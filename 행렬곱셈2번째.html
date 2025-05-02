@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3×3 행렬 곱셈 시각화</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+    rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+  <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+
+    .container {
+      text-align: center;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      font-size: 2.2rem;
+    }
+
+    h2 {
+      color: #34495e;
+      margin: 1rem 0;
+      font-size: 1.3rem;
+    }
+
+    .formula {
+      font-size: 1.8rem;
+      margin: 30px 0;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .matrices-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .matrix-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .matrix {
+      display: inline-block;
+      border: 2px solid #34495e;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 4px;
+    }
+
+    .matrix-row {
+      display: flex;
+      justify-content: center;
+    }
+
+    .matrix-cell {
+      width: 60px;
+      height: 60px;
+      margin: 3px;
+      text-align: center;
+      position: relative;
+    }
+
+    .matrix-cell input {
+      width: 100%;
+      height: 100%;
+      font-size: 1.5rem;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      padding: 5px;
+      font-weight: bold;
+    }
+
+    .matrix-cell input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+    }
+
+    .result-cell {
+      width: 60px;
+      height: 60px;
+      margin: 3px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1.5rem;
+    }
+
+    .operation-symbol {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 0 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2c3e50;
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 0 10px 20px 10px;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-container {
+      margin-top: 20px;
+    }
+
+    .equals-symbol {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 20px 0;
+      color: #2c3e50;
+    }
+
+    .button-container {
+      margin: 25px 0;
+    }
+
+    .color-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 40px 0 20px 0;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .color-item {
+      display: flex;
+      align-items: center;
+      margin: 5px;
+    }
+
+    .color-box {
+      width: 30px;
+      height: 30px;
+      border-radius: 4px;
+      margin-right: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .color-text {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .matrices-container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .operation-symbol {
+        margin: 15px 0;
+      }
+
+      .color-legend {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>3×3 행렬 곱셈 시각화</h1>
+
+    <div class="formula">A × T = R</div>
+
+    <div class="matrices-container">
+      <div class="matrix-container">
+        <h2>입력 행렬 A</h2>
+        <div class="matrix" id="matrix-a">
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="text" maxlength="1" value="1"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="2"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="3"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="text" maxlength="1" value="4"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="5"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="6"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="text" maxlength="1" value="7"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="8"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="9"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="operation-symbol">×</div>
+
+      <div class="matrix-container">
+        <h2>변환 행렬 T</h2>
+        <div class="matrix" id="matrix-t">
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="text" maxlength="1" value="1"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="0"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="0"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="text" maxlength="1" value="0"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="1"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="0"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="text" maxlength="1" value="0"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="0"></div>
+            <div class="matrix-cell"><input type="text" maxlength="1" value="1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button id="calculate-btn">곱셈 실행</button>
+      <button id="reset-btn">초기화</button>
+    </div>
+
+    <div class="equals-symbol">=</div>
+
+    <div class="result-container">
+      <h2>결과 행렬 R = A × T</h2>
+      <div class="matrix" id="matrix-r">
+        <div class="matrix-row">
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+        </div>
+        <div class="matrix-row">
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+        </div>
+        <div class="matrix-row">
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="color-legend">
+      <div class="color-item">
+        <div class="color-box" style="background-color: #FF0000;"></div>
+        <div class="color-text">0 = 빨강</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #FFA500;"></div>
+        <div class="color-text">1 = 주황</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #FFFF00;"></div>
+        <div class="color-text">2 = 노랑</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #ADFF2F;"></div>
+        <div class="color-text">3 = 연두</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #00FF00;"></div>
+        <div class="color-text">4 = 초록</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #00FFFF;"></div>
+        <div class="color-text">5 = 하늘</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #0000FF;"></div>
+        <div class="color-text">6 = 파랑</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #00008B;"></div>
+        <div class="color-text">7 = 남색</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #800080;"></div>
+        <div class="color-text">8 = 보라</div>
+      </div>
+      <div class="color-item">
+        <div class="color-box" style="background-color: #808080;"></div>
+        <div class="color-text">9 = 회색</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // 색상 매핑 정의
+      const colorMap = {
+        0: { bg: '#FF0000', text: 'white' },   // 빨강
+        1: { bg: '#FFA500', text: 'black' },   // 주황
+        2: { bg: '#FFFF00', text: 'black' },   // 노랑
+        3: { bg: '#ADFF2F', text: 'black' },   // 연두
+        4: { bg: '#00FF00', text: 'black' },   // 초록
+        5: { bg: '#00FFFF', text: 'black' },   // 하늘
+        6: { bg: '#0000FF', text: 'white' },   // 파랑
+        7: { bg: '#00008B', text: 'white' },   // 남색
+        8: { bg: '#800080', text: 'white' },   // 보라
+        9: { bg: '#808080', text: 'white' }    // 회색
+      };
+
+      // 입력 필드에 이벤트 리스너 추가
+      const inputsA = document.querySelectorAll('#matrix-a input');
+      const inputsT = document.querySelectorAll('#matrix-t input');
+
+      // A 행렬 입력 처리
+      inputsA.forEach(input => {
+        // 초기값에 대한 색상 적용
+        updateColorForInputA(input);
+
+        // 입력 제한 (0-9 숫자만)
+        input.addEventListener('input', function (e) {
+          // 숫자만 허용
+          this.value = this.value.replace(/[^0-9]/g, '');
+
+          // 값이 없으면 0으로 설정
+          if (this.value === '') {
+            this.value = '0';
+          }
+
+          // 색상 업데이트
+          updateColorForInputA(this);
+        });
+
+        // 키보드 이벤트 제한
+        input.addEventListener('keydown', function (e) {
+          // 숫자 키 (0-9), 백스페이스, 딜리트, 화살표 키만 허용
+          const allowedKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'];
+          if (!allowedKeys.includes(e.key)) {
+            e.preventDefault();
+          }
+        });
+
+        // 붙여넣기 방지
+        input.addEventListener('paste', function (e) {
+          e.preventDefault();
+        });
+      });
+
+      // T 행렬 입력 처리 (0 또는 1만 허용)
+      inputsT.forEach(input => {
+        // 입력 제한 (0-1 숫자만)
+        input.addEventListener('input', function (e) {
+          // 0과 1만 허용
+          this.value = this.value.replace(/[^0-1]/g, '');
+
+          // 값이 없으면 0으로 설정
+          if (this.value === '') {
+            this.value = '0';
+          }
+        });
+
+        // 키보드 이벤트 제한
+        input.addEventListener('keydown', function (e) {
+          // 0, 1, 백스페이스, 딜리트, 화살표 키만 허용
+          const allowedKeys = ['0', '1', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'];
+          if (!allowedKeys.includes(e.key)) {
+            e.preventDefault();
+          }
+        });
+
+        // 붙여넣기 방지
+        input.addEventListener('paste', function (e) {
+          e.preventDefault();
+        });
+      });
+
+      // 행렬 곱셈 계산 버튼
+      document.getElementById('calculate-btn').addEventListener('click', calculateMatrixMultiplication);
+
+      // 초기화 버튼
+      document.getElementById('reset-btn').addEventListener('click', resetMatrices);
+
+      // 페이지 로드 시 한 번 계산
+      calculateMatrixMultiplication();
+
+      // A 행렬 입력 필드 색상 업데이트 함수
+      function updateColorForInputA(element) {
+        const value = parseInt(element.value);
+        if (value >= 0 && value <= 9) {
+          const colorInfo = colorMap[value];
+          element.style.backgroundColor = colorInfo.bg;
+          element.style.color = colorInfo.text;
+        } else {
+          // 범위 외의 값은 회색으로 처리
+          element.style.backgroundColor = '#e0e0e0';
+          element.style.color = 'black';
+        }
+      }
+
+      // 결과 행렬 셀 색상 업데이트 함수
+      function updateColorForResultCell(element, value) {
+        if (value >= 0 && value <= 9) {
+          // 0-9 범위의 값은 색상 맵에서 색상 가져오기
+          const colorInfo = colorMap[value];
+          element.style.backgroundColor = colorInfo.bg;
+          element.style.color = colorInfo.text;
+        } else {
+          // 범위 외의 값은 값에 따른 적절한 색상 계산
+          let h = (value * 25) % 360;
+          let s = 80;
+          let l = 50;
+          element.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
+          element.style.color = l > 60 ? 'black' : 'white';
+        }
+      }
+
+      // 행렬 A 값 가져오기
+      function getMatrixA() {
+        const matrix = [];
+        const inputs = document.querySelectorAll('#matrix-a input');
+
+        for (let i = 0; i < 3; i++) {
+          matrix[i] = [];
+          for (let j = 0; j < 3; j++) {
+            const value = parseInt(inputs[i * 3 + j].value) || 0;
+            matrix[i][j] = value;
+          }
+        }
+
+        return matrix;
+      }
+
+      // 행렬 T 값 가져오기
+      function getMatrixT() {
+        const matrix = [];
+        const inputs = document.querySelectorAll('#matrix-t input');
+
+        for (let i = 0; i < 3; i++) {
+          matrix[i] = [];
+          for (let j = 0; j < 3; j++) {
+            const value = parseInt(inputs[i * 3 + j].value) || 0;
+            matrix[i][j] = value;
+          }
+        }
+
+        return matrix;
+      }
+
+      // 행렬 곱셈 계산
+      function calculateMatrixMultiplication() {
+        const matrixA = getMatrixA();
+        const matrixT = getMatrixT();
+        const resultCells = document.querySelectorAll('#matrix-r .result-cell');
+
+        // 결과 행렬 초기화
+        const resultMatrix = [
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0]
+        ];
+
+        // 행렬 곱셈 계산
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            let sum = 0;
+            for (let k = 0; k < 3; k++) {
+              sum += matrixA[i][k] * matrixT[k][j];
+            }
+            resultMatrix[i][j] = sum;
+          }
+        }
+
+        // 결과 표시
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            const value = resultMatrix[i][j];
+            const cell = resultCells[i * 3 + j];
+
+            cell.textContent = value;
+            updateColorForResultCell(cell, value);
+          }
+        }
+      }
+
+      // 행렬 초기화 함수
+      function resetMatrices() {
+        // A 행렬 초기화
+        inputsA.forEach(input => {
+          input.value = '0';
+          updateColorForInputA(input);
+        });
+
+        // T 행렬 초기화
+        inputsT.forEach(input => {
+          input.value = '0';
+        });
+
+        // 결과 업데이트
+        calculateMatrixMultiplication();
+      }
+    });
+  </script>
+</body>
+
+</html>

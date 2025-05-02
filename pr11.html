@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas 기반 이미지 블렌딩</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+
+    canvas {
+      border: 1px solid #ccc;
+      image-rendering: pixelated;
+    }
+
+    #matrixCanvas {
+      margin-top: 15px;
+    }
+
+    .slider {
+      width: 100%;
+    }
+
+    .info {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Canvas 기반 이미지 블렌딩 + 밝기 행렬 시각화</h1>
+
+  <div class="flex">
+    <div class="card">
+      <h3>이미지 1</h3>
+      <input type="file" id="img1">
+    </div>
+
+    <div class="card">
+      <h3>이미지 2</h3>
+      <input type="file" id="img2">
+    </div>
+
+    <div class="card">
+      <h3>혼합 비율</h3>
+      <input type="range" id="blend" class="slider" min="0" max="100" value="50">
+      <p><span id="blendLabel">50%</span></p>
+      <canvas id="blendCanvas" width="200" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin: 20px auto; max-width: 800px;">
+    <h3>밝기 행렬 시각화 (Canvas)</h3>
+    <canvas id="matrixCanvas" width="200" height="200"></canvas>
+    <p class="info" id="pixelInfo">픽셀 클릭 시 정보 표시</p>
+  </div>
+
+  <script>
+    const img1Input = document.getElementById('img1');
+    const img2Input = document.getElementById('img2');
+    const blendSlider = document.getElementById('blend');
+    const blendLabel = document.getElementById('blendLabel');
+    const blendCanvas = document.getElementById('blendCanvas');
+    const matrixCanvas = document.getElementById('matrixCanvas');
+    const pixelInfo = document.getElementById('pixelInfo');
+
+    const size = 200;
+    let gray1 = [], gray2 = [], result = [];
+    let image1 = null, image2 = null;
+
+    function loadImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => callback(img);
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function getGrayscaleMatrix(img) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      const matrix = [];
+      for (let y = 0; y < size; y++) {
+        matrix[y] = [];
+        for (let x = 0; x < size; x++) {
+          const i = (y * size + x) * 4;
+          const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+          matrix[y][x] = gray;
+        }
+      }
+      return matrix;
+    }
+
+    function blendAndDraw(alpha) {
+      const ctx = blendCanvas.getContext('2d');
+      const mtx = matrixCanvas.getContext('2d');
+      const imageData = ctx.createImageData(size, size);
+      result = [];
+      for (let y = 0; y < size; y++) {
+        result[y] = [];
+        for (let x = 0; x < size; x++) {
+          const gray = Math.round(alpha * gray1[y][x] + (1 - alpha) * gray2[y][x]);
+          result[y][x] = gray;
+          const i = (y * size + x) * 4;
+          imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = gray;
+          imageData.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      // 행렬 시각화
+      mtx.clearRect(0, 0, size, size);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const gray = result[y][x];
+          mtx.fillStyle = `rgb(${gray},${gray},${gray})`;
+          mtx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+
+    img1Input.addEventListener('change', e => {
+      loadImage(e.target.files[0], img => {
+        image1 = img;
+        gray1 = getGrayscaleMatrix(img);
+        if (image2) blendAndDraw(blendSlider.value / 100);
+      });
+    });
+
+    img2Input.addEventListener('change', e => {
+      loadImage(e.target.files[0], img => {
+        image2 = img;
+        gray2 = getGrayscaleMatrix(img);
+        if (image1) blendAndDraw(blendSlider.value / 100);
+      });
+    });
+
+    blendSlider.addEventListener('input', e => {
+      const alpha = e.target.value / 100;
+      blendLabel.textContent = `${e.target.value}%`;
+      if (gray1.length && gray2.length) {
+        blendAndDraw(alpha);
+      }
+    });
+
+    matrixCanvas.addEventListener('click', (e) => {
+      const rect = matrixCanvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left));
+      const y = Math.floor((e.clientY - rect.top));
+      if (result[y] && result[y][x] !== undefined) {
+        pixelInfo.textContent = `좌표: (${x}, ${y}), 밝기값: ${result[y][x]}`;
+      }
+    });
+  </script>
+</body>
+
+</html>

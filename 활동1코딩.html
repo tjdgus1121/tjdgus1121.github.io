@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO용 메타데이터 -->
+    <title>그림을 그리고 이를 숫자로 표현하기 활동</title>
+    <meta name="description" content="마우스로 그림을 만들고, 이를 이진 행렬로 표현하는 인공지능 수학 체험 활동. 시각적 패턴과 수학 개념의 연결을 쉽게 탐구할 수 있습니다.">
+    <meta name="keywords" content="수학 활동, 인공지능 수학, 행렬, 이진행렬, 시각적 패턴, AI 교육, 수학 수업 자료, 교육용 웹사이트">
+    <meta name="author" content="황성현">
+
+    <!-- Open Graph (SNS 공유용) -->
+    <meta property="og:title" content="그림을 그리고 이를 숫자로 표현하기 활동">
+    <meta property="og:description" content="마우스로 패턴을 만들고, 이를 2진 행렬로 변환해보는 인공지능 수학 체험 활동.">
+    <meta property="og:image" content="https://yourdomain.com/thumbnail.png"> <!-- ← 썸네일 이미지 주소로 교체하세요 -->
+    <meta property="og:url" content="https://yourdomain.com/"> <!-- ← 실제 배포 주소로 교체하세요 -->
+    <meta property="og:type" content="website">
+
+    <!-- Twitter 카드 (선택사항) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="그림을 그리고 이를 숫자로 표현하기 활동">
+    <meta name="twitter:description" content="수학과 시각적 사고의 만남. 클릭으로 패턴을 만들고 수치로 확인하세요.">
+    <meta name="twitter:image" content="https://yourdomain.com/thumbnail.png">
+
+    <!-- 폰트 및 아이콘 -->
+    <link rel="stylesheet" href="stylefooter.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .titleh2{
+            color:#555;
+            padding:10px 20px;
+            background:#ddd;
+            border-radius:5px;
+            font-size:18px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 1px;
+            border: 1px solid #ccc;
+            background-color: #ccc;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .cell {
+            aspect-ratio: 1/1;
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .cell.black {
+            background-color: black;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .matrix-container {
+            min-width:180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 450px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .matrix {
+            font-family: monospace;
+            white-space: pre;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            width: 100%;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+        }
+
+        .patterns-section {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 1200px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .patterns-section p{
+            text-align: center;
+            display:block;
+        }
+        .pattern-gallery {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 10px 0;
+            justify-content: center;
+        }
+
+        .pattern-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .pattern-item:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-3px);
+        }
+
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 1px;
+            border: 1px solid #ccc;
+            background-color: #ccc;
+            width: 100px;
+            height: 100px;
+        }
+
+        .pattern-cell {
+            background-color: white;
+        }
+
+        .pattern-cell.black {
+            background-color: black;
+        }
+
+        .pattern-name {
+            margin-top: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .grid {
+                max-width: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>패턴을 행렬로 표현하기기</h1>
+    <h2 class="titleh2">패턴을 마우스로 클릭해보고, 표시된 행렬을 탐구하며, 어떤 규칙이 있는지 알아봅시다.</h2>
+    
+    <div class="patterns-section">
+        <h2>샘플 패턴</h2>
+        <p>아래 패턴을 클릭하면 아래 15X15 행렬에 적용됩니다.</p>
+        <div class="pattern-gallery" id="pattern-gallery">
+            <!-- Patterns will be added here by JavaScript -->
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="grid-container">
+            <h2>15×15 행렬</h2>
+            <div class="grid" id="grid"></div>
+            <div class="controls">
+                <button id="showMatrix">행렬 표시</button>
+                <button id="clearGrid">초기화</button>
+            </div>
+        </div>
+        
+        <div class="matrix-container">
+            <h2>이진행렬</h2>
+            <div class="matrix" id="matrix"></div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('grid');
+            const matrixDisplay = document.getElementById('matrix');
+            const showMatrixBtn = document.getElementById('showMatrix');
+            const clearGridBtn = document.getElementById('clearGrid');
+            const patternGallery = document.getElementById('pattern-gallery');
+            
+            // Create 15x15 grid
+            for (let i = 0; i < 15 * 15; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', function() {
+                    this.classList.toggle('black');
+                });
+                grid.appendChild(cell);
+            }
+            
+            // Generate and display matrix
+            showMatrixBtn.addEventListener('click', function() {
+                const cells = document.querySelectorAll('.cell');
+                let matrixText = '';
+                
+                for (let i = 0; i < 15; i++) {
+                    let row = '';
+                    for (let j = 0; j < 15; j++) {
+                        const cell = cells[i * 15 + j];
+                        // White (not black) is 1, black is 0
+                        const value = cell.classList.contains('black') ? '0' : '1';
+                        row += value + ' ';
+                    }
+                    matrixText += row.trim() + '\n';
+                }
+                
+                matrixDisplay.textContent = matrixText;
+            });
+            
+            // Clear the grid (set all cells to white)
+            clearGridBtn.addEventListener('click', function() {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    cell.classList.remove('black');
+                });
+                matrixDisplay.textContent = '';
+            });
+            
+            // Define some preset patterns
+            const patterns = [
+                {
+                    name: "대각선 계단",
+                    grid: [
+                        [0,0,0,0,0,0,0,0],
+                        [0,1,0,0,0,0,0,0],
+                        [0,1,1,0,0,0,0,0],
+                        [0,1,1,1,0,0,0,0],
+                        [0,1,1,1,1,0,0,0],
+                        [0,1,1,1,1,1,0,0],
+                        [0,1,1,1,1,1,1,0],
+                        [0,0,0,0,0,0,0,0]
+                    ]
+                },
+                {
+                    name: "체스판",
+                    grid: [
+                        [1,0,1,0,1,0,1,0],
+                        [0,1,0,1,0,1,0,1],
+                        [1,0,1,0,1,0,1,0],
+                        [0,1,0,1,0,1,0,1],
+                        [1,0,1,0,1,0,1,0],
+                        [0,1,0,1,0,1,0,1],
+                        [1,0,1,0,1,0,1,0],
+                        [0,1,0,1,0,1,0,1]
+                    ]
+                },
+                {
+                    name: "십자가",
+                    grid: [
+                        [0,0,0,1,0,0,0,0],
+                        [0,0,0,1,0,0,0,0],
+                        [0,0,0,1,0,0,0,0],
+                        [1,1,1,1,1,1,1,0],
+                        [0,0,0,1,0,0,0,0],
+                        [0,0,0,1,0,0,0,0],
+                        [0,0,0,1,0,0,0,0],
+                        [0,0,0,0,0,0,0,0]
+                    ]
+                },
+                {
+                    name: "테두리",
+                    grid: [
+                        [1,1,1,1,1,1,1,0],
+                        [1,0,0,0,0,0,1,0],
+                        [1,0,0,0,0,0,1,0],
+                        [1,0,0,0,0,0,1,0],
+                        [1,0,0,0,0,0,1,0],
+                        [1,0,0,0,0,0,1,0],
+                        [1,1,1,1,1,1,1,0],
+                        [0,0,0,0,0,0,0,0]
+                    ]
+                },
+                {
+                    name: "원",
+                    grid: [
+                        [0,0,1,1,1,0,0,0],
+                        [0,1,0,0,0,1,0,0],
+                        [1,0,0,0,0,0,1,0],
+                        [1,0,0,0,0,0,1,0],
+                        [1,0,0,0,0,0,1,0],
+                        [0,1,0,0,0,1,0,0],
+                        [0,0,1,1,1,0,0,0],
+                        [0,0,0,0,0,0,0,0]
+                    ]
+                }
+            ];
+            
+            // Create pattern gallery
+            patterns.forEach((pattern, index) => {
+                const patternItem = document.createElement('div');
+                patternItem.className = 'pattern-item';
+                patternItem.dataset.patternIndex = index;
+                
+                const patternGrid = document.createElement('div');
+                patternGrid.className = 'pattern-grid';
+                
+                // Create small preview grid
+                for (let i = 0; i < 8; i++) {
+                    for (let j = 0; j < 8; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'pattern-cell';
+                        if (pattern.grid[i][j] === 1) {
+                            cell.classList.add('black');
+                        }
+                        patternGrid.appendChild(cell);
+                    }
+                }
+                
+                const patternName = document.createElement('div');
+                patternName.className = 'pattern-name';
+                patternName.textContent = pattern.name;
+                
+                patternItem.appendChild(patternGrid);
+                patternItem.appendChild(patternName);
+                
+                patternItem.addEventListener('click', function() {
+                    applyPattern(pattern.grid);
+                });
+                
+                patternGallery.appendChild(patternItem);
+            });
+            
+            // Function to apply a pattern to the main grid
+            function applyPattern(patternGrid) {
+                // Clear the grid first
+                clearGridBtn.click();
+                
+                const cells = document.querySelectorAll('.cell');
+                const centerOffset = Math.floor((15 - 8) / 2);
+                
+                // Apply the pattern at the center of the grid
+                for (let i = 0; i < 8; i++) {
+                    for (let j = 0; j < 8; j++) {
+                        const gridI = i + centerOffset;
+                        const gridJ = j + centerOffset;
+                        const index = gridI * 15 + gridJ;
+                        
+                        if (patternGrid[i][j] === 1) {
+                            cells[index].classList.add('black');
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
