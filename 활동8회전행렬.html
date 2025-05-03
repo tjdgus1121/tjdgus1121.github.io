@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vector Rotation Calculator</title>
+    <title>회전행렬 계산하기</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
@@ -254,7 +254,7 @@
                 이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
                 다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
             </div>
-
+        </div>
     </footer>
 
     <script>
@@ -465,6 +465,7 @@
                     const rotatedInfo = document.createElement('span');
                     rotatedInfo.textContent = `회전 결과 좌표 : (${vector.rotatedX}, ${vector.rotatedY})`;
 
+                    item.appendChild(document.createElement('br'));
                     item.appendChild(rotatedColorSpan);
                     item.appendChild(rotatedInfo);
                 }
@@ -542,20 +543,20 @@ ${lastVector.matrix[1][0].toFixed(4)} & ${lastVector.matrix[1][1].toFixed(4)} \\
                 idCell.textContent = rotation.id;
 
                 const coordCell = document.createElement('td');
-                coordCell.textContent = `(${rotation.x}, ${rotation.y})`;
+                coordCell.innerHTML = `\\( \\begin{pmatrix} ${rotation.x} \\\\ ${rotation.y} \\end{pmatrix} \\)`;
 
                 const angleCell = document.createElement('td');
                 const angleDeg = (rotation.angle * 180 / Math.PI).toFixed(2);
                 angleCell.textContent = `${angleDeg}° (${rotation.angle.toFixed(4)} rad)`;
 
                 const matrixCell = document.createElement('td');
-                matrixCell.innerHTML = `<span class="matrix">[
-                    [${rotation.matrix[0][0].toFixed(2)}, ${rotation.matrix[0][1].toFixed(2)}],
-                    [${rotation.matrix[1][0].toFixed(2)}, ${rotation.matrix[1][1].toFixed(2)}]
-                ]</span>`;
+                matrixCell.innerHTML = `\\( \\begin{pmatrix} 
+                    ${rotation.matrix[0][0].toFixed(2)} & ${rotation.matrix[0][1].toFixed(2)} \\\\
+                    ${rotation.matrix[1][0].toFixed(2)} & ${rotation.matrix[1][1].toFixed(2)}
+                \\end{pmatrix} \\)`;
 
                 const resultCell = document.createElement('td');
-                resultCell.textContent = `(${rotation.rotatedX}, ${rotation.rotatedY})`;
+                resultCell.innerHTML = `\\( \\begin{pmatrix} ${rotation.rotatedX} \\\\ ${rotation.rotatedY} \\end{pmatrix} \\)`;
 
                 row.appendChild(idCell);
                 row.appendChild(coordCell);
@@ -565,6 +566,11 @@ ${lastVector.matrix[1][0].toFixed(4)} & ${lastVector.matrix[1][1].toFixed(4)} \\
 
                 dataTable.appendChild(row);
             });
+            
+            // 테이블에 LaTeX 적용
+            if (window.MathJax) {
+                MathJax.typeset([dataTable]);
+            }
         }
 
         // Event Listeners
@@ -610,7 +616,7 @@ ${lastVector.matrix[1][0].toFixed(4)} & ${lastVector.matrix[1][1].toFixed(4)} \\
             }
         });
 
-        // Rotate 버튼 클릭 이벤트 핸들러 수정
+        // Rotate 버튼 클릭 이벤트 핸들러
         rotateBtn.addEventListener('click', () => {
             if (vectors.length === 0) {
                 alert("벡터를 먼저 추가해주세요!");
@@ -664,6 +670,9 @@ ${lastVector.matrix[1][0].toFixed(4)} & ${lastVector.matrix[1][1].toFixed(4)} \\
             notification.textContent = "클릭하여 벡터의 끝점을 정의해주세요. 시작점은 원점(0,0)입니다.";
             notification.style.display = 'block';
         });
+
+        // 현재 연도 표시
+        document.getElementById('current-year').textContent = new Date().getFullYear();
 
         // Initialize the app
         window.addEventListener('load', () => {
