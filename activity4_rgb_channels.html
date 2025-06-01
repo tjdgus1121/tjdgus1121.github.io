@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGB 채널 분리기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="stylefooter.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #333;
+            text-align: center;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+        }
+
+        #upload-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        #upload-btn:hover {
+            background-color: #45a049;
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .channel-container {
+            margin-bottom: 30px;
+        }
+
+        .channel-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .red-title {
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #d32f2f;
+        }
+
+        .green-title {
+            background-color: rgba(0, 255, 0, 0.1);
+            color: #388e3c;
+        }
+
+        .blue-title {
+            background-color: rgba(0, 0, 255, 0.1);
+            color: #1976d2;
+        }
+
+        .channel-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .image-display {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .matrix-display {
+            flex: 2;
+            min-width: 300px;
+            max-height: 400px;
+            overflow: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 10px;
+            white-space: pre;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .original-image-container {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .histogram-container {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .channel-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .channel-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .channel-btn.active {
+            opacity: 1;
+        }
+
+        .channel-btn.inactive {
+            opacity: 0.5;
+        }
+
+        #red-btn {
+            background-color: #ffcdd2;
+            color: #b71c1c;
+        }
+
+        #green-btn {
+            background-color: #c8e6c9;
+            color: #1b5e20;
+        }
+
+        #blue-btn {
+            background-color: #bbdefb;
+            color: #0d47a1;
+        }
+
+        .image-effects {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .effect-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .effect-control {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .effect-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .effect-btn:hover {
+            background-color: #0b7dda;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .slider-container label {
+            width: 80px;
+            font-size: 14px;
+        }
+
+        .slider-container input {
+            flex: 1;
+        }
+
+        .slider-container span {
+            width: 40px;
+            text-align: right;
+            margin-left: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 채널 매핑 관련 스타일 */
+        .channel-mapping {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+            border: 1px solid #c8e6c9;
+        }
+
+        .channel-mapping h3 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+
+        .mapping-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .mapping-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mapping-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .mapping-btn:hover {
+            background-color: #388e3c;
+        }
+
+        .mapping-btn.red {
+            background-color: #f44336;
+        }
+
+        .mapping-btn.red:hover {
+            background-color: #d32f2f;
+        }
+
+        .mapping-btn.green {
+            background-color: #4CAF50;
+        }
+
+        .mapping-btn.green:hover {
+            background-color: #388e3c;
+        }
+
+        .mapping-btn.blue {
+            background-color: #2196F3;
+        }
+
+        .mapping-btn.blue:hover {
+            background-color: #1976d2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>RGB 채널 분리기</h1>
+
+        <div class="upload-section">
+            <h2>이미지 업로드</h2>
+            <p>JPG 또는 PNG 이미지를 선택하여 RGB 채널을 분석하세요</p>
+            <input type="file" id="image-input" accept="image/png, image/jpeg" style="display: none;">
+            <button id="upload-btn">이미지 선택</button>
+        </div>
+
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>이미지 처리 중...</p>
+        </div>
+
+        <div class="results">
+            <div class="original-image-container">
+                <h2>원본 이미지 및 채널 조작</h2>
+
+                <div class="channel-controls">
+                    <button id="red-btn" class="channel-btn active">R 채널</button>
+                    <button id="green-btn" class="channel-btn active">G 채널</button>
+                    <button id="blue-btn" class="channel-btn active">B 채널</button>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                    <div>
+                        <canvas id="modified-image"></canvas>
+                    </div>
+                    <div class="histogram-container">
+                        <h3>히스토그램</h3>
+                        <canvas id="histogram-canvas" width="320" height="240"></canvas>
+                    </div>
+                </div>
+
+                <div class="image-effects">
+                    <h3>이미지 효과</h3>
+                    <div class="effect-controls">
+                        <button id="invert-btn" class="effect-btn">반전</button>
+                        <button id="grayscale-btn" class="effect-btn">그레이스케일</button>
+                        <button id="reset-btn" class="effect-btn">원본으로 되돌리기</button>
+                    </div>
+
+                    <div class="effect-control">
+                        <div class="slider-container">
+                            <label for="brightness">밝기:</label>
+                            <input type="range" id="brightness" min="-100" max="100" value="0">
+                            <span id="brightness-value">0</span>
+                        </div>
+
+                        <div class="slider-container">
+                            <label for="contrast">대비:</label>
+                            <input type="range" id="contrast" min="-100" max="100" value="0">
+                            <span id="contrast-value">0</span>
+                        </div>
+
+                        <div class="slider-container">
+                            <label for="saturation">채도:</label>
+                            <input type="range" id="saturation" min="-100" max="100" value="0">
+                            <span id="saturation-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 채널 매핑 섹션 추가 -->
+                <div class="channel-mapping">
+                    <h3>채널 매핑 옵션</h3>
+                    <p>한 채널의 데이터를 다른 채널로 복사하려면 아래 버튼을 사용하세요</p>
+
+                    <div class="mapping-controls">
+                        <button id="r-to-g" class="mapping-btn red">R→G</button>
+                        <button id="r-to-b" class="mapping-btn red">R→B</button>
+                        <button id="g-to-r" class="mapping-btn green">G→R</button>
+                        <button id="g-to-b" class="mapping-btn green">G→B</button>
+                        <button id="b-to-r" class="mapping-btn blue">B→R</button>
+                        <button id="b-to-g" class="mapping-btn blue">B→G</button>
+                    </div>
+
+                    <div class="mapping-controls" style="margin-top: 10px;">
+                        <button id="swap-r-g" class="mapping-btn">R↔G 교환</button>
+                        <button id="swap-r-b" class="mapping-btn">R↔B 교환</button>
+                        <button id="swap-g-b" class="mapping-btn">G↔B 교환</button>
+                    </div>
+
+                    <div class="mapping-controls" style="margin-top: 10px;">
+                        <button id="invert-r" class="mapping-btn red">R 반전</button>
+                        <button id="invert-g" class="mapping-btn green">G 반전</button>
+                        <button id="invert-b" class="mapping-btn blue">B 반전</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="rgb-channels">RGB 채널 이미지</div>
+                <div class="tab" data-tab="matrix-data">행렬 데이터</div>
+            </div>
+
+            <div id="rgb-channels" class="tab-content active">
+                <div class="channel-container">
+                    <div class="channel-title red-title">Red 채널</div>
+                    <div class="channel-display">
+                        <div class="image-display">
+                            <canvas id="red-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="channel-container">
+                    <div class="channel-title green-title">Green 채널</div>
+                    <div class="channel-display">
+                        <div class="image-display">
+                            <canvas id="green-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="channel-container">
+                    <div class="channel-title blue-title">Blue 채널</div>
+                    <div class="channel-display">
+                        <div class="image-display">
+                            <canvas id="blue-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="matrix-data" class="tab-content">
+                <div class="channel-container">
+                    <div class="channel-title red-title">Red 채널 행렬 데이터</div>
+                    <div class="matrix-display" id="red-matrix"></div>
+                </div>
+
+                <div class="channel-container">
+                    <div class="channel-title green-title">Green 채널 행렬 데이터</div>
+                    <div class="matrix-display" id="green-matrix"></div>
+                </div>
+
+                <div class="channel-container">
+                    <div class="channel-title blue-title">Blue 채널 행렬 데이터</div>
+                    <div class="matrix-display" id="blue-matrix"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const imageInput = document.getElementById('image-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const resultsSection = document.querySelector('.results');
+            const loadingSection = document.querySelector('.loading');
+
+            // Canvas elements
+            const redCanvas = document.getElementById('red-canvas');
+            const greenCanvas = document.getElementById('green-canvas');
+            const blueCanvas = document.getElementById('blue-canvas');
+            const modifiedCanvas = document.getElementById('modified-image');
+            const histogramCanvas = document.getElementById('histogram-canvas');
+
+            // Matrix display elements
+            const redMatrix = document.getElementById('red-matrix');
+            const greenMatrix = document.getElementById('green-matrix');
+            const blueMatrix = document.getElementById('blue-matrix');
+
+            // Channel toggle buttons
+            const redBtn = document.getElementById('red-btn');
+            const greenBtn = document.getElementById('green-btn');
+            const blueBtn = document.getElementById('blue-btn');
+
+            // Effect buttons
+            const invertBtn = document.getElementById('invert-btn');
+            const grayscaleBtn = document.getElementById('grayscale-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // Effect sliders
+            const brightnessSlider = document.getElementById('brightness');
+            const contrastSlider = document.getElementById('contrast');
+            const saturationSlider = document.getElementById('saturation');
+            const brightnessValue = document.getElementById('brightness-value');
+            const contrastValue = document.getElementById('contrast-value');
+            const saturationValue = document.getElementById('saturation-value');
+
+            // 채널 매핑 버튼
+            const rToGBtn = document.getElementById('r-to-g');
+            const rToBBtn = document.getElementById('r-to-b');
+            const gToRBtn = document.getElementById('g-to-r');
+            const gToBBtn = document.getElementById('g-to-b');
+            const bToRBtn = document.getElementById('b-to-r');
+            const bToGBtn = document.getElementById('b-to-g');
+            const swapRGBtn = document.getElementById('swap-r-g');
+            const swapRBBtn = document.getElementById('swap-r-b');
+            const swapGBBtn = document.getElementById('swap-g-b');
+
+            // Tab elements
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // Variables to store original and current image data
+            let originalImg = null;
+            let originalImageData = null;
+            let trueOriginalImageData = null; // 진짜 원본 이미지 데이터 저장
+            let redChannelActive = true;
+            let greenChannelActive = true;
+            let blueChannelActive = true;
+            let isInverted = false;
+            let isGrayscale = false;
+
+            // 채널별 반전 버튼
+            const invertRBtn = document.getElementById('invert-r');
+            const invertGBtn = document.getElementById('invert-g');
+            const invertBBtn = document.getElementById('invert-b');
+
+            // 채널별 반전 이벤트 핸들러
+            invertRBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                invertChannel(0); // Red 채널 반전
+            });
+
+            invertGBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                invertChannel(1); // Green 채널 반전
+            });
+
+            invertBBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                invertChannel(2); // Blue 채널 반전
+            });
+
+            // 채널 반전 함수
+            function invertChannel(channel) {
+                const width = originalImageData.width;
+                const height = originalImageData.height;
+
+                // 이미지 데이터 클론
+                const newData = new Uint8ClampedArray(originalImageData.data);
+                const newImageData = new ImageData(newData, width, height);
+
+                // 특정 채널만 반전 적용
+                for (let i = 0; i < newData.length; i += 4) {
+                    newData[i + channel] = 255 - originalImageData.data[i + channel];
+                }
+
+                // 이미지 데이터 업데이트
+                originalImageData = newImageData;
+
+                // 이미지 업데이트
+                updateModifiedImage();
+
+                // 채널 이미지도 업데이트
+                updateChannelImages();
+            }
+
+            uploadBtn.addEventListener('click', function () {
+                imageInput.click();
+            });
+
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function () {
+                    const tabId = this.getAttribute('data-tab');
+
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+
+                    // Add active class to current tab and content
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            imageInput.addEventListener('change', function (e) {
+                if (e.target.files.length === 0) return;
+
+                const file = e.target.files[0];
+
+                // Check if the file is an image
+                if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                    alert('JPG 또는 PNG 이미지를 선택해주세요.');
+                    return;
+                }
+
+                // Reset all effects
+                redChannelActive = true;
+                greenChannelActive = true;
+                blueChannelActive = true;
+                isInverted = false;
+                isGrayscale = false;
+                brightnessSlider.value = 0;
+                contrastSlider.value = 0;
+                saturationSlider.value = 0;
+                brightnessValue.textContent = '0';
+                contrastValue.textContent = '0';
+                saturationValue.textContent = '0';
+
+                // Update button states
+                redBtn.classList.add('active');
+                redBtn.classList.remove('inactive');
+                greenBtn.classList.add('active');
+                greenBtn.classList.remove('inactive');
+                blueBtn.classList.add('active');
+                blueBtn.classList.remove('inactive');
+
+                // Show loading spinner
+                loadingSection.style.display = 'block';
+                resultsSection.style.display = 'none';
+
+                // Create a FileReader to read the image
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    originalImg = new Image();
+                    originalImg.onload = function () {
+                        // Process the image to separate channels
+                        processImage(originalImg);
+
+                        // Hide loading spinner and show results
+                        loadingSection.style.display = 'none';
+                        resultsSection.style.display = 'block';
+                    };
+
+                    originalImg.src = event.target.result;
+                };
+
+                reader.readAsDataURL(file);
+            });
+
+            // Channel toggle buttons
+            redBtn.addEventListener('click', function () {
+                redChannelActive = !redChannelActive;
+                updateButtonState(redBtn, redChannelActive);
+                updateModifiedImage();
+            });
+
+            greenBtn.addEventListener('click', function () {
+                greenChannelActive = !greenChannelActive;
+                updateButtonState(greenBtn, greenChannelActive);
+                updateModifiedImage();
+            });
+
+            blueBtn.addEventListener('click', function () {
+                blueChannelActive = !blueChannelActive;
+                updateButtonState(blueBtn, blueChannelActive);
+                updateModifiedImage();
+            });
+
+            // Effect buttons
+            invertBtn.addEventListener('click', function () {
+                isInverted = !isInverted;
+                updateModifiedImage();
+            });
+
+            grayscaleBtn.addEventListener('click', function () {
+                isGrayscale = !isGrayscale;
+                updateModifiedImage();
+            });
+
+            resetBtn.addEventListener('click', function () {
+                redChannelActive = true;
+                greenChannelActive = true;
+                blueChannelActive = true;
+                isInverted = false;
+                isGrayscale = false;
+                brightnessSlider.value = 0;
+                contrastSlider.value = 0;
+                saturationSlider.value = 0;
+                brightnessValue.textContent = '0';
+                contrastValue.textContent = '0';
+                saturationValue.textContent = '0';
+
+                updateButtonState(redBtn, true);
+                updateButtonState(greenBtn, true);
+                updateButtonState(blueBtn, true);
+
+                // 진짜 원본 이미지 데이터로 복원
+                if (trueOriginalImageData) {
+                    // 깊은 복사로 원본 이미지 데이터 복원
+                    const newData = new Uint8ClampedArray(trueOriginalImageData.data);
+                    originalImageData = new ImageData(newData, trueOriginalImageData.width, trueOriginalImageData.height);
+
+                    // 이미지 데이터 업데이트
+                    updateModifiedImage();
+
+                    // 채널 이미지도 업데이트
+                    updateChannelImages();
+                }
+            });
+
+            // Effect sliders
+            brightnessSlider.addEventListener('input', function () {
+                brightnessValue.textContent = this.value;
+                updateModifiedImage();
+            });
+
+            contrastSlider.addEventListener('input', function () {
+                contrastValue.textContent = this.value;
+                updateModifiedImage();
+            });
+
+            saturationSlider.addEventListener('input', function () {
+                saturationValue.textContent = this.value;
+                updateModifiedImage();
+            });
+
+            // 채널 매핑 이벤트 핸들러
+            rToGBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                mapChannel(0, 1); // Red to Green
+            });
+
+            rToBBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                mapChannel(0, 2); // Red to Blue
+            });
+
+            gToRBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                mapChannel(1, 0); // Green to Red
+            });
+
+            gToBBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                mapChannel(1, 2); // Green to Blue
+            });
+
+            bToRBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                mapChannel(2, 0); // Blue to Red
+            });
+
+            bToGBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                mapChannel(2, 1); // Blue to Green
+            });
+
+            swapRGBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                swapChannels(0, 1); // Swap Red and Green
+            });
+
+            swapRBBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                swapChannels(0, 2); // Swap Red and Blue
+            });
+
+            swapGBBtn.addEventListener('click', function () {
+                if (!originalImageData) return;
+                swapChannels(1, 2); // Swap Green and Blue
+            });
+
+            function updateButtonState(button, isActive) {
+                if (isActive) {
+                    button.classList.add('active');
+                    button.classList.remove('inactive');
+                } else {
+                    button.classList.add('inactive');
+                    button.classList.remove('active');
+                }
+            }
+
+            // 채널 매핑 함수 (sourceChannel 값을 targetChannel로 복사)
+            function mapChannel(sourceChannel, targetChannel) {
+                const width = originalImageData.width;
+                const height = originalImageData.height;
+
+                // 이미지 데이터 클론
+                const newData = new Uint8ClampedArray(originalImageData.data);
+                const newImageData = new ImageData(newData, width, height);
+
+                // 채널 매핑 적용
+                for (let i = 0; i < newData.length; i += 4) {
+                    newData[i + targetChannel] = originalImageData.data[i + sourceChannel];
+                }
+
+                // 이미지 데이터 업데이트
+                originalImageData = newImageData;
+
+                // 이미지 업데이트
+                updateModifiedImage();
+
+                // 채널 이미지도 업데이트
+                updateChannelImages();
+            }
+
+            // 채널 교환 함수
+            function swapChannels(channel1, channel2) {
+                const width = originalImageData.width;
+                const height = originalImageData.height;
+
+                // 이미지 데이터 클론
+                const newData = new Uint8ClampedArray(originalImageData.data);
+                const newImageData = new ImageData(newData, width, height);
+
+                // 채널 교환 적용
+                for (let i = 0; i < newData.length; i += 4) {
+                    const temp = originalImageData.data[i + channel1];
+                    newData[i + channel1] = originalImageData.data[i + channel2];
+                    newData[i + channel2] = temp;
+                }
+
+                // 이미지 데이터 업데이트
+                originalImageData = newImageData;
+
+                // 이미지 업데이트
+                updateModifiedImage();
+
+                // 채널 이미지도 업데이트
+                updateChannelImages();
+            }
+
+            // 채널 이미지 업데이트 함수
+            function updateChannelImages() {
+                const width = originalImageData.width;
+                const height = originalImageData.height;
+
+                const redCtx = redCanvas.getContext('2d');
+                const greenCtx = greenCanvas.getContext('2d');
+                const blueCtx = blueCanvas.getContext('2d');
+
+                // 채널별 이미지 데이터 생성
+                const redData = new ImageData(width, height);
+                const greenData = new ImageData(width, height);
+                const blueData = new ImageData(width, height);
+
+                // 채널 값 배열 초기화
+                const redValues = new Array(height);
+                const greenValues = new Array(height);
+                const blueValues = new Array(height);
+
+                for (let y = 0; y < height; y++) {
+                    redValues[y] = new Array(width);
+                    greenValues[y] = new Array(width);
+                    blueValues[y] = new Array(width);
+
+                    for (let x = 0; x < width; x++) {
+                        const index = (y * width + x) * 4;
+
+                        // 채널 값 추출
+                        const r = originalImageData.data[index];
+                        const g = originalImageData.data[index + 1];
+                        const b = originalImageData.data[index + 2];
+
+                        // 값 저장
+                        redValues[y][x] = r;
+                        greenValues[y][x] = g;
+                        blueValues[y][x] = b;
+
+                        // Red 채널 이미지 생성
+                        redData.data[index] = r;
+                        redData.data[index + 1] = r;
+                        redData.data[index + 2] = r;
+                        redData.data[index + 3] = 255;
+
+                        // Green 채널 이미지 생성
+                        greenData.data[index] = g;
+                        greenData.data[index + 1] = g;
+                        greenData.data[index + 2] = g;
+                        greenData.data[index + 3] = 255;
+
+                        // Blue 채널 이미지 생성
+                        blueData.data[index] = b;
+                        blueData.data[index + 1] = b;
+                        blueData.data[index + 2] = b;
+                        blueData.data[index + 3] = 255;
+                    }
+                }
+
+                // 채널별 이미지
+
+                // 채널별 이미지 적용
+                redCanvas.width = width;
+                redCanvas.height = height;
+                redCtx.putImageData(redData, 0, 0);
+
+                greenCanvas.width = width;
+                greenCanvas.height = height;
+                greenCtx.putImageData(greenData, 0, 0);
+
+                blueCanvas.width = width;
+                blueCanvas.height = height;
+                blueCtx.putImageData(blueData, 0, 0);
+
+                // 행렬 데이터 업데이트
+                updateMatrixDisplays(redValues, greenValues, blueValues);
+
+                // 히스토그램 업데이트
+                updateHistogram(originalImageData);
+            }
+
+            function processImage(img) {
+                // 이미지 크기 조정 (최대 크기 500px)
+                let width = img.width;
+                let height = img.height;
+                const maxSize = 500;
+
+                if (width > maxSize || height > maxSize) {
+                    const ratio = Math.min(maxSize / width, maxSize / height);
+                    width = Math.floor(width * ratio);
+                    height = Math.floor(height * ratio);
+                }
+
+                // Canvas 설정
+                redCanvas.width = width;
+                redCanvas.height = height;
+                greenCanvas.width = width;
+                greenCanvas.height = height;
+                blueCanvas.width = width;
+                blueCanvas.height = height;
+                modifiedCanvas.width = width;
+                modifiedCanvas.height = height;
+
+                // 원본 이미지 그리기
+                const modCtx = modifiedCanvas.getContext('2d');
+                modCtx.drawImage(img, 0, 0, width, height);
+
+                // 원본 이미지 데이터 추출
+                originalImageData = modCtx.getImageData(0, 0, width, height);
+
+                // 진짜 원본 이미지 데이터 깊은 복사본 생성 
+                const trueOriginalData = new Uint8ClampedArray(originalImageData.data);
+                trueOriginalImageData = new ImageData(trueOriginalData, width, height);
+
+                // 채널 이미지 업데이트
+                updateChannelImages();
+            }
+
+            function updateModifiedImage() {
+                if (!originalImageData) return;
+
+                const modCtx = modifiedCanvas.getContext('2d');
+                const width = originalImageData.width;
+                const height = originalImageData.height;
+
+                // 이미지 데이터 클론
+                const newData = new Uint8ClampedArray(originalImageData.data);
+                const newImageData = new ImageData(newData, width, height);
+
+                // 채널 활성화/비활성화 적용
+                for (let i = 0; i < newData.length; i += 4) {
+                    if (!redChannelActive) newData[i] = 0;
+                    if (!greenChannelActive) newData[i + 1] = 0;
+                    if (!blueChannelActive) newData[i + 2] = 0;
+                }
+
+                // 효과 적용
+                applyEffects(newData);
+
+                // 이미지 업데이트
+                modCtx.putImageData(newImageData, 0, 0);
+
+                // 히스토그램 업데이트
+                updateHistogram(newImageData);
+            }
+
+            function applyEffects(data) {
+                const brightness = parseInt(brightnessSlider.value);
+                const contrast = parseInt(contrastSlider.value) / 100 + 1; // -100 ~ 100 -> 0 ~ 2
+                const saturation = parseInt(saturationSlider.value) / 100 + 1; // -100 ~ 100 -> 0 ~ 2
+
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i];
+                    let g = data[i + 1];
+                    let b = data[i + 2];
+
+                    // 밝기 조정
+                    if (brightness !== 0) {
+                        r += brightness;
+                        g += brightness;
+                        b += brightness;
+                    }
+
+                    // 대비 조정
+                    if (contrast !== 1) {
+                        r = Math.floor((r - 128) * contrast + 128);
+                        g = Math.floor((g - 128) * contrast + 128);
+                        b = Math.floor((b - 128) * contrast + 128);
+                    }
+
+                    // 그레이스케일 변환
+                    if (isGrayscale) {
+                        const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                        r = g = b = gray;
+                    }
+                    // 채도 조정 (그레이스케일이 아닌 경우에만)
+                    else if (saturation !== 1) {
+                        const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                        r = Math.floor(gray + saturation * (r - gray));
+                        g = Math.floor(gray + saturation * (g - gray));
+                        b = Math.floor(gray + saturation * (b - gray));
+                    }
+
+                    // 반전 효과
+                    if (isInverted) {
+                        r = 255 - r;
+                        g = 255 - g;
+                        b = 255 - b;
+                    }
+
+                    // 값 범위 제한 (0-255)
+                    data[i] = Math.max(0, Math.min(255, r));
+                    data[i + 1] = Math.max(0, Math.min(255, g));
+                    data[i + 2] = Math.max(0, Math.min(255, b));
+                }
+            }
+
+            function updateMatrixDisplays(redValues, greenValues, blueValues) {
+                // 행렬 크기 제한 (최대 20x20)
+                const maxDisplaySize = 20;
+                const width = Math.min(redValues[0].length, maxDisplaySize);
+                const height = Math.min(redValues.length, maxDisplaySize);
+
+                // 행렬 문자열 생성
+                let redMatrixStr = '';
+                let greenMatrixStr = '';
+                let blueMatrixStr = '';
+
+                for (let y = 0; y < height; y++) {
+                    let redRow = '';
+                    let greenRow = '';
+                    let blueRow = '';
+
+                    for (let x = 0; x < width; x++) {
+                        redRow += redValues[y][x].toString().padStart(3, ' ') + ' ';
+                        greenRow += greenValues[y][x].toString().padStart(3, ' ') + ' ';
+                        blueRow += blueValues[y][x].toString().padStart(3, ' ') + ' ';
+                    }
+
+                    redMatrixStr += redRow + '\n';
+                    greenMatrixStr += greenRow + '\n';
+                    blueMatrixStr += blueRow + '\n';
+                }
+
+                // 행렬 표시
+                redMatrix.textContent = redMatrixStr;
+                greenMatrix.textContent = greenMatrixStr;
+                blueMatrix.textContent = blueMatrixStr;
+            }
+
+            function updateHistogram(imageData) {
+                const histCtx = histogramCanvas.getContext('2d');
+                histCtx.clearRect(0, 0, histogramCanvas.width, histogramCanvas.height);
+
+                // 히스토그램 크기 설정
+                const leftMargin = 50;
+                const rightMargin = 10;
+                const topMargin = 15;
+                const bottomMargin = 25;
+
+                const histWidth = histogramCanvas.width - (leftMargin + rightMargin);
+                const histHeight = histogramCanvas.height - (topMargin + bottomMargin);
+
+                // 히스토그램 데이터 계산
+                const redHist = new Array(256).fill(0);
+                const greenHist = new Array(256).fill(0);
+                const blueHist = new Array(256).fill(0);
+
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    redHist[imageData.data[i]]++;
+                    greenHist[imageData.data[i + 1]]++;
+                    blueHist[imageData.data[i + 2]]++;
+                }
+
+                // 활성화된 채널만 최대값 계산에 포함
+                let maxValues = [];
+                if (redChannelActive) maxValues.push(...redHist);
+                if (greenChannelActive) maxValues.push(...greenHist);
+                if (blueChannelActive) maxValues.push(...blueHist);
+
+                // 최대값이 없으면 기본값 설정
+                if (maxValues.length === 0) {
+                    maxValues = [1]; // 기본값 설정
+                }
+
+                // 최대값 찾기 (스케일링을 위해)
+                const maxCount = Math.max(...maxValues);
+
+                // 최소 최대값 설정 (너무 작은 값으로 스케일링되는 것 방지)
+                const minMaxValue = Math.max(imageData.width * imageData.height * 0.05);
+
+                // 최대값을 보기 좋게 반올림, 최소값 적용
+                const roundedMax = Math.max(
+                    Math.ceil(maxCount / 1000) * 1000,
+                    minMaxValue
+                );
+
+                // 히스토그램 그리기
+                const barWidth = histWidth / 256;
+
+                // 배경 그리드 그리기
+                histCtx.strokeStyle = '#e0e0e0';
+                histCtx.beginPath();
+
+                // Y축 그리드 및 라벨
+                const ySteps = 5;
+                for (let i = 0; i <= ySteps; i++) {
+                    const y = topMargin + histHeight - (i * histHeight / ySteps);
+                    histCtx.moveTo(leftMargin, y);
+                    histCtx.lineTo(leftMargin + histWidth, y);
+
+                    // Y축 값 표시 (간격 및 폰트 개선)
+                    const yValue = Math.round((i / ySteps) * roundedMax);
+                    histCtx.fillStyle = '#666';
+                    histCtx.font = '11px Arial';
+                    histCtx.textAlign = 'right';
+                    histCtx.fillText(yValue, leftMargin - 8, y + 4);
+                }
+
+                // X축 그리기
+                histCtx.moveTo(leftMargin, topMargin + histHeight);
+                histCtx.lineTo(leftMargin + histWidth, topMargin + histHeight);
+
+                // X축 값 표시 (균등하게 분포)
+                const xValues = [0, 64, 128, 192, 255];
+                for (const xValue of xValues) {
+                    const x = leftMargin + (xValue * barWidth);
+                    histCtx.moveTo(x, topMargin + histHeight);
+                    histCtx.lineTo(x, topMargin + histHeight + 5);
+
+                    histCtx.fillStyle = '#666';
+                    histCtx.font = '11px Arial';  // 폰트 크기 증가
+                    histCtx.textAlign = 'center';
+                    histCtx.fillText(xValue, x, topMargin + histHeight + 15);
+                }
+
+                histCtx.stroke();
+
+                // 축 레이블
+                histCtx.fillStyle = '#333';
+                histCtx.font = '12px Arial';  // 폰트 크기 증가
+                histCtx.textAlign = 'center';
+                histCtx.fillText('픽셀 값', leftMargin + histWidth / 2, histogramCanvas.height - 5);
+
+                histCtx.save();
+                histCtx.translate(15, topMargin + histHeight / 2);  // 위치 조정
+                histCtx.rotate(-Math.PI / 2);
+                histCtx.textAlign = 'center';
+                histCtx.fillText('빈도', 0, 0);
+                histCtx.restore();
+
+                // 채널별 히스토그램 그리기
+                if (redChannelActive) {
+                    drawHistLine(redHist, 'rgba(255,0,0,0.7)');
+                }
+
+                if (greenChannelActive) {
+                    drawHistLine(greenHist, 'rgba(0,255,0,0.7)');
+                }
+
+                if (blueChannelActive) {
+                    drawHistLine(blueHist, 'rgba(0,0,255,0.7)');
+                }
+                function drawHistLine(data, color) {
+                    histCtx.strokeStyle = color;
+                    histCtx.beginPath();
+                    histCtx.moveTo(leftMargin, topMargin + histHeight);
+
+                    for (let i = 0; i < 256; i++) {
+                        const x = leftMargin + (i * barWidth);
+                        const y = topMargin + histHeight - (data[i] / roundedMax * histHeight);
+                        histCtx.lineTo(x, y);
+                    }
+
+                    histCtx.lineTo(leftMargin + histWidth, topMargin + histHeight);
+                    histCtx.closePath();
+
+                    // 선 아래 영역 채우기
+                    histCtx.fillStyle = color.replace('0.7', '0.3');
+                    histCtx.fill();
+
+                    // 선 그리기
+                    histCtx.stroke();
+                }
+            }
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 행렬 변환기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="stylefooter.css">
+    <style>
+        body {
+            font-family: 'DO Hyeon', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #e0e7e5;
+            color: #333;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: clamp(1.7rem, 4vw, 2.8rem);
+        }
+        
+        .upload-section {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding: 1.5rem;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #4CAF50;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: clamp(0.8rem, 1.2vw, 1rem);
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+        
+        .upload-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .output-section {
+            display: grid;
+            grid-template-columns: minmax(150px, 30%) 1fr;
+            gap: 1rem;
+            flex-grow: 1;
+            height: calc(100% - 150px);
+            overflow: hidden;
+        }
+        
+        .image-preview-container {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            max-height: 100%;
+        }
+        
+        .matrix-container {
+            overflow: hidden;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            background-color: #f9f9f9;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            margin-bottom: 0.5rem;
+            border: 1px solid #ddd;
+            object-fit: contain;
+            max-height: 25vh;
+        }
+        
+        .resized-preview {
+            image-rendering: pixelated;
+            border: 1px solid #ddd;
+            margin: 0.5rem 0;
+            align-self: center;
+        }
+        
+        .matrix-table-container {
+            overflow: auto;
+            flex-grow: 1;
+            max-height: calc(100% - 80px);
+            border: 1px solid #e0e0e0;
+            background-color: white;
+            border-radius: 4px;
+        }
+        
+        .matrix-table {
+            border-collapse: collapse;
+            font-family: monospace;
+            font-size: clamp(0.6rem, 1vw, 0.8rem);
+            margin: 0 auto;
+            table-layout: fixed;
+            width: auto;
+        }
+        
+        .matrix-table td {
+            border: 1px solid #e0e0e0;
+            padding: 0.15rem;
+            text-align: center;
+            position: relative;
+            min-width: 28px;
+            height: 28px;
+            overflow: hidden;
+        }
+        
+        .matrix-table td:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+            font-size: clamp(0.6rem, 0.8vw, 0.7rem);
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            display: none;
+            z-index: 100;
+        }
+        
+        .matrix-table td:hover .tooltip {
+            display: block;
+        }
+        
+        .settings {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.75rem;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        label {
+            font-weight: bold;
+            font-size: clamp(0.7rem, 1vw, 0.9rem);
+            white-space: nowrap;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            padding: 0.3rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: clamp(0.7rem, 1vw, 0.9rem);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 1rem;
+            font-style: italic;
+            color: #666;
+        }
+        
+        .section-heading {
+            margin: 0.5rem 0;
+            font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+            color: #444;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .section-heading h2, .section-heading h3 {
+            font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+            margin: 0;
+        }
+        
+        .matrix-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .pixel-info {
+            margin-top: 0.75rem;
+            padding: 0.6rem;
+            background-color: #e0f7fa;
+            border-radius: 4px;
+            font-size: clamp(0.7rem, 1vw, 0.9rem);
+        }
+        
+        .color-scale {
+            display: flex;
+            height: 1rem;
+            width: 100%;
+            margin: 0.3rem 0;
+            background: linear-gradient(to right, black, white);
+            border-radius: 2px;
+        }
+        
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(0.6rem, 0.8vw, 0.8rem);
+            color: #666;
+        }
+        
+        /* 이 클래스를 추가하여 행렬 데이터를 더 컴팩트하게 표시합니다 */
+        .compact-view .matrix-table td {
+            padding: 0;
+            font-size: clamp(0.5rem, 0.7vw, 0.6rem);
+            min-width: 20px;
+            height: 20px;
+        }
+        
+        /* 행렬 크기가 클 때를 위한 추가 스타일 */
+        .large-matrix .matrix-table td {
+            font-size: clamp(0.4rem, 0.6vw, 0.5rem);
+            min-width: 16px;
+            height: 16px;
+            padding: 0;
+        }
+        
+        /* 매우 큰 행렬을 위한 스타일 */
+        .very-large-matrix .matrix-table td {
+            font-size: clamp(0.3rem, 0.5vw, 0.4rem);
+            min-width: 12px;
+            height: 12px;
+            padding: 0;
+        }
+        
+        /* 숫자 숨김 모드 */
+        .hide-numbers .matrix-table td {
+            color: transparent !important;
+        }
+        
+        /* 숫자만 표시 모드 */
+        .numbers-only .matrix-table td {
+            background-color: #fff !important;
+            color: #000 !important;
+        }
+        
+        /* 행렬 확대/축소 컨트롤 */
+        .matrix-zoom-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .zoom-btn {
+            background-color: #3f51b5;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .zoom-btn:hover {
+            background-color: #303f9f;
+        }
+        
+        .zoom-level {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .output-section {
+                grid-template-columns: 1fr;
+                grid-auto-rows: auto 1fr;
+                height: auto;
+            }
+            
+            .container {
+                height: auto;
+                padding: 0.5rem;
+            }
+            
+            .matrix-container {
+                height: 60vh;
+                min-height: 300px;
+            }
+            
+            .image-preview-container {
+                max-height: none;
+            }
+            
+            .settings {
+                justify-content: center;
+            }
+            
+            .matrix-actions {
+                justify-content: center;
+            }
+            
+            .matrix-table td {
+                min-width: 24px;
+                height: 24px;
+            }
+            
+            .upload-section {
+                padding: 1rem;
+            }
+            
+            .upload-btn, input[type="number"] {
+                padding: 0.5rem;
+            }
+            
+            .section-heading {
+                padding-bottom: 0.3rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .matrix-table td {
+                min-width: 20px;
+                height: 20px;
+                font-size: 0.6rem;
+            }
+            
+            .compact-view .matrix-table td {
+                min-width: 18px;
+                height: 18px;
+            }
+            
+            .large-matrix .matrix-table td {
+                min-width: 14px;
+                height: 14px;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .settings {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .setting-group {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>이미지 행렬 변환기</h1>
+        
+        <div class="upload-section" id="drop-zone">
+            <p>이미지를 드래그&드롭하거나 아래 버튼을 클릭하세요</p>
+            <input type="file" id="file-input" class="file-input" accept="image/*">
+            <button class="upload-btn" id="upload-btn">이미지 업로드</button>
+        </div>
+        
+        <div id="output-section" class="output-section" style="display: none;">
+            <div class="image-preview-container">
+                <div class="section-heading">
+                    <h2>이미지 미리보기</h2>
+                </div>
+                <img id="original-preview" class="image-preview" alt="Original Image">
+                
+                <div class="section-heading">
+                    <h3>크기 조정 (그레이스케일)</h3>
+                </div>
+                <canvas id="resized-preview" class="resized-preview"></canvas>
+                
+                <div class="settings">
+                    <div class="setting-group">
+                        <label for="resize-width">가로:</label>
+                        <input type="number" id="resize-width" min="5" max="100" value="20">
+                    </div>
+                    <div class="setting-group">
+                        <label for="resize-height">세로:</label>
+                        <input type="number" id="resize-height" min="5" max="100" value="20">
+                    </div>
+                    <button class="upload-btn" id="process-btn">변환</button>
+                </div>
+                
+                <div class="pixel-info" id="pixel-info">
+                    <div>밝기값 범위: 0 (검정) ~ 255 (흰색)</div>
+                    <div class="color-scale"></div>
+                    <div class="scale-labels">
+                        <span>0</span>
+                        <span>255</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="matrix-container">
+                <div class="section-heading">
+                    <h2>픽셀 밝기값 행렬</h2>
+                    <span id="matrix-size"></span>
+                </div>
+                
+                <div class="matrix-actions">
+                    <button class="upload-btn" id="color-mode-btn">컬러 모드</button>
+                    <button class="upload-btn" id="numbers-mode-btn">숫자 모드</button>
+                    <button class="upload-btn" id="mixed-mode-btn">혼합 모드</button>
+                    <button class="upload-btn" id="toggle-compact-btn">컴팩트 보기</button>
+                    <button class="upload-btn" id="export-btn">CSV 내보내기</button>
+                </div>
+                
+                <div class="matrix-zoom-controls">
+                    <button class="zoom-btn" id="zoom-out-btn">-</button>
+                    <span class="zoom-level" id="zoom-level">100%</span>
+                    <button class="zoom-btn" id="zoom-in-btn">+</button>
+                </div>
+                
+                <div class="matrix-table-container" id="matrix-output"></div>
+            </div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const processBtn = document.getElementById('process-btn');
+            const dropZone = document.getElementById('drop-zone');
+            const outputSection = document.getElementById('output-section');
+            const originalPreview = document.getElementById('original-preview');
+            const resizedPreview = document.getElementById('resized-preview');
+            const matrixOutput = document.getElementById('matrix-output');
+            const resizeWidth = document.getElementById('resize-width');
+            const resizeHeight = document.getElementById('resize-height');
+            const colorModeBtn = document.getElementById('color-mode-btn');
+            const numbersModeBtn = document.getElementById('numbers-mode-btn');
+            const mixedModeBtn = document.getElementById('mixed-mode-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const matrixSize = document.getElementById('matrix-size');
+            const toggleCompactBtn = document.getElementById('toggle-compact-btn');
+            const zoomInBtn = document.getElementById('zoom-in-btn');
+            const zoomOutBtn = document.getElementById('zoom-out-btn');
+            const zoomLevelEl = document.getElementById('zoom-level');
+            
+            let uploadedImage = null;
+            let currentMatrix = null;
+            let displayMode = 'mixed'; // 'color', 'numbers', 'mixed'
+            let compactView = false;
+            let zoomLevel = 100; // 기본 100%
+            
+            // Event listeners
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            processBtn.addEventListener('click', processImage);
+            
+            colorModeBtn.addEventListener('click', function() {
+                displayMode = 'color';
+                updateMatrixDisplayMode();
+                highlightActiveButton();
+            });
+            
+            numbersModeBtn.addEventListener('click', function() {
+                displayMode = 'numbers';
+                updateMatrixDisplayMode();
+                highlightActiveButton();
+            });
+            
+            mixedModeBtn.addEventListener('click', function() {
+                displayMode = 'mixed';
+                updateMatrixDisplayMode();
+                highlightActiveButton();
+            });
+            
+            toggleCompactBtn.addEventListener('click', function() {
+                compactView = !compactView;
+                matrixOutput.classList.toggle('compact-view');
+                if (currentMatrix) {
+                    displayMatrix(currentMatrix);
+                }
+                // 컴팩트 버튼 토글 상태 표시
+                this.textContent = compactView ? "일반 보기" : "컴팩트 보기";
+            });
+            
+            // 확대/축소 버튼 이벤트
+            zoomInBtn.addEventListener('click', function() {
+                if (zoomLevel < 200) {
+                    zoomLevel += 20;
+                    applyZoom();
+                }
+            });
+            
+            zoomOutBtn.addEventListener('click', function() {
+                if (zoomLevel > 40) {
+                    zoomLevel -= 20;
+                    applyZoom();
+                }
+            });
+            
+            // 확대/축소 적용
+            function applyZoom() {
+                zoomLevelEl.textContent = `${zoomLevel}%`;
+                
+                const table = matrixOutput.querySelector('.matrix-table');
+                if (table) {
+                    table.style.transform = `scale(${zoomLevel / 100})`;
+                    table.style.transformOrigin = 'top left';
+                }
+            }
+            
+            exportBtn.addEventListener('click', function() {
+                if (!currentMatrix) return;
+                
+                let csvContent = "data:text/csv;charset=utf-8,";
+                
+                currentMatrix.forEach(row => {
+                    csvContent += row.join(',') + '\r\n';
+                });
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "pixel_matrix.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            
+            // 활성화된 버튼 강조 표시
+            function highlightActiveButton() {
+                // 명확한 활성화 상태 표시를 위해 스타일 변경
+                [colorModeBtn, numbersModeBtn, mixedModeBtn].forEach(btn => {
+                    btn.style.opacity = '0.7';
+                    btn.style.fontWeight = 'normal';
+                });
+                
+                // 활성화된 버튼 강조
+                if (displayMode === 'color') {
+                    colorModeBtn.style.opacity = '1';
+                    colorModeBtn.style.fontWeight = 'bold';
+                } else if (displayMode === 'numbers') {
+                    numbersModeBtn.style.opacity = '1';
+                    numbersModeBtn.style.fontWeight = 'bold';
+                } else if (displayMode === 'mixed') {
+                    mixedModeBtn.style.opacity = '1';
+                    mixedModeBtn.style.fontWeight = 'bold';
+                }
+            }
+            
+            // 매트릭스 디스플레이 모드 업데이트
+            function updateMatrixDisplayMode() {
+                const container = matrixOutput;
+                
+                container.classList.remove('hide-numbers', 'numbers-only');
+                
+                if (displayMode === 'color') {
+                    container.classList.add('hide-numbers');
+                } else if (displayMode === 'numbers') {
+                    container.classList.add('numbers-only');
+                }
+                
+                if (currentMatrix) {
+                    displayMatrix(currentMatrix);
+                }
+            }
+            
+            // Drag and drop functionality
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.style.borderColor = '#4CAF50';
+                this.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+            });
+            
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.style.borderColor = '#ccc';
+                this.style.backgroundColor = 'transparent';
+            });
+            
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.style.borderColor = '#ccc';
+                this.style.backgroundColor = 'transparent';
+                
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    fileInput.files = files;
+                    handleFileSelect(e);
+                }
+            });
+            
+            // 화면 크기 변경 감지 및 대응
+            window.addEventListener('resize', function() {
+                if (currentMatrix) {
+                    // 행렬 크기에 따라 반응형으로 스타일 조정
+                    adjustMatrixViewForScreenSize();
+                }
+            });
+            
+            // Handle file selection
+            function handleFileSelect(e) {
+                const file = fileInput.files[0];
+                
+                if (!file || !file.type.match('image.*')) {
+                    alert('이미지 파일만 업로드 가능합니다.');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        uploadedImage = img;
+                        
+                        // Show original image preview
+                        originalPreview.src = e.target.result;
+                        
+                        // Show output section
+                        outputSection.style.display = 'grid';
+                        
+                        // Process image automatically
+                        processImage();
+                        
+                        // 초기 버튼 강조
+                        highlightActiveButton();
+                    };
+                    img.src = e.target.result;
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            
+            // Process image to matrix
+            function processImage() {
+                if (!uploadedImage) return;
+                
+                const width = parseInt(resizeWidth.value) || 20;
+                const height = parseInt(resizeHeight.value) || 20;
+                
+                // Update matrix size display
+                matrixSize.textContent = `${width}×${height}`;
+                
+                // Resize and convert to grayscale
+                const context = resizedPreview.getContext('2d');
+                resizedPreview.width = width;
+                resizedPreview.height = height;
+                
+                // Scale up the display size for better visibility (but keep pixel data the same)
+                const maxDisplaySize = 300;
+                const maxDimension = Math.max(width, height);
+                const displayScale = Math.min(10, Math.floor(maxDisplaySize / maxDimension));
+                const displayWidth = width * displayScale;
+                const displayHeight = height * displayScale;
+                
+                resizedPreview.style.width = `${displayWidth}px`;
+                resizedPreview.style.height = `${displayHeight}px`;
+                
+                // Draw image with resizing
+                context.drawImage(uploadedImage, 0, 0, width, height);
+                
+                // Get pixel data
+                const imageData = context.getImageData(0, 0, width, height);
+                const pixels = imageData.data;
+                
+                // Extract grayscale values
+                const grayMatrix = [];
+                for (let y = 0; y < height; y++) {
+                    const row = [];
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        // Convert RGB to grayscale using luminance formula
+                        const gray = Math.round(
+                            0.299 * pixels[idx] + 
+                            0.587 * pixels[idx + 1] + 
+                            0.114 * pixels[idx + 2]
+                        );
+                        row.push(gray);
+                        
+                        // Update pixel to grayscale in the canvas
+                        pixels[idx] = gray;     // R
+                        pixels[idx + 1] = gray; // G
+                        pixels[idx + 2] = gray; // B
+                    }
+                    grayMatrix.push(row);
+                }
+                
+                // Update canvas with grayscale image
+                context.putImageData(imageData, 0, 0);
+                
+                // Store current matrix
+                currentMatrix = grayMatrix;
+                
+                // 행렬 크기에 따라 뷰 스타일 조정
+                adjustMatrixViewForScreenSize();
+                
+                // Display matrix
+                displayMatrix(grayMatrix);
+                
+                // 디스플레이 모드 업데이트
+                updateMatrixDisplayMode();
+                
+                // 기본 확대/축소 수준 설정
+                zoomLevel = 100;
+                zoomLevelEl.textContent = '100%';
+            }
+            
+            // 행렬 크기와 화면 크기에 따라 뷰 스타일 조정
+            function adjustMatrixViewForScreenSize() {
+                if (!currentMatrix) return;
+                
+                const matrixTableContainer = document.querySelector('.matrix-table-container');
+                if (!matrixTableContainer) return;
+                
+                // 모든 크기 클래스 제거
+                matrixTableContainer.classList.remove('large-matrix', 'very-large-matrix');
+                
+                // 행렬 크기에 따라 클래스 추가
+                const rows = currentMatrix.length;
+                const cols = currentMatrix[0] ? currentMatrix[0].length : 0;
+                
+                if (rows > 50 || cols > 50) {
+                    matrixTableContainer.classList.add('very-large-matrix');
+                } else if (rows > 30 || cols > 30) {
+                    matrixTableContainer.classList.add('large-matrix');
+                }
+                
+                // 자동으로 컴팩트 뷰 설정 (큰 행렬일 경우)
+                if (rows > 30 || cols > 30) {
+                    if (!compactView) {
+                        compactView = true;
+                        matrixOutput.classList.add('compact-view');
+                        toggleCompactBtn.textContent = "일반 보기";
+                    }
+                }
+            }
+            
+            // Display matrix as table
+            function displayMatrix(matrix) {
+                matrixOutput.innerHTML = '<div class="loading">행렬 생성 중...</div>';
+                
+                // Use setTimeout to prevent UI freeze on large matrices
+                setTimeout(() => {
+                    const tableContainer = document.createElement('div');
+                    const table = document.createElement('table');
+                    table.className = 'matrix-table';
+                    
+                    // 행렬 크기에 따라 뷰 스타일 적용
+                    const isLargeMatrix = matrix.length > 30 || (matrix[0] && matrix[0].length > 30);
+                    
+                    for (let y = 0; y < matrix.length; y++) {
+                        const row = document.createElement('tr');
+                        
+                        for (let x = 0; x < matrix[y].length; x++) {
+                            const value = matrix[y][x];
+                            const cell = document.createElement('td');
+                            
+                            // 모든 셀에 숫자 값을 항상 표시
+                            cell.textContent = value;
+                            
+                            if (displayMode === 'mixed' || displayMode === 'color') {
+                                // Set cell color based on value (darker background for darker pixels)
+                                const brightness = Math.floor((value / 255) * 240);
+                                cell.style.backgroundColor = `rgb(${brightness}, ${brightness}, ${brightness})`;
+                                
+                                // Set text color for better contrast
+                                cell.style.color = value > 127 ? '#000' : '#fff';
+                            }
+                            
+                            // Add tooltip
+                            const tooltip = document.createElement('div');
+                            tooltip.className = 'tooltip';
+                            tooltip.textContent = `좌표: (${x}, ${y}), 값: ${value}`;
+                            cell.appendChild(tooltip);
+                            
+                            row.appendChild(cell);
+                        }
+                        
+                        table.appendChild(row);
+                    }
+                    
+                    tableContainer.appendChild(table);
+                    matrixOutput.innerHTML = '';
+                    matrixOutput.appendChild(tableContainer);
+                    
+                    // 최초 렌더링 후 화면 크기에 맞게 스타일 조정
+                    adjustMatrixViewForScreenSize();
+                    
+                    // 확대/축소 적용
+                    applyZoom();
+                }, 50);
+            }
+            
+            // 초기화 시 기본 모드 강조
+            highlightActiveButton();
+        });
+    </script>
+</body>
+</html>
