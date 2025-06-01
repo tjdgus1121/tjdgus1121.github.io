@@ -24,13 +24,15 @@ def load_or_create_model():
     global model
     if os.path.exists(model_path):
         try:
-            # 커스텀 객체가 있다면 여기 등록해야 함 (예: layers.BatchNormalization 등)
-            # https://www.tensorflow.org/tutorials/keras/save_and_load?hl=ko#custom_objects 참고
-            # 여기서는 표준 레이어만 사용했으므로 별도 등록 필요 없음
-            model = tf.keras.models.load_model(model_path)
-            print(f"모델 로드 성공: {model_path}")
+            # 모델 로드 시 compile=False로 로드 후 명시적으로 컴파일
+            model = tf.keras.models.load_model(model_path, compile=False)
+            # 모델 로드 후 컴파일 설정 (피드백 학습에 필요한 설정)
+            model.compile(optimizer='adam',
+                          loss='categorical_crossentropy', # One-Hot 라벨에 맞춤
+                          metrics=['accuracy'])
+            print(f"모델 로드 성공 및 재컴파일 완료: {model_path}")
         except Exception as e:
-            print(f"모델 로드 실패 ({model_path}): {e}")
+            print(f"모델 로드 또는 재컴파일 실패 ({model_path}): {e}")
             print("모델 파일이 손상되었거나 호환되지 않을 수 있습니다. 임시 모델을 생성합니다.")
             model = create_simple_model() # 에러 시 임시 모델 생성
     else:
@@ -51,7 +53,7 @@ def create_simple_model():
     ])
     # 임시 모델도 컴파일 필요 (fit/predict 호출 가능하도록)
     temp_model.compile(optimizer='adam',
-                       loss='sparse_categorical_crossentropy',
+                       loss='categorical_crossentropy', # <-- 이 부분을 수정했습니다!
                        metrics=['accuracy'])
     print("임시 모델 생성 완료.")
     return temp_model
