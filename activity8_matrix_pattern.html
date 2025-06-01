@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- SEO용 메타데이터 -->
+  <title>행렬 패턴 탐구 활동</title>
+  <meta name="description" content="이 활동을 통해 행렬과 패턴의 관계를 시각적으로 탐구하고 이해합니다. 숫자가 어떻게 패턴으로 표현되는지 직접 체험해보세요.">
+  <meta name="keywords" content="행렬, 패턴, 수학 활동, 인공지능 수학, 시각화, AI 교육, 행렬 시각화">
+  <meta name="author" content="황성현">
+
+  <!-- Open Graph (SNS 공유용) -->
+  <meta property="og:title" content="행렬 패턴 탐구 활동">
+  <meta property="og:description" content="이 활동을 통해 행렬과 패턴의 관계를 시각적으로 탐구하고 이해합니다.">
+  <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+  <meta property="og:url" content="[YOUR_ACTIVITY_PAGE_URL]"> <!-- 이 활동 페이지의 실제 배포 주소로 교체하세요 -->
+  <meta property="og:type" content="website">
+
+  <!-- Twitter 카드 -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="행렬 패턴 탐구 활동">
+  <meta name="twitter:description" content="행렬과 패턴의 관계를 시각적으로 탐구해보는 인공지능 수학 활동입니다.">
+  <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      text-align: center;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 1000px;
+      width: 100%;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+    
+    h2 {
+      color: #555;
+      margin: 1rem 0;
+      font-size: 1.2rem;
+    }
+    
+    .matrices-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .matrix-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .matrix {
+      display: inline-block;
+      border: 2px solid #333;
+      padding: 10px;
+      background-color: #fff;
+    }
+    
+    .matrix-row {
+      display: flex;
+      justify-content: center;
+    }
+    
+    .matrix-cell {
+      width: 60px;
+      height: 60px;
+      margin: 3px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .matrix-cell input {
+      width: 100%;
+      height: 100%;
+      font-size: 1.1rem;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      padding: 5px;
+    }
+    
+    .matrix-cell input:focus {
+      outline: none;
+      border-color: #4285f4;
+      box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
+    }
+    
+    .result-cell {
+      width: 60px;
+      height: 60px;
+      margin: 3px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    
+    .operation-symbol {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    button {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin: 0 10px 20px 10px;
+    }
+    
+    button:hover {
+      background-color: #3367d6;
+    }
+    
+    .result-container {
+      margin-top: 20px;
+    }
+    
+    .equals-symbol {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    
+    .sky-blue {
+      background-color: #87CEEB !important;
+    }
+    
+    .button-container {
+      margin: 20px 0;
+    }
+    
+    .transform-selector {
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-bottom: 20px;
+      background-color: white;
+    }
+    
+    .formula {
+      font-size: 1.5rem;
+      margin: 30px 0;
+      font-weight: bold;
+    }
+    
+    .inquiry-text {
+      margin: 30px 0;
+      font-style: italic;
+      color: #555;
+      font-size: 1.1rem;
+    }
+    
+    @media (max-width: 768px) {
+      .matrices-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .operation-symbol {
+        margin: 15px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>행렬 곱셈 시각화</h1>
+    
+    <div class="formula">A × T = R</div>
+    
+    <div class="matrices-container">
+      <div class="matrix-container">
+        <h2>입력 행렬 A (픽셀 밝기값)</h2>
+        <div class="matrix" id="matrix-a">
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="100"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="150"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="200"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="50"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="100"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="150"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="0"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="50"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="255" value="100"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="operation-symbol">×</div>
+      
+      <div class="matrix-container">
+        <h2>변환 행렬 T (이동을 위한 0,1 행렬)</h2>
+        <div class="matrix" id="matrix-t">
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="0" class="sky-blue"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="1" class="sky-blue"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="0" class="sky-blue"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="0" class="sky-blue"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="0" class="sky-blue"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="1" class="sky-blue"></div>
+          </div>
+          <div class="matrix-row">
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="0" class="sky-blue"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="0" class="sky-blue"></div>
+            <div class="matrix-cell"><input type="number" min="0" max="1" value="0" class="sky-blue"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="button-container">
+      <select id="transform-selector" class="transform-selector">
+        <option value="right-shift">오른쪽 이동 행렬</option>
+        <option value="left-shift">왼쪽 이동 행렬</option>
+        <option value="up-shift">위쪽 이동 행렬</option>
+        <option value="down-shift">아래쪽 이동 행렬</option>
+        <option value="identity">단위 행렬</option>
+      </select>
+    </div>
+    
+    <div class="button-container">
+      <button id="reset-btn">초기화</button>
+      <button id="calculate-btn">곱셈 실행</button>
+      <button id="download-btn">결과 다운로드 (CSV)</button>
+    </div>
+    
+    <div class="equals-symbol">=</div>
+    
+    <div class="result-container">
+      <h2>결과 행렬 R = A × T</h2>
+      <div class="matrix" id="matrix-r">
+        <div class="matrix-row">
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+        </div>
+        <div class="matrix-row">
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+        </div>
+        <div class="matrix-row">
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+          <div class="result-cell">0</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="inquiry-text">
+      이 곱셈 결과는 왜 이렇게 나왔을까요?
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 모든 입력 필드에 이벤트 리스너 추가 및 초기 배경색 설정
+      const inputsA = document.querySelectorAll('#matrix-a input');
+      const inputsT = document.querySelectorAll('#matrix-t input');
+      
+      // A 행렬 입력 처리
+      inputsA.forEach(input => {
+        // 입력 값을 0~255로 제한
+        input.addEventListener('input', function() {
+          let value = parseInt(this.value);
+          if (isNaN(value)) {
+            this.value = 0;
+            value = 0;
+          } else if (value > 255) {
+            this.value = 255;
+            value = 255;
+          } else if (value < 0) {
+            this.value = 0;
+            value = 0;
+          }
+          
+          // 배경색 업데이트
+          updateBackgroundColor(this, value);
+          calculateMatrixMultiplication();
+        });
+        
+        // 초기 배경색 설정
+        updateBackgroundColor(input, parseInt(input.value) || 0);
+      });
+      
+      // T 행렬 입력 처리 (0 또는 1만 허용)
+      inputsT.forEach(input => {
+        input.addEventListener('input', function() {
+          let value = parseInt(this.value);
+          if (isNaN(value) || value < 0) {
+            this.value = 0;
+          } else if (value > 1) {
+            this.value = 1;
+          }
+          calculateMatrixMultiplication();
+        });
+      });
+      
+      // 행렬 곱셈 계산 버튼
+      document.getElementById('calculate-btn').addEventListener('click', calculateMatrixMultiplication);
+      
+      // 초기화 버튼
+      document.getElementById('reset-btn').addEventListener('click', resetMatrices);
+      
+      // 다운로드 버튼
+      document.getElementById('download-btn').addEventListener('click', downloadResultCSV);
+      
+      // 변환 행렬 선택기
+      document.getElementById('transform-selector').addEventListener('change', applyTransformMatrix);
+      
+      // 페이지 로드 시 한 번 계산
+      calculateMatrixMultiplication();
+      
+      // 배경색 업데이트 함수 (A 행렬용)
+      function updateBackgroundColor(element, value) {
+        const grayValue = Math.floor(value);
+        const rgbValue = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+        const textColor = grayValue > 128 ? 'black' : 'white';
+        
+        element.style.backgroundColor = rgbValue;
+        element.style.color = textColor;
+      }
+      
+      // 행렬 A 값 가져오기
+      function getMatrixA() {
+        const matrix = [];
+        const inputs = document.querySelectorAll('#matrix-a input');
+        
+        for (let i = 0; i < 3; i++) {
+          matrix[i] = [];
+          for (let j = 0; j < 3; j++) {
+            const value = parseInt(inputs[i * 3 + j].value) || 0;
+            matrix[i][j] = value;
+          }
+        }
+        
+        return matrix;
+      }
+      
+      // 행렬 T 값 가져오기
+      function getMatrixT() {
+        const matrix = [];
+        const inputs = document.querySelectorAll('#matrix-t input');
+        
+        for (let i = 0; i < 3; i++) {
+          matrix[i] = [];
+          for (let j = 0; j < 3; j++) {
+            const value = parseInt(inputs[i * 3 + j].value) || 0;
+            matrix[i][j] = value;
+          }
+        }
+        
+        return matrix;
+      }
+      
+      // 행렬 곱셈 계산
+      function calculateMatrixMultiplication() {
+        const matrixA = getMatrixA();
+        const matrixT = getMatrixT();
+        const resultCells = document.querySelectorAll('#matrix-r .result-cell');
+        
+        // 결과 행렬 초기화
+        const resultMatrix = [
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0]
+        ];
+        
+        // 행렬 곱셈 계산
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            let sum = 0;
+            for (let k = 0; k < 3; k++) {
+              sum += matrixA[i][k] * matrixT[k][j];
+            }
+            
+            // 0-255 범위로 제한
+            resultMatrix[i][j] = Math.min(255, Math.max(0, Math.round(sum)));
+          }
+        }
+        
+        // 결과 표시
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            const value = resultMatrix[i][j];
+            const cell = resultCells[i * 3 + j];
+            
+            cell.textContent = value;
+            
+            // 배경색 설정
+            const grayValue = value;
+            const rgbValue = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+            const textColor = grayValue > 128 ? 'black' : 'white';
+            
+            cell.style.backgroundColor = rgbValue;
+            cell.style.color = textColor;
+          }
+        }
+      }
+      
+      // 행렬 초기화 함수
+      function resetMatrices() {
+        // A 행렬 초기화
+        const defaultA = [
+          [100, 150, 200],
+          [50, 100, 150],
+          [0, 50, 100]
+        ];
+        
+        const inputsA = document.querySelectorAll('#matrix-a input');
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            const input = inputsA[i * 3 + j];
+            input.value = defaultA[i][j];
+            updateBackgroundColor(input, defaultA[i][j]);
+          }
+        }
+        
+        // T 행렬 초기화 (오른쪽 이동 행렬)
+        document.getElementById('transform-selector').value = 'right-shift';
+        applyTransformMatrix();
+        
+        // 결과 업데이트
+        calculateMatrixMultiplication();
+      }
+      
+      // 변환 행렬 적용 함수
+      function applyTransformMatrix() {
+        const transformType = document.getElementById('transform-selector').value;
+        let transformMatrix;
+        
+        switch(transformType) {
+          case 'right-shift':
+            transformMatrix = [
+              [0, 1, 0],
+              [0, 0, 1],
+              [0, 0, 0]
+            ];
+            break;
+          case 'left-shift':
+            transformMatrix = [
+              [0, 0, 0],
+              [1, 0, 0],
+              [0, 1, 0]
+            ];
+            break;
+          case 'up-shift':
+            transformMatrix = [
+              [0, 0, 0],
+              [1, 0, 0],
+              [0, 1, 0]
+            ];
+            break;
+          case 'down-shift':
+            transformMatrix = [
+              [0, 1, 0],
+              [0, 0, 1],
+              [0, 0, 0]
+            ];
+            break;
+          case 'identity':
+            transformMatrix = [
+              [1, 0, 0],
+              [0, 1, 0],
+              [0, 0, 1]
+            ];
+            break;
+          default:
+            transformMatrix = [
+              [0, 1, 0],
+              [0, 0, 1],
+              [0, 0, 0]
+            ];
+        }
+        
+        // T 행렬에 값 적용
+        const inputsT = document.querySelectorAll('#matrix-t input');
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            inputsT[i * 3 + j].value = transformMatrix[i][j];
+          }
+        }
+        
+        // 결과 업데이트
+        calculateMatrixMultiplication();
+      }
+      
+      // 결과 CSV 다운로드 함수
+      function downloadResultCSV() {
+        const resultMatrix = [];
+        const resultCells = document.querySelectorAll('#matrix-r .result-cell');
+        
+        // 결과 행렬 값 수집
+        for (let i = 0; i < 3; i++) {
+          resultMatrix[i] = [];
+          for (let j = 0; j < 3; j++) {
+            resultMatrix[i][j] = resultCells[i * 3 + j].textContent;
+          }
+        }
+        
+        // CSV 형식으로 변환
+        let csvContent = "data:text/csv;charset=utf-8,";
+        resultMatrix.forEach(row => {
+          csvContent += row.join(",") + "\r\n";
+        });
+        
+        // CSV 파일 생성 및 다운로드
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "matrix_result.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    });
+  </script>
+</body>
+</html>
