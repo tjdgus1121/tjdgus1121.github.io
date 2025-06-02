@@ -578,7 +578,7 @@
             <p>아래 캔버스에 0~9 숫자를 그려보세요. 정밀한 CNN 모델이 숫자를 인식합니다!</p>
         </div>
 
-        <div class="mnist-app__status" id="modelStatus">모델 로딩 중...</div>
+        <div class="mnist-app__status" id="modelStatus">모델 로딩 중...약 30초 소요요</div>
         
         <!-- 로딩 컨테이너 추가 -->
         <div class="mnist-app__loading-container" id="loadingContainer">
@@ -1302,6 +1302,97 @@
             if (resultsDiv) {
                 resultsDiv.style.display = 'block';
             }
+        }
+
+        // 서버로 피드백 전송 함수 추가
+        async function sendFeedbackToServer(correctLabel) {
+             if (!modelReady) {
+                 showSystemMessage('서버가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.', 'error');
+                 return;
+             }
+
+             const processedTensor = preprocessCanvas();
+             if (processedTensor === null) {
+                 showSystemMessage('피드백을 보내려면 숫자를 그려야 합니다.', 'error');
+                 return;
+             }
+
+             const sendFeedbackBtn = document.getElementById('sendFeedbackBtn');
+             if (sendFeedbackBtn) {
+                 sendFeedbackBtn.disabled = true; // 버튼 비활성화
+                 sendFeedbackBtn.textContent = '전송 중...';
+             }
+
+             let imgArray = null;
+             let flatArray = null;
+             let grayScalePixels = null;
+             let imgData = null;
+
+             try {
+                 imgArray = await processedTensor.array();
+
+                 flatArray = imgArray[0].flat();
+                 grayScalePixels = new Uint8ClampedArray(28 * 28 * 4);
+
+                 for (let i = 0; i < 28 * 28; i++) {
+                     const gray = Math.round((1 - flatArray[i]) * 255);
+                     grayScalePixels[i * 4 + 0] = gray;
+                     grayScalePixels[i * 4 + 1] = gray;
+                     grayScalePixels[i * 4 + 2] = gray;
+                     grayScalePixels[i * 4 + 3] = 255; // 완전 불투명
+                 }
+
+                 imgData = new ImageData(grayScalePixels, 28, 28);
+                 const tempCanvas = document.createElement('canvas');
+                 tempCanvas.width = 28;
+                 tempCanvas.height = 28;
+                 const tempCtx = tempCanvas.getContext('2d');
+                 tempCtx.putImageData(imgData, 0, 0);
+
+                 const imgDataUrl = tempCanvas.toDataURL('image/png');
+                 let imgBase64 = imgDataUrl.split(',')[1];
+
+                 // 피드백 요청을 /feedback 엔드포인트로 보내도록 URL 설정
+                 const serverUrl = 'https://tjdgus1121-github-io.onrender.com/feedback';
+
+                 console.log(`피드백 전송 시도: 레이블 ${correctLabel}`);
+
+                 const response = await fetch(serverUrl, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ image: imgBase64, label: correctLabel })
+                 });
+
+                 if (!response.ok) {
+                     const errorText = await response.text();
+                     throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText}`);
+                 }
+
+                 const result = await response.json();
+                 console.log('피드백 전송 성공:', result);
+
+                 // 히스토리에 피드백 항목 추가
+                 const imgDataForHistory = new ImageData(grayScalePixels, 28, 28);
+                 historyManager.addImage(imgDataForHistory, correctLabel, 'feedback');
+
+                 showSystemMessage(result.message || '피드백이 성공적으로 전송되었습니다!', 'success');
+
+                 // 피드백 성공 후 캔버스 지우기
+                 clearCanvas();
+
+             } catch (error) {
+                 console.error('피드백 전송 중 오류:', error);
+                 showSystemMessage(`피드백 전송 중 오류가 발생했습니다: ${error.message}. 서버 상태를 확인해주세요.`, 'error');
+
+             } finally {
+                 if (processedTensor) processedTensor.dispose();
+
+                 // 버튼 다시 활성화 및 텍스트 복원
+                 if (sendFeedbackBtn) {
+                     sendFeedbackBtn.disabled = false;
+                     sendFeedbackBtn.textContent = '피드백 보내기';
+                 }
+             }
         }
 
         // 이벤트 리스너 설정
