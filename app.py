@@ -8,13 +8,13 @@ from PIL import Image
 import io
 import base64
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 app = Flask(__name__)
 CORS(app)  # 모든 도메인 허용
 
 # 1. 모델 로드 (서버 시작 시 최초 1회만)
-# 배포 시 mnist_model.h5 파일이 함께 올라가야 합니다.
-model = None # 모델 변수 초기화
+model = None
 model_path = 'mnist_model.h5'
 
 def load_or_create_model():
@@ -180,8 +180,6 @@ def feedback():
         print(f"/feedback: 학습 결과 - Loss: {history.history['loss'][0]:.4f}") # 학습 결과 간단히 로그
 
         # 학습된 모델 저장
-        # Render 환경에서는 쓰기 가능한 경로에 저장해야 할 수 있습니다.
-        # 기본적으로 현재 디렉토리에 저장 시도
         try:
             model.save(model_path)
             print(f"/feedback: 모델 저장 성공: {model_path}")

@@ -4,17 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNIST 손글씨 인식기</title>
+    <title>손글씨 인식 테스트</title>
     
-    <!-- 메타데이터 추가 -->
-    <meta name="description" content="브라우저에서 손글씨 숫자를 인식하고 서버와 상호작용하는 웹 애플리케이션">
-    <meta name="keywords" content="MNIST, 손글씨 인식, 딥러닝, 웹 애플리케이션, TensorFlow.js, Flask, Python, 인공지능">
-    <meta name="author" content="Developer">
-    <meta property="og:title" content="MNIST 손글씨 인식기">
-    <meta property="og:description" content="브라우저에서 손글씨 숫자를 인식하고 서버와 상호작용하는 웹 애플리케이션">
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description" content="손글씨 숫자를 직접 그려 인공지능 모델이 인식하도록 체험하는 활동입니다. AI가 이미지를 어떻게 학습하고 예측하는지 탐구해 보세요.">
+    <meta name="keywords" content="손글씨 인식, MNIST, 인공지능 모델, 머신러닝, 딥러닝, AI 체험, 교육용 활동, 숫자 인식, 수학 교육">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a60707941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="손글씨 인식 체험 - 인공지능 수학 활동">
+    <meta property="og:description" content="사용자가 그린 손글씨 숫자를 인공지능이 인식하는 과정을 직접 체험하고 AI의 작동 방식을 탐구하는 활동 페이지입니다.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity9_mnist_recognizer.html">
     <meta property="og:type" content="website">
-    
-    <meta property="og:url" content="https://tjdgus1121.github.io/aimath/"> <!-- ← 실제 배포 주소로 수정 -->
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity9_mnist_recognizer.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="손글씨 인식 체험">
+    <meta name="twitter:description" content="사용자 손글씨 숫자를 인공지능이 인식하는 교육용 체험 활동.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#ff9a9e">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/activity9_mnist_recognizer.html">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.13.0/tf.min.js"></script>
     <style>
@@ -577,10 +597,30 @@
 
         <div class="mnist-app__drawing-area">
             <div class="mnist-app__canvas-container">
-                <canvas id="drawingCanvas" class="mnist-app__canvas--drawing" width="280" height="280" role="img" aria-label="숫자 손글씨 입력 영역"></canvas>
+                <canvas id="drawingCanvas" class="mnist-app__canvas--drawing" width="280" height="280" role="img" aria-label="숫자 손글씨 입력 영역" title="숫자 손글씨를 그리는 영역입니다."></canvas>
                 <div class="mnist-app__controls">
-                    <button class="mnist-app__button mnist-app__button--clear" id="clearBtn" aria-label="캔버스 지우기">🗑️ 지우기</button>
-                    <button class="mnist-app__button mnist-app__button--predict" id="predictBtn" disabled aria-label="손글씨 인식하기">🔍 인식하기</button>
+                    <button class="mnist-app__button mnist-app__button--clear" id="clearBtn" aria-label="캔버스 지우기" title="그림판을 지웁니다.">🗑️ 지우기</button>
+                    <button class="mnist-app__button mnist-app__button--predict" id="predictBtn" disabled aria-label="손글씨 인식하기" title="그린 손글씨를 인공지능으로 인식합니다.">🔍 인식하기</button>
+                </div>
+            </div>
+
+            <div class="mnist-app__feedback-section">
+                <h3>이 숫자가 맞나요?</h3>
+                <div class="mnist-app__feedback-controls">
+                    <select id="correctDigit" class="mnist-app__feedback-select" aria-label="정답 숫자 선택" title="인공지능 예측이 틀렸을 경우 올바른 숫자를 선택하여 피드백합니다.">
+                        <option value="-1">선택하세요</option>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                    </select>
+                    <button id="sendFeedbackBtn" class="mnist-app__feedback-button">피드백 보내기</button>
                 </div>
             </div>
         </div>
@@ -659,26 +699,6 @@
                     <div class="mnist-app__confidence-text" id="conf-text-9">0%</div>
                 </div>
             </div>
-             <!-- 피드백 영역 추가 -->
-                <div id="feedbackArea" class="mnist-app__feedback-area">
-                    <h3>이 숫자가 맞나요?</h3>
-                    <div class="mnist-app__feedback-controls">
-                        <select id="correctDigit" class="mnist-app__feedback-select" aria-label="정답 숫자 선택">
-                            <option value="-1">선택하세요</option>
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                        </select>
-                        <button id="sendFeedbackBtn" class="mnist-app__feedback-button">피드백 보내기</button>
-                    </div>
-                </div>
         </div>
     </div>
 
