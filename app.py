@@ -1,14 +1,26 @@
-# app.py
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # 로깅 레벨: 0 = 전체 메시지 출력
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
 import tensorflow as tf
+# GPU 장치 비활성화
+gpu_devices = tf.config.list_physical_devices('GPU')
+if gpu_devices:
+    try:
+        tf.config.set_visible_devices([], 'GPU')
+        print("==> 모든 GPU 장치를 명시적으로 비활성화했습니다.")
+    except Exception as e:
+        print(f"GPU 비활성화 시도 실패: {e}")
+
 import numpy as np
 from PIL import Image
 import io
 import base64
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+
 
 app = Flask(__name__)
 CORS(app)  # 모든 도메인 허용
