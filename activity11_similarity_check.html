@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description" content="마우스로 그림 패턴을 직접 만들고, 이를 0과 1로 이루어진 이진 행렬로 변환하여 시각화하는 인공지능 수학 체험 활동입니다. 시각적 정보가 숫자로 어떻게 표현되는지 탐구해 보세요.">
+    <meta name="keywords" content="이진 행렬, 그림 패턴, 행렬 시각화, 인공지능 수학, 수학 체험, 교육 활동, 픽셀 아트, 바이너리 매트릭스">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a60707941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="이진 행렬 그림 패턴 활동 - 인공지능 수학 탐구">
+    <meta property="og:description" content="마우스로 그림을 그리고 이를 이진 행렬로 변환하여 시각화하는 인공지능 수학 체험 활동.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity1_intro.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity1_intro.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="이진 행렬 그림 패턴 활동">
+    <meta name="twitter:description" content="그림 패턴을 이진 행렬로 변환하며 시각적 정보의 수치화 원리를 탐구하는 교육 활동.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#ff9a9e">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/activity1_intro.html">
+    <title>숫자 인식 해밍거리 비교</title>
+    <link rel="stylesheet" href="stylefooter.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            padding: 20px;
+            background: #fbfbf3;
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: rgba(219, 217, 217, 0.807);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #000000;
+            margin-bottom: 30px;
+            font-size: 3.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-family: 'Do hyeon', arial;
+            text-align: center;
+        }
+        
+        h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            font-weight: 800;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            color: #333;
+        }
+        
+        .drawing-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 30px auto;
+            max-width: 1200px;
+            justify-items: center;
+        }
+        
+        .canvas-container, .binary-display {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        canvas {
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            background: white;
+            cursor: crosshair;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .binary-grid {
+            display: grid;
+            grid-template-columns: repeat(28, 1fr);
+            grid-template-rows: repeat(28, 1fr);
+            gap: 0px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+            box-sizing: content-box;
+        }
+        
+        .binary-cell {
+            /* grid-template-columns/rows에 의해 크기 자동 결정 */
+            /* width: 3px; */ /* 고정 크기 제거 */
+            /* height: 3px; */ /* 고정 크기 제거 */
+            transition: background-color 0.2s ease;
+            border: 1px solid #eeeeee77; /* 셀 테두리 색상을 적절한 밝기의 회색으로 조정 */
+            box-sizing: border-box; /* 테두리가 셀 크기에 포함되도록 설정 */
+        }
+        
+        .binary-cell.active {
+            background: #000;
+        }
+        
+        .binary-cell.inactive {
+            background: #fff;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 30px auto;
+            max-width: 1200px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #ff6b6b;
+            color: #f7f7f7;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            font-weight: 800;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+        
+        .load-samples-btn {
+            background: #4ecdc4;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+        
+        .load-samples-btn:hover {
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+        }
+        
+        .calculate-btn {
+            background: #ffa726;
+            box-shadow: 0 4px 15px rgba(255, 167, 38, 0.3);
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 167, 38, 0.4);
+        }
+        
+        .samples-section {
+            margin: 30px 0;
+        }
+        
+        .samples-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin: 20px auto;
+            max-width: 1000px;
+            justify-items: center;
+            align-items: start;
+        }
+        
+        .sample-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            transition: transform 0.3s ease;
+            width: 100%;
+            max-width: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sample-item:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .sample-image {
+            width: 112px;
+            height: 112px;
+            margin: 0 auto 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(28, 1fr);
+            grid-template-rows: repeat(28, 1fr);
+            gap: 0;
+            background: white;
+        }
+        
+        .sample-info {
+            width: 100%;
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        .sample-info strong {
+            display: block;
+            font-size: 1.8em;
+            margin-bottom: 0;
+            color: #fff;
+            font-weight: 800;
+        }
+        
+        .sample-info .filename {
+            display: none;
+        }
+        
+        .results-section {
+            margin: 30px auto;
+            max-width: 1200px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            color: #fff;
+        }
+        
+        .distance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            transition: background 0.3s ease;
+            font-size: 1.1em;
+        }
+        
+        .distance-item strong {
+            font-weight: 800;
+        }
+        
+        .distance-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .closest-match {
+            background: linear-gradient(45deg, #4caf50, #8bc34a) !important;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+            opacity: 0.9;
+            color: #555;
+            font-size: 1.1em;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔢 숫자 인식 해밍거리 비교</h1>
+        
+        <div class="drawing-section">
+            <div class="canvas-container">
+                <h3>✏️ 숫자를 그려주세요</h3>
+                <canvas id="drawingCanvas" width="280" height="280"></canvas>
+                <div class="controls">
+                    <button onclick="clearCanvas()">지우기</button>
+                    <button onclick="processDrawing()">28x28 변환</button>
+                </div>
+            </div>
+            
+            <div class="binary-display">
+                <h3>🔲 28x28 이진화 결과</h3>
+                <div id="binaryGrid" class="binary-grid"></div>
+                <div class="status" id="binaryStatus">숫자를 그리고 변환 버튼을 눌러주세요</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="load-samples-btn" onclick="loadRandomSamples()">📂 랜덤 샘플 이미지 로드</button>
+            <button class="calculate-btn" onclick="calculateHammingDistances()" id="calculateBtn" disabled>📏 해밍거리 계산</button>
+        </div>
+        
+        <div class="samples-section" id="samplesSection" style="display: none;">
+            <h3>🎯 선택된 샘플 이미지들</h3>
+            <div id="samplesGrid" class="samples-grid"></div>
+        </div>
+        
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <h3>📊 해밍거리 비교 결과</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+
+
+    <script>
+        // 전역 변수
+        let canvas, ctx;
+        let isDrawing = false;
+        let userBinaryData = null;
+        let sampleImages = [];
+        let sampleBinaryData = [];
+        
+        // 캔버스 초기화
+        function initCanvas() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+            
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // 마우스 이벤트
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // 터치 이벤트 (모바일 지원)
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+        
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+        
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                ctx.beginPath();
+            }
+        }
+        
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                            e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+        
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            userBinaryData = null;
+            updateBinaryDisplay([]);
+            document.getElementById('binaryStatus').textContent = '숫자를 그리고 변환 버튼을 눌러주세요';
+        }
+        
+        // 28x28 변환 및 이진화
+        function processDrawing() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // 28x28로 리사이즈
+            const resized = resizeImageData(imageData, 28, 28);
+            
+            // 이진화 (픽셀값 > 127 → 1, 아니면 0)
+            userBinaryData = [];
+            for (let i = 0; i < resized.data.length; i += 4) {
+                const r = resized.data[i];
+                const g = resized.data[i + 1];
+                const b = resized.data[i + 2];
+                const alpha = resized.data[i + 3];
+                
+                // 그레이스케일 변환 후 이진화
+                const gray = (r + g + b) / 3;
+                // 투명한 부분은 0, 그려진 부분은 픽셀값으로 판단
+                const value = alpha > 0 && gray < 127 ? 1 : 0;
+                userBinaryData.push(value);
+            }
+            
+            updateBinaryDisplay(userBinaryData);
+            document.getElementById('binaryStatus').textContent = `변환 완료! (1의 개수: ${userBinaryData.filter(x => x === 1).length})`;
+            
+            // 사용자 입력 이진 데이터가 준비되면 해밍거리 계산 버튼 활성화
+            document.getElementById('calculateBtn').disabled = false;
+        }
+        
+        function resizeImageData(imageData, newWidth, newHeight) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = imageData.width;
+            canvas.height = imageData.height;
+            ctx.putImageData(imageData, 0, 0);
+            
+            const resizedCanvas = document.createElement('canvas');
+            const resizedCtx = resizedCanvas.getContext('2d');
+            resizedCanvas.width = newWidth;
+            resizedCanvas.height = newHeight;
+            
+            resizedCtx.drawImage(canvas, 0, 0, newWidth, newHeight);
+            return resizedCtx.getImageData(0, 0, newWidth, newHeight);
+        }
+        
+        function updateBinaryDisplay(binaryData) {
+            const grid = document.getElementById('binaryGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 28 * 28; i++) {
+                const cell = document.createElement('div');
+                cell.className = `binary-cell ${binaryData[i] === 1 ? 'active' : 'inactive'}`;
+                grid.appendChild(cell);
+            }
+        }
+        
+        // 랜덤 샘플 이미지 로드
+        function loadRandomSamples() {
+            sampleImages = []; // 이전 샘플 초기화
+            sampleBinaryData = []; // 이전 이진 데이터 초기화
+            
+            const processedSamples = []; // 처리된 샘플을 임시 저장할 배열
+            let samplesProcessedCount = 0;
+            const totalSamples = 10; // 숫자 0부터 9까지 총 10개 샘플
+
+            for (let digit = 0; digit <= 9; digit++) {
+                const randomIndex = Math.floor(Math.random() * 10); // 각 숫자에 대해 랜덤 파일 선택
+                const filename = `number${digit}${randomIndex}.png`;
+                const imagePath = `image/${filename}`;
+
+                const img = new Image();
+
+                img.onload = function() {
+                    // 이미지가 성공적으로 로드되면 처리
+                    const binary = convertImageToBinary(img);
+                    processedSamples.push({
+                        digit: digit,
+                        path: imagePath,
+                        filename: filename,
+                        binaryData: binary
+                    });
+                    samplesProcessedCount++;
+                    checkAllSamplesProcessed();
+                };
+
+                img.onerror = function() {
+                    // 이미지 로드 실패 시 더미 데이터 생성
+                    const dummyBinary = generateDummyDigitBinary(digit);
+                    processedSamples.push({
+                        digit: digit,
+                        path: imagePath, // 실패했더라도 경로 정보는 유지
+                        filename: filename, // 실패했더라도 파일명 정보는 유지
+                        binaryData: dummyBinary // 더미 이진 데이터
+                    });
+                    samplesProcessedCount++;
+                    checkAllSamplesProcessed();
+                };
+
+                img.src = imagePath;
+            }
+
+            function checkAllSamplesProcessed() {
+                if (samplesProcessedCount === totalSamples) {
+                    // 모든 샘플이 처리되면 숫자 순서대로 정렬
+                    processedSamples.sort((a, b) => a.digit - b.digit);
+
+                    // 정렬된 데이터를 최종 배열에 할당
+                    sampleImages = processedSamples.map(sample => ({
+                         digit: sample.digit,
+                         path: sample.path,
+                         filename: sample.filename
+                    }));
+                    sampleBinaryData = processedSamples.map(sample => sample.binaryData);
+
+                    // 샘플 표시
+                    displaySamples();
+                }
+            }
+        }
+        
+        // 이미지를 28x28 이진 데이터로 변환하는 함수
+        function convertImageToBinary(img) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 28;
+            canvas.height = 28;
+            
+            // 이미지를 28x28로 리사이즈
+            ctx.drawImage(img, 0, 0, 28, 28);
+            const imageData = ctx.getImageData(0, 0, 28, 28);
+            
+            // 이진화
+            const binary = new Array(28 * 28).fill(0);
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const r = imageData.data[i];
+                const g = imageData.data[i + 1];
+                const b = imageData.data[i + 2];
+                const alpha = imageData.data[i + 3];
+                
+                // 그레이스케일 변환 후 이진화
+                const gray = (r + g + b) / 3;
+                binary[i / 4] = alpha > 0 && gray < 127 ? 1 : 0;
+            }
+            
+            return binary;
+        }
+        
+        function displaySamples() {
+            const samplesGrid = document.getElementById('samplesGrid');
+            const samplesSection = document.getElementById('samplesSection');
+            
+            samplesGrid.innerHTML = '';
+            samplesSection.style.display = 'block';
+            
+            sampleImages.forEach((sample, index) => {
+                const sampleItem = document.createElement('div');
+                sampleItem.className = 'sample-item';
+                
+                // 이진화된 이미지를 표시할 컨테이너
+                const binaryContainer = document.createElement('div');
+                binaryContainer.className = 'sample-image';
+                binaryContainer.id = `sample-${index}`;
+                // 스타일은 CSS 클래스에서 관리
+                
+                // 이진 데이터를 셀로 변환
+                const binaryData = sampleBinaryData[index];
+                for (let i = 0; i < 28 * 28; i++) {
+                    const cell = document.createElement('div');
+                    // 셀 스타일은 CSS 클래스에서 관리
+                    cell.className = `binary-cell ${binaryData[i] === 1 ? 'active' : 'inactive'}`;
+                    binaryContainer.appendChild(cell);
+                }
+                
+                sampleItem.appendChild(binaryContainer);
+                
+                // 숫자 정보 표시 (파일 이름은 숨김 처리)
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'sample-info';
+                infoDiv.innerHTML = `
+                    <strong>${sample.digit}</strong>
+                    <div class="filename">${sample.filename}</div>
+                `;
+                sampleItem.appendChild(infoDiv);
+                
+                samplesGrid.appendChild(sampleItem);
+            });
+        }
+        
+        function generateDummyDigitBinary(digit) {
+            // 각 숫자의 간단한 패턴을 생성 (실제로는 이미지에서 로드)
+            const patterns = {
+                0: [
+                    "  ████████  ",
+                    " ██      ██ ",
+                    "██        ██",
+                    "██   ██   ██",
+                    "██  ████  ██",
+                    "██ ██  ██ ██",
+                    "████    ████",
+                    "██        ██",
+                    "██        ██",
+                    " ██      ██ ",
+                    "  ████████  "
+                ],
+                1: [
+                    "     ██     ",
+                    "   ████     ",
+                    " ██████     ",
+                    "     ██     ",
+                    "     ██     ",
+                    "     ██     ",
+                    "     ██     ",
+                    "     ██     ",
+                    "     ██     ",
+                    "     ██     ",
+                    " ██████████ "
+                ],
+                2: [
+                    " ████████   ",
+                    "██      ██  ",
+                    "        ██  ",
+                    "        ██  ",
+                    "      ██    ",
+                    "    ██      ",
+                    "  ██        ",
+                    " ██         ",
+                    "██          ",
+                    "██          ",
+                    "████████████"
+                ],
+                3: [
+                    " ████████   ",
+                    "██      ██  ",
+                    "        ██  ",
+                    "        ██  ",
+                    "   ██████   ",
+                    "        ██  ",
+                    "        ██  ",
+                    "        ██  ",
+                    "██      ██  ",
+                    " ████████   "
+                ],
+                4: [
+                    "       ██   ",
+                    "     ████   ",
+                    "   ██ ██    ",
+                    "  ██  ██    ",
+                    " ██   ██    ",
+                    "██    ██    ",
+                    "████████████",
+                    "      ██    ",
+                    "      ██    ",
+                    "      ██    "
+                ],
+                5: [
+                    "████████████",
+                    "██          ",
+                    "██          ",
+                    "██          ",
+                    "███████████ ",
+                    "          ██",
+                    "          ██",
+                    "          ██",
+                    "██      ██  ",
+                    " ████████   "
+                ],
+                6: [
+                    "  ████████  ",
+                    " ██      ██ ",
+                    "██          ",
+                    "██          ",
+                    "██ ███████  ",
+                    "███      ██ ",
+                    "██        ██",
+                    "██        ██",
+                    " ██      ██ ",
+                    "  ████████  "
+                ],
+                7: [
+                    "████████████",
+                    "          ██",
+                    "         ██ ",
+                    "        ██  ",
+                    "       ██   ",
+                    "      ██    ",
+                    "     ██     ",
+                    "    ██      ",
+                    "   ██       ",
+                    "  ██        "
+                ],
+                8: [
+                    "  ████████  ",
+                    " ██      ██ ",
+                    "██        ██",
+                    " ██      ██ ",
+                    "  ████████  ",
+                    " ██      ██ ",
+                    "██        ██",
+                    "██        ██",
+                    " ██      ██ ",
+                    "  ████████  "
+                ],
+                9: [
+                    "  ████████  ",
+                    " ██      ██ ",
+                    "██        ██",
+                    "██        ██",
+                    " ██      ███",
+                    "  ███████ ██",
+                    "          ██",
+                    "          ██",
+                    " ██      ██ ",
+                    "  ████████  "
+                ]
+            };
+            
+            const pattern = patterns[digit] || patterns[0];
+            const binary = new Array(28 * 28).fill(0);
+            
+            // 패턴을 28x28에 맞게 조정
+            const startY = Math.floor((28 - pattern.length) / 2);
+            pattern.forEach((row, y) => {
+                const startX = Math.floor((28 - row.length) / 2);
+                for (let x = 0; x < row.length && x + startX < 28; x++) {
+                    if (row[x] === '█') {
+                        const index = (startY + y) * 28 + (startX + x);
+                        if (index >= 0 && index < 28 * 28) {
+                            binary[index] = 1;
+                        }
+                    }
+                }
+            });
+            
+            // 약간의 노이즈 추가
+            for (let i = 0; i < 50; i++) {
+                const randomIndex = Math.floor(Math.random() * binary.length);
+                if (Math.random() < 0.1) {
+                    binary[randomIndex] = binary[randomIndex] === 1 ? 0 : 1;
+                }
+            }
+            
+            return binary;
+        }
+        
+        // 해밍거리 계산
+        function calculateHammingDistances() {
+            if (!userBinaryData) {
+                alert('먼저 사용자 입력을 28x28로 변환해주세요!');
+                return;
+            }
+            
+            if (sampleBinaryData.length === 0) {
+                alert('먼저 샘플 이미지를 로드해주세요!');
+                return;
+            }
+            
+            const results = [];
+            let minDistance = Infinity;
+            let closestDigit = -1;
+            
+            sampleBinaryData.forEach((sampleBinary, index) => {
+                const distance = calculateHamming(userBinaryData, sampleBinary);
+                results.push({
+                    digit: sampleImages[index].digit,
+                    distance: distance
+                });
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestDigit = sampleImages[index].digit;
+                }
+            });
+            
+            displayResults(results, closestDigit, minDistance);
+        }
+        
+        function calculateHamming(array1, array2) {
+            if (array1.length !== array2.length) {
+                throw new Error('배열 길이가 다릅니다.');
+            }
+            
+            let distance = 0;
+            for (let i = 0; i < array1.length; i++) {
+                if (array1[i] !== array2[i]) {
+                    distance++;
+                }
+            }
+            return distance;
+        }
+        
+        function displayResults(results, closestDigit, minDistance) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsDiv = document.getElementById('results');
+            
+            resultsSection.style.display = 'block';
+            resultsDiv.innerHTML = '';
+            
+            // 결과를 거리순으로 정렬
+            results.sort((a, b) => a.distance - b.distance);
+            
+            results.forEach(result => {
+                const item = document.createElement('div');
+                item.className = 'distance-item';
+                if (result.digit === closestDigit && result.distance === minDistance) {
+                    item.classList.add('closest-match');
+                }
+                
+                item.innerHTML = `
+                    <span>숫자 ${result.digit}과 해밍거리:</span>
+                    <span><strong>${result.distance}</strong></span>
+                `;
+                
+                resultsDiv.appendChild(item);
+            });
+            
+            // 최종 결과 표시
+            const finalResult = document.createElement('div');
+            finalResult.style.marginTop = '20px';
+            finalResult.style.textAlign = 'center';
+            finalResult.style.fontSize = '1.3em';
+            finalResult.style.fontWeight = 'bold';
+            finalResult.style.padding = '15px';
+            finalResult.style.background = 'linear-gradient(45deg, #4caf50, #8bc34a)';
+            finalResult.style.borderRadius = '15px';
+            finalResult.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.3)';
+            finalResult.innerHTML = `🎯 가장 유사한 숫자: ${closestDigit} (거리: ${minDistance})`;
+            
+            resultsDiv.appendChild(finalResult);
+        }
+        
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            initCanvas();
+            
+            // 이진 그리드 초기화
+            const grid = document.getElementById('binaryGrid');
+            for (let i = 0; i < 28 * 28; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'binary-cell inactive';
+                grid.appendChild(cell);
+            }
+        });
+
+        // 현재 연도를 푸터에 표시하는 스크립트
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
