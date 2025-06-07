@@ -4,6 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description" content="다양한 보간법(최근접 이웃, 선형, 비큐빅)을 사용하여 이미지의 해상도를 높이는 과정을 직접 체험하고 탐구하는 활동 페이지입니다.">
+    <meta name="keywords" content="이미지 업스케일링, 보간법, 최근접 이웃, 선형 보간, 비큐빅 보간, 이미지 처리, 해상도 향상, AI 수학, 교육 활동">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="이미지 업스케일러 활동">
+    <meta property="og:description" content="다양한 보간법을 통해 이미지를 업스케일링하고 해상도 향상 원리를 탐구하는 활동입니다.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity12_interpolation.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity12_interpolation.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="이미지 업스케일러">
+    <meta name="twitter:description" content="다양한 보간법을 사용하여 이미지 해상도 향상 원리를 체험하는 활동 페이지.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#667eea">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/activity12_interpolation.html">
+
     <title>이미지 업스케일러</title>
     <style>
         * {
@@ -41,6 +72,7 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             align-items: start;
+            margin:auto;
         }
 
         .canvas-section {
@@ -61,12 +93,14 @@
             border-radius: 15px;
             padding: 20px;
             background: #fafafa;
-            min-height: 300px;
+            min-height: 250px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             position: relative;
             transition: all 0.3s ease;
+            flex-grow: 1;
         }
 
         .canvas-container:hover {
@@ -76,15 +110,13 @@
 
         canvas {
             max-width: 100%;
-            max-height: 400px;
+            max-height: 100%;
             border-radius: 10px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
 
         .controls {
             flex: 1;
-            width: 300px;
-            max-width: 100%;
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -184,6 +216,8 @@
         .radio-item {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
+            flex-wrap: nowrap;
             padding: 8px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -196,6 +230,9 @@
 
         .radio-item input[type="radio"] {
             margin-right: 8px;
+            margin-top: 0;
+            vertical-align: middle;
+            flex-shrink: 0;
         }
 
         .placeholder {
@@ -286,6 +323,92 @@
             box-shadow: none;
         }
 
+        .interpolation-link {
+            font-size: 0.9em;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            margin-top: 0;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .interpolation-link a {
+            color: white;
+            text-decoration: none;
+            background-color: #667eea;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            white-space: nowrap;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .interpolation-link a:hover {
+            background-color: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .interpolation-text-content {
+            white-space: nowrap;
+            flex-grow: 1;
+            flex-shrink: 1;
+            min-width: 0;
+        }
+
+        .interpolation-details {
+            display: flex;
+            flex-wrap: nowrap;
+            flex-grow: 1;
+            justify-content: space-between;
+            align-items: center;
+            margin-left: 8px;
+            gap: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .controls {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .radio-item {
+                flex-direction: column;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+            .radio-item input[type="radio"] {
+                margin-top: 4px;
+            }
+            .interpolation-details {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                width: 100%;
+                margin-left: 0;
+                flex-grow: 1;
+            }
+            .interpolation-link {
+                margin-top: 8px;
+                margin-left: 0;
+                width: 100%;
+            }
+            .interpolation-link a {
+                display: block;
+                text-align: center;
+            }
+            .interpolation-text-content {
+                white-space: normal;
+                flex-grow: 1;
+                flex-shrink: 1;
+            }
+        }
+        
         .scaled-canvas-container {
             position: relative;
             overflow: auto;
@@ -310,16 +433,6 @@
             flex-direction: column;
             align-items: center;
         }
-
-        @media (max-width: 1200px) {
-            .main-content {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            .controls {
-                order: -1;
-            }
-        }
     </style>
 </head>
 
@@ -329,28 +442,28 @@
 
         <div class="main-content">
             <!-- 원본 이미지 -->
-                <div class="canvas-section">
-                    <div class="canvas-title">원본 이미지</div>
-                    <div class="canvas-container">
-                        <canvas id="originalCanvas"></canvas>
-                        <div id="originalPlaceholder" class="placeholder">
-                            이미지를 업로드해주세요
-                        </div>
+            <div class="canvas-section">
+                <div class="canvas-title">원본 이미지</div>
+                <div class="canvas-container">
+                    <canvas id="originalCanvas"></canvas>
+                    <div id="originalPlaceholder" class="placeholder">
+                        이미지를 업로드해주세요
                     </div>
-                    <div id="originalInfo" class="image-info"></div>
+                </div>
+                <div id="originalInfo" class="image-info"></div>
+            </div>
+
+            <!-- 컨트롤 패널 -->
+            <div class="controls">
+                <div class="upload-section">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="imageInput" class="file-input" accept="image/*">
+                        <label for="imageInput" class="file-input-button">
+                            📁 이미지 선택
+                        </label>
+                    </div>
                 </div>
 
-                <!-- 컨트롤 패널 -->
-                <div class="controls">
-                    <div class="upload-section">
-                        <div class="file-input-wrapper">
-                            <input type="file" id="imageInput" class="file-input" accept="image/*">
-                            <label for="imageInput" class="file-input-button">
-                                📁 이미지 선택
-                            </label>
-                        </div>
-                    </div>
-                
 
                 <div class="control-group">
                     <label class="control-label">업스케일 배율</label>
@@ -366,15 +479,30 @@
                     <div class="radio-group">
                         <label class="radio-item">
                             <input type="radio" name="interpolation" value="nearest" checked>
-                            최근접 이웃 (Nearest Neighbor)
+                            <div class="interpolation-details">
+                                <span class="interpolation-text-content">최근접 이웃 (Nearest Neighbor)</span>
+                                <div class="interpolation-link"><a
+                                        href="https://ko.wikipedia.org/wiki/%EC%B5%9C%EA%B7%BC%EC%A0%91_%EC%9D%B4%EC%9B%83_%EB%B3%B4%EA%B0%84"
+                                        target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
+                            </div>
                         </label>
                         <label class="radio-item">
                             <input type="radio" name="interpolation" value="bilinear">
-                            선형 보간 (Bilinear)
+                            <div class="interpolation-details">
+                                <span class="interpolation-text-content">선형 보간 (Bilinear)</span>
+                                <div class="interpolation-link"><a
+                                        href="https://ko.wikipedia.org/wiki/%EC%84%A0%ED%98%95_%EB%B3%B4%EA%B0%84%EB%B2%95"
+                                        target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
+                            </div>
                         </label>
                         <label class="radio-item">
                             <input type="radio" name="interpolation" value="bicubic">
-                            비큐빅 보간 (Bicubic)
+                            <div class="interpolation-details">
+                                <span class="interpolation-text-content">비큐빅 보간 (Bicubic)</span>
+                                <div class="interpolation-link"><a
+                                        href="https://ko.wikipedia.org/wiki/%EB%B9%84%ED%81%90%EB%B9%85_%EB%B3%B4%EA%B0%84%EB%B2%95"
+                                        target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
+                            </div>
                         </label>
                     </div>
                 </div>
@@ -445,16 +573,16 @@
                         this.scaledCanvas.width = result.width;
                         this.scaledCanvas.height = result.height;
                         this.scaledCtx.putImageData(result, 0, 0);
-                        
+
                         document.getElementById('scaledPlaceholder').style.display = 'none';
                         this.scaledCanvas.style.display = 'block';
-                        
+
                         document.getElementById('scaledInfo').textContent =
                             `${result.width} × ${result.height} 픽셀`;
-                        
+
                         this.actualSizeBtn.disabled = false;
                         this.downloadBtn.disabled = false;
-                        
+
                         // 프로그레스 바 숨기기
                         document.getElementById('progressContainer').style.display = 'none';
                     }
