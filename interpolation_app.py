@@ -3,9 +3,9 @@ import base64
 import io
 from PIL import Image
 import torch
-from basicsr.archs.rrdbnet_arch import RRDBNet
-from basicsr.utils.download_util import load_file_from_url
-from basicsr.utils.registry import ARCH_REGISTRY
+# from basicsr.archs.rrdbnet_arch import RRDBNet
+# from basicsr.utils.download_util import load_file_from_url
+# from basicsr.utils.registry import ARCH_REGISTRY
 from flask_cors import CORS
 import os
 import numpy as np
@@ -13,12 +13,18 @@ import numpy as np
 app = Flask(__name__)
 CORS(app)
 
-# ESRGAN 모델 로드
-model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32)
-model_url = 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth'
-model_path = load_file_from_url(model_url, model_dir='weights')
-model.load_state_dict(torch.load(model_path, map_location='cpu'))
-model.eval()
+# ESRGAN 모델 로드 (PyTorch Hub 사용)
+# RealESRGAN_x4plus 모델을 xinnntao/Real-ESRGAN 레포지토리에서 로드합니다.
+# 이 과정에서 필요한 종속성(torchvision 등)이 자동으로 처리될 수 있습니다.
+try:
+    model = torch.hub.load('xinnntao/Real-ESRGAN', 'realesrgan', model_name='RealESRGAN_x4plus', pretrained=True)
+    model.eval()
+    print("Real-ESRGAN 모델이 PyTorch Hub를 통해 성공적으로 로드되었습니다.")
+except Exception as e:
+    print(f"Real-ESRGAN 모델 로드 중 오류 발생: {e}")
+    # 모델 로드 실패 시 앱을 계속 실행하지 않도록 처리하거나, 더미 모델을 설정할 수 있습니다.
+    # 여기서는 오류 메시지를 출력하고 앱을 계속 실행하여 엔드포인트에서 오류를 반환하도록 합니다.
+    model = None # 모델 로드 실패 시 None으로 설정
 
 @app.route('/ping', methods=['GET'])
 def ping():
@@ -26,6 +32,8 @@ def ping():
 
 @app.route('/upscale_esrgan', methods=['POST'])
 def upscale_esrgan():
+    if model is None: # 모델이 로드되지 않았다면 오류 반환
+        return jsonify({'error': 'AI 모델이 서버에서 로드되지 않았습니다.'}), 500
     try:
         data = request.get_json()
         if not data or 'image' not in data:
@@ -33,14 +41,21 @@ def upscale_esrgan():
 
         # Base64 이미지 데이터 디코딩
         image_data = base64.b64decode(data['image'].split(',')[1])
-        image = Image.open(io.BytesIO(image_data))
+        # PIL Image로 변환 (RGB로 강제 변환하여 4채널 이미지 문제 방지)
+        image = Image.open(io.BytesIO(image_data)).convert("RGB")
 
         # 이미지 업스케일링
         with torch.no_grad():
-            input_tensor = torch.from_numpy(np.array(image)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+            # NumPy 배열로 변환 후 PyTorch Tensor로 변환 및 정규화
+            img_np = np.array(image).astype(np.float32) / 255.0
+            # (H, W, C) -> (C, H, W)로 변환하고 배치 차원 추가
+            input_tensor = torch.from_numpy(img_np).permute(2, 0, 1).unsqueeze(0)
+
             output_tensor = model(input_tensor)
-            output_image = (output_tensor.squeeze().permute(1, 2, 0).numpy() * 255).astype(np.uint8)
-            output_image = Image.fromarray(output_image)
+
+            # (N, C, H, W) -> (H, W, C)로 변환하고 0-255 범위로 재정규화 후 NumPy 배열로
+            output_image_np = (output_tensor.squeeze(0).permute(1, 2, 0).clamp(0, 1).numpy() * 255).astype(np.uint8)
+            output_image = Image.fromarray(output_image_np)
 
         # 업스케일된 이미지를 Base64로 인코딩
         buffered = io.BytesIO()
@@ -50,7 +65,8 @@ def upscale_esrgan():
         return jsonify({'upscaled_image': f'data:image/png;base64,{img_str}'})
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"ESRGAN 업스케일링 중 오류 발생: {e}")
+        return jsonify({'error': f'ESRGAN 업스케일링 중 오류가 발생했습니다: {str(e)}'}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
