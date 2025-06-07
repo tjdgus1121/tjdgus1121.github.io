@@ -5,8 +5,8 @@ const state = {
     grayImage1: [],
     grayImage2: [],
     resultImage: [],
-    width: 40,
-    height: 40,
+    width: 100,
+    height: 100,
     mode: 'mixed', // 'number', 'color', 'mixed'
     blendRatio: 0.5,
     cellSize: 24, // 셀 크기 기본값 (픽셀)

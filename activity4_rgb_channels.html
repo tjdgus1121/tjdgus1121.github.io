@@ -53,10 +53,11 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f0f8ff; /* 은은한 배경색으로 변경 */
+            animation: subtleBackgroundChange 15s infinite alternate; /* 은은한 배경 애니메이션 적용 */
         }
         h1{
             font-family: "Do Hyeon";
@@ -80,9 +81,12 @@
         .upload-section {
             text-align: center;
             margin-bottom: 20px;
-            padding: 20px;
+            padding: 10px;
             border: 2px dashed #ccc;
             border-radius: 5px;
+        }
+        .upload-section h2, p{
+            margin:10px;
         }
 
         #upload-btn {
@@ -93,11 +97,13 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            margin-top: 10px;
+            margin-top: 5px;
+            transition: transform 0.3s ease; /* 부드러운 전환 효과 */
         }
 
         #upload-btn:hover {
             background-color: #45a049;
+            transform: scale(1.1); /* 호버 시 확대 */
         }
 
         .results {
@@ -132,35 +138,25 @@
         }
 
         .channel-display {
+            position: relative;
             display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .image-display {
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .matrix-display {
-            flex: 2;
-            min-width: 300px;
-            max-height: 400px;
-            overflow: auto;
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: auto;
+            min-height: 200px;
             padding: 10px;
-            font-family: monospace;
-            font-size: 10px;
-            white-space: pre;
+            box-sizing: border-box;
         }
 
-        canvas {
+        .channel-display canvas {
             max-width: 100%;
+            max-height: 100%;
+            width: auto;
             height: auto;
             border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: none; /* 마우스 커서 숨기기 */
         }
 
         .loading {
@@ -199,10 +195,11 @@
 
         .histogram-container {
             margin-top: 15px;
-            padding: 10px;
+            padding: 20px;
             background-color: white;
             border-radius: 5px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
         }
 
         .channel-controls {
@@ -218,6 +215,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            transition: transform 0.3s ease; /* 부드러운 전환 효과 */
         }
 
         .channel-btn.active {
@@ -226,6 +224,10 @@
 
         .channel-btn.inactive {
             opacity: 0.5;
+        }
+
+        .channel-btn:hover {
+            transform: scale(1.1); /* 호버 시 확대 */
         }
 
         #red-btn {
@@ -255,6 +257,7 @@
             flex-wrap: wrap;
             gap: 15px;
             margin-top: 10px;
+            justify-content: center;
         }
 
         .effect-control {
@@ -270,10 +273,12 @@
             border-radius: 4px;
             cursor: pointer;
             margin-right: 10px;
+            transition: transform 0.3s ease; /* 부드러운 전환 효과 */
         }
 
         .effect-btn:hover {
             background-color: #0b7dda;
+            transform: scale(1.1); /* 호버 시 확대 */
         }
 
         .slider-container {
@@ -305,7 +310,6 @@
 
         .tab {
             padding: 10px 20px;
-            cursor: pointer;
             background-color: #f1f1f1;
             border: 1px solid #ddd;
             border-bottom: none;
@@ -364,10 +368,12 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            transition: transform 0.3s ease; /* 부드러운 전환 효과 */
         }
 
         .mapping-btn:hover {
             background-color: #388e3c;
+            transform: scale(1.1); /* 호버 시 확대 */
         }
 
         .mapping-btn.red {
@@ -392,6 +398,88 @@
 
         .mapping-btn.blue:hover {
             background-color: #1976d2;
+        }
+
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: auto auto;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .channel-header {
+            text-align: center;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+
+        .rgb-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 16px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+
+        .rgb-pointer {
+            position: absolute;
+            width: 0; /* 메인 div는 시각적으로 숨김 */
+            height: 0; /* 메인 div는 시각적으로 숨김 */
+            pointer-events: none;
+            display: none;
+            z-index: 1001; /* 툴팁 위에 표시되도록 */
+            transform: translate(-50%, -50%); /* 마우스 커서 중앙에 맞춤 */
+        }
+
+        .rgb-pointer::before,
+        .rgb-pointer::after {
+            content: '';
+            position: absolute;
+            background-color: yellow; /* 기본 포인터 색상 */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .rgb-pointer.dark::before,
+        .rgb-pointer.dark::after {
+            background-color: #0f0f60; /* 어두운 색상 (purple로 변경) */
+        }
+
+        .rgb-pointer::before { /* 가로선 */
+            width: 12px;
+            height: 2px;
+        }
+
+        .rgb-pointer::after { /* 세로선 */
+            width: 2px;
+            height: 12px;
+        }
+
+        .channel-display canvas {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        @keyframes subtleBackgroundChange {
+            0% {
+                background-color: #f0f8ff;
+            }
+            100% {
+                background-color: #f8f8ff; /* 살짝 다른 연한 색으로 변경 */
+            }
         }
     </style>
 </head>
@@ -428,7 +516,7 @@
                     </div>
                     <div class="histogram-container">
                         <h3>히스토그램</h3>
-                        <canvas id="histogram-canvas" width="320" height="240"></canvas>
+                        <canvas id="histogram-canvas" width="792" height="594"></canvas>
                     </div>
                 </div>
 
@@ -491,52 +579,29 @@
 
             <div class="tabs">
                 <div class="tab active" data-tab="rgb-channels">RGB 채널 이미지</div>
-                <div class="tab" data-tab="matrix-data">행렬 데이터</div>
             </div>
 
             <div id="rgb-channels" class="tab-content active">
-                <div class="channel-container">
-                    <div class="channel-title red-title">Red 채널</div>
+                <div class="channel-grid">
+                    <div class="channel-header red-title">Red 채널</div>
+                    <div class="channel-header green-title">Green 채널</div>
+                    <div class="channel-header blue-title">Blue 채널</div>
+                    
                     <div class="channel-display">
-                        <div class="image-display">
-                            <canvas id="red-canvas"></canvas>
-                        </div>
+                        <canvas id="red-canvas"></canvas>
+                        <div class="rgb-tooltip" id="red-tooltip"></div>
+                        <div class="rgb-pointer" id="red-pointer"></div>
                     </div>
-                </div>
-
-                <div class="channel-container">
-                    <div class="channel-title green-title">Green 채널</div>
                     <div class="channel-display">
-                        <div class="image-display">
-                            <canvas id="green-canvas"></canvas>
-                        </div>
+                        <canvas id="green-canvas"></canvas>
+                        <div class="rgb-tooltip" id="green-tooltip"></div>
+                        <div class="rgb-pointer" id="green-pointer"></div>
                     </div>
-                </div>
-
-                <div class="channel-container">
-                    <div class="channel-title blue-title">Blue 채널</div>
                     <div class="channel-display">
-                        <div class="image-display">
-                            <canvas id="blue-canvas"></canvas>
-                        </div>
+                        <canvas id="blue-canvas"></canvas>
+                        <div class="rgb-tooltip" id="blue-tooltip"></div>
+                        <div class="rgb-pointer" id="blue-pointer"></div>
                     </div>
-                </div>
-            </div>
-
-            <div id="matrix-data" class="tab-content">
-                <div class="channel-container">
-                    <div class="channel-title red-title">Red 채널 행렬 데이터</div>
-                    <div class="matrix-display" id="red-matrix"></div>
-                </div>
-
-                <div class="channel-container">
-                    <div class="channel-title green-title">Green 채널 행렬 데이터</div>
-                    <div class="matrix-display" id="green-matrix"></div>
-                </div>
-
-                <div class="channel-container">
-                    <div class="channel-title blue-title">Blue 채널 행렬 데이터</div>
-                    <div class="matrix-display" id="blue-matrix"></div>
                 </div>
             </div>
         </div>
@@ -555,7 +620,6 @@
             <div class="social-links">
                 <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
                 <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
-                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank">
                     <img src="naver.png" alt="메일 보내기"
                         style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
                         onmouseover="this.style.filter='grayscale(0%)';"
@@ -584,10 +648,20 @@
             const modifiedCanvas = document.getElementById('modified-image');
             const histogramCanvas = document.getElementById('histogram-canvas');
 
-            // Matrix display elements
+            // Matrix display elements 제거
             const redMatrix = document.getElementById('red-matrix');
             const greenMatrix = document.getElementById('green-matrix');
             const blueMatrix = document.getElementById('blue-matrix');
+
+            // Tooltip elements
+            const redTooltip = document.getElementById('red-tooltip');
+            const greenTooltip = document.getElementById('green-tooltip');
+            const blueTooltip = document.getElementById('blue-tooltip');
+
+            // Pointer elements
+            const redPointer = document.getElementById('red-pointer');
+            const greenPointer = document.getElementById('green-pointer');
+            const bluePointer = document.getElementById('blue-pointer');
 
             // Channel toggle buttons
             const redBtn = document.getElementById('red-btn');
@@ -718,7 +792,7 @@
                 saturationSlider.value = 0;
                 brightnessValue.textContent = '0';
                 contrastValue.textContent = '0';
-                saturationValue.textContent = '0';
+                contrastValue.textContent = '0';
 
                 // Update button states
                 redBtn.classList.add('active');
@@ -793,7 +867,7 @@
                 saturationSlider.value = 0;
                 brightnessValue.textContent = '0';
                 contrastValue.textContent = '0';
-                saturationValue.textContent = '0';
+                contrastValue.textContent = '0';
 
                 updateButtonState(redBtn, true);
                 updateButtonState(greenBtn, true);
@@ -935,8 +1009,84 @@
                 updateChannelImages();
             }
 
-            // 채널 이미지 업데이트 함수
+            // 모든 채널 캔버스와 툴팁, 포인터를 배열로 관리
+            const allChannelCanvases = [redCanvas, greenCanvas, blueCanvas];
+            const allChannelTooltips = [redTooltip, greenTooltip, blueTooltip];
+            const allChannelPointers = [redPointer, greenPointer, bluePointer];
+
+            // 각 채널 캔버스에 마우스 이벤트 설정
+            allChannelCanvases.forEach((canvas, index) => {
+                canvas.addEventListener('mousemove', function(e) {
+                    if (!originalImageData) {
+                        allChannelTooltips.forEach(tooltip => tooltip.style.display = 'none');
+                        allChannelPointers.forEach(pointer => pointer.style.display = 'none');
+                        return;
+                    }
+
+                    const parentRect = canvas.parentElement.getBoundingClientRect();
+                    const pixelX = Math.floor((e.clientX - parentRect.left) * (canvas.width / parentRect.width));
+                    const pixelY = Math.floor((e.clientY - parentRect.top) * (canvas.height / parentRect.height));
+
+                    // 툴팁 및 포인터 위치를 위한 마우스 좌표 (부모 요소 기준)는 이제 픽셀의 렌더링된 중앙을 사용
+                    // 캔버스 픽셀의 렌더링된 크기 계산
+                    const canvasRect = canvas.getBoundingClientRect();
+                    const pixelRenderedWidth = canvasRect.width / canvas.width;
+                    const pixelRenderedHeight = canvasRect.height / canvas.height;
+
+                    // 대상 픽셀의 렌더링된 중앙 위치 (부모 요소 기준) 계산
+                    const pointerLeft = (canvasRect.left - parentRect.left) + (pixelX * pixelRenderedWidth) + (pixelRenderedWidth / 2);
+                    const pointerTop = (canvasRect.top - parentRect.top) + (pixelY * pixelRenderedHeight) + (pixelRenderedHeight / 2);
+
+                    if (pixelX >= 0 && pixelX < canvas.width && pixelY >= 0 && pixelY < canvas.height) {
+                        // 툴팁의 RGB 값은 이제 originalImageData (수정된 이미지 데이터)에서 가져옴
+                        const dataIndex = (pixelY * originalImageData.width + pixelX) * 4;
+                        const r = originalImageData.data[dataIndex];
+                        const g = originalImageData.data[dataIndex + 1];
+                        const b = originalImageData.data[dataIndex + 2];
+
+                        // 모든 툴팁에 동일한 좌표의 RGB 값을 표시하고 위치 조정
+                        allChannelTooltips.forEach((tooltip) => {
+                            tooltip.innerHTML = `RGB(<span style="color:#ff9999;">${r}</span>, <span style="color:#99ff99;">${g}</span>, <span style="color:#99ccff;">${b}</span>)`;
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (e.clientX - parentRect.left + 10) + 'px';
+                            tooltip.style.top = (e.clientY - parentRect.top + 10) + 'px';
+                        });
+
+                        // 각 포인터에 렌더링된 픽셀 중앙 좌표로 이동 및 표시, 색상 조건부 변경
+                        allChannelPointers.forEach((pointer, ptrIndex) => {
+                            pointer.style.left = pointerLeft + 'px';
+                            pointer.style.top = pointerTop + 'px';
+                            pointer.style.display = 'block';
+
+                            // 픽셀 값에 따라 포인터 색상 변경
+                            let channelValue;
+                            if (ptrIndex === 0) channelValue = originalImageData.data[dataIndex]; // Red 채널
+                            else if (ptrIndex === 1) channelValue = originalImageData.data[dataIndex + 1]; // Green 채널
+                            else if (ptrIndex === 2) channelValue = originalImageData.data[dataIndex + 2]; // Blue 채널
+
+                            if (channelValue >= 150) {
+                                pointer.classList.add('dark');
+                            } else {
+                                pointer.classList.remove('dark');
+                            }
+                        });
+
+                    } else {
+                        allChannelTooltips.forEach(tooltip => tooltip.style.display = 'none');
+                        allChannelPointers.forEach(pointer => pointer.style.display = 'none');
+                    }
+                });
+
+                canvas.addEventListener('mouseleave', function() {
+                    allChannelTooltips.forEach(tooltip => tooltip.style.display = 'none');
+                    allChannelPointers.forEach(pointer => pointer.style.display = 'none');
+                });
+            });
+
             function updateChannelImages() {
+                // 각 채널 이미지는 이제 originalImageData (수정된 이미지 데이터)를 기반으로 그림
+                if (!originalImageData) return; 
+
                 const width = originalImageData.width;
                 const height = originalImageData.height;
 
@@ -944,78 +1094,51 @@
                 const greenCtx = greenCanvas.getContext('2d');
                 const blueCtx = blueCanvas.getContext('2d');
 
-                // 채널별 이미지 데이터 생성
-                const redData = new ImageData(width, height);
-                const greenData = new ImageData(width, height);
-                const blueData = new ImageData(width, height);
-
-                // 채널 값 배열 초기화
-                const redValues = new Array(height);
-                const greenValues = new Array(height);
-                const blueValues = new Array(height);
-
-                for (let y = 0; y < height; y++) {
-                    redValues[y] = new Array(width);
-                    greenValues[y] = new Array(width);
-                    blueValues[y] = new Array(width);
-
-                    for (let x = 0; x < width; x++) {
-                        const index = (y * width + x) * 4;
-
-                        // 채널 값 추출
-                        const r = originalImageData.data[index];
-                        const g = originalImageData.data[index + 1];
-                        const b = originalImageData.data[index + 2];
-
-                        // 값 저장
-                        redValues[y][x] = r;
-                        greenValues[y][x] = g;
-                        blueValues[y][x] = b;
-
-                        // Red 채널 이미지 생성
-                        redData.data[index] = r;
-                        redData.data[index + 1] = r;
-                        redData.data[index + 2] = r;
-                        redData.data[index + 3] = 255;
-
-                        // Green 채널 이미지 생성
-                        greenData.data[index] = g;
-                        greenData.data[index + 1] = g;
-                        greenData.data[index + 2] = g;
-                        greenData.data[index + 3] = 255;
-
-                        // Blue 채널 이미지 생성
-                        blueData.data[index] = b;
-                        blueData.data[index + 1] = b;
-                        blueData.data[index + 2] = b;
-                        blueData.data[index + 3] = 255;
-                    }
-                }
-
-                // 채널별 이미지
-
-                // 채널별 이미지 적용
                 redCanvas.width = width;
                 redCanvas.height = height;
-                redCtx.putImageData(redData, 0, 0);
-
                 greenCanvas.width = width;
                 greenCanvas.height = height;
-                greenCtx.putImageData(greenData, 0, 0);
-
                 blueCanvas.width = width;
                 blueCanvas.height = height;
+
+                // 채널별 이미지 데이터 생성 및 적용
+                const redData = redCtx.createImageData(width, height);
+                const greenData = greenCtx.createImageData(width, height);
+                const blueData = blueCtx.createImageData(width, height);
+
+                for (let i = 0; i < originalImageData.data.length; i += 4) {
+                    const r = originalImageData.data[i];
+                    const g = originalImageData.data[i + 1];
+                    const b = originalImageData.data[i + 2];
+
+                    // Red 채널 이미지 생성
+                    redData.data[i] = r;
+                    redData.data[i + 1] = r;
+                    redData.data[i + 2] = r;
+                    redData.data[i + 3] = 255;
+
+                    // Green 채널 이미지 생성
+                    greenData.data[i] = g;
+                    greenData.data[i + 1] = g;
+                    greenData.data[i + 2] = g;
+                    greenData.data[i + 3] = 255;
+
+                    // Blue 채널 이미지 생성
+                    blueData.data[i] = b;
+                    blueData.data[i + 1] = b;
+                    blueData.data[i + 2] = b;
+                    blueData.data[i + 3] = 255;
+                }
+
+                redCtx.putImageData(redData, 0, 0);
+                greenCtx.putImageData(greenData, 0, 0);
                 blueCtx.putImageData(blueData, 0, 0);
 
-                // 행렬 데이터 업데이트
-                updateMatrixDisplays(redValues, greenValues, blueValues);
-
-                // 히스토그램 업데이트
+                // 히스토그램 업데이트 (이것은 originalImageData를 사용해야 함)
                 updateHistogram(originalImageData);
             }
 
             function processImage(img) {
-                // 이미지 크기 조정 (최대 크기 500px)
                 let width = img.width;
                 let height = img.height;
                 const maxSize = 500;
@@ -1026,7 +1149,6 @@
                     height = Math.floor(height * ratio);
                 }
 
-                // Canvas 설정
                 redCanvas.width = width;
                 redCanvas.height = height;
                 greenCanvas.width = width;
@@ -1036,15 +1158,14 @@
                 modifiedCanvas.width = width;
                 modifiedCanvas.height = height;
 
-                // 원본 이미지 그리기
                 const modCtx = modifiedCanvas.getContext('2d');
                 modCtx.drawImage(img, 0, 0, width, height);
 
                 // 원본 이미지 데이터 추출
                 originalImageData = modCtx.getImageData(0, 0, width, height);
 
-                // 진짜 원본 이미지 데이터 깊은 복사본 생성 
-                const trueOriginalData = new Uint8ClampedArray(originalImageData.data);
+                // 진짜 원본 이미지 데이터 깊은 복사본 생성
+                const trueOriginalData = new Uint8ClampedArray(originalImageData.data); // 깊은 복사
                 trueOriginalImageData = new ImageData(trueOriginalData, width, height);
 
                 // 채널 이미지 업데이트
@@ -1058,24 +1179,19 @@
                 const width = originalImageData.width;
                 const height = originalImageData.height;
 
-                // 이미지 데이터 클론
                 const newData = new Uint8ClampedArray(originalImageData.data);
                 const newImageData = new ImageData(newData, width, height);
 
-                // 채널 활성화/비활성화 적용
                 for (let i = 0; i < newData.length; i += 4) {
                     if (!redChannelActive) newData[i] = 0;
                     if (!greenChannelActive) newData[i + 1] = 0;
                     if (!blueChannelActive) newData[i + 2] = 0;
                 }
 
-                // 효과 적용
                 applyEffects(newData);
 
-                // 이미지 업데이트
                 modCtx.putImageData(newImageData, 0, 0);
 
-                // 히스토그램 업데이트
                 updateHistogram(newImageData);
             }
 
@@ -1130,51 +1246,18 @@
                 }
             }
 
-            function updateMatrixDisplays(redValues, greenValues, blueValues) {
-                // 행렬 크기 제한 (최대 20x20)
-                const maxDisplaySize = 20;
-                const width = Math.min(redValues[0].length, maxDisplaySize);
-                const height = Math.min(redValues.length, maxDisplaySize);
-
-                // 행렬 문자열 생성
-                let redMatrixStr = '';
-                let greenMatrixStr = '';
-                let blueMatrixStr = '';
-
-                for (let y = 0; y < height; y++) {
-                    let redRow = '';
-                    let greenRow = '';
-                    let blueRow = '';
-
-                    for (let x = 0; x < width; x++) {
-                        redRow += redValues[y][x].toString().padStart(3, ' ') + ' ';
-                        greenRow += greenValues[y][x].toString().padStart(3, ' ') + ' ';
-                        blueRow += blueValues[y][x].toString().padStart(3, ' ') + ' ';
-                    }
-
-                    redMatrixStr += redRow + '\n';
-                    greenMatrixStr += greenRow + '\n';
-                    blueMatrixStr += blueRow + '\n';
-                }
-
-                // 행렬 표시
-                redMatrix.textContent = redMatrixStr;
-                greenMatrix.textContent = greenMatrixStr;
-                blueMatrix.textContent = blueMatrixStr;
-            }
-
             function updateHistogram(imageData) {
                 const histCtx = histogramCanvas.getContext('2d');
                 histCtx.clearRect(0, 0, histogramCanvas.width, histogramCanvas.height);
 
                 // 히스토그램 크기 설정
-                const leftMargin = 50;
-                const rightMargin = 10;
-                const topMargin = 15;
-                const bottomMargin = 25;
+                const drawLeftMargin = 180;  // Space for Y-axis labels - Increased for numbers
+                const drawRightMargin = 20; // Space for right edge
+                const drawTopMargin = 40;   // Space for top (title, if any)
+                const drawBottomMargin = 150; // Space for X-axis labels and "픽셀 값" label - Increased
 
-                const histWidth = histogramCanvas.width - (leftMargin + rightMargin);
-                const histHeight = histogramCanvas.height - (topMargin + bottomMargin);
+                const histWidth = histogramCanvas.width - drawLeftMargin - drawRightMargin;
+                const histHeight = histogramCanvas.height - drawTopMargin - drawBottomMargin;
 
                 // 히스토그램 데이터 계산
                 const redHist = new Array(256).fill(0);
@@ -1220,48 +1303,48 @@
                 // Y축 그리드 및 라벨
                 const ySteps = 5;
                 for (let i = 0; i <= ySteps; i++) {
-                    const y = topMargin + histHeight - (i * histHeight / ySteps);
-                    histCtx.moveTo(leftMargin, y);
-                    histCtx.lineTo(leftMargin + histWidth, y);
+                    const y = drawTopMargin + histHeight - (i * histHeight / ySteps);
+                    histCtx.moveTo(drawLeftMargin, y);
+                    histCtx.lineTo(drawLeftMargin + histWidth, y);
 
                     // Y축 값 표시 (간격 및 폰트 개선)
                     const yValue = Math.round((i / ySteps) * roundedMax);
                     histCtx.fillStyle = '#666';
-                    histCtx.font = '11px Arial';
+                    histCtx.font = '17px Arial';
                     histCtx.textAlign = 'right';
-                    histCtx.fillText(yValue, leftMargin - 8, y + 4);
+                    histCtx.fillText(yValue, drawLeftMargin - 20, y + 4); // Positioned to the left of the drawing area
                 }
 
                 // X축 그리기
-                histCtx.moveTo(leftMargin, topMargin + histHeight);
-                histCtx.lineTo(leftMargin + histWidth, topMargin + histHeight);
+                histCtx.moveTo(drawLeftMargin, drawTopMargin + histHeight);
+                histCtx.lineTo(drawLeftMargin + histWidth, drawTopMargin + histHeight);
 
                 // X축 값 표시 (균등하게 분포)
                 const xValues = [0, 64, 128, 192, 255];
                 for (const xValue of xValues) {
-                    const x = leftMargin + (xValue * barWidth);
-                    histCtx.moveTo(x, topMargin + histHeight);
-                    histCtx.lineTo(x, topMargin + histHeight + 5);
+                    const x = drawLeftMargin + (xValue * barWidth);
+                    histCtx.moveTo(x, drawTopMargin + histHeight);
+                    histCtx.lineTo(x, drawTopMargin + histHeight + 5);
 
                     histCtx.fillStyle = '#666';
-                    histCtx.font = '11px Arial';  // 폰트 크기 증가
+                    histCtx.font = '17px Arial';
                     histCtx.textAlign = 'center';
-                    histCtx.fillText(xValue, x, topMargin + histHeight + 15);
+                    histCtx.fillText(xValue, x, drawTopMargin + histHeight + 35); // Adjusted y-coordinate
                 }
 
                 histCtx.stroke();
 
                 // 축 레이블
                 histCtx.fillStyle = '#333';
-                histCtx.font = '12px Arial';  // 폰트 크기 증가
+                histCtx.font = '18px Arial';
                 histCtx.textAlign = 'center';
-                histCtx.fillText('픽셀 값', leftMargin + histWidth / 2, histogramCanvas.height - 5);
+                histCtx.fillText('픽셀 값', drawLeftMargin + histWidth / 2, histogramCanvas.height - 50); // Center of histogram width, near canvas bottom
 
                 histCtx.save();
-                histCtx.translate(15, topMargin + histHeight / 2);  // 위치 조정
+                histCtx.translate(drawLeftMargin / 2 - 40, drawTopMargin + histHeight / 2); // Further left for "빈도"
                 histCtx.rotate(-Math.PI / 2);
                 histCtx.textAlign = 'center';
-                histCtx.fillText('빈도', 0, 0);
+                histCtx.fillText('빈도', 0, 0); // Drawn at translated origin
                 histCtx.restore();
 
                 // 채널별 히스토그램 그리기
@@ -1279,15 +1362,15 @@
                 function drawHistLine(data, color) {
                     histCtx.strokeStyle = color;
                     histCtx.beginPath();
-                    histCtx.moveTo(leftMargin, topMargin + histHeight);
+                    histCtx.moveTo(drawLeftMargin, drawTopMargin + histHeight);
 
                     for (let i = 0; i < 256; i++) {
-                        const x = leftMargin + (i * barWidth);
-                        const y = topMargin + histHeight - (data[i] / roundedMax * histHeight);
+                        const x = drawLeftMargin + (i * barWidth);
+                        const y = drawTopMargin + histHeight - (data[i] / roundedMax * histHeight);
                         histCtx.lineTo(x, y);
                     }
 
-                    histCtx.lineTo(leftMargin + histWidth, topMargin + histHeight);
+                    histCtx.lineTo(drawLeftMargin + histWidth, drawTopMargin + histHeight);
                     histCtx.closePath();
 
                     // 선 아래 영역 채우기

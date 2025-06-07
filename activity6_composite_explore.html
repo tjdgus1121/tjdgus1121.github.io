@@ -55,12 +55,21 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 20px;
-      background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
+      background-color: #f0f8ff; /* 은은한 배경색으로 변경 (앨리스 블루) */
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      animation: dynamicBackgroundAnimation 20s ease-in-out infinite alternate;
+      animation: subtleBackgroundChange 15s ease-in-out infinite alternate; /* 은은한 배경 애니메이션 적용 */
+    }
+
+    @keyframes subtleBackgroundChange {
+      0% {
+        background-color: #f0f8ff; /* 시작 색상 */
+      }
+      100% {
+        background-color: #f8f8ff; /* 끝 색상 (더욱 연한) */
+      }
     }
 
     h1 {
@@ -143,28 +152,29 @@
 
     /* 커스텀 파일 선택 버튼 (label) 스타일 */
     .custom-file-upload-button {
-      display: inline-block; /* 버튼처럼 보이게 */
-      background-color: #4CAF50; /* 초록색 배경 */
-      color: white; /* 흰색 글자 */
-      padding: 8px 12px; /* 적절한 패딩 */
-      border-radius: 4px; /* 둥근 모서리 */
-      cursor: pointer; /* 클릭 가능한 커서 */
-      font-size: 14px; /* 글자 크기 */
-      border: none; /* 테두리 제거 */
-      transition: background-color 0.3s ease; /* 부드러운 호버 효과 */
-      margin-top: 10px; /* 미리보기 영역과의 간격 */
-      text-align: center; /* 텍스트 가운데 정렬 */
+      display: inline-block;
+      background-color: #4CAF50;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      border: none;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+      margin-top: 10px;
+      text-align: center;
     }
 
     .custom-file-upload-button:hover {
-      background-color: #45a049; /* 호버 시 조금 더 어두운 초록색 */
+      background-color: #45a049;
+      transform: scale(1.1);
     }
 
     .result-canvas {
-      width: 100%; /* 컨테이너 너비에 맞춤 */
-      height: auto; /* 높이 자동 조절 */
-      flex-grow: 1; /* 남은 공간을 차지하여 높이 확장 */
-      min-height: 250px; /* 최소 높이 설정 */
+      width: 100%;
+      height: auto;
+      flex-grow: 1;
+      min-height: 250px;
       background-color: #eee;
       margin: auto;
     }
@@ -194,17 +204,22 @@
 
     .mode-button {
       padding: 8px 12px;
-      background-color: #eeeeee; /* 기본 배경색 (매우 연한 회색) */
+      background-color: #eeeeee;
       border: 1px solid #ddd;
       border-radius: 4px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
-      color: #333; /* 기본 글자색 */
-      font-weight: normal; /* 기본 폰트 굵기 */
+      transition: background-color 0.3s ease, transform 0.3s ease;
+      color: #333;
+      font-weight: normal;
     }
 
     .mode-button.active {
       /* 활성화된 버튼 스타일은 개별 ID에서 오버라이드 */
+    }
+
+    .mode-button:not([disabled]):hover {
+        opacity: 0.9;
+        transform: scale(1.1);
     }
 
     .slider-container {
@@ -251,7 +266,7 @@
       padding: 6px 10px;
       font-size: 14px;
       cursor: pointer;
-      transition: background-color 0.3s ease, opacity 0.3s ease;
+      transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
     }
 
     .download-button {
@@ -262,11 +277,12 @@
       padding: 8px 15px;
       font-weight: bold;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, transform 0.3s ease;
     }
 
     .control-button:not([disabled]):hover, .resize-button:not([disabled]):hover, .download-button:not([disabled]):hover {
       opacity: 0.85;
+      transform: scale(1.1);
     }
 
     .matrix-wrapper {
@@ -394,10 +410,6 @@
         border-color: #45a049; /* 테두리 색상 */
     }
 
-    .mode-button:not([disabled]):hover {
-        opacity: 0.9; /* 호버 시 약간 투명 */
-    }
-
     .combined-result-controls .controls-content {
         width: 100%; /* 부모 (.combined-result-controls) 너비에 맞춤 */
     }
@@ -416,6 +428,22 @@
     #zoomOut,
     #decreaseSize {
         background-color: #ff6a00; /* 주황색 계열 */
+    }
+
+    .resize-button {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .resize-button:hover {
+      background-color: #1976d2;
+      transform: scale(1.1);
     }
 
     </style>
@@ -466,9 +494,9 @@
                     <div class="options-container">
                         <div>
                             <label for="widthInput">너비: </label>
-                            <input type="number" id="widthInput" class="size-input" value="40" min="5" max="100">
+                            <input type="number" id="widthInput" class="size-input" value="100" min="5" max="100">
                             <label for="heightInput">높이: </label>
-                            <input type="number" id="heightInput" class="size-input" value="40" min="5" max="100">
+                            <input type="number" id="heightInput" class="size-input" value="100" min="5" max="100">
                             <button id="resizeButton" class="resize-button">크기 적용</button>
                         </div>
 

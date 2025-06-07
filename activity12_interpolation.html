@@ -445,6 +445,66 @@
             flex-direction: column;
             align-items: center;
         }
+
+        /* 이미지 처리 진행률 팝업 스타일 */
+        .progress-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* 반투명한 어두운 배경 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* 다른 요소들 위에 표시 */
+            opacity: 0; /* 초기에는 숨김 */
+            visibility: hidden; /* 초기에는 숨김 */
+            transition: opacity 0.3s ease, visibility 0.3s ease; /* 부드러운 전환 */
+        }
+
+        .progress-popup-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .progress-popup-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .progress-popup-content h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .progress-bar-popup {
+            width: 100%;
+            height: 25px;
+            background-color: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill-popup {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease; /* 부드러운 진행률 애니메이션 */
+        }
+
+        .progress-text-popup {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
     </style>
 </head>
 
@@ -516,6 +576,15 @@
                                         target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
                             </div>
                         </label>
+                        <label class="radio-item">
+                            <input type="radio" name="interpolation" value="esrgan">
+                            <div class="interpolation-details">
+                                <span class="interpolation-text-content">ESRGAN (AI 기반)</span>
+                                <div class="interpolation-link"><a
+                                        href="https://ko.wikipedia.org/wiki/%EC%B4%88%ED%95%B4%EC%83%81%EB%8F%84" 
+                                        target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
+                            </div>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -535,12 +604,6 @@
                 </div>
             </div>
             <div id="scaledInfo" class="image-info"></div>
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">0%</div>
-            </div>
             <div class="action-buttons">
                 <button id="actualSizeBtn" class="action-button" disabled>
                     🔍 실제 크기로 보기
@@ -551,7 +614,16 @@
             </div>
         </div>
 
-        <div id="tooltip" class="tooltip"></div>
+        <!-- 이미지 처리 진행률 팝업 -->
+        <div id="progressPopupOverlay" class="progress-popup-overlay">
+            <div class="progress-popup-content">
+                <h3>이미지 업스케일링 중...</h3>
+                <div class="progress-bar-popup">
+                    <div class="progress-fill-popup" id="progressFillPopup"></div>
+                </div>
+                <div class="progress-text-popup" id="progressTextPopup">0%</div>
+            </div>
+        </div>
     </div>
 
     <footer class="footer">
@@ -596,16 +668,19 @@
                 this.actualSizeBtn = document.getElementById('actualSizeBtn');
                 this.downloadBtn = document.getElementById('downloadBtn');
 
+                // 팝업 진행률 요소 가져오기
+                this.progressPopupOverlay = document.getElementById('progressPopupOverlay');
+                this.progressFillPopup = document.getElementById('progressFillPopup');
+                this.progressTextPopup = document.getElementById('progressTextPopup');
+
                 // Web Worker 초기화
                 this.worker = new Worker('imageWorker.js');
                 this.worker.onmessage = (e) => {
                     if (e.data.type === 'progress') {
-                        // 진행도 업데이트
+                        // 진행도 업데이트 (팝업에 표시)
                         const progress = e.data.progress;
-                        const progressFill = document.getElementById('progressFill');
-                        const progressText = document.getElementById('progressText');
-                        progressFill.style.width = `${progress}%`;
-                        progressText.textContent = `${progress}%`;
+                        this.progressFillPopup.style.width = `${progress}%`;
+                        this.progressTextPopup.textContent = `${progress}%`;
                     } else {
                         // 이미지 처리 완료
                         const result = e.data;
@@ -622,8 +697,8 @@
                         this.actualSizeBtn.disabled = false;
                         this.downloadBtn.disabled = false;
 
-                        // 프로그레스 바 숨기기
-                        document.getElementById('progressContainer').style.display = 'none';
+                        // 프로그레스 팝업 숨기기
+                        this.progressPopupOverlay.classList.remove('show');
                     }
                 };
 
@@ -716,24 +791,88 @@
                 const scale = parseFloat(document.getElementById('scaleSlider').value);
                 const interpolation = document.querySelector('input[name="interpolation"]:checked').value;
 
-                // 프로그레스 바 표시
-                const progressContainer = document.getElementById('progressContainer');
-                const progressFill = document.getElementById('progressFill');
-                const progressText = document.getElementById('progressText');
-                progressContainer.style.display = 'block';
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
+                // 프로그레스 팝업 표시 및 초기화
+                this.progressPopupOverlay.classList.add('show');
+                this.progressFillPopup.style.width = '0%';
+                this.progressTextPopup.textContent = '0%';
 
                 // 버튼 비활성화
                 this.actualSizeBtn.disabled = true;
                 this.downloadBtn.disabled = true;
 
-                // Web Worker로 이미지 처리 요청
-                this.worker.postMessage({
-                    imageData: this.originalImageData,
-                    scale: scale,
-                    interpolation: interpolation
-                });
+                if (interpolation === 'esrgan') {
+                    // ESRGAN은 백엔드 API를 통해 처리
+                    this.progressTextPopup.textContent = '이미지 서버 전송 중...';
+
+                    // originalImageData를 Base64 문자열로 변환
+                    const base64Image = this.getImageDataAsBase64(this.originalImageData);
+
+                    fetch('https://tjdgus1121-interpolation.onrender.com/upscale_esrgan', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            image: base64Image,
+                            scale: scale,
+                        }),
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.upscaled_image) {
+                            this.displayBase64Image(this.scaledCanvas, this.scaledCtx, data.upscaled_image);
+                            document.getElementById('scaledPlaceholder').style.display = 'none';
+                            this.scaledCanvas.style.display = 'block';
+                            document.getElementById('scaledInfo').textContent = `업스케일됨`; // 실제 크기 정보는 서버에서 받아와야 함
+                        } else {
+                            alert('ESRGAN 업스케일링에 실패했습니다.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('ESRGAN 업스케일링 오류:', error);
+                        alert(`ESRGAN 업스케일링 중 오류가 발생했습니다.\n서버를 확인하거나 네트워크 연결을 점검해주세요.`);
+                    })
+                    .finally(() => {
+                        this.progressPopupOverlay.classList.remove('show');
+                        this.actualSizeBtn.disabled = false;
+                        this.downloadBtn.disabled = false;
+                    });
+
+                } else {
+                    // 기존 보간법은 Web Worker로 이미지 처리 요청
+                    this.worker.postMessage({
+                        imageData: this.originalImageData,
+                        scale: scale,
+                        interpolation: interpolation
+                    });
+                }
+            }
+
+            // ImageData를 Base64 URL로 변환하는 헬퍼 함수
+            getImageDataAsBase64(imageData) {
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = imageData.width;
+                tempCanvas.height = imageData.height;
+                tempCtx.putImageData(imageData, 0, 0);
+                return tempCanvas.toDataURL();
+            }
+
+            // Base64 URL 이미지를 캔버스에 그리는 헬퍼 함수
+            displayBase64Image(canvas, ctx, base64Url) {
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    document.getElementById('scaledInfo').textContent = `${img.width} × ${img.height} 픽셀`;
+                };
+                img.src = base64Url;
             }
 
             toggleActualSize() {
@@ -924,11 +1063,31 @@
                 link.download = 'upscaled_image.png';
                 link.click();
             }
+
+            pingBackend() {
+                // 페이지 로드 시 백엔드에 신호 보내기
+                fetch('https://tjdgus1121-interpolation.onrender.com/ping', {
+                    method: 'GET',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('백엔드에 성공적으로 신호를 보냈습니다.');
+                })
+                .catch(error => {
+                    console.error('백엔드에 신호 보내기 중 오류가 발생했습니다:', error);
+                });
+            }
         }
 
         // 앱 초기화
         document.addEventListener('DOMContentLoaded', () => {
-            new ImageUpscaler();
+            const upscaler = new ImageUpscaler();
+            upscaler.pingBackend(); // 페이지 로드 시 백엔드에 신호 보내기
         });
     </script>
 </body>

@@ -6,8 +6,12 @@ import torch
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from basicsr.utils.download_util import load_file_from_url
 from basicsr.utils.registry import ARCH_REGISTRY
+from flask_cors import CORS
+import os
+import numpy as np
 
 app = Flask(__name__)
+CORS(app)
 
 # ESRGAN 모델 로드
 model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32)
@@ -15,6 +19,10 @@ model_url = 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/Rea
 model_path = load_file_from_url(model_url, model_dir='weights')
 model.load_state_dict(torch.load(model_path, map_location='cpu'))
 model.eval()
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({'message': 'pong'}), 200
 
 @app.route('/upscale_esrgan', methods=['POST'])
 def upscale_esrgan():
@@ -45,4 +53,5 @@ def upscale_esrgan():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
