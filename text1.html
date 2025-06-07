@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description" content="다양한 보간법(최근접 이웃, 선형, 비큐빅)을 사용하여 이미지의 해상도를 높이는 과정을 직접 체험하고 탐구하는 활동 페이지입니다.">
+    <meta name="keywords" content="이미지 업스케일링, 보간법, 최근접 이웃, 선형 보간, 비큐빅 보간, 이미지 처리, 해상도 향상, AI 수학, 교육 활동">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="이미지 업스케일러 활동">
+    <meta property="og:description" content="다양한 보간법을 통해 이미지를 업스케일링하고 해상도 향상 원리를 탐구하는 활동입니다.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity12_interpolation.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity12_interpolation.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="이미지 업스케일러">
+    <meta name="twitter:description" content="다양한 보간법을 사용하여 이미지 해상도 향상 원리를 체험하는 활동 페이지.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#667eea">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/activity12_interpolation.html">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="stylefooter.css">
+
+    <title>이미지 업스케일러</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            font-family:"Do Hyeon"
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: start;
+            margin:auto;
+        }
+
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .canvas-container {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 20px;
+            background: #fafafa;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+        }
+
+        .canvas-container:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-section {
+            margin-bottom: 25px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .slider-container {
+            position: relative;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .slider-value {
+            text-align: center;
+            margin-top: 5px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: nowrap;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .radio-item:hover {
+            background: #e9ecef;
+        }
+
+        .radio-item input[type="radio"] {
+            margin-right: 8px;
+            margin-top: 0;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
+        .placeholder {
+            text-align: center;
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        .image-info {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .action-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .progress-container {
+            width: 100%;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .action-button {
+            padding: 8px 16px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .interpolation-link {
+            font-size: 0.9em;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            margin-top: 0;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .interpolation-link a {
+            color: white;
+            text-decoration: none;
+            background-color: #667eea;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            white-space: nowrap;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .interpolation-link a:hover {
+            background-color: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .interpolation-text-content {
+            white-space: nowrap;
+            flex-grow: 1;
+            flex-shrink: 1;
+            min-width: 0;
+        }
+
+        .interpolation-details {
+            display: flex;
+            flex-wrap: nowrap;
+            flex-grow: 1;
+            justify-content: space-between;
+            align-items: center;
+            margin-left: 8px;
+            gap: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .controls {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .radio-item {
+                flex-direction: column;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+            .radio-item input[type="radio"] {
+                margin-top: 4px;
+            }
+            .interpolation-details {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                width: 100%;
+                margin-left: 0;
+                flex-grow: 1;
+            }
+            .interpolation-link {
+                margin-top: 8px;
+                margin-left: 0;
+                width: 100%;
+            }
+            .interpolation-link a {
+                display: block;
+                text-align: center;
+            }
+            .interpolation-text-content {
+                white-space: normal;
+                flex-grow: 1;
+                flex-shrink: 1;
+            }
+        }
+        
+        .scaled-canvas-container {
+            position: relative;
+            overflow: auto;
+            max-height: 500px;
+            max-width: 100%;
+            border: 2px solid #eee;
+            border-radius: 10px;
+        }
+
+        .scaled-canvas-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .upscaled-section {
+            margin-top: 40px;
+            width: 100%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 이미지 처리 진행률 팝업 스타일 */
+        .progress-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* 반투명한 어두운 배경 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* 다른 요소들 위에 표시 */
+            opacity: 0; /* 초기에는 숨김 */
+            visibility: hidden; /* 초기에는 숨김 */
+            transition: opacity 0.3s ease, visibility 0.3s ease; /* 부드러운 전환 */
+        }
+
+        .progress-popup-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .progress-popup-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .progress-popup-content h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .progress-bar-popup {
+            width: 100%;
+            height: 25px;
+            background-color: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill-popup {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease; /* 부드러운 진행률 애니메이션 */
+        }
+
+        .progress-text-popup {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎨 이미지 업스케일러</h1>
+
+        <div class="main-content">
+            <!-- 원본 이미지 -->
+            <div class="canvas-section">
+                <div class="canvas-title">원본 이미지</div>
+                <div class="canvas-container">
+                    <canvas id="originalCanvas"></canvas>
+                    <div id="originalPlaceholder" class="placeholder">
+                        이미지를 업로드해주세요
+                    </div>
+                </div>
+                <div id="originalInfo" class="image-info"></div>
+            </div>
+
+            <!-- 컨트롤 패널 -->
+            <div class="controls">
+                <div class="upload-section">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="imageInput" class="file-input" accept="image/*">
+                        <label for="imageInput" class="file-input-button">
+                            📁 이미지 선택
+                        </label>
+                    </div>
+                </div>
+
+
+                <div class="control-group">
+                    <label class="control-label">업스케일 배율</label>
+                    <div class="slider-container">
+                        <input type="range" id="scaleSlider" class="slider" min="1" max="4" value="2" step="0.5"
+                            title="업스케일 배율 선택">
+                        <div id="scaleValue" class="slider-value">x2.0</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">보간법</label>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="interpolation" value="nearest" checked>
+                            <div class="interpolation-details">
+                                <span class="interpolation-text-content">최근접 이웃 (Nearest Neighbor)</span>
+                                <div class="interpolation-link"><a
+                                        href="https://ko.wikipedia.org/wiki/%EC%B5%9C%EA%B7%BC%EC%A0%91_%EC%9D%B4%EC%9B%83_%EB%B3%B4%EA%B0%84"
+                                        target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
+                            </div>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="interpolation" value="bilinear">
+                            <div class="interpolation-details">
+                                <span class="interpolation-text-content">선형 보간 (Bilinear)</span>
+                                <div class="interpolation-link"><a
+                                        href="https://ko.wikipedia.org/wiki/%EC%84%A0%ED%98%95_%EB%B3%B4%EA%B0%84%EB%B2%95"
+                                        target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
+                            </div>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="interpolation" value="bicubic">
+                            <div class="interpolation-details">
+                                <span class="interpolation-text-content">비큐빅 보간 (Bicubic)</span>
+                                <div class="interpolation-link"><a
+                                        href="https://ko.wikipedia.org/wiki/%EB%B9%84%ED%81%90%EB%B9%85_%EB%B3%B4%EA%B0%84%EB%B2%95"
+                                        target="_blank" rel="noopener noreferrer">자세히 알아보기</a></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 업스케일된 이미지를 아래쪽에 크게 배치 -->
+        <div class="upscaled-section">
+            <div class="canvas-title">업스케일된 이미지</div>
+            <div class="canvas-container">
+                <div class="scaled-canvas-container">
+                    <div class="scaled-canvas-wrapper">
+                        <canvas id="scaledCanvas"></canvas>
+                        <div id="scaledPlaceholder" class="placeholder">
+                            업스케일된 이미지가 <br>여기에 표시됩니다
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="scaledInfo" class="image-info"></div>
+            <div class="action-buttons">
+                <button id="actualSizeBtn" class="action-button" disabled>
+                    🔍 실제 크기로 보기
+                </button>
+                <button id="downloadBtn" class="action-button" disabled>
+                    💾 PNG로 저장
+                </button>
+            </div>
+        </div>
+
+        <!-- 이미지 처리 진행률 팝업 -->
+        <div id="progressPopupOverlay" class="progress-popup-overlay">
+            <div class="progress-popup-content">
+                <h3>이미지 업스케일링 중...</h3>
+                <div class="progress-bar-popup">
+                    <div class="progress-fill-popup" id="progressFillPopup"></div>
+                </div>
+                <div class="progress-text-popup" id="progressTextPopup">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+    </footer>
+
+
+    <script>
+        class ImageUpscaler {
+            constructor() {
+                this.originalCanvas = document.getElementById('originalCanvas');
+                this.scaledCanvas = document.getElementById('scaledCanvas');
+                this.originalCtx = this.originalCanvas.getContext('2d');
+                this.scaledCtx = this.scaledCanvas.getContext('2d');
+                this.tooltip = document.getElementById('tooltip');
+
+                this.originalImage = null;
+                this.originalImageData = null;
+                this.isActualSize = false;
+                this.actualSizeBtn = document.getElementById('actualSizeBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+
+                // 팝업 진행률 요소 가져오기
+                this.progressPopupOverlay = document.getElementById('progressPopupOverlay');
+                this.progressFillPopup = document.getElementById('progressFillPopup');
+                this.progressTextPopup = document.getElementById('progressTextPopup');
+
+                // Web Worker 초기화
+                this.worker = new Worker('imageWorker.js');
+                this.worker.onmessage = (e) => {
+                    if (e.data.type === 'progress') {
+                        // 진행도 업데이트 (팝업에 표시)
+                        const progress = e.data.progress;
+                        this.progressFillPopup.style.width = `${progress}%`;
+                        this.progressTextPopup.textContent = `${progress}%`;
+                    } else {
+                        // 이미지 처리 완료
+                        const result = e.data;
+                        this.scaledCanvas.width = result.width;
+                        this.scaledCanvas.height = result.height;
+                        this.scaledCtx.putImageData(result, 0, 0);
+
+                        document.getElementById('scaledPlaceholder').style.display = 'none';
+                        this.scaledCanvas.style.display = 'block';
+
+                        document.getElementById('scaledInfo').textContent =
+                            `${result.width} × ${result.height} 픽셀`;
+
+                        this.actualSizeBtn.disabled = false;
+                        this.downloadBtn.disabled = false;
+
+                        // 프로그레스 팝업 숨기기
+                        this.progressPopupOverlay.classList.remove('show');
+                    }
+                };
+
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                // 파일 업로드
+                document.getElementById('imageInput').addEventListener('change', (e) => {
+                    this.loadImage(e.target.files[0]);
+                });
+
+                // 슬라이더 변경
+                document.getElementById('scaleSlider').addEventListener('input', (e) => {
+                    document.getElementById('scaleValue').textContent = `x${e.target.value}`;
+                    this.updateScaledImage();
+                });
+
+                // 보간법 변경
+                document.querySelectorAll('input[name="interpolation"]').forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        this.updateScaledImage();
+                    });
+                });
+
+                // 마우스 이벤트 (업스케일된 이미지)
+                this.scaledCanvas.addEventListener('mousemove', (e) => {
+                    this.showPixelInfo(e);
+                });
+
+                this.scaledCanvas.addEventListener('mouseleave', () => {
+                    this.hideTooltip();
+                });
+
+                // 실제 크기로 보기 버튼 이벤트
+                this.actualSizeBtn.addEventListener('click', () => {
+                    this.toggleActualSize();
+                });
+
+                // PNG 저장 버튼 이벤트
+                this.downloadBtn.addEventListener('click', () => {
+                    this.downloadUpscaledImage();
+                });
+            }
+
+            loadImage(file) {
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.originalImage = img;
+                        this.displayOriginalImage();
+                        this.updateScaledImage();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            displayOriginalImage() {
+                const img = this.originalImage;
+                const maxSize = 400;
+
+                // 원본 해상도 그대로 캔버스에 설정
+                this.originalCanvas.width = img.width;
+                this.originalCanvas.height = img.height;
+                this.originalCtx.drawImage(img, 0, 0, img.width, img.height);
+
+                // CSS로 크기 조절
+                this.originalCanvas.style.maxWidth = '100%';
+                this.originalCanvas.style.maxHeight = `${maxSize}px`;
+                this.originalCanvas.style.width = 'auto';
+                this.originalCanvas.style.height = 'auto';
+
+                // 원본 이미지 데이터 저장
+                this.originalImageData = this.originalCtx.getImageData(0, 0, img.width, img.height);
+
+                document.getElementById('originalPlaceholder').style.display = 'none';
+                this.originalCanvas.style.display = 'block';
+
+                document.getElementById('originalInfo').textContent =
+                    `${img.width} × ${img.height} 픽셀`;
+            }
+
+            updateScaledImage() {
+                if (!this.originalImageData) return;
+
+                const scale = parseFloat(document.getElementById('scaleSlider').value);
+                const interpolation = document.querySelector('input[name="interpolation"]:checked').value;
+
+                // 프로그레스 팝업 표시 및 초기화
+                this.progressPopupOverlay.classList.add('show');
+                this.progressFillPopup.style.width = '0%';
+                this.progressTextPopup.textContent = '0%';
+
+                // 버튼 비활성화
+                this.actualSizeBtn.disabled = true;
+                this.downloadBtn.disabled = true;
+
+                // Web Worker로 이미지 처리 요청
+                this.worker.postMessage({
+                    imageData: this.originalImageData,
+                    scale: scale,
+                    interpolation: interpolation
+                });
+            }
+
+            toggleActualSize() {
+                const container = this.scaledCanvas.closest('.scaled-canvas-container');
+                if (!this.isActualSize) {
+                    // 실제 크기: 컨테이너에 스크롤, 캔버스는 원본 크기
+                    container.style.maxWidth = '100%';
+                    container.style.maxHeight = '500px';
+                    container.style.overflow = 'auto';
+                    this.scaledCanvas.style.maxWidth = 'none';
+                    this.scaledCanvas.style.maxHeight = 'none';
+                    this.actualSizeBtn.textContent = '🔙 축소해서 보기';
+                    this.isActualSize = true;
+                } else {
+                    // 축소 보기: 컨테이너에 스크롤 해제, 캔버스는 축소
+                    container.style.maxWidth = '100%';
+                    container.style.maxHeight = '500px';
+                    container.style.overflow = 'auto';
+                    this.scaledCanvas.style.maxWidth = '100%';
+                    this.scaledCanvas.style.maxHeight = '400px';
+                    this.actualSizeBtn.textContent = '🔍 실제 크기로 보기';
+                    this.isActualSize = false;
+                }
+            }
+
+            performUpscaling(originalData, scaledData, interpolation) {
+                const srcWidth = originalData.width;
+                const srcHeight = originalData.height;
+                const dstWidth = scaledData.width;
+                const dstHeight = scaledData.height;
+
+                const scaleX = srcWidth / dstWidth;
+                const scaleY = srcHeight / dstHeight;
+
+                for (let y = 0; y < dstHeight; y++) {
+                    for (let x = 0; x < dstWidth; x++) {
+                        const srcX = x * scaleX;
+                        const srcY = y * scaleY;
+
+                        let r, g, b, a;
+
+                        switch (interpolation) {
+                            case 'nearest':
+                                [r, g, b, a] = this.nearestNeighbor(originalData, srcX, srcY);
+                                break;
+                            case 'bilinear':
+                                [r, g, b, a] = this.bilinearInterpolation(originalData, srcX, srcY);
+                                break;
+                            case 'bicubic':
+                                [r, g, b, a] = this.bicubicInterpolation(originalData, srcX, srcY);
+                                break;
+                        }
+
+                        const index = (y * dstWidth + x) * 4;
+                        scaledData.data[index] = r;
+                        scaledData.data[index + 1] = g;
+                        scaledData.data[index + 2] = b;
+                        scaledData.data[index + 3] = a;
+                    }
+                }
+            }
+
+            nearestNeighbor(imageData, x, y) {
+                const ix = Math.round(x);
+                const iy = Math.round(y);
+                return this.getPixel(imageData, ix, iy);
+            }
+
+            bilinearInterpolation(imageData, x, y) {
+                const x1 = Math.floor(x);
+                const y1 = Math.floor(y);
+                const x2 = x1 + 1;
+                const y2 = y1 + 1;
+
+                const dx = x - x1;
+                const dy = y - y1;
+
+                const p11 = this.getPixel(imageData, x1, y1);
+                const p12 = this.getPixel(imageData, x1, y2);
+                const p21 = this.getPixel(imageData, x2, y1);
+                const p22 = this.getPixel(imageData, x2, y2);
+
+                const result = [];
+                for (let i = 0; i < 4; i++) {
+                    const top = p11[i] * (1 - dx) + p21[i] * dx;
+                    const bottom = p12[i] * (1 - dx) + p22[i] * dx;
+                    result[i] = Math.round(top * (1 - dy) + bottom * dy);
+                }
+
+                return result;
+            }
+
+            bicubicInterpolation(imageData, x, y) {
+                const x1 = Math.floor(x);
+                const y1 = Math.floor(y);
+
+                const dx = x - x1;
+                const dy = y - y1;
+
+                const result = [];
+                for (let i = 0; i < 4; i++) {
+                    let value = 0;
+
+                    for (let m = -1; m <= 2; m++) {
+                        for (let n = -1; n <= 2; n++) {
+                            const pixel = this.getPixel(imageData, x1 + n, y1 + m);
+                            const weight = this.cubicWeight(dx - n) * this.cubicWeight(dy - m);
+                            value += pixel[i] * weight;
+                        }
+                    }
+
+                    result[i] = Math.max(0, Math.min(255, Math.round(value)));
+                }
+
+                return result;
+            }
+
+            cubicWeight(t) {
+                const a = -0.5;
+                const absT = Math.abs(t);
+
+                if (absT <= 1) {
+                    return (a + 2) * absT * absT * absT - (a + 3) * absT * absT + 1;
+                } else if (absT <= 2) {
+                    return a * absT * absT * absT - 5 * a * absT * absT + 8 * a * absT - 4 * a;
+                }
+                return 0;
+            }
+
+            getPixel(imageData, x, y) {
+                x = Math.max(0, Math.min(imageData.width - 1, x));
+                y = Math.max(0, Math.min(imageData.height - 1, y));
+
+                const index = (y * imageData.width + x) * 4;
+                return [
+                    imageData.data[index],
+                    imageData.data[index + 1],
+                    imageData.data[index + 2],
+                    imageData.data[index + 3]
+                ];
+            }
+
+            showPixelInfo(event) {
+                const rect = this.scaledCanvas.getBoundingClientRect();
+                const x = Math.floor((event.clientX - rect.left) * (this.scaledCanvas.width / rect.width));
+                const y = Math.floor((event.clientY - rect.top) * (this.scaledCanvas.height / rect.height));
+
+                if (x >= 0 && x < this.scaledCanvas.width && y >= 0 && y < this.scaledCanvas.height) {
+                    const imageData = this.scaledCtx.getImageData(x, y, 1, 1);
+                    const pixel = imageData.data;
+
+                    const r = pixel[0];
+                    const g = pixel[1];
+                    const b = pixel[2];
+                    const a = pixel[3];
+
+                    this.tooltip.innerHTML = `
+                        위치: (${x}, ${y})<br>
+                        RGB: (${r}, ${g}, ${b})<br>
+                        Alpha: ${a}
+                    `;
+
+                    this.tooltip.style.left = event.pageX + 10 + 'px';
+                    this.tooltip.style.top = event.pageY - 10 + 'px';
+                    this.tooltip.classList.add('show');
+                }
+            }
+
+            hideTooltip() {
+                this.tooltip.classList.remove('show');
+            }
+
+            calculateDisplaySize(width, height, maxSize) {
+                if (width <= maxSize && height <= maxSize) {
+                    return { width, height };
+                }
+
+                const ratio = Math.min(maxSize / width, maxSize / height);
+                return {
+                    width: Math.floor(width * ratio),
+                    height: Math.floor(height * ratio)
+                };
+            }
+
+            downloadUpscaledImage() {
+                const link = document.createElement('a');
+                link.href = this.scaledCanvas.toDataURL('image/png');
+                link.download = 'upscaled_image.png';
+                link.click();
+            }
+        }
+
+        // 앱 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            new ImageUpscaler();
+        });
+    </script>
+</body>
+
+</html>
