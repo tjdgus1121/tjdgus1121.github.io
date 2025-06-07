@@ -55,14 +55,22 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 20px;
-      background-color: #f5f5f5;
+      background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: dynamicBackgroundAnimation 20s ease-in-out infinite alternate;
     }
 
     h1 {
       text-align: center;
       color: #333;
       margin-bottom: 20px;
-      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-family: 'Do hyeon', cursive;
+      line-height: 0.5;
+      letter-spacing:1.5px;
     }
     .titleh3{
         color:rgb(77, 77, 77);
@@ -84,6 +92,7 @@
       gap: 20px;
       flex-wrap: wrap;
       justify-content: center;
+      align-items: center;
     }
 
     .upload-section {
@@ -101,8 +110,14 @@
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       flex: 1;
       min-width: 250px;
+      text-align: center;
     }
 
+    .upload-title{
+        font-size:20px;
+        color:navy;
+        font-family: "Noto Sans KR";
+    }
     .preview-container {
       position: relative;
       height: 150px;
@@ -120,14 +135,37 @@
       display: none;
     }
 
+    /* 실제 input[type="file"] 요소는 숨김 */
     input[type="file"] {
-      margin-top: 10px;
+      display: none;
+    }
+
+    /* 커스텀 파일 선택 버튼 (label) 스타일 */
+    .custom-file-upload-button {
+      display: inline-block; /* 버튼처럼 보이게 */
+      background-color: #4CAF50; /* 초록색 배경 */
+      color: white; /* 흰색 글자 */
+      padding: 8px 12px; /* 적절한 패딩 */
+      border-radius: 4px; /* 둥근 모서리 */
+      cursor: pointer; /* 클릭 가능한 커서 */
+      font-size: 14px; /* 글자 크기 */
+      border: none; /* 테두리 제거 */
+      transition: background-color 0.3s ease; /* 부드러운 호버 효과 */
+      margin-top: 10px; /* 미리보기 영역과의 간격 */
+      text-align: center; /* 텍스트 가운데 정렬 */
+    }
+
+    .custom-file-upload-button:hover {
+      background-color: #45a049; /* 호버 시 조금 더 어두운 초록색 */
     }
 
     .result-canvas {
-      width: 100%;
-      max-height: 200px;
+      width: 100%; /* 컨테이너 너비에 맞춤 */
+      height: auto; /* 높이 자동 조절 */
+      flex-grow: 1; /* 남은 공간을 차지하여 높이 확장 */
+      min-height: 250px; /* 최소 높이 설정 */
       background-color: #eee;
+      margin: auto;
     }
 
     .controls-section {
@@ -155,15 +193,17 @@
 
     .mode-button {
       padding: 8px 12px;
-      background-color: #f0f0f0;
+      background-color: #eeeeee; /* 기본 배경색 (매우 연한 회색) */
       border: 1px solid #ddd;
       border-radius: 4px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+      color: #333; /* 기본 글자색 */
+      font-weight: normal; /* 기본 폰트 굵기 */
     }
 
     .mode-button.active {
-      background-color: #4CAF50;
-      color: white;
+      /* 활성화된 버튼 스타일은 개별 ID에서 오버라이드 */
     }
 
     .slider-container {
@@ -210,6 +250,7 @@
       padding: 6px 10px;
       font-size: 14px;
       cursor: pointer;
+      transition: background-color 0.3s ease, opacity 0.3s ease;
     }
 
     .download-button {
@@ -220,6 +261,11 @@
       padding: 8px 15px;
       font-weight: bold;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .control-button:not([disabled]):hover, .resize-button:not([disabled]):hover, .download-button:not([disabled]):hover {
+      opacity: 0.85;
     }
 
     .matrix-wrapper {
@@ -231,13 +277,16 @@
       border-collapse: collapse;
       width: 100%;
       font-size: 12px;
+      table-layout: fixed;
     }
 
     .matrix-table td {
       border: 1px solid #ddd;
       text-align: center;
-      padding: 4px;
-      min-width: 30px;
+      padding: 0;
+      box-sizing: border-box;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
     .pixel-info {
@@ -256,6 +305,118 @@
         gap: 20px;
       }
     }
+
+    /* 로딩 인디케이터 스타일 추가 */
+    .loading-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loading-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto 10px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4CAF50;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .control-button[disabled], .resize-button[disabled] {
+      background-color: #cccccc; /* 회색 배경 */
+      cursor: not-allowed; /* 금지 커서 */
+      opacity: 0.6; /* 약간 투명하게 */
+    }
+
+    /* 결과 이미지 및 컨트롤 섹션 통합 스타일 */
+    .combined-result-controls {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      flex: 1.5; /* 너비 비율 2 차지 */
+      min-width: 200px; /* 최소 너비 설정 (필요시 조정) */
+      display: flex;
+      flex-direction: column; /* 결과 이미지와 컨트롤을 세로로 배치 */
+      gap: 10px; /* 내부 요소 간 간격 */
+      text-align: center; /* 내부 콘텐츠 가운데 정렬 */
+    }
+    
+    .combined-result-controls h3 {
+        margin-top: 0; /* 제목 위쪽 마진 제거 */
+        margin-bottom: 0; /* 제목 아래 간격 제거 (gap으로 대체) */
+    }
+
+    /* 개별 모드 버튼 색상 및 활성화/호버 스타일 */
+    #numberMode:not(.active) {
+        background-color: #ff9800; /* 숫자 모드 (주황색) */
+        color: white;
+    }
+
+    #colorMode:not(.active) {
+        background-color: #f44336; /* 컬러 모드 (붉은색) */
+        color: white;
+    }
+
+    #mixedMode:not(.active) {
+        background-color: #a5d6a7; /* 혼합 모드 (연한 초록색) */
+        color: #333; /* 글자색 어둡게 */
+    }
+
+    #numberMode.active,
+    #colorMode.active,
+    #mixedMode.active {
+        background-color: #4CAF50; /* 활성화된 버튼 (진한 초록색) */
+        color: white;
+        font-weight: bold;
+        border-color: #45a049; /* 테두리 색상 */
+    }
+
+    .mode-button:not([disabled]):hover {
+        opacity: 0.9; /* 호버 시 약간 투명 */
+    }
+
+    .combined-result-controls .controls-content {
+        width: 100%; /* 부모 (.combined-result-controls) 너비에 맞춤 */
+    }
+
+    /* 픽셀 밝기값 행렬 제목 글자 크기 */
+    .matrix-title {
+        font-size: 24px; /* 기본 크기 + 8px 정도 */
+    }
+
+    /* 확대/축소 및 셀 크기 조절 버튼 색상 */
+    #zoomIn,
+    #increaseSize {
+        background-color: #2196f3; /* 하늘색 계열 */
+    }
+
+    #zoomOut,
+    #decreaseSize {
+        background-color: #ff9800; /* 주황색 계열 */
+    }
+
     </style>
 </head>
 
@@ -263,6 +424,14 @@
     <h1>이미지 블렌딩 행렬 시각화</h1>
     <h3 class="titleh3">사진을 업로드하면, 이미지를 동일한 사이즈로 렌더링 한 후 흑백사진으로 변환하여 이미지를 합성합니다.<br>오른쪽의 스크롤을 조절하며 행렬데이터가 어떻게 변하는지 살펴보세요.</h3>
     <div class="container">
+        <!-- 로딩 인디케이터 추가 -->
+        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loadingMessage">이미지 처리 중...</p>
+            </div>
+        </div>
+        
         <!-- 상단 섹션: 이미지 업로드, 결과 이미지, 컨트롤 -->
         <div class="top-section">
             <!-- 이미지 업로드 섹션 -->
@@ -271,8 +440,9 @@
                     <h3 class="upload-title">이미지 1</h3>
                     <div class="preview-container" id="preview1">
                         <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
-                        <img class="preview-image" id="previewImage1">
+                        <img class="preview-image" id="previewImage1" alt="업로드된 이미지 1 미리보기">
                     </div>
+                    <label for="imageInput1" class="custom-file-upload-button">파일 선택</label>
                     <input type="file" id="imageInput1" accept="image/*" title="첫 번째 이미지 업로드">
                 </div>
 
@@ -280,27 +450,24 @@
                     <h3 class="upload-title">이미지 2</h3>
                     <div class="preview-container" id="preview2">
                         <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
-                        <img class="preview-image" id="previewImage2">
+                        <img class="preview-image" id="previewImage2" alt="업로드된 이미지 2 미리보기">
                     </div>
+                    <label for="imageInput2" class="custom-file-upload-button">파일 선택</label>
                     <input type="file" id="imageInput2" accept="image/*" title="두 번째 이미지 업로드">
                 </div>
             </div>
 
-            <!-- 결과 이미지 섹션 -->
-            <div class="result-image-container">
+            <!-- 결과 이미지 및 컨트롤 섹션 통합 -->
+            <div class="combined-result-controls">
                 <h3>결과 이미지</h3>
                 <canvas id="resultCanvas" class="result-canvas"></canvas>
-            </div>
-
-            <!-- 컨트롤 섹션 -->
-            <div class="controls-section">
-                <div>
+                <div class="controls-content">
                     <div class="options-container">
                         <div>
                             <label for="widthInput">너비: </label>
-                            <input type="number" id="widthInput" class="size-input" value="20" min="5" max="100">
+                            <input type="number" id="widthInput" class="size-input" value="40" min="5" max="100">
                             <label for="heightInput">높이: </label>
-                            <input type="number" id="heightInput" class="size-input" value="20" min="5" max="100">
+                            <input type="number" id="heightInput" class="size-input" value="40" min="5" max="100">
                             <button id="resizeButton" class="resize-button">크기 적용</button>
                         </div>
 
@@ -314,7 +481,7 @@
                     <div class="slider-container">
                         <label for="blendSlider">혼합 비율: </label>
                         <span id="sliderValue" class="slider-value">50%</span>
-                        <input type="range" id="blendSlider" class="slider" min="0" max="100" value="50">
+                        <input type="range" id="blendSlider" class="slider" min="0" max="100" value="50" step="5">
                     </div>
                 </div>
             </div>
@@ -334,7 +501,7 @@
 
                     <div class="zoom-control">
                         <button id="decreaseSize" class="control-button">-</button>
-                        <span>셀 크기: <span id="cellSizeValue">36</span>px</span>
+                        <span>셀 크기: <span id="cellSizeValue">24</span>px</span>
                         <button id="increaseSize" class="control-button">+</button>
                     </div>
 
@@ -379,474 +546,7 @@
 
     </footer>
     
-    <script>
-        // 전역 변수 설정
-        const state = {
-            image1: null,
-            image2: null,
-            grayImage1: [],
-            grayImage2: [],
-            resultImage: [],
-            width: 20,
-            height: 20,
-            mode: 'mixed', // 'number', 'color', 'mixed'
-            blendRatio: 0.5,
-            cellSize: 36, // 셀 크기 기본값 (픽셀)
-            zoomLevel: 1 // 확대/축소 수준 (1 = 100%)
-        };
-
-        // DOM 요소 초기화
-        document.addEventListener('DOMContentLoaded', function () {
-            // 이미지 업로드 관련 요소
-            const imageInput1 = document.getElementById('imageInput1');
-            const imageInput2 = document.getElementById('imageInput2');
-            const previewImage1 = document.getElementById('previewImage1');
-            const previewImage2 = document.getElementById('previewImage2');
-
-            // 컨트롤 관련 요소
-            const blendSlider = document.getElementById('blendSlider');
-            const sliderValue = document.getElementById('sliderValue');
-            const widthInput = document.getElementById('widthInput');
-            const heightInput = document.getElementById('heightInput');
-            const resizeButton = document.getElementById('resizeButton');
-
-            // 모드 버튼
-            const numberMode = document.getElementById('numberMode');
-            const colorMode = document.getElementById('colorMode');
-            const mixedMode = document.getElementById('mixedMode');
-
-            // 결과 관련 요소
-            const resultCanvas = document.getElementById('resultCanvas');
-            const matrixTable = document.getElementById('matrixTable');
-            const matrixContainer = document.getElementById('matrixContainer');
-            const pixelInfo = document.getElementById('pixelInfo');
-            const downloadCSV = document.getElementById('downloadCSV');
-
-            // 셀 크기 조절 요소
-            const increaseSize = document.getElementById('increaseSize');
-            const decreaseSize = document.getElementById('decreaseSize');
-            const cellSizeValue = document.getElementById('cellSizeValue');
-
-            // 확대/축소 조절 요소
-            const zoomIn = document.getElementById('zoomIn');
-            const zoomOut = document.getElementById('zoomOut');
-            const zoomValue = document.getElementById('zoomValue');
-
-            // 이벤트 리스너 등록
-            imageInput1.addEventListener('change', (e) => handleImageUpload(e, 1));
-            imageInput2.addEventListener('change', (e) => handleImageUpload(e, 2));
-
-            blendSlider.addEventListener('input', handleSliderChange);
-            resizeButton.addEventListener('click', applyResize);
-
-            numberMode.addEventListener('click', () => setDisplayMode('number'));
-            colorMode.addEventListener('click', () => setDisplayMode('color'));
-            mixedMode.addEventListener('click', () => setDisplayMode('mixed'));
-
-            downloadCSV.addEventListener('click', downloadMatrixAsCSV);
-
-            // 셀 크기 조절 이벤트
-            increaseSize.addEventListener('click', () => {
-                if (state.cellSize < 100) {
-                    state.cellSize += 4;
-                    cellSizeValue.textContent = state.cellSize;
-                    updateMatrixDisplay();
-                }
-            });
-
-            decreaseSize.addEventListener('click', () => {
-                if (state.cellSize > 20) {
-                    state.cellSize -= 4;
-                    cellSizeValue.textContent = state.cellSize;
-                    updateMatrixDisplay();
-                }
-            });
-
-            // 확대/축소 이벤트
-            zoomIn.addEventListener('click', () => {
-                if (state.zoomLevel < 2) {
-                    state.zoomLevel += 0.1;
-                    updateZoom();
-                }
-            });
-
-            zoomOut.addEventListener('click', () => {
-                if (state.zoomLevel > 0.1) {
-                    state.zoomLevel -= 0.1;
-                    updateZoom();
-                }
-            });
-
-            // 드래그 앤 드롭 이벤트 설정
-            setupDragDrop('preview1', 1);
-            setupDragDrop('preview2', 2);
-
-            // 초기 너비/높이 값 적용
-            state.width = parseInt(widthInput.value);
-            state.height = parseInt(heightInput.value);
-
-            // 캔버스 초기화
-            initializeCanvas();
-        });
-
-        // 확대/축소 업데이트 함수
-        function updateZoom() {
-            const matrixContainer = document.getElementById('matrixContainer');
-            const zoomValue = document.getElementById('zoomValue');
-
-            matrixContainer.style.transform = `scale(${state.zoomLevel})`;
-            zoomValue.textContent = `${Math.round(state.zoomLevel * 100)}%`;
-        }
-
-        // 드래그 앤 드롭 설정 함수
-        function setupDragDrop(previewId, imageNumber) {
-            const previewContainer = document.getElementById(previewId);
-
-            previewContainer.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                previewContainer.style.borderColor = '#4CAF50';
-            });
-
-            previewContainer.addEventListener('dragleave', () => {
-                previewContainer.style.borderColor = '#ccc';
-            });
-
-            previewContainer.addEventListener('drop', (e) => {
-                e.preventDefault();
-                previewContainer.style.borderColor = '#ccc';
-
-                if (e.dataTransfer.files.length) {
-                    const file = e.dataTransfer.files[0];
-                    if (file.type.match('image.*')) {
-                        const reader = new FileReader();
-
-                        reader.onload = function (e) {
-                            const img = new Image();
-                            img.onload = function () {
-                                if (imageNumber === 1) {
-                                    state.image1 = img;
-                                } else {
-                                    state.image2 = img;
-                                }
-
-                                // 미리보기 이미지 표시
-                                const previewImage = document.getElementById(`previewImage${imageNumber}`);
-                                previewImage.src = e.target.result;
-                                previewImage.style.display = 'block';
-
-                                // 드롭 텍스트 숨기기
-                                const dropText = previewContainer.querySelector('.drop-text');
-                                dropText.style.display = 'none';
-
-                                // 이미지 처리
-                                processImages();
-                            };
-                            img.src = e.target.result;
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                }
-            });
-        }
-
-        // 이미지 업로드 처리 함수
-        function handleImageUpload(event, imageNumber) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-
-            reader.onload = function (e) {
-                const img = new Image();
-                img.onload = function () {
-                    if (imageNumber === 1) {
-                        state.image1 = img;
-                    } else {
-                        state.image2 = img;
-                    }
-
-                    // 미리보기 이미지 표시
-                    const previewImage = document.getElementById(`previewImage${imageNumber}`);
-                    previewImage.src = e.target.result;
-                    previewImage.style.display = 'block';
-
-                    // 드롭 텍스트 숨기기
-                    const previewContainer = document.getElementById(`preview${imageNumber}`);
-                    const dropText = previewContainer.querySelector('.drop-text');
-                    dropText.style.display = 'none';
-
-                    // 이미지 처리
-                    processImages();
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // 슬라이더 변경 처리 함수
-        function handleSliderChange(event) {
-            const value = event.target.value;
-            state.blendRatio = value / 100;
-
-            // 슬라이더 값 표시 업데이트
-            document.getElementById('sliderValue').textContent = value + '%';
-
-            // 이미지 처리
-            blendImages();
-            updateResultsDisplay();
-        }
-
-        // 리사이즈 적용 함수
-        function applyResize() {
-            const widthInput = document.getElementById('widthInput');
-            const heightInput = document.getElementById('heightInput');
-
-            state.width = parseInt(widthInput.value);
-            state.height = parseInt(heightInput.value);
-
-            // 캔버스 크기 조정
-            initializeCanvas();
-
-            // 이미지 처리
-            processImages();
-        }
-
-        // 디스플레이 모드 설정 함수
-        function setDisplayMode(mode) {
-            state.mode = mode;
-
-            // 모드 버튼 활성화 상태 업데이트
-            document.getElementById('numberMode').classList.remove('active');
-            document.getElementById('colorMode').classList.remove('active');
-            document.getElementById('mixedMode').classList.remove('active');
-
-            document.getElementById(`${mode}Mode`).classList.add('active');
-
-            // 행렬 표시 업데이트
-            updateMatrixDisplay();
-        }
-
-        // 캔버스 초기화 함수
-        function initializeCanvas() {
-            const resultCanvas = document.getElementById('resultCanvas');
-            const ctx = resultCanvas.getContext('2d');
-
-            resultCanvas.width = state.width;
-            resultCanvas.height = state.height;
-
-            // 캔버스 초기화 (검은색)
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, state.width, state.height);
-        }
-
-        // 이미지 처리 메인 함수
-        function processImages() {
-            if (!state.image1 || !state.image2) return;
-
-            // 이미지를 그레이스케일로 변환
-            state.grayImage1 = convertToGrayscale(state.image1);
-            state.grayImage2 = convertToGrayscale(state.image2);
-
-            // 이미지 혼합
-            blendImages();
-
-            // 결과 표시 업데이트
-            updateResultsDisplay();
-        }
-
-        // 그레이스케일 변환 함수
-        function convertToGrayscale(image) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            // 캔버스 크기 설정
-            canvas.width = state.width;
-            canvas.height = state.height;
-
-            // 이미지를 캔버스 크기에 맞게 그리기
-            ctx.drawImage(image, 0, 0, state.width, state.height);
-
-            // 픽셀 데이터 가져오기
-            const imageData = ctx.getImageData(0, 0, state.width, state.height);
-            const pixels = imageData.data;
-
-            // 그레이스케일 행렬 생성
-            const grayMatrix = Array(state.height).fill().map(() => Array(state.width).fill(0));
-
-            // 픽셀 단위로 그레이스케일 변환
-            for (let y = 0; y < state.height; y++) {
-                for (let x = 0; x < state.width; x++) {
-                    const i = (y * state.width + x) * 4;
-
-                    // 그레이스케일 변환 공식: gray = 0.299*R + 0.587*G + 0.114*B
-                    const gray = Math.round(
-                        0.299 * pixels[i] +      // R
-                        0.587 * pixels[i + 1] +  // G
-                        0.114 * pixels[i + 2]    // B
-                    );
-
-                    grayMatrix[y][x] = gray;
-
-                    // 그레이스케일 값으로 픽셀 업데이트
-                    pixels[i] = pixels[i + 1] = pixels[i + 2] = gray;
-                }
-            }
-
-            // 업데이트된 이미지 데이터를 캔버스에 그리기
-            ctx.putImageData(imageData, 0, 0);
-
-            return grayMatrix;
-        }
-
-        // 이미지 혼합 함수
-        function blendImages() {
-            if (!state.grayImage1.length || !state.grayImage2.length) return;
-
-            const alpha = state.blendRatio;
-
-            // 결과 행렬 초기화
-            state.resultImage = Array(state.height).fill().map(() => Array(state.width).fill(0));
-
-            // 픽셀 단위로 혼합
-            for (let y = 0; y < state.height; y++) {
-                for (let x = 0; x < state.width; x++) {
-                    // 혼합 공식: result = alpha * img1 + (1 - alpha) * img2
-                    state.resultImage[y][x] = Math.round(
-                        alpha * state.grayImage1[y][x] +
-                        (1 - alpha) * state.grayImage2[y][x]
-                    );
-                }
-            }
-        }
-
-        // 결과 표시 업데이트 함수
-        function updateResultsDisplay() {
-            // 결과 이미지 업데이트
-            updateResultImage();
-
-            // 행렬 표시 업데이트
-            updateMatrixDisplay();
-        }
-
-        // 결과 이미지 업데이트 함수
-        function updateResultImage() {
-            if (!state.resultImage.length) return;
-
-            const resultCanvas = document.getElementById('resultCanvas');
-            const ctx = resultCanvas.getContext('2d');
-
-            // 이미지 데이터 생성
-            const imageData = ctx.createImageData(state.width, state.height);
-            const pixels = imageData.data;
-
-            // 픽셀 데이터 설정
-            for (let y = 0; y < state.height; y++) {
-                for (let x = 0; x < state.width; x++) {
-                    const i = (y * state.width + x) * 4;
-                    const gray = state.resultImage[y][x];
-
-                    pixels[i] = pixels[i + 1] = pixels[i + 2] = gray;
-                    pixels[i + 3] = 255; // 알파 채널 (불투명)
-                }
-            }
-
-            // 이미지 데이터를 캔버스에 그리기
-            ctx.putImageData(imageData, 0, 0);
-        }
-
-        // 행렬 표시 업데이트 함수
-        function updateMatrixDisplay() {
-            if (!state.resultImage.length) return;
-
-            const matrixTable = document.getElementById('matrixTable');
-
-            // 테이블 초기화
-            matrixTable.innerHTML = '';
-
-            // 행렬 데이터로 테이블 생성
-            for (let y = 0; y < state.height; y++) {
-                const row = document.createElement('tr');
-
-                for (let x = 0; x < state.width; x++) {
-                    const cell = document.createElement('td');
-                    const gray = state.resultImage[y][x];
-
-                    // 셀 크기 설정
-                    cell.style.width = `${state.cellSize}px`;
-                    cell.style.height = `${state.cellSize}px`;
-
-                    // 셀 내용 설정 (모드에 따라)
-                    if (state.mode === 'number' || state.mode === 'mixed') {
-                        cell.textContent = gray;
-                    }
-
-                    // 셀 배경색 설정 (모드에 따라)
-                    if (state.mode === 'color' || state.mode === 'mixed') {
-                        cell.style.backgroundColor = `rgb(${gray}, ${gray}, ${gray})`;
-
-                        // 밝기에 따라 텍스트 색상 조정 (가독성 향상)
-                        if (gray < 128) {
-                            cell.style.color = 'white';
-                        } else {
-                            cell.style.color = 'black';
-                        }
-                    }
-
-                    // 폰트 크기 조정 (셀 크기에 비례)
-                    const fontSize = Math.max(10, Math.min(16, state.cellSize / 3));
-                    cell.style.fontSize = `${fontSize}px`;
-
-                    // 셀 클릭 이벤트 추가
-                    cell.dataset.x = x;
-                    cell.dataset.y = y;
-                    cell.dataset.value = gray;
-                    cell.addEventListener('click', showPixelInfo);
-
-                    row.appendChild(cell);
-                }
-
-                matrixTable.appendChild(row);
-            }
-        }
-
-        // 픽셀 정보 표시 함수
-        function showPixelInfo(event) {
-            const cell = event.target;
-            const x = cell.dataset.x;
-            const y = cell.dataset.y;
-            const value = cell.dataset.value;
-
-            const pixelInfo = document.getElementById('pixelInfo');
-            pixelInfo.textContent = `좌표: (${x}, ${y}), 밝기값: ${value}`;
-        }
-
-        // CSV 다운로드 함수
-        function downloadMatrixAsCSV() {
-            if (!state.resultImage.length) return;
-
-            // CSV 데이터 생성
-            let csvContent = '';
-
-            // 행렬 데이터를 CSV 형식으로 변환
-            for (let y = 0; y < state.height; y++) {
-                const row = state.resultImage[y].join(',');
-                csvContent += row + '\n';
-            }
-
-            // CSV 파일 다운로드
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'image_matrix.csv');
-            link.style.visibility = 'hidden';
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    </script>
+    <script src="activity6_script.js" defer></script>
 </body>
 
 </html>

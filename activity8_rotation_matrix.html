@@ -54,35 +54,99 @@
     <link rel="stylesheet" href="stylefooter.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans KR', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
-            max-width: 1200px;
-            margin: 0 auto;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.5) 1px, transparent 1px);
+            background-size: 20px 20px;
+            padding: 20px;
         }
 
         .container {
+            text-align: center;
+            background: linear-gradient(-45deg,
+                rgba(224, 230, 255, 0.4),
+                rgba(192, 224, 255, 0.4),
+                rgba(216, 240, 240, 0.5),
+                rgba(224, 255, 255, 0.6));
+            background-size: 300% 300%;
+            animation: gradient-shift 8s ease infinite;
+            padding: 2rem;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            font-size: 3rem;
+            width: 100%;
+            text-align: center;
+            font-family: 'Do Hyeon', sans-serif;
+            line-height: 1.3;
+            letter-spacing: 0.05em;
+        }
+
+        h3 {
+            color: #34495e;
+            margin: 1rem 0;
+            font-size: 1.3rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .notification {
+            padding: 10px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: none;
+            width: 100%;
+            text-align: center;
         }
 
         .coordinate-system {
-            border: 1px solid #ccc;
-            position: relative;
             width: 600px;
             height: 600px;
-            background: repeating-linear-gradient(#f5f5f5 0,
-                    #f5f5f5 1px,
-                    transparent 1px,
-                    transparent 30px),
-                repeating-linear-gradient(90deg,
-                    #f5f5f5 0,
-                    #f5f5f5 1px,
-                    transparent 1px,
-                    transparent 30px);
+            max-width: 100%;
+            aspect-ratio: 1 / 1;
+            background: white;
+            border: 1px solid #ccc;
+            position: relative;
+            flex-shrink: 0;
+            flex-grow: 0;
         }
 
         #coordinate-plane {
@@ -97,41 +161,72 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
         }
 
         .angle-inputs {
             display: flex;
-            gap: 10px;
-            align-items: flex-end;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .angle-inputs input {
-            width: 80px;
-            padding: 8px;
+        .angle-inputs>div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .angle-inputs input[type="number"] {
+            width: 100px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
         }
 
         button {
-            padding: 10px;
-            background-color: #4CAF50;
+            padding: 12px 20px;
+            background-color: #3498db;
+            /* Blue color */
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: #2980b9;
+            transform: translateY(-2px);
         }
 
-        .math-area {
-            margin-top: 20px;
+        button:active {
+            transform: translateY(0);
+        }
+
+        #clear-btn {
+            background-color: #e74c3c;
+            /* Red color */
+        }
+
+        #clear-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .math-area,
+        .vector-info {
+            margin-top: 0;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -142,59 +237,93 @@
             border-collapse: collapse;
             width: 100%;
             margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            /* Ensure rounded corners apply to children */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         table th,
         table td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px;
             text-align: center;
         }
 
         table th {
             background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #fefefe;
+        }
+
+        table tbody tr:hover {
+            background-color: #e9e9e9;
         }
 
         .vector-info {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            align-items: center;
+            text-align: center;
         }
 
         .vector-item {
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .vector-color {
             width: 20px;
             height: 20px;
             border-radius: 50%;
+            flex-shrink: 0;
         }
 
         .axis-label {
             position: absolute;
             font-size: 12px;
             font-weight: bold;
+            color: #333; /* Ensure axis labels are visible on white background */
         }
 
-        #clear-btn {
-            background-color: #f44336;
-        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
 
-        #clear-btn:hover {
-            background-color: #d32f2f;
-        }
+            .coordinate-system {
+                width: 100%;
+                /* Make it fluid on small screens */
+                height: auto;
+            }
 
-        .notification {
-            padding: 10px;
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            display: none;
+            .controls {
+                width: 100%;
+                min-width: auto;
+            }
+
+            .angle-inputs {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .angle-inputs>div {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .angle-inputs input[type="number"] {
+                width: 150px;
+                /* Adjust width for better mobile input */
+            }
         }
     </style>
 </head>
@@ -226,6 +355,10 @@
                         <label>라디안(rad)</label>
                     </div>
                 </div>
+            </div>
+            <div style="margin-bottom:10px; text-align:left;">
+                <input type="checkbox" id="snap-to-grid" checked>
+                <label for="snap-to-grid">격자점에 맞추기</label>
             </div>
 
             <button id="rotate-btn">회전 실행</button>
@@ -317,8 +450,11 @@
         // Initialize the canvas
         function initCanvas() {
             // Set canvas size to match its container
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            // Set canvas size to be a square based on the parent's width
+            const parentWidth = canvas.parentElement.clientWidth;
+
+            canvas.width = parentWidth;
+            canvas.height = parentWidth; // Ensure height is equal to width
 
             // Calculate the center of the canvas
             offsetX = canvas.width / 2;
@@ -610,7 +746,13 @@ ${lastVector.matrix[1][0].toFixed(4)} & ${lastVector.matrix[1][1].toFixed(4)} \\
             const canvasX = event.clientX - rect.left;
             const canvasY = event.clientY - rect.top;
 
-            const coords = canvasToCoords(canvasX, canvasY);
+            let coords = canvasToCoords(canvasX, canvasY);
+
+            // 격자점에 맞추기 체크박스가 체크되어 있으면 정수로 반올림
+            if (document.getElementById('snap-to-grid').checked) {
+                coords.x = Math.round(coords.x);
+                coords.y = Math.round(coords.y);
+            }
 
             // 이미 벡터가 있는지 확인
             if (vectors.length > 0) {
