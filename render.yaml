@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: real-esrgan-app
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install torch==2.0.0 torchvision==0.15.0 --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple
+      pip install basicsr==1.3.5 numpy==1.22.4
+      pip install -r requirements1.txt
+      mkdir -p weights
+      curl -L -o weights/RealESRGAN_x4plus.pth https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
+    startCommand: python interpolation_app.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
