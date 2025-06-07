@@ -3,7 +3,7 @@ import base64
 import io
 from PIL import Image
 import torch
-# from basicsr.archs.rrdbnet_arch import RRDBNet
+from basicsr.archs.rrdbnet_arch import RRDBNet
 # from basicsr.utils.download_util import load_file_from_url
 # from basicsr.utils.registry import ARCH_REGISTRY
 from flask_cors import CORS
@@ -13,17 +13,15 @@ import numpy as np
 app = Flask(__name__)
 CORS(app)
 
-# ESRGAN 모델 로드 (PyTorch Hub 사용)
-# RealESRGAN_x4plus 모델을 xinnntao/Real-ESRGAN 레포지토리에서 로드합니다.
-# 이 과정에서 필요한 종속성(torchvision 등)이 자동으로 처리될 수 있습니다.
+# ESRGAN 모델 로드 (로컬 파일 사용)
 try:
-    model = torch.hub.load('xinnntao/Real-ESRGAN', 'realesrgan', model_name='RealESRGAN_x4plus', pretrained=True, trust_repo=True)
+    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32)
+    model_path = 'weights/RealESRGAN_x4plus.pth' # 로컬 모델 파일 경로
+    model.load_state_dict(torch.load(model_path, map_location='cpu'))
     model.eval()
-    print("Real-ESRGAN 모델이 PyTorch Hub를 통해 성공적으로 로드되었습니다.")
+    print("Real-ESRGAN 모델이 로컬 파일에서 성공적으로 로드되었습니다.")
 except Exception as e:
     print(f"Real-ESRGAN 모델 로드 중 오류 발생: {e}")
-    # 모델 로드 실패 시 앱을 계속 실행하지 않도록 처리하거나, 더미 모델을 설정할 수 있습니다.
-    # 여기서는 오류 메시지를 출력하고 앱을 계속 실행하여 엔드포인트에서 오류를 반환하도록 합니다.
     model = None # 모델 로드 실패 시 None으로 설정
 
 @app.route('/ping', methods=['GET'])
