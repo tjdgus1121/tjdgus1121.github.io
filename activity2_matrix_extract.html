@@ -53,7 +53,7 @@
     <link rel="stylesheet" href="stylefooter.css">
     <style>
         body {
-            font-family: 'DO Hyeon', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Noto Sans KR', sans-serif;
             line-height: 1.6;
             margin: 0;
             padding: 0;
@@ -62,7 +62,7 @@
             height: 100vh;
             width: 100vw;
             box-sizing: border-box;
-            overflow-x: hidden;
+            overflow-x: auto;
         }
         
         .container {
@@ -77,14 +77,16 @@
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: auto;
         }
         
         h1 {
             text-align: center;
             color: #333;
             margin-bottom: 1rem;
-            font-size: clamp(1.7rem, 4vw, 2.8rem);
+            font-size: clamp(1.95rem, 4.6vw, 3.22rem);
+            font-weight: 300;
+            font-family: 'Do Hyeon', sans-serif;
         }
         
         .upload-section {
@@ -105,19 +107,96 @@
         }
         
         .upload-btn {
-            background-color: #4CAF50;
+            background-color: #03C75A; /* Naver Green */
             color: white;
             padding: 0.5rem 1rem;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: clamp(0.8rem, 1.2vw, 1rem);
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             white-space: nowrap;
         }
         
         .upload-btn:hover {
-            background-color: #45a049;
+            background-color: #02B851; /* Darker Naver Green on hover */
+            transform: scale(1.1);
+        }
+
+        /* 개별 버튼 스타일 */
+        #color-mode-btn {
+            background-color: #2196F3; /* Blue */
+            transition: all 0.3s ease;
+        }
+        #color-mode-btn:hover {
+            background-color: #1976D2;
+            transform: scale(1.1);
+        }
+        #color-mode-btn.active {
+            background-color: #1565C0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+            font-weight: bold;
+            transform: scale(1.05); /* Slightly scale up when active */
+        }
+        #color-mode-btn.active:hover {
+            background-color: #0D47A1;
+        }
+
+        #numbers-mode-btn {
+            background-color: #F44336; /* Red */
+        }
+        #numbers-mode-btn:hover {
+            background-color: #D32F2F;
+        }
+        #numbers-mode-btn.active {
+            background-color: #C62828;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+            font-weight: bold;
+            transform: scale(1.05); /* Slightly scale up when active */
+        }
+        #numbers-mode-btn.active:hover {
+            background-color: #B71C1C;
+        }
+
+        #mixed-mode-btn {
+            background-color: #4CAF50; /* Green */
+        }
+        #mixed-mode-btn:hover {
+            background-color: #43A047;
+        }
+        #mixed-mode-btn.active {
+            background-color: #388E3C;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+            font-weight: bold;
+            transform: scale(1.05); /* Slightly scale up when active */
+        }
+        #mixed-mode-btn.active:hover {
+            background-color: #2E7D32;
+        }
+
+        #toggle-compact-btn {
+            background-color: #9C27B0; /* Purple */
+        }
+        #toggle-compact-btn:hover {
+            background-color: #8E24AA;
+        }
+        #toggle-compact-btn.active {
+            background-color: #7B1FA2;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+            font-weight: bold;
+            transform: scale(1.05); /* Slightly scale up when active */
+        }
+        #toggle-compact-btn.active:hover {
+            background-color: #6A1B9A;
+        }
+
+        #export-btn {
+            background-color: #607D8B; /* Blue Gray */
+            transition: all 0.3s ease;
+        }
+        #export-btn:hover {
+            background-color: #546E7A;
+            transform: scale(1.1);
         }
         
         .output-section {
@@ -126,7 +205,7 @@
             gap: 1rem;
             flex-grow: 1;
             height: calc(100% - 150px);
-            overflow: hidden;
+            overflow: visible;
         }
         
         .image-preview-container {
@@ -138,7 +217,7 @@
         }
         
         .matrix-container {
-            overflow: hidden;
+            overflow: visible;
             border: 1px solid #ddd;
             border-radius: 4px;
             padding: 1rem;
@@ -147,6 +226,8 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 0;
         }
         
         .image-preview {
@@ -165,7 +246,8 @@
         }
         
         .matrix-table-container {
-            overflow: auto;
+            overflow-x: auto;
+            overflow-y: auto;
             flex-grow: 1;
             max-height: calc(100% - 80px);
             border: 1px solid #e0e0e0;
@@ -178,8 +260,9 @@
             font-family: monospace;
             font-size: clamp(0.6rem, 1vw, 0.8rem);
             margin: 0 auto;
-            table-layout: fixed;
-            width: auto;
+            table-layout: auto;
+            width: max-content;
+            display: block;
         }
         
         .matrix-table td {
@@ -189,7 +272,7 @@
             position: relative;
             min-width: 28px;
             height: 28px;
-            overflow: hidden;
+            white-space: nowrap;
         }
         
         .matrix-table td:hover {
@@ -355,11 +438,33 @@
             justify-content: center;
             font-size: 1.2rem;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
         }
         
         .zoom-btn:hover {
             background-color: #303f9f;
+            transform: scale(1.1);
+        }
+        
+        /* 확대/축소 버튼 개별 스타일 */
+        #zoom-out-btn {
+            background-color: #ff9800; /* 주황색 */
+            transition: all 0.3s ease;
+        }
+        
+        #zoom-out-btn:hover {
+            background-color: #f57c00; /* 진한 주황색 */
+            transform: scale(1.1);
+        }
+        
+        #zoom-in-btn {
+            background-color: #03a9f4; /* 하늘색 */
+            transition: all 0.3s ease;
+        }
+        
+        #zoom-in-btn:hover {
+            background-color: #0288d1; /* 진한 하늘색 */
+            transform: scale(1.1);
         }
         
         .zoom-level {
@@ -650,23 +755,26 @@
             
             // 활성화된 버튼 강조 표시
             function highlightActiveButton() {
-                // 명확한 활성화 상태 표시를 위해 스타일 변경
-                [colorModeBtn, numbersModeBtn, mixedModeBtn].forEach(btn => {
-                    btn.style.opacity = '0.7';
-                    btn.style.fontWeight = 'normal';
+                // 모든 모드 버튼에서 'active' 클래스 제거
+                [colorModeBtn, numbersModeBtn, mixedModeBtn, toggleCompactBtn, exportBtn].forEach(btn => {
+                    btn.classList.remove('active');
                 });
                 
-                // 활성화된 버튼 강조
+                // 현재 활성화된 모드 버튼에 'active' 클래스 추가
                 if (displayMode === 'color') {
-                    colorModeBtn.style.opacity = '1';
-                    colorModeBtn.style.fontWeight = 'bold';
+                    colorModeBtn.classList.add('active');
                 } else if (displayMode === 'numbers') {
-                    numbersModeBtn.style.opacity = '1';
-                    numbersModeBtn.style.fontWeight = 'bold';
+                    numbersModeBtn.classList.add('active');
                 } else if (displayMode === 'mixed') {
-                    mixedModeBtn.style.opacity = '1';
-                    mixedModeBtn.style.fontWeight = 'bold';
+                    mixedModeBtn.classList.add('active');
                 }
+
+                // 컴팩트 보기 버튼의 활성화/비활성화 상태도 처리
+                if (compactView) {
+                    toggleCompactBtn.classList.add('active');
+                }
+                // exportBtn은 항상 비활성화 상태
+                exportBtn.classList.remove('active');
             }
             
             // 매트릭스 디스플레이 모드 업데이트
