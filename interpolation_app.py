@@ -17,7 +17,7 @@ CORS(app)
 # RealESRGAN_x4plus 모델을 xinnntao/Real-ESRGAN 레포지토리에서 로드합니다.
 # 이 과정에서 필요한 종속성(torchvision 등)이 자동으로 처리될 수 있습니다.
 try:
-    model = torch.hub.load('xinnntao/Real-ESRGAN', 'realesrgan', model_name='RealESRGAN_x4plus', pretrained=True)
+    model = torch.hub.load('xinnntao/Real-ESRGAN', 'realesrgan', model_name='RealESRGAN_x4plus', pretrained=True, trust_repo=True)
     model.eval()
     print("Real-ESRGAN 모델이 PyTorch Hub를 통해 성공적으로 로드되었습니다.")
 except Exception as e:
