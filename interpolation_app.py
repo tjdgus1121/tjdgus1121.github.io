@@ -1,12 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import base64
 import io
 from PIL import Image
 import torch
 from basicsr.archs.rrdbnet_arch import RRDBNet
-# from basicsr.utils.download_util import load_file_from_url
-# from basicsr.utils.registry import ARCH_REGISTRY
-from flask_cors import CORS
 import os
 import numpy as np
 
