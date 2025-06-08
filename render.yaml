@@ -4,14 +4,8 @@ services:
     runtime: python
     region: oregon
     plan: free
-    buildCommand: |
-      touch requirements.txt
-      pip install -r requirements1.txt
-      pip install torch==2.0.0 torchvision==0.15.0 --index-url https://download.pytorch.org/whl/cpu
-      pip install basicsr==1.3.5 numpy==1.22.4 --extra-index-url https://pypi.org/simple
-      mkdir -p weights
-      curl -L -o weights/RealESRGAN_x4plus.pth https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
-    startCommand: python3 -m gunicorn interpolation_app:app --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn interpolation_app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11
