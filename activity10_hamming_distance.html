@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- 🔍 SEO (검색엔진 최적화) -->
     <title>손글씨 숫자 to 28x28 행렬 변환기</title>
     <meta name="description" content="손글씨로 그린 숫자를 28x28 행렬로 변환하여 MNIST 데이터셋 형식으로 확인할 수 있는 웹 도구입니다.">
@@ -36,10 +37,16 @@
     <meta name="url" content="https://tjdgus1121.github.io/activity10_hamming_distance.html">
 
     <!-- 📎 스타일 및 폰트 -->
+    <link rel="stylesheet" href="stylefooter.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <style>
@@ -50,34 +57,40 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
             background: white;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             text-align: center;
             color: #333;
             margin-bottom: 30px;
             font-family: "Do Hyeon";
             font-weight: 300;
-            font-size:3em;
+            font-size: 3em;
         }
+
         .canvas-section {
             text-align: center;
             margin-bottom: 30px;
         }
+
         #drawingCanvas {
             border: 2px solid #333;
             cursor: crosshair;
             background-color: white;
             border-radius: 5px;
         }
+
         .controls {
             margin: 20px 0;
             text-align: center;
         }
+
         button {
             background-color: #4CAF50;
             color: white;
@@ -89,22 +102,28 @@
             font-size: 16px;
             transition: background-color 0.3s;
         }
+
         button:hover {
             background-color: #45a049;
         }
+
         button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
         }
+
         .clear-btn {
             background-color: #f44336;
         }
+
         .clear-btn:hover {
             background-color: #da190b;
         }
+
         .output-section {
             margin-top: 30px;
         }
+
         .matrix-container {
             display: flex;
             gap: 30px;
@@ -112,6 +131,7 @@
             justify-content: center;
             align-items: flex-start;
         }
+
         .matrix-display {
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -121,12 +141,14 @@
             flex-direction: column;
             align-items: center;
         }
+
         .matrix-title {
             font-weight: bold;
             margin-bottom: 15px;
             text-align: center;
             color: #555;
         }
+
         .visual-matrix {
             display: grid;
             grid-template-columns: repeat(28, 1fr);
@@ -136,6 +158,7 @@
             border: 1px solid #ccc;
             background-color: white;
         }
+
         .pixel {
             width: 100%;
             height: 100%;
@@ -145,6 +168,7 @@
             justify-content: center;
             border: none;
         }
+
         .numeric-matrix {
             font-family: 'Courier New', monospace;
             font-size: 10px;
@@ -165,20 +189,26 @@
             max-width: 450px;
             max-height: 450px;
         }
+
         .matrix-cell {
-            width: 12px; /* 셀 크기 조정 */
-            height: 12px; /* 셀 크기 조정 */
+            width: 12px;
+            /* 셀 크기 조정 */
+            height: 12px;
+            /* 셀 크기 조정 */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 7px; /* 폰트 크기 조정 */
+            font-size: 7px;
+            /* 폰트 크기 조정 */
             border: 0.5px solid #eee;
             background-color: white;
         }
+
         .matrix-cell.highlight {
             background-color: #ffeb3b;
             font-weight: bold;
         }
+
         .compact-matrix {
             font-family: 'Courier New', monospace;
             font-size: 9px;
@@ -196,16 +226,19 @@
             padding: 10px;
             border-radius: 3px;
         }
+
         .matrix-flex-row {
             display: flex;
             gap: 20px;
             align-items: flex-start;
         }
+
         .button-column {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
+
         .button-column button {
             width: 160px;
             padding: 12px 24px;
@@ -216,36 +249,44 @@
             font-size: 16px;
             transition: background-color 0.3s;
         }
+
         .button-column button:hover {
             opacity: 0.9;
         }
+
         .button-column button:disabled {
-             background-color: #cccccc;
-             cursor: not-allowed;
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
+
         /* 버튼 색상 클래스 */
         .btn-primary {
             background-color: #2196F3;
             color: white;
         }
+
         .btn-success {
             background-color: #4CAF50;
             color: white;
         }
+
         .btn-warning {
             background-color: #FF9800;
             color: white;
         }
+
         .btn-danger {
             background-color: #FF5722;
             color: white;
         }
+
         .stats {
             margin-top: 15px;
             font-size: 14px;
             color: #666;
             text-align: center;
         }
+
         .instructions {
             background-color: #e7f4f7;
             border-left: 4px solid #2196F3;
@@ -253,19 +294,23 @@
             margin-bottom: 20px;
             border-radius: 0 5px 5px 0;
         }
+
         .instructions h3 {
             margin-top: 0;
             color: #1976D2;
         }
+
         .instructions ul {
             margin: 10px 0;
             padding-left: 20px;
         }
+
         .matrix-tabs {
             display: flex;
             margin-bottom: 10px;
             border-bottom: 1px solid #ddd;
         }
+
         .tab {
             padding: 8px 16px;
             background-color: #f0f0f0;
@@ -275,16 +320,20 @@
             border-radius: 5px 5px 0 0;
             font-size: 12px;
         }
+
         .tab.active {
             background-color: #4CAF50;
             color: white;
         }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
         }
+
         .numeric-matrix-container {
             display: flex;
             gap: 20px;
@@ -292,10 +341,11 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🖊️ 손글씨 숫자 → 28×28 행렬 변환기</h1>
-        
+
         <div class="instructions">
             <h3>사용법</h3>
             <ul>
@@ -317,20 +367,21 @@
 
         <div class="output-section" id="outputSection" style="display: none;">
             <h2 style="text-align: center; color: #333;">변환 결과</h2>
-            
+
             <!-- 다운로드 버튼들을 상단에 배치 -->
-            <div style="text-align: center; margin-bottom: 20px; padding: 15px; background-color: #f8f8f8; border-radius: 5px;">
+            <div
+                style="text-align: center; margin-bottom: 20px; padding: 15px; background-color: #f8f8f8; border-radius: 5px;">
                 <h4 style="margin: 0 0 10px 0; color: #555;">아래에서 시각적 표현과 숫자 데이터를 확인하세요.</h4>
-                 
+
             </div>
-            
+
             <div class="matrix-container">
                 <div class="matrix-display">
                     <div class="matrix-title">시각적 표현 (28×28)</div>
                     <div class="visual-matrix" id="visualMatrix"></div>
                     <div class="stats" id="visualStats"></div>
                 </div>
-                
+
                 <div class="matrix-display">
                     <div class="matrix-title">숫자 행렬 표시</div>
                     <!-- 숫자 행렬과 버튼을 감싸는 새로운 flex 컨테이너 -->
@@ -348,6 +399,34 @@
             </div>
         </div>
     </div>
+
+    <footer class="footer" style="width:100%;">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+
 
     <script>
         // === 상수 정의 ===
@@ -375,7 +454,7 @@
                 // 캔버스 배경을 흰색으로 채우기
                 this.ctx.fillStyle = 'white';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
+
                 // 펜 스타일 설정
                 this.ctx.strokeStyle = 'black'; // 펜 색상 검정
                 this.ctx.lineWidth = PEN_STROKE_WIDTH; // 펜 굵기
@@ -452,7 +531,7 @@
             // 그리는 중 (선 그리기)
             draw(e) {
                 if (!this.isDrawing) return;
-                
+
                 const pos = this.getMousePos(e);
                 this.ctx.lineTo(pos.x, pos.y); // 현재 위치까지 선 그리기
                 this.ctx.stroke(); // 선 그리기 실행
@@ -500,14 +579,14 @@
                         const g = data[index + 1];
                         const b = data[index + 2];
                         // const a = data[index + 3]; // 알파값은 사용하지 않음
-                        
+
                         // RGB 값을 표준 공식에 따라 grayscale(명도) 값으로 변환
                         const grayscale = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-                        
+
                         // MNIST 데이터 형식에 맞춰 값 반전 (원래 MNIST는 검은색 픽셀이 높은 값)
                         // 캔버스에서 그린 검은색(RGB 작음)을 높은 값(255)으로, 흰색(RGB 큼)을 낮은 값(0)으로 변환
                         const mnistValue = MAX_PIXEL_VALUE - grayscale;
-                        
+
                         row.push(mnistValue); // 행렬에 변환된 값 추가
                     }
                     matrix.push(row); // 행렬에 행 추가
@@ -528,40 +607,40 @@
             displayVisualMatrix(matrix) {
                 const visualMatrix = document.getElementById('visualMatrix');
                 const visualStats = document.getElementById('visualStats');
-                
+
                 visualMatrix.innerHTML = ''; // 이전 내용 지우기
-                
+
                 let nonZeroCount = 0; // 0이 아닌 픽셀 수 카운트
                 let minVal = MAX_PIXEL_VALUE, maxVal = 0; // 최소/최대 픽셀 값 추적
-                
+
                 // 28x28 그리드 생성 및 각 픽셀 표시
                 for (let y = 0; y < MATRIX_SIZE; y++) {
                     for (let x = 0; x < MATRIX_SIZE; x++) {
                         const value = matrix[y][x]; // 행렬에서 픽셀 값 가져오기
                         const pixel = document.createElement('div');
                         pixel.className = 'pixel';
-                        
+
                         // 픽셀 값에 따라 배경색 설정 (grayscale). 값이 높을수록(어두울수록) 배경도 어둡게
                         // MNIST 값(검정=255)을 RGB(검정=0)로 변환해야 하므로 255에서 빼줌
                         const displayGray = MAX_PIXEL_VALUE - value;
                         pixel.style.backgroundColor = `rgb(${displayGray}, ${displayGray}, ${displayGray})`;
-                        
+
                         // 툴팁에 픽셀 위치와 값 표시
                         pixel.title = `(${x},${y}): ${value}`;
-                        
+
                         visualMatrix.appendChild(pixel);
-                        
+
                         // 통계 계산에 필요한 값 업데이트
                         if (value > 0) nonZeroCount++;
                         if (value > maxVal) maxVal = value;
                         if (value < minVal) minVal = value;
                     }
                 }
-                
+
                 // 시각적 행렬 통계 표시
                 const totalPixels = MATRIX_SIZE * MATRIX_SIZE; // 전체 픽셀 수 (28*28=784)
                 visualStats.innerHTML = `
-                    활성 픽셀: ${nonZeroCount}/${totalPixels} (${(nonZeroCount/totalPixels*100).toFixed(1)}%)<br>
+                    활성 픽셀: ${nonZeroCount}/${totalPixels} (${(nonZeroCount / totalPixels * 100).toFixed(1)}%)<br>
                     값 범위: ${minVal} ~ ${maxVal}
                 `;
             }
@@ -570,9 +649,9 @@
             displayNumericMatrix(matrix) {
                 const numericMatrix = document.getElementById('numericMatrix');
                 const numericStats = document.getElementById('numericStats');
-                
+
                 numericMatrix.innerHTML = ''; // 이전 내용 지우기
-                
+
                 // 28x28 격자형으로 각 셀에 숫자 값 표시
                 for (let y = 0; y < MATRIX_SIZE; y++) {
                     for (let x = 0; x < MATRIX_SIZE; x++) {
@@ -581,12 +660,12 @@
                         cell.className = 'matrix-cell';
                         cell.textContent = value; // 셀에 숫자 값 표시
                         cell.title = `위치: (${x}, ${y}), 값: ${value}`; // 툴팁
-                        
+
                         // 특정 임계값(예: 127)보다 큰 값(어두운 픽셀)을 하이라이트
                         if (value > HIGHLIGHT_THRESHOLD) {
                             cell.classList.add('highlight');
                         }
-                        
+
                         numericMatrix.appendChild(cell); // 격자에 셀 추가
                     }
                 }
@@ -596,7 +675,7 @@
                 const sum = flatMatrix.reduce((a, b) => a + b, 0); // 모든 값의 합계
                 const avg = (sum / flatMatrix.length).toFixed(1); // 평균 값
                 const nonZeros = flatMatrix.filter(v => v > 0).length; // 0이 아닌 값의 개수
-                
+
                 numericStats.innerHTML = `
                     전체 평균: ${avg}<br>
                     0이 아닌 값: ${nonZeros}/${MATRIX_SIZE * MATRIX_SIZE}<br>
@@ -611,10 +690,10 @@
                     alert('변환된 행렬 데이터가 없습니다.');
                     return;
                 }
-                
+
                 // 2차원 배열을 탭('\t')으로 구분된 문자열로 변환
                 const matrixData = this.currentMatrix.map(row => row.join('\t')).join('\n');
-                
+
                 // 클립보드에 쓰기
                 navigator.clipboard.writeText(matrixData).then(() => {
                     alert('행렬 데이터가 클립보드에 복사되었습니다!');
@@ -628,30 +707,30 @@
             downloadMatrix() {
                 // currentMatrix 데이터가 없을 경우 종료
                 if (!this.currentMatrix) {
-                     console.warn('행렬 데이터가 없습니다.');
-                     alert('변환된 행렬 데이터가 없습니다.');
-                     return;
+                    console.warn('행렬 데이터가 없습니다.');
+                    alert('변환된 행렬 데이터가 없습니다.');
+                    return;
                 }
-                
+
                 // 2차원 배열을 쉼표(',')로 구분된 CSV 문자열로 변환
                 const matrixData = this.currentMatrix.map(row => row.join(',')).join('\n');
-                
+
                 try {
                     // Blob 객체 생성
                     const blob = new Blob([matrixData], { type: 'text/csv' });
                     const url = URL.createObjectURL(blob); // Blob URL 생성
-                    
+
                     // 다운로드 링크 생성 및 클릭
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = 'digit_matrix_28x28.csv'; // 다운로드될 파일 이름
                     document.body.appendChild(a);
                     a.click();
-                    
+
                     // 사용 후 Blob URL 해제 (비동기적으로 실행될 수 있으므로 setTimeout 사용)
                     setTimeout(() => {
-                         document.body.removeChild(a);
-                         URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
                     }, 100);
 
                 } catch (error) {
@@ -664,65 +743,65 @@
             downloadPNG() {
                 // currentMatrix 데이터가 없을 경우 종료
                 if (!this.currentMatrix) {
-                     console.warn('행렬 데이터가 없습니다.');
-                     alert('변환된 행렬 데이터가 없습니다.');
-                     return;
+                    console.warn('행렬 데이터가 없습니다.');
+                    alert('변환된 행렬 데이터가 없습니다.');
+                    return;
                 }
-                
+
                 // 메모리에 28x28 캔버스 생성
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
                 if (!ctx) {
-                     console.error('캔버스 컨텍스트를 가져올 수 없습니다.');
-                     alert('이미지 처리에 필요한 캔버스를 생성할 수 없습니다.');
-                     return;
+                    console.error('캔버스 컨텍스트를 가져올 수 없습니다.');
+                    alert('이미지 처리에 필요한 캔버스를 생성할 수 없습니다.');
+                    return;
                 }
 
                 canvas.width = MATRIX_SIZE;
                 canvas.height = MATRIX_SIZE;
-                
+
                 // 이미지 데이터 객체 생성
                 const imageData = ctx.createImageData(MATRIX_SIZE, MATRIX_SIZE);
                 const data = imageData.data; // 픽셀 데이터 배열
-                
+
                 // 행렬 데이터를 이미지 데이터의 RGBA 값으로 변환
                 for (let y = 0; y < MATRIX_SIZE; y++) {
                     for (let x = 0; x < MATRIX_SIZE; x++) {
                         const index = (y * MATRIX_SIZE + x) * 4; // 픽셀의 RGBA 데이터 시작 인덱스
                         const value = this.currentMatrix[y][x]; // 행렬에서 픽셀 값 (0-255)
-                        
+
                         // MNIST 값(0-255, 검정=255)을 그레이스케일 RGB 값(0-255, 검정=0)으로 변환
                         const grayValue = MAX_PIXEL_VALUE - value; // 값 반전
-                        
+
                         data[index] = grayValue;     // Red 채널
                         data[index + 1] = grayValue; // Green 채널
                         data[index + 2] = grayValue; // Blue 채널
                         data[index + 3] = MAX_PIXEL_VALUE;       // Alpha 채널 (불투명)
                     }
                 }
-                
+
                 // 이미지 데이터를 캔버스에 그리기
                 ctx.putImageData(imageData, 0, 0);
-                
+
                 // 캔버스 내용을 PNG Blob으로 변환 후 다운로드
                 canvas.toBlob((blob) => {
-                     if (blob) {
+                    if (blob) {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = 'digit_28x28.png';
                         document.body.appendChild(a);
                         a.click();
-                        
+
                         // 사용 후 Blob URL 해제 (비동기적으로 실행될 수 있으므로 setTimeout 사용)
                         setTimeout(() => {
-                             document.body.removeChild(a);
-                             URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
                         }, 100);
                     } else {
-                         console.error('캔버스를 Blob으로 변환 실패');
-                         alert('이미지 다운로드에 실패했습니다.');
+                        console.error('캔버스를 Blob으로 변환 실패');
+                        alert('이미지 다운로드에 실패했습니다.');
                     }
                 }, 'image/png'); // PNG 형식 지정
             }
@@ -731,27 +810,27 @@
             downloadPNGLarge() {
                 // currentMatrix 데이터가 없을 경우 종료
                 if (!this.currentMatrix) {
-                     console.warn('행렬 데이터가 없습니다.');
-                     alert('변환된 행렬 데이터가 없습니다.');
-                     return;
+                    console.warn('행렬 데이터가 없습니다.');
+                    alert('변환된 행렬 데이터가 없습니다.');
+                    return;
                 }
-                
+
                 const scaleFactor = 10; // 확대 배율
                 const largeSize = MATRIX_SIZE * scaleFactor; // 확대된 크기 (280)
-                
+
                 // 메모리에 확대된 크기의 캔버스 생성
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
-                 if (!ctx) {
-                     console.error('캔버스 컨텍스트를 가져올 수 없습니다.');
-                     alert('이미지 처리에 필요한 캔버스를 생성할 수 없습니다.');
-                     return;
+                if (!ctx) {
+                    console.error('캔버스 컨텍스트를 가져올 수 없습니다.');
+                    alert('이미지 처리에 필요한 캔버스를 생성할 수 없습니다.');
+                    return;
                 }
-                
+
                 canvas.width = largeSize;
                 canvas.height = largeSize;
-                
+
                 // 이미지 스무딩 비활성화 (픽셀이 깨지지 않도록)
                 ctx.imageSmoothingEnabled = false;
 
@@ -760,33 +839,33 @@
                     for (let x = 0; x < MATRIX_SIZE; x++) {
                         const value = this.currentMatrix[y][x]; // 행렬에서 픽셀 값
                         const grayValue = MAX_PIXEL_VALUE - value; // 값 반전 (표시용)
-                        
+
                         // 해당 픽셀의 그레이스케일 색상으로 채우기 스타일 설정
                         ctx.fillStyle = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
-                        
+
                         // 확대된 픽셀 위치에 사각형 그리기
                         ctx.fillRect(x * scaleFactor, y * scaleFactor, scaleFactor, scaleFactor);
                     }
                 }
-                
+
                 // 캔버스 내용을 PNG Blob으로 변환 후 다운로드
                 canvas.toBlob((blob) => {
-                     if (blob) {
+                    if (blob) {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = 'digit_280x280.png';
                         document.body.appendChild(a);
                         a.click();
-                        
+
                         // 사용 후 Blob URL 해제 (비동기적으로 실행될 수 있으므로 setTimeout 사용)
                         setTimeout(() => {
-                             document.body.removeChild(a);
-                             URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
                         }, 100);
                     } else {
-                         console.error('캔버스를 Blob으로 변환 실패');
-                         alert('이미지 다운로드에 실패했습니다.');
+                        console.error('캔버스를 Blob으로 변환 실패');
+                        alert('이미지 다운로드에 실패했습니다.');
                     }
                 }, 'image/png'); // PNG 형식 지정
             }
@@ -798,4 +877,5 @@
         });
     </script>
 </body>
+
 </html>
