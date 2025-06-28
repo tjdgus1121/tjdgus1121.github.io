@@ -1,26 +1,57 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
+    <!-- 기본 메타 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO 객체 탐지 체험하기</title>
-    
-    <!-- TensorFlow.js와 COCO-SSD 모델 CDN 로드 -->
-    <!-- 잘 동작하는 예시 -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.9.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+
+    <!-- SEO -->
+    <title>YOLO 객체 탐지 체험하기 | 인공지능 수학 이미지 탐구 활동</title>
+    <meta name="description" content="YOLO(You Only Look Once)를 통해 실시간 객체 탐지 기술을 직접 체험해보는 활동 페이지입니다.">
+    <meta name="keywords" content="YOLO, 객체 탐지, You Only Look Once, AI 활동, 인공지능 수학">
+    <meta name="author" content="황성현">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity14_yolo.html">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="YOLO 객체 탐지 체험하기">
+    <meta property="og:description" content="YOLO(You Only Look Once)를 통해 실시간 객체 탐지 기술을 직접 체험해보는 활동 페이지입니다.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity14_yolo.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="AI & 탐구수학">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="YOLO 객체 탐지 체험하기">
+    <meta name="twitter:description" content="YOLO(You Only Look Once)를 통해 실시간 객체 탐지 기술을 직접 체험해보는 활동 페이지입니다.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <!-- favicon -->
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+
+    <!-- 공통 스타일 -->
     <link rel="stylesheet" href="stylefooter.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Web Fonts 최적화 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;700&family=Orbitron:wght@400;900&family=Gamja+Flower&display=swap"
         rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
-    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
-    
+
+
+    <!-- 아이콘 폰트 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.9.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+
+
+    <link rel="stylesheet" href="nav.css">
+    <script defer src="nav.js"></script>
     <style>
         * {
             margin: 0;
@@ -51,7 +82,7 @@
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .header p {
@@ -65,7 +96,7 @@
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border-left: 5px solid #667eea;
         }
 
@@ -86,7 +117,7 @@
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .control-buttons {
@@ -125,7 +156,7 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         .btn:disabled {
@@ -152,7 +183,7 @@
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
 
@@ -163,11 +194,12 @@
             margin-bottom: 20px;
         }
 
-        #canvas, #video {
+        #canvas,
+        #video {
             max-width: 100%;
             height: auto;
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         #video {
@@ -194,8 +226,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* 결과 통계 */
@@ -203,7 +240,7 @@
             background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .results-panel h3 {
@@ -306,7 +343,7 @@
             padding: 10px 15px;
             border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             font-size: 0.9em;
             z-index: 1000;
         }
@@ -316,7 +353,31 @@
         }
     </style>
 </head>
+
 <body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <aside class="sidebar">
+        <nav>
+            <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="activity14_yolo.html" class="active"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+        </nav>
+    </aside>
     <div class="container">
         <!-- 헤더 -->
         <div class="header">
@@ -328,8 +389,8 @@
         <div class="info-box">
             <h3>🤖 YOLO란 무엇인가요?</h3>
             <p>
-                <strong>YOLO (You Only Look Once)</strong>는 이미지를 격자로 나누고, 각 셀에서 객체의 위치와 종류를 
-                <strong>한 번에</strong> 예측하는 혁신적인 객체 탐지 기술입니다. 
+                <strong>YOLO (You Only Look Once)</strong>는 이미지를 격자로 나누고, 각 셀에서 객체의 위치와 종류를
+                <strong>한 번에</strong> 예측하는 혁신적인 객체 탐지 기술입니다.
                 기존 방법들과 달리 이미지를 여러 번 스캔할 필요가 없어 <strong>실시간 처리</strong>가 가능합니다!
             </p>
         </div>
@@ -343,16 +404,16 @@
                         📷 이미지 업로드
                     </button>
                 </div>
-                
+
                 <button class="btn btn-secondary" id="webcamBtn" onclick="startWebcam()">
                     🎥 웹캠 시작
                 </button>
-                
+
                 <button class="btn btn-danger" id="stopBtn" onclick="stopWebcam()" style="display: none;">
                     ⏹️ 웹캠 정지
                 </button>
             </div>
-            
+
             <!-- 로딩 표시 -->
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -371,18 +432,18 @@
         <!-- 결과 통계 -->
         <div class="results-panel">
             <h3>📊 탐지 결과</h3>
-            
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-number" id="totalObjects">0</div>
                     <div class="stat-label">총 탐지된 객체</div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-number" id="uniqueClasses">0</div>
                     <div class="stat-label">서로 다른 클래스</div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-number" id="avgConfidence">0%</div>
                     <div class="stat-label">평균 정확도</div>
@@ -438,9 +499,9 @@
         let ctx = null;             // 캔버스 2D 컨텍스트
         let isWebcamActive = false; // 웹캠 활성화 상태
         let animationId = null;     // 애니메이션 프레임 ID
-        
+
         // 페이지 로드 시 초기화
-        window.onload = async function() {
+        window.onload = async function () {
             await initializeApp();
         };
 
@@ -454,10 +515,10 @@
             video = document.getElementById('video');
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
-            
+
             // 이미지 업로드 이벤트 리스너 추가
             document.getElementById('imageInput').addEventListener('change', handleImageUpload);
-            
+
             // 모델 로드 시작
             await loadModel();
         }
@@ -468,35 +529,35 @@
          */
         async function loadModel() {
             const loadingDiv = document.getElementById('loading');
-            
+
             try {
                 loadingDiv.style.display = 'block';
                 loadingDiv.querySelector('p').textContent = 'AI 모델을 로드하는 중입니다...';
-                
+
                 // TensorFlow.js와 COCO-SSD 라이브러리 로드 확인
                 if (typeof tf === 'undefined') {
                     throw new Error('TensorFlow.js가 로드되지 않았습니다.');
                 }
-                
+
                 if (typeof cocoSsd === 'undefined') {
                     throw new Error('COCO-SSD 라이브러리가 로드되지 않았습니다.');
                 }
-                
+
                 console.log('라이브러리 로드 확인 완료');
-                
+
                 // COCO-SSD 모델 로드 (CDN에서 자동으로 다운로드)
                 model = await cocoSsd.load();
-                
+
                 loadingDiv.style.display = 'none';
                 console.log('COCO-SSD 모델 로드 완료!');
-                
+
                 // 캔버스에 시작 메시지 표시
                 drawWelcomeMessage();
-                
+
             } catch (error) {
                 loadingDiv.querySelector('p').textContent = '모델 로드 실패: ' + error.message;
                 console.error('모델 로드 오류:', error);
-                
+
                 // 대안 라이브러리 로드 시도
                 setTimeout(() => {
                     loadingDiv.querySelector('p').textContent = '대안 CDN에서 재시도 중...';
@@ -514,12 +575,12 @@
                 const script1 = document.createElement('script');
                 script1.src = 'https://unpkg.com/@tensorflow/tfjs@4.10.0/dist/tf.min.js';
                 document.head.appendChild(script1);
-                
+
                 script1.onload = () => {
                     const script2 = document.createElement('script');
                     script2.src = 'https://unpkg.com/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js';
                     document.head.appendChild(script2);
-                    
+
                     script2.onload = async () => {
                         try {
                             model = await cocoSsd.load();
@@ -527,7 +588,7 @@
                             console.log('대안 CDN으로 모델 로드 성공!');
                             drawWelcomeMessage();
                         } catch (error) {
-                            document.getElementById('loading').querySelector('p').textContent = 
+                            document.getElementById('loading').querySelector('p').textContent =
                                 '모델 로드에 실패했습니다. 인터넷 연결을 확인해주세요.';
                         }
                     };
@@ -543,12 +604,12 @@
         function drawWelcomeMessage() {
             ctx.fillStyle = '#f8f9fa';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             ctx.fillStyle = '#667eea';
             ctx.font = '24px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('이미지를 업로드하거나', canvas.width/2, canvas.height/2 - 20);
-            ctx.fillText('웹캠을 시작해보세요!', canvas.width/2, canvas.height/2 + 20);
+            ctx.fillText('이미지를 업로드하거나', canvas.width / 2, canvas.height / 2 - 20);
+            ctx.fillText('웹캠을 시작해보세요!', canvas.width / 2, canvas.height / 2 + 20);
         }
 
         /**
@@ -565,18 +626,18 @@
             }
 
             const img = new Image();
-            img.onload = async function() {
+            img.onload = async function () {
                 // 캔버스 크기를 이미지 크기에 맞춰 조정
                 canvas.width = img.width;
                 canvas.height = img.height;
-                
+
                 // 이미지를 캔버스에 그리기
                 ctx.drawImage(img, 0, 0);
-                
+
                 // 객체 탐지 수행
                 await detectObjects();
             };
-            
+
             // 파일을 이미지로 읽기
             img.src = URL.createObjectURL(file);
         }
@@ -594,23 +655,23 @@
                         height: { ideal: 480 }
                     }
                 });
-                
+
                 video.srcObject = stream;
                 video.style.display = 'block';
-                
+
                 // 캔버스 크기 설정
                 canvas.width = 640;
                 canvas.height = 480;
-                
+
                 isWebcamActive = true;
-                
+
                 // 버튼 상태 변경
                 document.getElementById('webcamBtn').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'inline-block';
-                
+
                 // 비디오가 준비되면 실시간 탐지 시작
                 video.addEventListener('loadeddata', startRealTimeDetection);
-                
+
             } catch (error) {
                 console.error('웹캠 접근 오류:', error);
                 alert('웹캠에 접근할 수 없습니다. 권한을 확인해주세요.');
@@ -627,23 +688,23 @@
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
             }
-            
+
             video.style.display = 'none';
             isWebcamActive = false;
-            
+
             // 애니메이션 정지
             if (animationId) {
                 cancelAnimationFrame(animationId);
                 animationId = null;
             }
-            
+
             // 버튼 상태 복원
             document.getElementById('webcamBtn').style.display = 'inline-block';
             document.getElementById('stopBtn').style.display = 'none';
-            
+
             // 캔버스 초기화
             drawWelcomeMessage();
-            
+
             // 결과 초기화
             updateResults([]);
         }
@@ -654,10 +715,10 @@
          */
         function startRealTimeDetection() {
             if (!isWebcamActive || !video.readyState) return;
-            
+
             // 비디오 프레임을 캔버스에 그리기
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
+
             // 객체 탐지 수행
             detectObjects().then(() => {
                 // 다음 프레임을 위해 재귀 호출
@@ -680,13 +741,13 @@
             try {
                 // 캔버스에서 이미지 데이터 추출하여 모델에 전달
                 const predictions = await model.detect(canvas);
-                
+
                 // 탐지 결과를 캔버스에 그리기
                 drawPredictions(predictions);
-                
+
                 // 결과 통계 업데이트
                 updateResults(predictions);
-                
+
             } catch (error) {
                 console.error('객체 탐지 오류:', error);
             }
@@ -701,29 +762,29 @@
             if (isWebcamActive && video.readyState) {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             }
-            
+
             // 각 탐지 결과에 대해 바운딩 박스 그리기
             predictions.forEach((prediction, index) => {
                 const [x, y, width, height] = prediction.bbox;
                 const className = prediction.class;
                 const confidence = (prediction.score * 100).toFixed(1);
-                
+
                 // 클래스별로 다른 색상 사용
                 const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
                 const color = colors[index % colors.length];
-                
+
                 // 바운딩 박스 그리기
                 ctx.strokeStyle = color;
                 ctx.lineWidth = 3;
                 ctx.strokeRect(x, y, width, height);
-                
+
                 // 라벨 배경 그리기
                 ctx.fillStyle = color;
                 const labelText = `${className} ${confidence}%`;
                 ctx.font = '16px Arial';
                 const textWidth = ctx.measureText(labelText).width;
                 ctx.fillRect(x, y - 25, textWidth + 10, 25);
-                
+
                 // 라벨 텍스트 그리기
                 ctx.fillStyle = 'white';
                 ctx.fillText(labelText, x + 5, y - 5);
@@ -738,15 +799,15 @@
             // 기본 통계 계산
             const totalObjects = predictions.length;
             const uniqueClasses = [...new Set(predictions.map(p => p.class))].length;
-            const avgConfidence = totalObjects > 0 
+            const avgConfidence = totalObjects > 0
                 ? (predictions.reduce((sum, p) => sum + p.score, 0) / totalObjects * 100).toFixed(1)
                 : 0;
-            
+
             // 통계 UI 업데이트
             document.getElementById('totalObjects').textContent = totalObjects;
             document.getElementById('uniqueClasses').textContent = uniqueClasses;
             document.getElementById('avgConfidence').textContent = avgConfidence + '%';
-            
+
             // 상세 탐지 목록 업데이트
             updateDetectionList(predictions);
         }
@@ -757,18 +818,18 @@
          */
         function updateDetectionList(predictions) {
             const listElement = document.getElementById('detectionList');
-            
+
             if (predictions.length === 0) {
                 listElement.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">탐지된 객체가 없습니다.</p>';
                 return;
             }
-            
+
             // 클래스별로 그룹화하여 개수 계산
             const classCount = {};
             predictions.forEach(p => {
                 classCount[p.class] = (classCount[p.class] || 0) + 1;
             });
-            
+
             // HTML 생성
             let html = '';
             Object.entries(classCount).forEach(([className, count]) => {
@@ -776,9 +837,9 @@
                 const maxConfidence = Math.max(...predictions
                     .filter(p => p.class === className)
                     .map(p => p.score));
-                
+
                 const confidencePercent = (maxConfidence * 100).toFixed(1);
-                
+
                 html += `
                     <div class="detection-item">
                         <div>
@@ -794,7 +855,7 @@
                     </div>
                 `;
             });
-            
+
             listElement.innerHTML = html;
         }
 
@@ -819,11 +880,12 @@
         }
 
         // 페이지 언로드 시 웹캠 정리
-        window.addEventListener('beforeunload', function() {
+        window.addEventListener('beforeunload', function () {
             if (isWebcamActive) {
                 stopWebcam();
             }
         });
     </script>
 </body>
+
 </html>

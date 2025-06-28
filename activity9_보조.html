@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>손글씨 인식 테스트</title>
+
+    <!-- 🔍 SEO -->
+    <meta name="description" content="손글씨 숫자를 직접 그려 인공지능 모델이 인식하도록 체험하는 활동입니다.">
+    <meta name="keywords" content="손글씨 인식, MNIST, 인공지능 모델, 머신러닝, 딥러닝, AI 체험, 숫자 인식">
+    <meta name="author" content="황성현">
+
+    <!-- SNS 공유(Open Graph) -->
+    <meta property="og:title" content="손글씨 인식 체험 - AI 수학 활동">
+    <meta property="og:description" content="사용자가 그린 손글씨 숫자를 AI가 인식하는 과정을 직접 체험해 보세요.">
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="stylefooter.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.13.0/tf.min.js"></script>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js"></script>
+
+    <style>
+        /* 전역 리셋 */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Segoe UI',sans-serif;
+            background:linear-gradient(135deg,#a1c4fd,#c2e9fb);
+            min-height:100vh; padding:20px;
+        }
+
+        /* 레이아웃 */
+        .main-layout-container {
+            display:flex; justify-content:center; align-items:flex-start;
+            gap:40px; padding:20px;
+            max-width:1200px; margin:0 auto; flex-wrap:wrap;
+        }
+        .mnist-app {
+            background:rgba(255,255,255,0.95);
+            backdrop-filter:blur(10px);
+            border-radius:20px;
+            padding:40px; box-shadow:0 20px 40px rgba(0,0,0,0.1);
+            max-width:800px; width:100%;
+            text-align:center;
+            display:flex; flex-direction:column; align-items:center;
+        }
+
+        /* 타이틀 */
+        .mnist-app__title {
+            font-size:3rem; font-weight:700; margin-bottom:30px;
+            background:linear-gradient(45deg,#66b5ea,#1a0a2b,#ac87aa);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
+
+        /* 안내문 */
+        .mnist-app__instructions {
+            background:rgba(102,126,234,0.1);
+            border-left:4px solid #667eea;
+            border-radius:15px;
+            padding:20px;
+            margin-bottom:30px;
+            width:100%; text-align:left;
+        }
+        .mnist-app__instructions h3 { margin-bottom:10px; font-size:1.2rem; }
+        .mnist-app__instructions p { line-height:1.6; color:#555; }
+
+        /* 상태 표시 */
+        .mnist-app__status {
+            margin:10px 0; padding:10px; border-radius:10px;
+            width:100%; font-weight:500;
+        }
+        .mnist-app__status--loading { background:rgba(102,126,234,0.1); color:#667eea; }
+        .mnist-app__status--ready   { background:rgba(34,197,94,0.1);  color:#16a34a; }
+
+        /* 로딩 바 */
+        .mnist-app__loading-container {
+            margin:20px 0; padding:20px;
+            background:rgba(255,255,255,0.9);
+            border-radius:15px; box-shadow:0 4px 6px rgba(0,0,0,0.1);
+            width:100%; max-width:500px;
+        }
+        .mnist-app__progress-text { text-align:center; margin-bottom:5px; }
+        .mnist-app__progress-bar {
+            width:100%; height:20px; background:#e0e6ed;
+            border-radius:10px; overflow:hidden; position:relative;
+        }
+        .mnist-app__progress-fill {
+            height:100%;
+            background:linear-gradient(90deg,#667eea,#764ba2);
+            transition:width .3s ease;
+            width:0%;
+        }
+        .mnist-app__loading-spinner {
+            width:40px; height:40px; margin:10px auto;
+            border:4px solid #f3f3f3; border-top:4px solid #667eea;
+            border-radius:50%; animation:spin 1s linear infinite;
+        }
+        @keyframes spin { from{transform:rotate(0)}to{transform:rotate(360deg)} }
+
+        .mnist-app__loading-steps {
+            margin-top:15px; text-align:left;
+            display:flex; flex-direction:column; gap:5px;
+        }
+        .mnist-app__step { padding:5px; border-radius:5px; transition:all .3s; }
+        .mnist-app__step--active    { background:rgba(102,126,234,0.1); color:#667eea; font-weight:600; }
+        .mnist-app__step--completed { background:rgba(34,197,94,0.1);  color:#16a34a; }
+
+        /* 그리기 영역 */
+        .mnist-app__drawing-area {
+            display:flex; gap:20px; flex-wrap:wrap;
+            justify-content:center; width:100%; margin-bottom:30px;
+        }
+        .mnist-app__canvas-container {
+            display:flex; flex-direction:column; align-items:center;
+        }
+        canvas {
+            border:3px solid #667eea;
+            border-radius:15px; background:#fff;
+            cursor:crosshair; box-shadow:0 10px 20px rgba(0,0,0,0.1);
+            transition:transform .2s ease;
+        }
+        canvas:hover { transform:scale(1.02); }
+
+        .mnist-app__controls {
+            display:flex; gap:15px; margin-top:20px;
+            flex-wrap:wrap; justify-content:center;
+        }
+        .mnist-app__button {
+            padding:12px 24px; border:none; border-radius:25px;
+            font-size:16px; font-weight:600; cursor:pointer;
+            transition:all .3s; box-shadow:0 4px 15px rgba(0,0,0,0.1);
+        }
+        .mnist-app__button--clear   { background:linear-gradient(45deg,#ff6b6b,#ee5a24); color:#fff; }
+        .mnist-app__button--clear:hover {
+            transform:translateY(-2px);
+            box-shadow:0 6px 20px rgba(255,107,107,0.4);
+        }
+        .mnist-app__button--predict {
+            background:linear-gradient(45deg,#667eea,#764ba2); color:#fff;
+        }
+        .mnist-app__button--predict:hover {
+            transform:translateY(-2px);
+            box-shadow:0 6px 20px rgba(102,126,234,0.4);
+        }
+        .mnist-app__button--predict:disabled {
+            background:#ccc; cursor:not-allowed; transform:none;
+        }
+
+        /* 결과 표시 */
+        .mnist-app__results {
+            background:linear-gradient(135deg,#f8f9ff,#e6f3ff);
+            border-radius:15px; padding:25px;
+            margin-top:30px; box-shadow:inset 0 2px 10px rgba(0,0,0,0.05);
+            width:100%;
+        }
+        .mnist-app__prediction-result {
+            font-size:1.8rem; font-weight:700; color:#333; margin-bottom:20px;
+        }
+        .mnist-app__confidence-bars {
+            display:grid; grid-template-columns:repeat(3,1fr);
+            gap:15px; max-width:500px; margin:0 auto;
+        }
+        .mnist-app__confidence-item {
+            display:flex; flex-direction:column; align-items:center;
+        }
+        .mnist-app__digit-label { font-size:1.2rem; font-weight:600; margin-bottom:8px; }
+        .mnist-app__confidence-bar {
+            width:40px; height:120px; background:#e0e6ed;
+            border-radius:20px; overflow:hidden; position:relative;
+        }
+        .mnist-app__confidence-fill {
+            position:absolute; bottom:0; width:100%;
+            background:linear-gradient(to top,#667eea,#764ba2);
+            transition:height .8s ease; height:0;
+        }
+        .mnist-app__confidence-text {
+            margin-top:5px; font-size:0.9rem; color:#666;
+        }
+
+        /* 반응형 */
+        @media(max-width:768px){
+            .mnist-app { padding:20px; }
+            .mnist-app__title { font-size:2rem; }
+            .mnist-app__drawing-area { flex-direction:column; }
+            canvas { width:250px; height:250px; }
+            .mnist-app__controls { gap:10px; }
+            .mnist-app__confidence-bars { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:480px){
+            .mnist-app__confidence-bars { grid-template-columns:repeat(2,1fr); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+      </div>
+
+    <aside class="sidebar">
+        <nav>
+            <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <a href="activity9_mnist_recognizer.html" class="active"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+        </nav>
+    </aside>
+    <div class="main-layout-container">
+
+        <div class="mnist-app">
+            <h1 class="mnist-app__title">🔢 MNIST 손글씨 인식기</h1>
+
+            <div class="mnist-app__instructions">
+                <h3>사용법</h3>
+                <p>아래 캔버스에 0~9 숫자를 그려보세요. AI 모델이 숫자를 인식합니다!</p>
+            </div>
+
+            <div id="modelStatus" class="mnist-app__status mnist-app__status--loading">
+                모델 로딩 중... 약 30초 소요
+            </div>
+
+            <div id="loadingContainer" class="mnist-app__loading-container">
+                <div id="progressText" class="mnist-app__progress-text">모델 초기화 중...</div>
+                <div class="mnist-app__progress-bar">
+                    <div id="progressFill" class="mnist-app__progress-fill"></div>
+                </div>
+                <div class="mnist-app__loading-spinner"></div>
+                <div class="mnist-app__loading-steps">
+                    <div id="step1" class="mnist-app__step">1. TensorFlow.js 초기화</div>
+                    <div id="step2" class="mnist-app__step">2. 모델 생성</div>
+                    <div id="step3" class="mnist-app__step">3. 데이터 준비</div>
+                    <div id="step4" class="mnist-app__step">4. 모델 훈련</div>
+                </div>
+            </div>
+
+            <div class="mnist-app__drawing-area">
+                <div class="mnist-app__canvas-container">
+                    <canvas id="drawingCanvas" width="280" height="280"></canvas>
+                    <div class="mnist-app__controls">
+                        <button id="clearBtn" class="mnist-app__button mnist-app__button--clear">🗑️ 지우기</button>
+                        <button id="predictBtn" class="mnist-app__button mnist-app__button--predict" disabled>
+                            🔍 인식하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results" class="mnist-app__results" style="display:none;">
+                <div id="predictionResult" class="mnist-app__prediction-result">예측 결과</div>
+                <div class="mnist-app__confidence-bars">
+                    <!-- 0~9 confidence blocks -->
+                    ${[...Array(10)].map(i => `
+                    <div class="mnist-app__confidence-item">
+                      <div class="mnist-app__digit-label">${i}</div>
+                      <div class="mnist-app__confidence-bar">
+                        <div id="conf-${i}" class="mnist-app__confidence-fill"></div>
+                      </div>
+                      <div id="conf-text-${i}" class="mnist-app__confidence-text">0%</div>
+                    </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="footer" style="width:100%;">
+        <div class="footer-content">
+            <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+            <div class="creator-info">
+                Designed &amp; Developed by <strong>황성현</strong><br>
+                Contact: tjdgus1121@naver.com
+            </div>
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank"
+                    rel="noopener">
+                    <img src="naver.png" alt="Naver Mail" style="height:25px; filter:grayscale(100%); transition:filter .3s"
+                        onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(100%)'">
+                </a>
+            </div>
+            <div class="copyright">
+                ⓒ 인공지능 수학 이미지 탐구 활동 사이트. 모든 권리 보유.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Canvas & Drawing 설정
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 12;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        let isDrawing = false, modelReady = false;
+
+        function getTouchPos(e) {
+            const r = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / r.width;
+            const scaleY = canvas.height / r.height;
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+            return { x: x * scaleX, y: y * scaleY };
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            document.getElementById('results').style.display = 'none';
+        }
+
+        async function preprocessCanvas() {
+            const id = ctx.getImageData(0,0,canvas.width,canvas.height);
+            let has=false, minX=canvas.width, minY=canvas.height, maxX=0, maxY=0;
+            for(let i=0;i<id.data.length;i+=4){
+                if(id.data[i+3]>10){
+                    const idx=i/4;
+                    const x=idx%canvas.width, y=Math.floor(idx/canvas.width);
+                    has=true; minX=Math.min(minX,x); minY=Math.min(minY,y);
+                    maxX=Math.max(maxX,x); maxY=Math.max(maxY,y);
+                }
+            }
+            if(!has) return null;
+            const pad=20;
+            minX=Math.max(0,minX-pad); minY=Math.max(0,minY-pad);
+            maxX=Math.min(canvas.width,maxX+pad); maxY=Math.min(canvas.height,maxY+pad);
+            const size=Math.max(maxX-minX,maxY-minY);
+            const tmp=document.createElement('canvas');
+            tmp.width=28; tmp.height=28;
+            const tctx=tmp.getContext('2d');
+            tctx.fillStyle='white'; tctx.fillRect(0,0,28,28);
+            tctx.drawImage(canvas, minX, minY, size, size, 0,0,28,28);
+            const imgd=tctx.getImageData(0,0,28,28).data;
+            const arr=new Float32Array(28*28);
+            for(let i=0;i<28*28;i++){
+                const g=(imgd[i*4]+imgd[i*4+1]+imgd[i*4+2])/3;
+                arr[i]=(255-g)/255;
+            }
+            return tf.tensor4d(arr,[1,28,28,1]);
+        }
+
+        async function initServerStatusCheck(){
+            const statusEl=document.getElementById('modelStatus'),
+                  fill=document.getElementById('progressFill'),
+                  txt=document.getElementById('progressText'),
+                  loadCon=document.getElementById('loadingContainer'),
+                  btn=document.getElementById('predictBtn');
+            statusEl.textContent='서버 연결 중...';
+            statusEl.className='mnist-app__status mnist-app__status--loading';
+            btn.disabled=true; fill.style.width='0%'; txt.textContent='서버 응답 대기...';
+            let retries=0, max=10;
+            while(retries<max){
+                try{
+                    const res=await fetch('https://tjdgus1121-github-io.onrender.com/',{method:'HEAD'});
+                    if(res.ok){
+                        statusEl.textContent='서버 준비 완료!';
+                        statusEl.className='mnist-app__status mnist-app__status--ready';
+                        fill.style.width='100%'; txt.textContent='사용 가능';
+                        setTimeout(()=>loadCon.style.display='none',500);
+                        btn.disabled=false; modelReady=true;
+                        return;
+                    }
+                }catch{}
+                retries++;
+                fill.style.width=`${(retries/max)*100}%`;
+                txt.textContent=`재시도 중 (${retries}/${max})`;
+                await new Promise(r=>setTimeout(r,3000));
+            }
+            statusEl.textContent='서버 연결 실패';
+            statusEl.style.color='#ef4444'; btn.disabled=true;
+        }
+
+        function showPrediction(pred, probs){
+            document.getElementById('results').style.display='block';
+            document.getElementById('predictionResult').innerHTML=
+                `예측: <strong style="color:#667eea;font-size:2rem;">${pred}</strong>`;
+            probs.forEach((p,i)=>{
+                const pct=(p*100).toFixed(1)+'%';
+                document.getElementById(`conf-${i}`).style.height=`${p*100}%`;
+                document.getElementById(`conf-${i}`).style.background=
+                    i===pred?'linear-gradient(to top,#ff6b6b,#ee5a24)':'linear-gradient(to top,#667eea,#764ba2)';
+                document.getElementById(`conf-text-${i}`).textContent=pct;
+            });
+        }
+
+        async function predictWithServer(){
+            if(!modelReady){
+                alert('서버 준비 중입니다.');
+                return;
+            }
+            const tensor=await preprocessCanvas();
+            if(!tensor){
+                alert('숫자를 그려주세요.');
+                return;
+            }
+            try{
+                const arr=await tensor.array();
+                const flat=arr[0].flat();
+                const gray=new Uint8ClampedArray(28*28*4);
+                flat.forEach((v,i)=>{
+                    const g=Math.round((1-v)*255);
+                    gray[i*4]=g; gray[i*4+1]=g; gray[i*4+2]=g; gray[i*4+3]=255;
+                });
+                const tmp=document.createElement('canvas');
+                tmp.width=28; tmp.height=28;
+                tmp.getContext('2d').putImageData(new ImageData(gray,28,28),0,0);
+                const b64=tmp.toDataURL().split(',')[1];
+                const res=await fetch('https://tjdgus1121-github-io.onrender.com/predict',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({image:b64})
+                });
+                const data=await res.json();
+                showPrediction(data.result,data.probs);
+            }catch(e){
+                console.error(e);
+                alert('예측 중 오류가 발생했습니다.');
+            }finally{
+                tensor.dispose();
+            }
+        }
+
+        // 이벤트 설정
+        window.addEventListener('load',async()=>{
+            await initServerStatusCheck();
+            const clearBtn=document.getElementById('clearBtn'),
+                  predictBtn=document.getElementById('predictBtn');
+            clearBtn.onclick=clearCanvas;
+            predictBtn.onclick=async()=>{
+                predictBtn.disabled=true;
+                predictBtn.textContent='인식 중…';
+                await predictWithServer();
+                predictBtn.disabled=false;
+                predictBtn.textContent='🔍 인식하기';
+            };
+            ['mousedown','touchstart'].forEach(evt=>{
+                canvas.addEventListener(evt,e=>{
+                    e.preventDefault();
+                    isDrawing=true;
+                    const {x,y}=getTouchPos(e);
+                    ctx.beginPath(); ctx.moveTo(x,y);
+                });
+            });
+            ['mousemove','touchmove'].forEach(evt=>{
+                canvas.addEventListener(evt,e=>{
+                    if(!isDrawing) return;
+                    e.preventDefault();
+                    const {x,y}=getTouchPos(e);
+                    ctx.lineTo(x,y); ctx.stroke();
+                });
+            });
+            ['mouseup','mouseout','touchend','touchcancel'].forEach(evt=>{
+                canvas.addEventListener(evt,()=>isDrawing=false);
+            });
+        });
+    </script>
+</body>
+
+</html>

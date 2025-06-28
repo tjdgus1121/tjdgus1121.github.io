@@ -2,103 +2,134 @@
 <html lang="ko">
 
 <head>
+  <!-- 기본 메타 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RealESRGAN 이미지 업스케일러</title>
-
-  <!-- ONNX Runtime Web -->
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-  <!-- 메인 스크립트 -->
-  <script src="activity13.js"></script>
+  
+  <!-- SEO -->
+  <title>AI기반 업스케일러 | 인공지능 수학 이미지 탐구 활동</title>
+  <meta name="description" content="딥러닝 기반의 학습형 알고리즘(Super-resolution)인 RealESRGAN으로 이미지를 업스케일링 해보는 체험 활동 페이지입니다.">
+  <meta name="keywords" content="RealESRGAN, 이미지 업스케일링, Super-resolution, AI 활동, 인공지능 수학">
+  <meta name="author" content="황성현">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tjdgus1121.github.io/activity13_realesrgan.html">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="AI기반 업스케일러">
+  <meta property="og:description" content="딥러닝 기반의 학습형 알고리즘(Super-resolution)인 RealESRGAN으로 이미지를 업스케일링 해보는 체험 활동 페이지입니다.">
+  <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+  <meta property="og:url" content="https://tjdgus1121.github.io/activity13_realesrgan.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AI & 탐구수학">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AI기반 업스케일러">
+  <meta name="twitter:description" content="딥러닝 기반의 학습형 알고리즘(Super-resolution)인 RealESRGAN으로 이미지를 업스케일링 해보는 체험 활동 페이지입니다.">
+  <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+  
+  <!-- favicon -->
+  <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+  
+  <!-- 스타일시트 -->
   <link rel="stylesheet" href="stylefooter.css">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- Web Fonts 최적화 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&family=Gamja+Flower&display=swap"
     rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
-  <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+  
+  <!-- 아이콘 폰트 -->
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- ONNX Runtime Web -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  
+  <!-- 메인 스크립트 -->
+  <script src="activity13.js"></script>
+  <link rel="stylesheet" href="nav.css">
+    <script src="nav.js"></script>
 
   <style>
-    /* 전역 130% 확대 */
-    body {
-      zoom: 120%;
-      font-family: "Noto Sans KR";
-    }
-
-    :root {
-      --primary-gradient: linear-gradient(135deg, #667eea, #764ba2);
-      --secondary-gradient: linear-gradient(135deg, #11998e, #38ef7d);
-      --accent-gradient: linear-gradient(135deg, #ff6b6b, #ee5a24);
-      --disabled-bg: #cccccc;
-      --bg-color: rgba(255, 255, 255, 0.9);
-      --text-color: #333;
-      --radius: 16px;
-      --transition: all 0.3s ease;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    }
-
+    /* ─────────────────────────────────────────────────────────────
+       기본 세팅
+    ───────────────────────────────────────────────────────────── */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    html,
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      background: var(--primary-gradient);
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-      flex-direction: column;
-      justify-content: cemter;
-      align-items: center;
+      height: 100%;
     }
 
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: 'Noto Sans KR', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       메인 래퍼 & 중앙 정렬
+    ───────────────────────────────────────────────────────────── */
     .main-wrap {
       flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 20px;
-      width: 2000px;
     }
 
-
     .container {
-
       position: relative;
-      background: var(--bg-color);
-      border-radius: var(--radius);
-      backdrop-filter: blur(15px);
-      box-shadow: var(--shadow);
       width: 100%;
-      max-width: 1500px;
-      padding: 20px;
+      max-width: 1400px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      padding: 30px;
       text-align: center;
     }
 
     h1 {
-      font-size: 3.5rem;
-      margin-bottom: 30px;
-      margin-top:50px;
-      font-family:"Do Hyeon";
-      letter-spacing: 2.5px;
-      
-    }
+  font-size: 2.8rem;
+  margin-bottom: 20px;
+  color: #222;  /* 채우기 색상 */
 
+  /* text-shadow를 네 방향에 1px씩, + 살짝 블러 그림자 추가 */
+  text-shadow:
+    -1px -1px 0 #7435fd,
+    1px -1px 0 #7435fd,
+    -1px 1px 0 #7435fd,
+    1px 1px 0 #7435fd,
+    0   0   4px rgba(0, 0, 0, 0.1);
+}
+
+    /* ─────────────────────────────────────────────────────────────
+       버튼 스타일
+    ───────────────────────────────────────────────────────────── */
     .upload-section {
       display: flex;
       justify-content: center;
-      gap: 20px;
-      margin-bottom: 30px;
+      gap: 16px;
       flex-wrap: wrap;
+      margin-bottom: 24px;
     }
 
     .btn {
@@ -106,96 +137,103 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 28px;
+      padding: 14px 24px;
       font-size: 1rem;
       font-weight: 600;
       color: #fff;
       border: none;
-      border-radius: var(--radius);
+      border-radius: 12px;
       cursor: pointer;
-      transition: var(--transition);
-      box-shadow: var(--shadow);
+      transition: all .3s ease;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
       overflow: hidden;
+      min-width: 120px;
+      text-align: center;
     }
 
-    .btn:before {
+    .btn::before {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.2);
       transform: scale(0);
-      transition: var(--transition);
-      border-radius: var(--radius);
-    }
-    section{
-      border-radius: 15px;
-      line-height: 2rem;
+      transition: all .3s ease;
+      border-radius: 12px;
     }
 
-    .btn:hover:before {
+    .btn:hover::before {
       transform: scale(1);
       opacity: 0.3;
-    }
-
-    .btn-primary {
-      background: var(--primary-gradient);
-    }
-
-    .btn-secondary {
-      background: var(--secondary-gradient);
-    }
-
-    .btn-accent {
-      background: var(--accent-gradient);
     }
 
     .btn:active {
       transform: scale(0.96);
     }
 
-    .btn:disabled,
-    .btn[disabled] {
-      background: var(--disabled-bg) !important;
+    .btn:disabled {
+      background: #ccc !important;
       cursor: not-allowed;
       opacity: 0.6;
     }
 
+    .btn-select {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .btn-sample {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       이미지 캔버스 & 정보
+    ───────────────────────────────────────────────────────────── */
     .images-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin-top: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 16px;
     }
 
     .canvas-wrapper {
       background: #f7f7f7;
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
     }
 
     canvas {
       width: 100%;
       height: auto;
-      border-radius: var(--radius);
+      border-radius: 8px;
     }
 
     .info {
       margin-top: 8px;
       font-size: 0.9rem;
-      color: var(--text-color);
+      color: #555;
     }
 
+    /* ─────────────────────────────────────────────────────────────
+       상태 메시지
+    ───────────────────────────────────────────────────────────── */
     .status {
-      margin-top: 20px;
-      padding: 14px;
-      border-radius: var(--radius);
+      display: none;
+      margin-top: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
       font-weight: 600;
-      transition: var(--transition);
-      display: inline-block;
+      font-size: 0.95rem;
     }
 
     .status.info {
@@ -213,141 +251,242 @@
       color: #c62828;
     }
 
-    /* 컨테이너 내부 오버레이 */
+    /* ─────────────────────────────────────────────────────────────
+       진행률 오버레이
+    ───────────────────────────────────────────────────────────── */
     #progressOverlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.6);
       display: none;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      flex-direction: column;
-      color: #fff;
-      font-size: 1.2rem;
+      border-radius: 16px;
       z-index: 10;
+      color: #fff;
+      font-size: 1.1rem;
     }
 
     #progressBar {
       width: 60%;
-      max-width: 300px;
-      height: 16px;
+      max-width: 250px;
+      height: 14px;
       background: rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
+      border-radius: 7px;
       overflow: hidden;
-      margin-top: 10px;
+      margin: 12px 0;
     }
 
     #progressFill {
-      height: 100%;
       width: 0;
-      background: var(--secondary-gradient);
-      transition: width 0.1s ease;
+      height: 100%;
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+      transition: width .1s ease;
     }
 
     #eta {
-      margin-top: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       도움말 박스
+    ───────────────────────────────────────────────────────────── */
+    .help-box {
+      margin: 24px auto 0px;
+      padding: 16px;
+      background: rgba(85, 85, 85, 0.1);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #1a0592;
+      text-align: left;
+      line-height: 1.4;
+      width: fit-content;
+      width: -moz-fit-content;
+      width: -webkit-fit-content;
+      display: block;
+    }
+
+    .help-box a {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 6px 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a237e;
+      /* 약간 더 차분한 네이비 톤 */
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: 0.5s;
+    }
+
+    .help-box a:hover {
+      color: #0d047a;
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      background: linear-gradient(135deg, #bbdefb, #e3f2fd);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       반응형 : 모바일 최적화
+    ───────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2.4rem;
+      }
+
+      .upload-section {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .btn {
+        width: 100%;
+        font-size: 1.1rem;
+        padding: 16px;
+      }
+
+      .images-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      #progressOverlay {
+        font-size: 1rem;
+      }
+
+      #progressBar {
+        width: 80%;
+      }
+
+      .help-box {
+        font-size: 0.85rem;
+        padding: 12px;
+      }
+    }
+
+    footer {
+      background: rgba(0, 0, 0, 0.1);
+      padding: 12px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #fff;
     }
   </style>
 </head>
 
 <body>
-  <!-- …이전 콘텐츠… -->
+  <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+    <i class="fas fa-bars"></i>
+  </div>
 
-  <h1>🚀 RealESRGAN 이미지 업스케일러</h1>
-  <section id="upscaling-info" style="padding: 2rem; background: #f9f9f9; border-top: 1px solid #ddd;">
-    <ul>
-      <li>
-        <strong>학습자의 웹페이지 내 원활한 체험을 위해 경량화된 AI모델(<code>RealESRGAN-x4v3</code>)을 적용했습니다.</strong>
-        <ul>
-          <!-- 여기에 부연 설명을 추가하세요 -->
-        </ul>
-      </li>
-      <li>
-        <strong>더 고급화된 모델을 알아보고 싶다면 아래 링크를 참고하세요:</strong>
-        <a href="https://phhofm.github.io/upscale/multimodels.html#ai-generated" target="_blank" rel="generated">
-          고급 모델 상세 보기
-        </a>
-        <ul>
-          <li>예: <code>RealESRGAN-general</code>, <code>SwinIR</code>, <code>EDSR</code> 등 다양한 고성능 모델</li>
-        </ul>
-      </li>
-      <li>
-        <strong>
-          인터넷 기반 사이트에는 GPU 사용이 제한적이기에 과도한 고화질 파일은 업로드를 제한하였습니다.
-          (5MB 이하)
-        </strong>
-      </li>
-    </ul>
-  </section>
+<aside class="sidebar">
+    <nav>
+        <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
+        <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+        <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+        <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+        <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+        <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+        <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+        <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+        <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+        <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+        <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+        <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+        <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+        <a href="activity13_realesrgan.html" class="active"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+        <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+    </nav>
+</aside>
+  <div class="main-wrap">
+    <div class="container">
 
-    <!-- 기존 footer 내용 -->
-
-    <div class="main-wrap">
-      <div class="container">
-        <div id="progressOverlay">
-          <div>업스케일링 진행 중… <span id="progressText">0%</span></div>
-          <div id="progressBar">
-            <div id="progressFill"></div>
-          </div>
-          <div id="eta">예상 남은 시간: 0초</div>
+      <!-- 진행률 오버레이 -->
+      <div id="progressOverlay">
+        <div>업스케일링 진행 중… <span id="progressText">0%</span></div>
+        <div id="progressBar">
+          <div id="progressFill"></div>
         </div>
+        <div id="eta">예상 남은 시간: 0초</div>
+      </div>
 
-        <div class="upload-section">
-          <label class="btn btn-primary">
-            📁 이미지 선택
-            <input type="file" id="imageInput" accept="image/*" style="display:none;">
-          </label>
-          <button id="sampleBtn" class="btn btn-primary">🖼️ 샘플사진</button>
-          <button id="processBtn" class="btn btn-secondary" disabled>⚡ 업스케일링 시작</button>
+      <h1>🚀 RealESRGAN 이미지 업스케일러</h1>
+
+      <!-- 업로드 섹션 -->
+      <div class="upload-section">
+        <label class="btn btn-select">
+          📁 이미지 선택
+          <input type="file" id="imageInput" accept="image/*" style="display:none;">
+        </label>
+        <button id="sampleBtn" class="btn btn-sample">🖼️ 샘플사진</button>
+        <button id="processBtn" class="btn btn-start" disabled>⚡ 업스케일링 시작</button>
+      </div>
+
+      <!-- 상태 메시지 -->
+      <div id="status" class="status info"></div>
+
+      <!-- 결과 영역 -->
+      <div class="images-container" id="imagesContainer" style="display:none;">
+        <div class="canvas-wrapper">
+          <h3>원본 이미지</h3>
+          <canvas id="originalCanvas"></canvas>
+          <div class="info" id="originalSize"></div>
         </div>
-        <div id="status" class="status info" style="display:none;"></div>
-
-        <div class="images-container" id="imagesContainer" style="display:none;">
-          <div class="canvas-wrapper">
-            <h3>원본 이미지</h3>
-            <canvas id="originalCanvas"></canvas>
-            <div class="info" id="originalSize"></div>
-          </div>
-          <div class="canvas-wrapper">
-            <h3>업스케일된 이미지 (4x)</h3>
-            <canvas id="upscaledCanvas"></canvas>
-            <div class="info" id="upscaledSize"></div>
-            <button id="downloadBtn" class="btn btn-accent" disabled>💾 다운로드</button>
-          </div>
+        <div class="canvas-wrapper">
+          <h3>업스케일된 이미지 (4x)</h3>
+          <canvas id="upscaledCanvas"></canvas>
+          <div class="info" id="upscaledSize"></div>
+          <button id="downloadBtn" class="btn btn-download" disabled>💾 다운로드</button>
         </div>
       </div>
+
+      <!-- 도움말 박스 -->
+      <div class="help-box">
+        <strong style="display:block; text-align: center; margin:0px">도움말</strong><br>
+        • GPU 사용환경이 제한적이기에 5MB 이하의 이미지만 업로드 가능합니다.<br>
+        • “샘플사진” 버튼으로 내장된 랜덤 이미지를 불러옵니다.<br>
+        • 고화질 사진, 사용자의 컴퓨터 환경에 따라 업스케일링 진행시간이 오래걸릴 수 있습니다.<br>
+        • 완료 후 “다운로드” 버튼이 활성화됩니다.<br>
+        • 지금 사이트는 학습자의 체험을 위해 경량화 AI모델을 사용하고 있습니다. <a
+          href="https://phhofm.github.io/upscale/multimodels.html#ai-generated">고급모델 살펴보기</a>
+      </div>
+
     </div>
+  </div>
 
-    <footer class="footer" style="width:100%;">
-      <div class="footer-content">
-        <div>
-          <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
-          <div class="creator-info">
-            Designed & Developed by <span>황성현</span><br>
-            Contact : tjdgus1121@naver.com
-          </div>
+  <footer class="footer" style="width:100%;">
+    <div class="footer-content">
+      <div>
+        <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+        <div class="creator-info">
+          Designed & Developed by <span>황성현</span><br>
+          Contact : tjdgus1121@naver.com
         </div>
+      </div>
 
-        <div class="social-links">
-          <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
-          <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
-            <img src="naver.png" alt="메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
-              onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';">
-          </a>
-        </div>
+      <div class="social-links">
+        <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+        <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+          <img src="naver.png" alt="메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+            onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';">
+        </a>
+      </div>
 
-        <div class="copyright">
-          이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
-          다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
-        </div>
+      <div class="copyright">
+        이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+        다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+      </div>
 
-    </footer>
-
+  </footer>
 </body>
 
 </html>

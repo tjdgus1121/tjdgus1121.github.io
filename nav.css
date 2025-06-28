@@ -1,0 +1,123 @@
+/* 1) 토글 버튼 (작대기 3개) */
+/* span 스타일은 모두 삭제하세요 */
+.sidebar-toggle {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1100;
+  }
+  .sidebar-toggle i {
+    font-size: 2em;
+    color: #333;
+    transition: transform 0.3s;
+  }
+
+  .sidebar-toggle i:hover{
+    transform:scale(1.1);
+    color:#5f7478;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.486);
+
+  }
+  /* (선택) 토글 애니메이션 시 약간 회전 효과 */
+  .sidebar-toggle.open i {
+    transform: rotate(90deg);
+  }
+  
+  .sidebar-toggle.open i:hover{
+    transform:scale(1.1) rotate(90deg);
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.486);
+   
+  }
+/* 2) 사이드바 기본 숨김 */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100%;
+    background: rgba(230, 230, 230, 0.486);
+    backdrop-filter: blur(8px);
+
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+
+    /* 2) 레이어 승격 */
+    will-change: transform, opacity;
+
+    /* 3) 폰트 스무딩 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    backface-visibility: hidden;
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+/* 3) 메뉴 아이템 */
+.sidebar nav {
+    margin-top: 4rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar nav a {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: background 0.3s, font-size 0.6s;
+}
+
+.sidebar nav a i {
+    margin-right: 0.8rem;
+    font-size: 1.1rem;
+}
+
+.sidebar nav a:hover {
+    background-color: rgba(255, 255, 255, 0.477);       /* 30% 어둡게 덮어줄 검은색 */
+    background-blend-mode: multiply;
+    font-size:1.1rem;
+    color:black;
+  }
+  .sidebar nav a:hover i {
+    color:rgb(6, 6, 218);
+  }
+
+/* 활성 메뉴 아rgb(117, 35, 35)/텍스트 강조 */
+.sidebar nav a.active {
+    background: #0000006d;
+    /* 강조 배경 */
+    color: #ffffffd8;
+    /* 강조 텍스트 */
+}
+
+/* 활성 메뉴 아이콘 색상 변경 */
+.sidebar nav a.active i {
+    color: #f09bf9a8;
+    /* 예: 노란색 아이콘 */
+}
+
+/* 활성 메뉴 텍스트를 굵게 */
+.sidebar nav a.active span {
+    font-weight: 700;
+}
+
+.sidebar nav a.active:hover {
+    background-color: rgba(255, 255, 255, 0.242);     
+  background-blend-mode: multiply;
+}
+
+/* 4) 반응형 고려 (너비 자동) */
+@media (max-width: 480px) {
+    .sidebar.open {
+        width: 80vw;
+    }
+}
