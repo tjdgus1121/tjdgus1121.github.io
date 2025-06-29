@@ -1,0 +1,800 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 스타일 트랜스퍼 체험</title>
+
+  <!-- 🔍 SEO (검색엔진 최적화) -->
+  <meta name="description" content="AI 신경망을 활용한 스타일 트랜스퍼로 이미지에 예술적 스타일을 적용해보세요. 고품질 AI 모델로 쉽고 빠르게 이미지를 변환할 수 있습니다.">
+  <meta name="keywords" content="AI 스타일 트랜스퍼, 신경망 스타일 변환, 이미지 스타일링, 예술적 이미지 변환, AI 이미지 처리, 딥러닝 스타일, 이미지 필터, AI 아트">
+  <meta name="author" content="황성현">
+  <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+  <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
+  <meta name="msvalidate.01" content="08F18BF8F771D108EBF67209A4DE2D17" />
+
+  <!-- 📱 SNS 공유 (Open Graph) -->
+  <meta property="og:title" content="AI 스타일 트랜스퍼 - 신경망 기반 이미지 스타일링">
+  <meta property="og:description"
+    content="AI 신경망을 활용한 스타일 트랜스퍼로 이미지에 예술적 스타일을 적용해보세요. 모자이크, 캔디, 비의 공주 등 다양한 스타일을 체험할 수 있습니다.">
+  <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+  <meta property="og:url" content="https://tjdgus1121.github.io/acitivity15_styletransper.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AI 스타일 트랜스퍼">
+
+  <!-- 🔍 SEO (추가 메타데이터) -->
+  <meta name="robots" content="index, follow">
+  <meta name="subject" content="AI 스타일 트랜스퍼 체험">
+  <meta name="theme-color" content="#667eea">
+  <meta name="copyright" content="황성현">
+  <meta name="reply-to" content="tjdgus1121@naver.com">
+  <meta name="url" content="https://tjdgus1121.github.io/acitivity15_styletransper.html">
+  <link rel="canonical" href="https://tjdgus1121.github.io">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AI 스타일 트랜스퍼 - 신경망 기반 이미지 스타일링">
+  <meta name="twitter:description" content="AI 신경망을 활용한 스타일 트랜스퍼로 이미지에 예술적 스타일을 적용해보세요.">
+  <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+  <!-- 📎 스타일 및 폰트 -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="stylefooter.css">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(ellipse at top, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+      min-height: 100vh;
+      color: #333;
+      padding: 2rem;
+      zoom: 120%;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(132, 94, 247, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 90%, rgba(45, 212, 191, 0.1) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+      z-index: -1;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translate(0px, 0px) rotate(0deg);
+      }
+
+      33% {
+        transform: translate(30px, -30px) rotate(120deg);
+      }
+
+      66% {
+        transform: translate(-20px, 20px) rotate(240deg);
+      }
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      box-shadow:
+        0 32px 64px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #333;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .header h1 i {
+      background: linear-gradient(135deg, #dd66ea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2.2rem;
+    }
+
+    .header h1 .title-text {
+      background: linear-gradient(135deg, #1535b5 0%, #2f045a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      color: #666;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 1.5rem;
+      align-items: end;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: linear-gradient(145deg, rgba(248, 249, 255, 0.8), rgba(255, 255, 255, 0.6));
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 2px solid rgba(225, 229, 233, 0.3);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 8px 32px rgba(0, 0, 0, 0.05);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .control-group label i {
+      color: #667eea;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      cursor: pointer;
+      background: linear-gradient(145deg, #ffffff, #f8f9ff);
+      border: 2px solid rgba(102, 126, 234, 0.2);
+      border-radius: 16px;
+      padding: 0.75rem 1rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow:
+        0 4px 16px rgba(102, 126, 234, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .file-input-wrapper:hover {
+      border-color: #667eea;
+      background: linear-gradient(145deg, #f8f9ff, #ffffff);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+    }
+
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .file-input-text {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper::after {
+      content: '\f107';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #667eea;
+      pointer-events: none;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid rgba(102, 126, 234, 0.2);
+      border-radius: 16px;
+      font-size: 1rem;
+      background: linear-gradient(145deg, #ffffff, #f8f9ff);
+      appearance: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow:
+        0 4px 16px rgba(102, 126, 234, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      padding: 0.75rem 2rem;
+      border: none;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    /* 스타일 적용 버튼 - 메인 그라디언트 */
+    #runBtn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow:
+        0 8px 32px rgba(102, 126, 234, 0.3),
+        0 4px 16px rgba(118, 75, 162, 0.2);
+    }
+
+    #runBtn:hover:not(:disabled) {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow:
+        0 12px 48px rgba(102, 126, 234, 0.4),
+        0 8px 24px rgba(118, 75, 162, 0.3);
+    }
+
+    /* 다운로드 버튼 - 그린 그라디언트 */
+    #downloadBtn {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      box-shadow:
+        0 8px 32px rgba(17, 153, 142, 0.3),
+        0 4px 16px rgba(56, 239, 125, 0.2);
+      display: block;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    #downloadBtn:hover:not(:disabled) {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow:
+        0 12px 48px rgba(17, 153, 142, 0.4),
+        0 8px 24px rgba(56, 239, 125, 0.3);
+    }
+
+    button:disabled {
+      background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      color: #718096;
+    }
+
+    #status {
+      padding: 1rem;
+      border-radius: 16px;
+      margin-bottom: 1rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, rgba(227, 242, 253, 0.8), rgba(186, 230, 253, 0.6));
+      color: #1976d2;
+      border: 1px solid rgba(187, 222, 251, 0.5);
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 16px rgba(25, 118, 210, 0.1);
+    }
+
+    #status.success {
+      background: linear-gradient(135deg, rgba(232, 245, 232, 0.8), rgba(200, 230, 201, 0.6));
+      color: #2e7d32;
+      border: 1px solid rgba(200, 230, 201, 0.5);
+      margin: auto;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(46, 125, 50, 0.1);
+    }
+
+    #status.error {
+      background: linear-gradient(135deg, rgba(255, 235, 238, 0.8), rgba(255, 205, 210, 0.6));
+      color: #c62828;
+      border: 1px solid rgba(255, 205, 210, 0.5);
+      box-shadow: 0 4px 16px rgba(198, 40, 40, 0.1);
+    }
+
+    #status.loading {
+      background: linear-gradient(135deg, rgba(255, 243, 224, 0.8), rgba(255, 204, 2, 0.1));
+      color: #f57c00;
+      border: 1px solid rgba(255, 204, 2, 0.3);
+      box-shadow: 0 4px 16px rgba(245, 124, 0, 0.1);
+    }
+
+    #status.loading::before {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(245, 124, 0, 0.3);
+      border-top: 2px solid #f57c00;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    #progressContainer {
+      display: none;
+      margin: 1rem 0;
+      background: linear-gradient(145deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.6));
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background: linear-gradient(145deg, #e0e0e0, #f5f5f5);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #progressBar {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #progressBar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    #progressText {
+      text-align: center;
+      font-weight: 600;
+      color: #555;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 20px;
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 3px solid rgba(225, 229, 233, 0.3);
+      margin: 15px auto;
+      display: block;
+      backdrop-filter: blur(10px);
+    }
+
+    canvas:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    #downloadBtn {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .style-preview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .style-option {
+      padding: 1rem;
+      border: 2px solid rgba(225, 229, 233, 0.3);
+      border-radius: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(248, 249, 255, 0.6));
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .style-option:hover {
+      border-color: #667eea;
+      background: linear-gradient(145deg, rgba(248, 249, 255, 0.9), rgba(255, 255, 255, 0.7));
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.15);
+    }
+
+    .style-option.selected {
+      border-color: #667eea;
+      background: linear-gradient(145deg, rgba(240, 244, 255, 0.9), rgba(248, 249, 255, 0.7));
+      box-shadow:
+        0 8px 24px rgba(102, 126, 234, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .style-option img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 0.5rem;
+      transition: transform 0.3s ease;
+    }
+
+    .style-option:hover img {
+      transform: scale(1.05);
+    }
+
+    .style-option h4 {
+      color: #555;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .style-option p {
+      color: #999;
+      font-size: 0.8rem;
+    }
+
+    /* 설명 섹션 스타일 */
+    .explanation-section {
+      margin-top: 3rem;
+      padding: 2rem;
+      background: linear-gradient(145deg, rgba(248, 249, 255, 0.8), rgba(255, 255, 255, 0.6));
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 2px solid rgba(225, 229, 233, 0.3);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .explanation-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      justify-content: center;
+    }
+
+    .explanation-header i {
+      color: #f59e0b;
+      font-size: 1.5rem;
+    }
+
+    .explanation-header h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #333;
+      margin: 0;
+    }
+
+    .explanation-intro {
+      font-size: 1.1rem;
+      color: #555;
+      text-align: center;
+      margin-bottom: 2rem;
+      font-weight: 500;
+    }
+
+    .explanation-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(225, 229, 233, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .step:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .step p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .style-preview {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        <i class="fas fa-palette"></i>
+        <span class="title-text">AI 스타일 트랜스퍼</span>
+      </h1>
+      <p>고품질 AI 모델로 이미지에 예술적 스타일을 적용해보세요</p>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="contentInput">
+          <i class="fas fa-image"></i>
+          콘텐츠 이미지
+        </label>
+        <div class="file-input-wrapper">
+          <input type="file" id="contentInput" accept="image/*">
+          <div class="file-input-text">
+            <i class="fas fa-upload"></i>
+            이미지 선택하기
+          </div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="styleSelect">
+          <i class="fas fa-paint-brush"></i>
+          스타일 선택
+        </label>
+        <div class="select-wrapper">
+          <select id="styleSelect">
+            <option value="onnx_models/style_mosaic.onnx">Mosaic (모자이크)</option>
+            <option value="onnx_models/style_candy.onnx">Candy (캔디)</option>
+            <option value="onnx_models/style_rain_princess.onnx">Rain Princess (비의 공주)</option>
+            <option value="onnx_models/style_udnie.onnx">Udnie (우드니)</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="runBtn" disabled>
+        <i class="fas fa-magic"></i>
+        스타일 적용
+      </button>
+    </div>
+
+    <div id="status">
+      <i class="fas fa-info-circle"></i>
+      이미지와 스타일을 선택하세요.
+    </div>
+
+    <div id="progressContainer">
+      <div class="progress-bar">
+        <div id="progressBar"></div>
+      </div>
+      <div id="progressText">0%</div>
+    </div>
+
+    <canvas id="outputCanvas"></canvas>
+    <button id="downloadBtn">
+      <i class="fas fa-download"></i>
+      결과 이미지 다운로드
+    </button>
+
+    <div class="explanation-section">
+      <div class="explanation-header">
+        <i class="fas fa-lightbulb"></i>
+        <h3>신경망 스타일 전이란?</h3>
+      </div>
+      <p class="explanation-intro">신경망 스타일 전이는 사진에 그림의 화풍을 입히는 기술입니다.</p>
+      <div class="explanation-steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <p>먼저 사진(컨텐츠)과 그림(스타일) 두 장을 준비합니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <p>컴퓨터는 두 이미지를 작은 조각(특징)으로 나눠 분석합니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <p>사진 특징은 형태와 윤곽을, 그림 특징은 색과 질감을 담고 있습니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <p>합성 이미지는 사진을 바탕으로 시작해 점점 그림 느낌을 더해 갑니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">5</div>
+          <p>컴퓨터는 "얼마나 사진 모양을 유지하고 그림처럼 보일까"를 평가합니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">6</div>
+          <p>평가 결과를 줄이기 위해 이미지 픽셀을 조금씩 바꿉니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">7</div>
+          <p>이 과정을 여러 번 반복하면 사진이 그림처럼 변합니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">8</div>
+          <p>중간 과정을 보며 스타일 강도를 조절할 수 있습니다.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">9</div>
+          <p>최종 결과는 사진의 내용에 그림의 화풍을 입힌 새로운 이미지입니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+        <div class="creator-info">
+          Designed & Developed by <span>황성현</span><br>
+          Contact : tjdgus1121@naver.com
+        </div>
+      </div>
+
+      <div class="social-links">
+        <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+        <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+          <img src="naver.png" alt="메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+            onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';">
+        </a>
+      </div>
+
+      <div class="copyright">
+        이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+        다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+      </div>
+  </footer>
+
+  <!-- ONNX Runtime Web -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.min.js"></script>
+  <script>
+    // ONNX Runtime 설정 - CDN에서 WASM 파일들을 로드
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/';
+    ort.env.wasm.numThreads = 1; // 단일 스레드로 설정하여 호환성 향상
+    ort.env.wasm.simd = false; // SIMD 비활성화로 호환성 향상
+  </script>
+  <!-- 분리된 JS 불러오기 -->
+  <script src="./activity15_styletransfer.js"></script>
+</body>
+
+</html>
