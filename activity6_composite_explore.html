@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
 
     <meta name="subject" content="AI 수학 교육 체험">
-    <meta name="theme-color" content="#ff9a9e">
+    <meta name="theme-color" content="#6366f1">
     <meta name="copyright" content="황성현">
     <meta name="reply-to" content="tjdgus1121@naver.com">
     <meta name="url" content="https://tjdgus1121.github.io/activity6_composite_explore.html">
@@ -53,401 +53,435 @@
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js"></script>
     <style>
-         body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f0f8ff; /* 은은한 배경색으로 변경 (앨리스 블루) */
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      animation: subtleBackgroundChange 15s ease-in-out infinite alternate; /* 은은한 배경 애니메이션 적용 */
-    }
-
-    @keyframes subtleBackgroundChange {
-      0% {
-        background-color: #f0f8ff; /* 시작 색상 */
-      }
-      100% {
-        background-color: #f8f8ff; /* 끝 색상 (더욱 연한) */
-      }
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 20px;
-      font-size: clamp(2rem, 6vw, 3rem);
-      font-family: 'Do hyeon', cursive;
-      line-height: 0.5;
-      letter-spacing:1.5px;
-      font-weight: 300;
-    }
-    .titleh3{
-        color:rgb(77, 77, 77);
-        font-size:15px;
-        width:700px;
-        margin:10px auto;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .top-section {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .upload-section {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex: 1;
-      min-width: 250px;
-    }
-
-    .upload-card, .result-image-container, .controls-section {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      flex: 1;
-      min-width: 250px;
-      text-align: center;
-    }
-
-    .upload-title{
-        font-size:20px;
-        color:navy;
-        font-family: "Noto Sans KR";
-    }
-    .preview-container {
-      position: relative;
-      height: 150px;
-      background-color: #eee;
-      border: 2px dashed #ccc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    .preview-image {
-      max-width: 100%;
-      max-height: 100%;
-      display: none;
-    }
-
-    /* 실제 input[type="file"] 요소는 숨김 */
-    input[type="file"] {
-      display: none;
-    }
-
-    /* 커스텀 파일 선택 버튼 (label) 스타일 */
-    .custom-file-upload-button {
-      display: inline-block;
-      background-color: #4CAF50;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      border: none;
-      transition: background-color 0.3s ease, transform 0.3s ease;
-      margin-top: 10px;
-      text-align: center;
-    }
-
-    .custom-file-upload-button:hover {
-      background-color: #45a049;
-      transform: scale(1.1);
-    }
-
-    .result-canvas {
-      width: 100%;
-      height: auto;
-      flex-grow: 1;
-      min-height: 250px;
-      background-color: #eee;
-      margin: auto;
-    }
-
-    .controls-section {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .options-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .size-input {
-      width: 60px;
-      text-align: center;
-    }
-
-    .mode-buttons {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .mode-button {
-      padding: 8px 12px;
-      background-color: #eeeeee;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s ease, transform 0.3s ease;
-      color: #333;
-      font-weight: normal;
-    }
-
-    .mode-button.active {
-      /* 활성화된 버튼 스타일은 개별 ID에서 오버라이드 */
-    }
-
-    .mode-button:not([disabled]):hover {
-        opacity: 0.9;
-        transform: scale(1.1);
-    }
-
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .slider {
-      flex: 1;
-    }
-
-    .matrix-section {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .matrix-header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .matrix-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .control-button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 6px 10px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
-    }
-
-    .download-button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 8px 15px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.3s ease, transform 0.3s ease;
-    }
-
-    .control-button:not([disabled]):hover, .resize-button:not([disabled]):hover, .download-button:not([disabled]):hover {
-      opacity: 0.85;
-      transform: scale(1.1);
-    }
-
-    .matrix-wrapper {
-      overflow-x: auto;
-      max-height: 500px;
-    }
-
-    .matrix-table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 12px;
-      table-layout: fixed;
-    }
-
-    .matrix-table td {
-      border: 1px solid #ddd;
-      text-align: center;
-      padding: 0;
-      box-sizing: border-box;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .pixel-info {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #666;
-      text-align: center;
-      background-color: #f0f0f0;
-      padding: 5px;
-      border-radius: 4px;
-    }
-
-    @media (max-width: 768px) {
-      .top-section {
-        flex-direction: column;
-        gap: 20px;
-      }
-    }
-
-    /* 로딩 인디케이터 스타일 추가 */
-    .loading-indicator {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-
-    .loading-content {
-        background-color: white;
-        padding: 20px;
-        border-radius: 8px;
-        text-align: center;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .spinner {
-        width: 40px;
-        height: 40px;
-        margin: 0 auto 10px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #4CAF50;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .control-button[disabled], .resize-button[disabled] {
-      background-color: #cccccc; /* 회색 배경 */
-      cursor: not-allowed; /* 금지 커서 */
-      opacity: 0.6; /* 약간 투명하게 */
-    }
-
-    /* 결과 이미지 및 컨트롤 섹션 통합 스타일 */
-    .combined-result-controls {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      flex: 1.5; /* 너비 비율 2 차지 */
-      min-width: 200px; /* 최소 너비 설정 (필요시 조정) */
-      display: flex;
-      flex-direction: column; /* 결과 이미지와 컨트롤을 세로로 배치 */
-      gap: 10px; /* 내부 요소 간 간격 */
-      text-align: center; /* 내부 콘텐츠 가운데 정렬 */
-    }
-    
-    .combined-result-controls h3 {
-        margin-top: 0; /* 제목 위쪽 마진 제거 */
-        margin-bottom: 0; /* 제목 아래 간격 제거 (gap으로 대체) */
-    }
-
-    /* 개별 모드 버튼 색상 및 활성화/호버 스타일 */
-    #numberMode:not(.active) {
-        background-color: #ffb92d; /* 숫자 모드 (주황색) */
-        color: white;
-    }
-
-    #colorMode:not(.active) {
-        background-color: #f44336; /* 컬러 모드 (붉은색) */
-        color: white;
-    }
-
-    #mixedMode:not(.active) {
-        background-color: #b7eeb9; /* 혼합 모드 (연한 초록색) */
-        color: #333; /* 글자색 어둡게 */
-    }
-
-    #numberMode.active,
-    #colorMode.active,
-    #mixedMode.active {
-        background-color: #2855b6; /* 활성화된 버튼 (진한 초록색) */
-        color: white;
-        font-weight: bold;
-        border-color: #45a049; /* 테두리 색상 */
-    }
-
-    .combined-result-controls .controls-content {
-        width: 100%; /* 부모 (.combined-result-controls) 너비에 맞춤 */
-    }
-
-    /* 픽셀 밝기값 행렬 제목 글자 크기 */
-    .matrix-title {
-        font-size: 24px; /* 기본 크기 + 8px 정도 */
-    }
-
-    /* 확대/축소 및 셀 크기 조절 버튼 색상 */
-    #zoomIn,
-    #increaseSize {
-        background-color: #2196f3; /* 하늘색 계열 */
-    }
-
-    #zoomOut,
-    #decreaseSize {
-        background-color: #ff6a00; /* 주황색 계열 */
-    }
-
-    .resize-button {
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 8px 12px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background-color 0.3s ease, transform 0.3s ease;
-    }
-
-    .resize-button:hover {
-      background-color: #1976d2;
-      transform: scale(1.1);
-    }
-
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #ec4899;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --light-gray: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --border-radius: 0.75rem;
+            --border-radius-lg: 1rem;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: linear-gradient(120deg, #f8fafc 0%, #e0e7ff 40%, #c7d2fe 70%, #f0abfc 100%);
+            background-size: 300% 300%;
+            animation: gradientBG 18s ease-in-out infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .header-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            transform: translateX(-50%);
+            border-radius: 50%;
+        }
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-family: 'Do Hyeon', sans-serif;
+            font-weight: 400;
+            color: #22223b;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            color: #3b3b4f;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .upload-card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-xl);
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+        .upload-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl), 0 0 0 1px var(--primary-color);
+        }
+        .upload-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+            text-align: center;
+        }
+        .upload-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+        .preview-container {
+            position: relative;
+            height: 180px;
+            background: var(--light-gray);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+        .preview-container:hover {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+            border-radius: var(--border-radius);
+        }
+        .drop-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 1rem;
+        }
+        input[type="file"] { display: none; }
+        .custom-file-upload-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: none;
+            transition: var(--transition);
+            text-decoration: none;
+            justify-content: center;
+        }
+        .custom-file-upload-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .custom-file-upload-button::before {
+            content: '📁';
+            font-size: 1.1rem;
+        }
+        .result-section {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .result-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--success-color), var(--info-color));
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .section-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+        }
+        .result-canvas {
+            width: 80%;
+            height: 70%;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            display: block;
+            margin: 10px auto;
+        }
+        .controls-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+        }
+        .control-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+        .input-group, .mode-buttons {
+            width: 100%;
+            justify-content: flex-start;
+            gap: 1rem;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1 1 0;
+            min-width: 200px;
+            max-width: 350px;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        .size-input {
+            width: 80px;
+            padding: 0.5rem 1rem;
+            border: 2px solid #c7d2fe;
+            border-radius: 1.5rem;
+            background: #f8fafc;
+            color: #3730a3;
+            text-align: center;
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(199,210,254,0.08);
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+        .size-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+            background: #e0e7ff;
+        }
+        .input-group label {
+            font-size: 1rem;
+            color: #3730a3;
+            font-weight: 500;
+        }
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 1.2rem;
+            border-radius: var(--border-radius); font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer;
+            transition: var(--transition); text-decoration: none; justify-content: center;
+            min-height: 44px;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+        }
+        /* 크기 적용 버튼 그룹 전체 가운데 정렬 */
+        .control-row .input-group {
+            width: 100%;
+            justify-content: center;
+        }
+        .mode-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .mode-button {
+            min-width: 120px;
+            flex: 1 1 120px;
+            background: #f3f4f6;
+            color: var(--primary-color);
+            height:50px;
+        }
+        /* 숫자모드, 컬러모드, 혼합모드 각각 배경색 지정 */
+        #numberMode {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+        #colorMode {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        #mixedMode {
+            background: linear-gradient(90deg, #e0e7ff 0%, #fee2e2 100%);
+            color: #6366f1;
+            animation: modeGradient 6s ease-in-out infinite alternate;
+        }
+        @keyframes modeGradient {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        .mode-button {
+            padding: 0 1.2rem;
+            border: 2px solid transparent;
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--light-gray);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(99,102,241,0.05);
+        }
+        .mode-button.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.12);
+        }
+        .mode-button:hover:not(.active) {
+            background: var(--secondary-color);
+            color: #fff;
+            border-color: var(--secondary-color);
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: auto;
+            margin-top: 0.5rem;
+        }
+        .slider-container label {
+            font-size: 0.9rem; font-weight: 500; color: var(--text-primary); min-width: 48px; text-align: right;
+        }
+        .slider-value { font-size: 0.9rem; font-weight: 600; color: var(--primary-color); min-width: 32px; text-align: left; }
+        .slider {
+            width: 180px;
+            min-width: 80px;
+            max-width: 220px;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            outline: none;
+            transition: var(--transition);
+        }
+        .slider::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; background: var(--primary-color); border-radius: 50%; cursor: pointer; box-shadow: var(--shadow-sm); transition: var(--transition); }
+        .slider::-webkit-slider-thumb:hover { transform: scale(1.1); box-shadow: var(--shadow-md); }
+        .matrix-section {
+            background: white; border-radius: var(--border-radius-lg); padding: 2rem; box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-color); position: relative; overflow: hidden; margin-top: 2rem;
+        }
+        .matrix-section::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--warning-color), var(--danger-color));
+        }
+        .matrix-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .matrix-title { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
+        .matrix-title::before { content: '📊'; font-size: 1.2rem; }
+        .matrix-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .control-group-inline { display: flex; align-items: center; gap: 0.5rem; }
+        .control-group-inline span { font-size: 0.9rem; color: var(--text-secondary); }
+        .matrix-wrapper { overflow: auto; max-height: 600px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: var(--light-gray); }
+        .matrix-table { border-collapse: collapse; width: 100%; font-size: 12px; font-family: 'Orbitron', monospace; }
+        .matrix-table td { border: 1px solid var(--border-color); text-align: center; padding: 0; box-sizing: border-box; white-space: nowrap; overflow: hidden; transition: var(--transition); }
+        .matrix-table td:hover { background: rgba(99, 102, 241, 0.1); transform: scale(1.05); z-index: 1; position: relative; }
+        .pixel-info { margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius); border: 1px solid var(--border-color); font-size: 0.9rem; color: var(--text-secondary); text-align: center; }
+        .loading-indicator { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .loading-content { background: white; padding: 2rem; border-radius: var(--border-radius-lg); text-align: center; box-shadow: var(--shadow-xl); max-width: 300px; }
+        .spinner { width: 50px; height: 50px; margin: 0 auto 1rem; border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 1024px) {
+            .upload-section { grid-template-columns: 1fr; }
+            .matrix-header { flex-direction: column; align-items: flex-start; }
+            .matrix-controls { width: 100%; justify-content: space-between; }
+            .control-row { flex-direction: column; align-items: stretch; }
+            .input-group, .mode-buttons, .slider-container { max-width: 100%; min-width: 0; flex: 1 1 100%; }
+        }
+        @media (max-width: 768px) {
+            .main-container { padding: 1rem; }
+            .upload-card, .result-section, .matrix-section { padding: 1.5rem; }
+            .control-row { flex-direction: column; align-items: stretch; }
+            .mode-buttons { width: 100%; justify-content: flex-start; }
+            .input-group, .mode-buttons, .slider-container { max-width: 100%; min-width: 0; flex: 1 1 100%; }
+            .mode-button { flex: 1; }
+            .input-group, .mode-buttons {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .mode-button {
+                min-width: 100%;
+            }
+        }
+        @media (max-width: 480px) {
+            h1 { font-size: 2rem; }
+            .subtitle { font-size: 1rem; }
+            .upload-card, .result-section, .matrix-section { padding: 1rem; }
+            .btn { padding: 0.625rem 1rem; font-size: 0.875rem; }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+        @media (prefers-color-scheme: dark) {
+            :root { --text-primary: #f1f5f9; --text-secondary: #94a3b8; --light-gray: #1e293b; --border-color: #334155; }
+        }
+        @media (max-width: 900px) {
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            .input-group, .mode-buttons {
+                max-width: 100%;
+                min-width: 0;
+                flex: 1 1 100%;
+            }
+        }
     </style>
 </head>
 
@@ -473,103 +507,89 @@
         <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
         <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
         <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+        <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
     </nav>
 </aside>
 
-    <h1>이미지 블렌딩 행렬 시각화</h1>
-    <h3 class="titleh3">사진을 업로드하면, 이미지를 동일한 사이즈로 렌더링 한 후 흑백사진으로 변환하여 이미지를 합성합니다.<br>오른쪽의 스크롤을 조절하며 행렬데이터가 어떻게 변하는지 살펴보세요.</h3>
-    <div class="container">
-        <!-- 로딩 인디케이터 추가 -->
+    <div class="main-container">
+        <div class="header-section">
+            <h1>이미지 블렌딩 행렬 시각화</h1>
+            <p class="subtitle">두 이미지를 업로드하여 동일한 사이즈로 렌더링한 후, 그레이스케일로 변환하여 합성합니다.<br>슬라이더를 조절하며 행렬 데이터가 어떻게 변화하는지 탐구해보세요.</p>
+        </div>
         <div id="loadingIndicator" class="loading-indicator" style="display: none;">
             <div class="loading-content">
                 <div class="spinner"></div>
                 <p id="loadingMessage">이미지 처리 중...</p>
             </div>
         </div>
-        
-        <!-- 상단 섹션: 이미지 업로드, 결과 이미지, 컨트롤 -->
-        <div class="top-section">
-            <!-- 이미지 업로드 섹션 -->
-            <div class="upload-section">
-                <div class="upload-card">
-                    <h3 class="upload-title">이미지 1</h3>
-                    <div class="preview-container" id="preview1">
-                        <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
-                        <img class="preview-image" id="previewImage1" alt="업로드된 이미지 1 미리보기">
-                    </div>
-                    <label for="imageInput1" class="custom-file-upload-button">파일 선택</label>
-                    <input type="file" id="imageInput1" accept="image/*" title="첫 번째 이미지 업로드">
+        <div class="upload-section">
+            <div class="upload-card">
+                <h3 class="upload-title">이미지 1</h3>
+                <div class="preview-container" id="preview1">
+                    <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
+                    <img class="preview-image" id="previewImage1" alt="업로드된 이미지 1 미리보기">
                 </div>
-
-                <div class="upload-card">
-                    <h3 class="upload-title">이미지 2</h3>
-                    <div class="preview-container" id="preview2">
-                        <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
-                        <img class="preview-image" id="previewImage2" alt="업로드된 이미지 2 미리보기">
-                    </div>
-                    <label for="imageInput2" class="custom-file-upload-button">파일 선택</label>
-                    <input type="file" id="imageInput2" accept="image/*" title="두 번째 이미지 업로드">
-                </div>
+                <label for="imageInput1" class="custom-file-upload-button">파일 선택</label>
+                <input type="file" id="imageInput1" accept="image/*">
             </div>
-
-            <!-- 결과 이미지 및 컨트롤 섹션 통합 -->
-            <div class="combined-result-controls">
-                <h3>결과 이미지</h3>
-                <canvas id="resultCanvas" class="result-canvas"></canvas>
-                <div class="controls-content">
-                    <div class="options-container">
-                        <div>
-                            <label for="widthInput">너비: </label>
-                            <input type="number" id="widthInput" class="size-input" value="100" min="5" max="100">
-                            <label for="heightInput">높이: </label>
-                            <input type="number" id="heightInput" class="size-input" value="100" min="5" max="100">
-                            <button id="resizeButton" class="resize-button">크기 적용</button>
-                        </div>
-
-                        <div class="mode-buttons">
-                            <button id="numberMode" class="mode-button">숫자 모드</button>
-                            <button id="colorMode" class="mode-button">컬러 모드</button>
-                            <button id="mixedMode" class="mode-button active">혼합 모드</button>
-                        </div>
+            <div class="upload-card">
+                <h3 class="upload-title">이미지 2</h3>
+                <div class="preview-container" id="preview2">
+                    <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
+                    <img class="preview-image" id="previewImage2" alt="업로드된 이미지 2 미리보기">
+                </div>
+                <label for="imageInput2" class="custom-file-upload-button">파일 선택</label>
+                <input type="file" id="imageInput2" accept="image/*">
+            </div>
+        </div>
+        <div class="result-section">
+            <h3 class="section-title">결과 이미지</h3>
+            <canvas id="resultCanvas" class="result-canvas"></canvas>
+            <div class="controls-grid">
+                <div class="control-row">
+                    <div class="input-group">
+                        <label for="widthInput">너비</label>
+                        <input type="number" id="widthInput" class="size-input" value="100" min="5" max="100">
+                        <label for="heightInput">높이</label>
+                        <input type="number" id="heightInput" class="size-input" value="100" min="5" max="100">
+                        <button id="resizeButton" class="btn btn-success">크기 적용</button>
                     </div>
-
-                    <div class="slider-container">
-                        <label for="blendSlider">혼합 비율: </label>
-                        <span id="sliderValue" class="slider-value">50%</span>
-                        <input type="range" id="blendSlider" class="slider" min="0" max="100" value="50" step="5">
+                    <div class="mode-buttons">
+                        <button id="numberMode" class="mode-button">숫자 모드</button>
+                        <button id="colorMode" class="mode-button">컬러 모드</button>
+                        <button id="mixedMode" class="mode-button active">혼합 모드</button>
                     </div>
+                </div>
+                <div class="slider-container">
+                    <label for="blendSlider">혼합 비율</label>
+                    <span id="sliderValue" class="slider-value">50%</span>
+                    <input type="range" id="blendSlider" class="slider" min="0" max="100" value="50" step="5">
                 </div>
             </div>
         </div>
-
-        <!-- 행렬 표시 섹션 (전체 너비 사용) -->
         <div class="matrix-section">
             <div class="matrix-header">
-                <h3 class="matrix-title">픽셀 밝기값 행렬</h3>
-
+                <span class="matrix-title">픽셀 밝기값 행렬</span>
                 <div class="matrix-controls">
-                    <div class="zoom-control">
-                        <button id="zoomOut" class="control-button">-</button>
-                        <span class="zoom-value" id="zoomValue">100%</span>
-                        <button id="zoomIn" class="control-button">+</button>
+                    <div class="control-group-inline">
+                        <button id="zoomOut" class="btn btn-warning">-</button>
+                        <span id="zoomValue">100%</span>
+                        <button id="zoomIn" class="btn btn-info">+</button>
                     </div>
-
-                    <div class="zoom-control">
-                        <button id="decreaseSize" class="control-button">-</button>
+                    <div class="control-group-inline">
+                        <button id="decreaseSize" class="btn btn-warning">-</button>
                         <span>셀 크기: <span id="cellSizeValue">24</span>px</span>
-                        <button id="increaseSize" class="control-button">+</button>
+                        <button id="increaseSize" class="btn btn-info">+</button>
                     </div>
-
-                    <button id="downloadCSV" class="download-button">CSV 다운로드</button>
+                    <button id="downloadCSV" class="btn btn-primary">CSV 다운로드</button>
                 </div>
             </div>
-
             <div class="matrix-wrapper" id="matrixWrapper">
                 <div class="matrix-container" id="matrixContainer">
                     <table id="matrixTable" class="matrix-table"></table>
                 </div>
             </div>
-
             <div id="pixelInfo" class="pixel-info">픽셀을 클릭하면 좌표와 밝기값이 표시됩니다.</div>
         </div>
     </div>

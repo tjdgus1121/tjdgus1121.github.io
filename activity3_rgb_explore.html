@@ -55,9 +55,10 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 90vw;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
+            background: linear-gradient(135deg, #e6f0fa 0%, #e6fcf5 100%);
         }
         h1{
             font-family: "Do Hyeon";
@@ -103,6 +104,11 @@
             overflow: auto;
             max-width: 100%;
             max-height: 60vh;
+            background: rgba(255,255,255,0.93);
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(80,120,120,0.07);
+            border: 1.2px solid #e3e8f0;
+            padding: 12px 0;
         }
 
         .grid {
@@ -117,6 +123,14 @@
             background-color: white;
             border: 1px solid #ddd;
             cursor: pointer;
+            border-radius: 6px;
+            border: 1.2px solid #e0e0e0;
+            transition: box-shadow 0.18s, border 0.18s;
+        }
+
+        .cell:hover {
+            box-shadow: 0 2px 8px rgba(80,120,120,0.13);
+            border: 1.2px solid #a3c8e8;
         }
 
         .action-btn {
@@ -124,14 +138,18 @@
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 16px;
             margin-right: 10px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+            transition: background 0.22s, transform 0.18s, box-shadow 0.18s;
         }
 
         .action-btn:hover {
-            background-color: #45a049;
+            transform: translateY(-2px) scale(1.06);
+            box-shadow: 0 8px 24px rgba(102,126,234,0.13);
         }
 
         .matrix-container {
@@ -139,6 +157,11 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            background: rgba(255,255,255,0.97);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(80, 120, 120, 0.10);
+            border: 1.5px solid #e3e8f0;
+            padding: 28px 18px 18px 18px;
         }
 
         .matrix-display {
@@ -161,13 +184,14 @@
         .matrix {
             font-family: monospace;
             white-space: pre;
-            background-color: #f5f5f5;
-            padding: 15px;
-            border-radius: 4px;
+            background-color: rgba(255,255,255,0.98);
+            padding: 18px;
+            border-radius: 10px;
             overflow-x: auto;
             font-size: 14px;
             line-height: 1.5;
-            border: 1px solid #ddd;
+            border: 1.2px solid #e3e8f0;
+            box-shadow: 0 2px 10px rgba(80,120,120,0.07);
         }
 
         .selected-color-info {
@@ -175,12 +199,13 @@
             font-family: monospace;
             text-align: center;
             font-size: 16px;
-            padding: 5px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
+            padding: 7px 12px;
+            background-color: #f0f4fa;
+            border-radius: 8px;
             display: inline-block;
             margin-left: auto;
             margin-right: auto;
+            box-shadow: 0 1px 4px rgba(80,120,120,0.07);
         }
 
         .info-container {
@@ -189,19 +214,22 @@
         }
         .grid-settings-information {
             text-align:center;
-            background:rgba(219, 219, 219, 0.889);
-            padding:5px;
-            margin-bottom:10px;
+            background: rgba(219, 219, 219, 0.889);
+            padding: 7px;
+            margin-bottom: 10px;
             font-weight: 600;
+            border-radius: 8px;
         }
         .grid-settings {
             display: flex;
             align-items: center;
-            background-color: #f5f5f5;
-            padding: 10px;
-            border-radius: 4px;
+            background-color: rgba(245,247,250,0.97);
+            padding: 12px 10px;
+            border-radius: 10px;
             margin-bottom: 20px;
             justify-content: center;
+            border: 1.2px solid #e3e8f0;
+            box-shadow: 0 2px 8px rgba(80,120,120,0.06);
         }
 
         .grid-settings label {
@@ -222,15 +250,26 @@
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 10px;
             cursor: pointer;
             margin-left: 10px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+            transition: background 0.22s, transform 0.18s, box-shadow 0.18s;
+        }
+
+        .apply-btn:hover {
+            transform: translateY(-2px) scale(1.06);
+            box-shadow: 0 8px 24px rgba(102,126,234,0.13);
         }
 
         .color-palette {
-            margin-bottom: 10px;
-            padding: 5px;
-            border-radius: 4px;
+            margin-bottom: 14px;
+            padding: 10px 8px 8px 8px;
+            border-radius: 14px;
+            background: rgba(245,247,250,0.97);
+            box-shadow: 0 2px 10px rgba(80,120,120,0.07);
+            border: 1.2px solid #e3e8f0;
         }
 
         .color-palette-title {
@@ -245,11 +284,14 @@
         }
 
         .color-lookup {
-            background-color: #f5f5f5;
-            padding: 15px;
-            border-radius: 6px;
+            background: rgba(255,255,255,0.97);
+            padding: 22px 18px 18px 18px;
+            border-radius: 18px;
             margin-bottom: 25px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 24px rgba(80, 120, 120, 0.10);
+            border: 1.5px solid #e3e8f0;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
         }
 
         .color-lookup-title {
@@ -324,14 +366,27 @@
             background-color: #2196F3;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 10px;
             cursor: pointer;
             margin-left: 10px;
             font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+            transition: background 0.22s, transform 0.18s, box-shadow 0.18s;
         }
 
         .use-color-btn:hover {
-            background-color: #0b7dda;
+            transform: translateY(-2px) scale(1.06);
+            box-shadow: 0 8px 24px rgba(102,126,234,0.13);
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding: 8px;
+            }
+            .color-lookup, .matrix-container {
+                padding: 12px 4px 10px 4px;
+            }
         }
     </style>
 </head>
@@ -358,6 +413,8 @@
             <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
             <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
         </nav>
     </aside>
 

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 스타일 변환 스튜디오</title>
+  <!-- SEO & Social Meta -->
+  <meta name="description" content="AI 기반 스타일 변환으로 원본 이미지의 비율을 유지하며 예술적으로 변환하는 웹 서비스. 다양한 예술 스타일을 이미지에 적용해보세요.">
+  <meta name="keywords" content="AI, 스타일 변환, Style Transfer, ONNX, 이미지 변환, 예술, 딥러닝, 인공지능, Neural Style, 웹앱">
+  <meta name="author" content="황성현">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical"
+    href="https://tjdgus1121.github.io/real-esrgan-app/web-stylization/activity16_Arbitrary_transfer.html">
+  <!-- Open Graph -->
+  <meta property="og:title" content="AI 스타일 변환 스튜디오">
+  <meta property="og:description" content="AI 기반 스타일 변환으로 원본 이미지의 비율을 유지하며 예술적으로 변환하는 웹 서비스. 다양한 예술 스타일을 이미지에 적용해보세요.">
+  <meta property="og:type" content="website">
+  <meta property="og:url"
+    content="https://tjdgus1121.github.io/real-esrgan-app/web-stylization/activity16_Arbitrary_transfer.html">
+  <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AI 스타일 변환 스튜디오">
+  <meta name="twitter:description" content="AI 기반 스타일 변환으로 원본 이미지의 비율을 유지하며 예술적으로 변환하는 웹 서비스.">
+  <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+    rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+  <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="stylefooter.css">
+  <link rel="stylesheet" href="nav.css">
+  <script src="nav.js"></script>
+  <style>
+    :root {
+      /* Modern Color Palette */
+      --primary-50: #f0f9ff;
+      --primary-100: #e0f2fe;
+      --primary-500: #0ea5e9;
+      --primary-600: #0284c7;
+      --primary-700: #0369a1;
+      --primary-900: #0c4a6e;
+
+      --secondary-50: #faf5ff;
+      --secondary-500: #a855f7;
+      --secondary-600: #9333ea;
+
+      --neutral-50: #fafafa;
+      --neutral-100: #f5f5f5;
+      --neutral-200: #e5e5e5;
+      --neutral-300: #d4d4d4;
+      --neutral-400: #a3a3a3;
+      --neutral-500: #737373;
+      --neutral-600: #525252;
+      --neutral-700: #404040;
+      --neutral-800: #262626;
+      --neutral-900: #171717;
+
+      --success-50: #f0fdf4;
+      --success-500: #22c55e;
+      --success-600: #16a34a;
+
+      --warning-50: #fffbeb;
+      --warning-500: #f59e0b;
+      --warning-600: #d97706;
+
+      --error-50: #fef2f2;
+      --error-500: #ef4444;
+      --error-600: #dc2626;
+
+      /* Spacing */
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --spacing-3xl: 4rem;
+
+      /* Typography */
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-lg: 1.125rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.5rem;
+      --font-3xl: 1.875rem;
+      --font-4xl: 2.25rem;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+      /* Border Radius */
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-2xl: 1.5rem;
+      --radius-3xl: 2rem;
+      --radius-full: 9999px;
+
+      /* Transitions */
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      background: linear-gradient(135deg,
+          var(--primary-500) 0%,
+          var(--secondary-500) 50%,
+          var(--primary-700) 100%);
+      min-height: 100vh;
+      color: var(--neutral-900);
+      line-height: 1.6;
+      font-size: var(--font-base);
+      overflow-x: hidden;
+    }
+
+    /* Animated background elements */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 50%);
+      animation: backgroundMove 20s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes backgroundMove {
+
+      0%,
+      100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-20px) rotate(1deg);
+      }
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: var(--spacing-xl);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Main card with glassmorphism */
+    .main-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px);
+      border-radius: var(--radius-3xl);
+      padding: var(--spacing-3xl);
+      box-shadow: var(--shadow-2xl);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .main-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: var(--spacing-3xl);
+      position: relative;
+    }
+
+    .header h1 {
+      font-size: clamp(var(--font-3xl), 5vw, var(--font-4xl));
+      font-weight: 800;
+      background: linear-gradient(135deg,
+          var(--primary-600) 0%,
+          var(--secondary-600) 50%,
+          var(--primary-700) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: var(--spacing-md);
+      letter-spacing: -0.025em;
+    }
+
+    .header p {
+      font-size: var(--font-lg);
+      color: var(--neutral-600);
+      font-weight: 500;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Controls Grid */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: var(--spacing-xl);
+      margin-bottom: var(--spacing-3xl);
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: 600;
+      color: var(--neutral-700);
+      margin-bottom: var(--spacing-md);
+      font-size: var(--font-sm);
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+    }
+
+    /* File Input Styling */
+    .file-input {
+      position: relative;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 160px;
+      border: 2px dashed var(--neutral-300);
+      border-radius: var(--radius-xl);
+      background: var(--neutral-50);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .file-input:hover {
+      border-color: var(--primary-500);
+      background: var(--primary-50);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .file-input.has-file {
+      border-color: var(--success-500);
+      background: var(--success-50);
+      border-style: solid;
+    }
+
+    .file-input input[type="file"] {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .file-input-content {
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .file-input-icon {
+      font-size: 2.5rem;
+      margin-bottom: var(--spacing-md);
+      opacity: 0.7;
+      transition: all var(--transition-base);
+    }
+
+    .file-input:hover .file-input-icon {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .file-input-text {
+      font-size: var(--font-sm);
+      color: var(--neutral-500);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* Run Button */
+    .run-button {
+      grid-column: 1 / -1;
+      justify-self: center;
+      padding: var(--spacing-lg) var(--spacing-3xl);
+      background: linear-gradient(135deg,
+          var(--primary-600) 0%,
+          var(--secondary-600) 100%);
+      color: white;
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: var(--font-lg);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.025em;
+      min-width: 240px;
+    }
+
+    .run-button:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .run-button:active:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .run-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .run-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.6s;
+    }
+
+    .run-button:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    /* Status Messages */
+    .status {
+      margin: var(--spacing-xl) 0;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      border-radius: var(--radius-xl);
+      font-weight: 500;
+      text-align: center;
+      transition: all var(--transition-base);
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-sm);
+    }
+
+    .status.loading {
+      background: linear-gradient(135deg, var(--warning-50), #fef3c7);
+      color: var(--warning-600);
+      border: 1px solid var(--warning-500);
+    }
+
+    .status.error {
+      background: linear-gradient(135deg, var(--error-50), #fecaca);
+      color: var(--error-600);
+      border: 1px solid var(--error-500);
+    }
+
+    .status.success {
+      background: linear-gradient(135deg, var(--success-50), #a7f3d0);
+      color: var(--success-600);
+      border: 1px solid var(--success-500);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top: 2px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: var(--spacing-sm);
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Preview Section */
+    .preview-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--spacing-xl);
+      margin-top: var(--spacing-xl);
+    }
+
+    .preview-box {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius-2xl);
+      padding: var(--spacing-xl);
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all var(--transition-slow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-box:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .preview-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary-500), var(--secondary-500));
+      opacity: 0;
+      transition: opacity var(--transition-base);
+    }
+
+    .preview-box:hover::before {
+      opacity: 1;
+    }
+
+    .preview-box h3 {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      color: var(--neutral-800);
+      margin-bottom: var(--spacing-lg);
+      text-align: center;
+      letter-spacing: -0.025em;
+    }
+
+    .preview-container {
+      width: 100%;
+      height: 280px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--neutral-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 1px solid var(--neutral-200);
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform var(--transition-slow);
+    }
+
+    .preview-container:hover .preview-img {
+      transform: scale(1.02);
+    }
+
+    .placeholder {
+      color: var(--neutral-400);
+      font-size: var(--font-sm);
+      text-align: center;
+      padding: var(--spacing-lg);
+      line-height: 1.6;
+    }
+
+    /* Canvas Styling */
+    .canvas-container {
+      width: 100%;
+      min-height: 280px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--neutral-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 1px solid var(--neutral-200);
+    }
+
+    #canvas {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      transition: transform var(--transition-slow);
+    }
+
+    .canvas-container:hover #canvas {
+      transform: scale(1.02);
+    }
+
+    /* Download Button */
+    .download-button {
+      margin-top: var(--spacing-lg);
+      padding: var(--spacing-md) var(--spacing-xl);
+      background: linear-gradient(135deg, var(--success-500), var(--success-600));
+      color: white;
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: var(--font-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      display: none;
+      width: 100%;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .download-button:hover {
+      background: linear-gradient(135deg, var(--success-600), #059669);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .download-button:active {
+      transform: translateY(0);
+    }
+
+    /* Slider Styling */
+    .slider-container {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* 가운데 정렬 */
+        gap: 0.75rem;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .slider-container label {
+        margin-right: 0.5rem;
+        min-width: 70px;
+        text-align: right;
+    }
+    .slider {
+        flex: 0 1 250px; /* 슬라이더가 너무 넓어지지 않게 */
+        max-width: 300px;
+        min-width: 100px;
+    }
+    .slider-value {
+        min-width: 40px;
+        margin-left: 0.5rem;
+        text-align: left;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: var(--spacing-md);
+      }
+
+      .main-card {
+        padding: var(--spacing-xl);
+        border-radius: var(--radius-2xl);
+      }
+
+      .header h1 {
+        font-size: var(--font-3xl);
+      }
+
+      .header p {
+        font-size: var(--font-base);
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+      }
+
+      .preview-section {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+      }
+
+      .file-input {
+        height: 140px;
+      }
+
+      .preview-container,
+      .canvas-container {
+        height: 240px;
+      }
+
+      .run-button {
+        min-width: 200px;
+        padding: var(--spacing-md) var(--spacing-xl);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-card {
+        padding: var(--spacing-lg);
+      }
+
+      .file-input {
+        height: 120px;
+      }
+
+      .preview-container,
+      .canvas-container {
+        height: 200px;
+      }
+
+      .file-input-icon {
+        font-size: 2rem;
+      }
+    }
+
+    /* Smooth scrolling and accessibility */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Focus states for accessibility */
+    .run-button:focus,
+    .download-button:focus,
+    .file-input:focus-within {
+      outline: 2px solid var(--primary-500);
+      outline-offset: 2px;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <aside class="sidebar">
+    <nav>
+      <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
+      <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+      <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+      <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+      <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+      <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+      <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+      <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+      <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+      <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+      <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+      <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+      <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+      <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+      <a href="activity14_yolo.html""><i class=" fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+      <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+      <a href="activity16_Arbitrary_transfer.html" class="active"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
+          변환</span></a>
+    </nav>
+  </aside>
+  <div class="container">
+    <div class="main-card">
+      <div class="header">
+        <h1>🎨 AI 스타일 변환 스튜디오</h1>
+        <p>AI 기반 스타일 변환으로 원본 이미지의 비율을 유지하며 예술적으로 변환</p>
+      </div>
+
+      <div class="controls">
+        <div class="input-group">
+          <label for="contentImg">📷 원본 이미지</label>
+          <div class="file-input" id="contentInputWrapper">
+            <input type="file" id="contentImg" accept="image/*" />
+            <div class="file-input-content">
+              <div class="file-input-icon">📷</div>
+              <div class="file-input-text">원본 이미지를 선택하세요<br>JPG, PNG 파일을 지원합니다</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="styleImg">🎭 스타일 이미지</label>
+          <div class="file-input" id="styleInputWrapper">
+            <input type="file" id="styleImg" accept="image/*" />
+            <div class="file-input-content">
+              <div class="file-input-icon">🎭</div>
+              <div class="file-input-text">스타일 이미지를 선택하세요<br>변환할 스타일을 정의합니다</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="run-button" id="runBtn" disabled>
+          <span id="buttonText">✨ 스타일 변환하기</span>
+        </button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="preview-section">
+        <div class="preview-box">
+          <h3>원본 이미지</h3>
+          <div class="preview-container">
+            <img id="contentPreview" class="preview-img" style="display:none;" />
+            <div id="contentPlaceholder" class="placeholder">
+              원본 이미지를 업로드하면<br>미리보기가 나타납니다
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-box">
+          <h3>스타일 참조</h3>
+          <div class="preview-container">
+            <img id="stylePreview" class="preview-img" style="display:none;" />
+            <div id="stylePlaceholder" class="placeholder">
+              스타일 이미지를 업로드하면<br>미리보기가 나타납니다
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-box">
+          <h3>변환 결과</h3>
+          <div class="canvas-container">
+            <canvas id="canvas" width="512" height="512"></canvas>
+          </div>
+          <button class="download-button" id="downloadBtn">💾 결과 다운로드</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+        <div class="creator-info">
+          Designed & Developed by <span>황성현</span><br>
+          Contact : tjdgus1121@naver.com
+        </div>
+        <div style="margin-top: 15px; font-size: 20px; font-family: 'Nanum Pen Script', cursive;">
+          오늘 / 총 방문자 수:
+          <a href="https://hits.sh/tjdgus1121.github.io/" target="_blank" rel="noopener">
+            <img
+              src="https://hits.sh/tjdgus1121.github.io.svg?view=today-total&style=for-the-badge&label=오늘/총&extraCount=15&color=d4fbfb&labelColor=7a7a7a&logo=github"
+              alt="방문자 수" style="height: 30px; vertical-align: middle;" />
+          </a>
+        </div>
+      </div>
+
+      <div class="social-links">
+        <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+        <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+          <img src="naver.png" alt="메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+            onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';">
+        </a>
+      </div>
+
+      <div class="copyright">
+        이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+        다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+      </div>
+
+  </footer>
+  <!-- ONNX Runtime Web -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script src="./activity16js.js"></script>
+</body>
+
+</html>
