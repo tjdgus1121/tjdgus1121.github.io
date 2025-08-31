@@ -1,10 +1,39 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description" content="이미지를 업로드하고 다양한 커널 필터(블러, 샤프닝, 엣지 감지 등)를 적용하며 컨볼루션의 원리를 체험하는 활동 페이지입니다.">
+    <meta name="keywords" content="커널, 컨볼루션, 이미지 필터, 블러, 샤프닝, 엣지 감지, 인공지능 수학, 이미지 처리, 교육 활동">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="커널 필터 체험 - 인공지능 수학 탐구">
+    <meta property="og:description" content="3×3 커널을 직접 조작하며 이미지가 어떻게 변형되는지 확인하고, 컨볼루션의 원리를 탐구해 보세요.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity17_kernel.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity17_kernel.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="커널 필터 체험">
+    <meta name="twitter:description" content="커널 행렬을 활용해 이미지를 변환하며 컨볼루션의 작동 원리를 탐구하는 활동입니다.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/activity17_kernel.html">
     <title>컨볼루션 필터 체험 도구</title>
-    <link rel="stylesheet" href="stylefooter.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
         integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
@@ -14,13 +43,16 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
         rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="stylefooter.css">
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
+
         * {
             margin: 0;
             padding: 0;
@@ -179,7 +211,8 @@
             box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.4);
         }
 
-        select, button {
+        select,
+        button {
             width: 100%;
             padding: 16px;
             border: 2px solid rgba(229, 231, 235, 0.8);
@@ -191,7 +224,8 @@
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
         }
 
-        select:focus, button:focus {
+        select:focus,
+        button:focus {
             outline: none;
             border-color: #06b6d4;
             box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -426,8 +460,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .info-panel {
@@ -505,12 +544,12 @@
                 grid-template-columns: 1fr;
                 gap: 30px;
             }
-            
+
             .canvas-container {
                 grid-template-rows: 1fr 1fr;
                 gap: 25px;
             }
-            
+
             .controls {
                 position: static;
             }
@@ -520,11 +559,11 @@
             body {
                 padding: 10px;
             }
-            
+
             .main-content {
                 padding: 20px;
             }
-            
+
             .header {
                 padding: 30px 20px;
             }
@@ -541,11 +580,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
         <i class="fas fa-bars"></i>
-      </div>
-    
+    </div>
+
     <aside class="sidebar">
         <nav>
             <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
@@ -554,7 +594,8 @@
             <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
             <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
             <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
-            <a href="activity6_composite_explore.html" class="active"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <a href="activity6_composite_explore.html" class="active"><i class="fa fa-layer-group"></i><span>합성
+                    원리</span></a>
             <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
             <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
             <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
@@ -564,8 +605,10 @@
             <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
-            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
-            <a href="activity17_Arbitrary_transfer.html" class="active"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
+                    변환</span></a>
+            <a href="activity17_Arbitrary_transfer.html" class="active"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터
+                    체험</span></a>
         </nav>
     </aside>
 
@@ -581,7 +624,8 @@
                 <div class="control-group">
                     <label>📁 이미지 업로드</label>
                     <div class="file-input-wrapper micro-interaction">
-                        <input type="file" id="imageInput" class="file-input" accept="image/*" title="이미지 파일을 선택하세요" aria-label="이미지 파일 선택">
+                        <input type="file" id="imageInput" class="file-input" accept="image/*" title="이미지 파일을 선택하세요"
+                            aria-label="이미지 파일 선택">
                         <div class="file-input-button">
                             <span>📸</span>
                             <span>이미지 선택하기</span>
@@ -671,6 +715,40 @@
         </div>
     </div>
 
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+                <div style="margin-top: 15px; font-size: 20px; font-family: 'Nanum Pen Script', cursive;">
+                    오늘 / 총 방문자 수:
+                    <a href="https://hits.sh/tjdgus1121.github.io/" target="_blank" rel="noopener">
+                        <img src="https://hits.sh/tjdgus1121.github.io.svg?view=today-total&style=for-the-badge&label=오늘/총&extraCount=15&color=d4fbfb&labelColor=7a7a7a&logo=github"
+                            alt="방문자 수" style="height: 30px; vertical-align: middle;" />
+                    </a>
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+
     <script>
         // 전역 변수
         let originalImageData = null;
@@ -679,11 +757,11 @@
         // 미리 정의된 커널들
         const kernels = {
             identity: [[0, 0, 0], [0, 1, 0], [0, 0, 0]],
-            blur: [[1/9, 1/9, 1/9], [1/9, 1/9, 1/9], [1/9, 1/9, 1/9]],
+            blur: [[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]],
             sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]],
             edge: [[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]],
             emboss: [[-2, -1, 0], [-1, 1, 1], [0, 1, 2]],
-            gaussian: [[1/16, 2/16, 1/16], [2/16, 4/16, 2/16], [1/16, 2/16, 1/16]]
+            gaussian: [[1 / 16, 2 / 16, 1 / 16], [2 / 16, 4 / 16, 2 / 16], [1 / 16, 2 / 16, 1 / 16]]
         };
 
         // 필터 설명
@@ -714,7 +792,7 @@
         imageInput.addEventListener('change', handleImageUpload);
         filterSelect.addEventListener('change', handleFilterChange);
         applyButton.addEventListener('click', applyFilter);
-        
+
         // 커널 입력값 변경 이벤트
         kernelInputs.forEach((input, index) => {
             input.addEventListener('input', () => {
@@ -732,14 +810,14 @@
                 const row = Math.floor(index / 3);
                 const col = index % 3;
                 const value = currentKernel[row][col];
-                
+
                 // 분수를 소수로 변환하여 표시
                 if (value < 1 && value > 0) {
                     cell.textContent = value.toFixed(3);
                 } else {
                     cell.textContent = value.toString();
                 }
-                
+
                 // 중심 셀 강조
                 if (index === 4) {
                     cell.style.background = '#e0e7ff';
@@ -761,13 +839,13 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 const img = new Image();
-                img.onload = function() {
+                img.onload = function () {
                     // 캔버스 크기 조정 (최대 500px)
                     const maxSize = 500;
                     let { width, height } = img;
-                    
+
                     if (width > maxSize || height > maxSize) {
                         const ratio = Math.min(maxSize / width, maxSize / height);
                         width *= ratio;
@@ -782,7 +860,7 @@
 
                     // 이미지 데이터 저장
                     originalImageData = ctx.getImageData(0, 0, width, height);
-                    
+
                     // 결과 캔버스 크기 맞추기
                     resultCanvas.width = width;
                     resultCanvas.height = height;
@@ -798,10 +876,10 @@
         // 필터 변경 처리
         function handleFilterChange() {
             const selectedFilter = filterSelect.value;
-            
+
             // 설명 업데이트
             filterDescription.textContent = descriptions[selectedFilter];
-            
+
             // 커스텀 모드일 때만 커널 에디터 표시
             if (selectedFilter === 'custom') {
                 kernelEditor.style.display = 'block';
@@ -864,15 +942,15 @@
             if (!originalImageData) return;
 
             loading.classList.add('show');
-            
+
             // 비동기 처리로 UI 블로킹 방지
             setTimeout(() => {
                 try {
                     const resultImageData = applyConvolution(originalImageData, currentKernel);
-                    
+
                     const ctx = resultCanvas.getContext('2d');
                     ctx.putImageData(resultImageData, 0, 0);
-                    
+
                     loading.classList.remove('show');
                 } catch (error) {
                     console.error('필터 적용 중 오류:', error);
@@ -887,4 +965,5 @@
         updateKernelDisplay();
     </script>
 </body>
+
 </html>
