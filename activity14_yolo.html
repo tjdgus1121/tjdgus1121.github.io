@@ -48,8 +48,8 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.9.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 
 
     <link rel="stylesheet" href="nav.css">
@@ -63,7 +63,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #a8c0ff 0%, #c2e9fb 100%);
             min-height: 100vh;
             color: #333;
         }
@@ -81,15 +81,73 @@
             margin-bottom: 30px;
         }
 
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header-text {
+            flex: 1;
+            text-align: center;
+        }
+
         .header h1 {
-            font-size: 2.5em;
+            font-size: 3em;
+            font-family: 'Do Hyeon';
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 2px 2px 4px rgba(160, 160, 160, 0.3);
+            font-weight:400;
+            color:black;
         }
 
         .header p {
             font-size: 1.2em;
             opacity: 0.9;
+        }
+
+        .header-help-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: 2px solid #667eea;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .header-help-btn:hover {
+            background: linear-gradient(135deg, #5a6fd8, #6a4c93);
+            border-color: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .header-help-btn i {
+            font-size: 1.2em;
+        }
+
+        /* 모바일에서는 헤더 도움말 버튼 숨기고 플로팅 도움말만 표시 */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .header-help-btn {
+                display: none;
+            }
         }
 
         /* YOLO 설명 박스 */
@@ -335,23 +393,138 @@
             }
         }
 
-        /* 플로팅 도움말 */
-        .help-tooltip {
+
+
+        /* 도움말 모달 스타일 */
+        .help-modal {
+            display: none;
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #667eea;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            font-size: 0.9em;
-            z-index: 1000;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
         }
 
-        .help-tooltip:hover {
-            background: #5a6fd8;
+        .help-modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .help-modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .help-modal-header h3 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .help-close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+
+        .help-close:hover {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
+
+        .help-modal-body {
+            padding: 25px;
+        }
+
+        .help-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .help-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .help-section h4 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-section p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .help-section ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .help-section li {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .help-section strong {
+            color: #333;
+        }
+
+        /* 모바일 반응형 */
+        @media (max-width: 768px) {
+            .help-modal-content {
+                margin: 10% auto;
+                width: 95%;
+                max-height: 85vh;
+            }
+            
+            .help-modal-header {
+                padding: 15px 20px;
+            }
+            
+            .help-modal-header h3 {
+                font-size: 1.3em;
+            }
+            
+            .help-modal-body {
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -380,13 +553,22 @@
             <a href="activity14_yolo.html" class="active"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <a href="activity17_Arbitrary_transfer.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
         </nav>
     </aside>
     <div class="container">
         <!-- 헤더 -->
         <div class="header">
-            <h1>🎯 YOLO 객체 탐지 체험하기</h1>
-            <p>실시간 객체 탐지 기술을 직접 체험해보세요!</p>
+            <div class="header-content">
+                <div class="header-text">
+                    <h1>🎯 YOLO 객체 탐지 체험하기</h1>
+                    <p>실시간 객체 탐지 기술을 직접 체험해보세요!</p>
+                </div>
+                <button class="header-help-btn" onclick="showHelp()" title="도움말 보기">
+                    <i class="fas fa-question-circle"></i>
+                    <span>도움말</span>
+                </button>
+            </div>
         </div>
 
         <!-- YOLO 설명 박스 -->
@@ -403,7 +585,7 @@
         <div class="control-panel">
             <div class="control-buttons">
                 <div class="file-upload">
-                    <input type="file" id="imageInput" accept="image/*">
+                    <input type="file" id="imageInput" accept="image/*" title="이미지 파일을 선택하세요" aria-label="이미지 파일 선택">
                     <button class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
                         📷 이미지 업로드
                     </button>
@@ -463,9 +645,53 @@
         </div>
     </div>
 
-    <!-- 도움말 툴팁 -->
-    <div class="help-tooltip" onclick="showHelp()">
-        ❓ 도움말
+
+
+    <!-- 도움말 모달 오버레이 -->
+    <div id="helpModal" class="help-modal">
+        <div class="help-modal-content">
+            <div class="help-modal-header">
+                <h3>🎯 YOLO 객체 탐지 체험 가이드</h3>
+                <span class="help-close" onclick="hideHelp()">&times;</span>
+            </div>
+            <div class="help-modal-body">
+                <div class="help-section">
+                    <h4>📷 이미지 업로드</h4>
+                    <p>컴퓨터에서 사진을 선택하여 객체를 탐지해보세요. JPG, PNG, GIF 등 다양한 이미지 형식을 지원합니다.</p>
+                </div>
+                
+                <div class="help-section">
+                    <h4>🎥 웹캠 시작</h4>
+                    <p>실시간으로 카메라를 통해 객체를 탐지할 수 있습니다. 카메라 권한을 허용해주세요.</p>
+                </div>
+                
+                <div class="help-section">
+                    <h4>🤖 AI가 탐지할 수 있는 객체들</h4>
+                    <ul>
+                        <li><strong>사람, 동물:</strong> 고양이, 개, 새, 말, 소 등</li>
+                        <li><strong>교통수단:</strong> 자동차, 자전거, 버스, 기차, 비행기 등</li>
+                        <li><strong>생활용품:</strong> 의자, 책, 휴대폰, 노트북, 가방 등</li>
+                        <li><strong>음식:</strong> 사과, 바나나, 피자, 햄버거, 케이크 등</li>
+                        <li><strong>총 80가지 클래스</strong>의 객체를 탐지할 수 있습니다!</li>
+                    </ul>
+                </div>
+                
+                <div class="help-section">
+                    <h4>💡 성공적인 탐지를 위한 팁</h4>
+                    <ul>
+                        <li>밝은 곳에서 명확한 객체가 포함된 이미지나 영상을 사용하세요</li>
+                        <li>객체가 너무 작거나 흐릿하지 않도록 주의하세요</li>
+                        <li>웹캠 사용 시 카메라를 안정적으로 고정하세요</li>
+                        <li>탐지 결과의 정확도(Confidence)를 확인하세요</li>
+                    </ul>
+                </div>
+                
+                <div class="help-section">
+                    <h4>🔧 기술적 정보</h4>
+                    <p>이 활동은 <strong>TensorFlow.js</strong>와 <strong>COCO-SSD</strong> 모델을 사용하여 실시간 객체 탐지를 수행합니다. 모든 처리는 브라우저에서 이루어져 개인정보가 외부로 전송되지 않습니다.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <footer class="footer">
@@ -867,20 +1093,30 @@
          * 도움말 표시 함수
          */
         function showHelp() {
-            alert(`🎯 YOLO 객체 탐지 체험 가이드
+            const modal = document.getElementById('helpModal');
+            modal.style.display = 'block';
+            
+            // 모달 외부 클릭 시 닫기
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    hideHelp();
+                }
+            };
+            
+            // ESC 키로 닫기
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    hideHelp();
+                }
+            });
+        }
 
-📷 이미지 업로드: 컴퓨터에서 사진을 선택하여 객체를 탐지해보세요.
-
-🎥 웹캠 시작: 실시간으로 카메라를 통해 객체를 탐지할 수 있습니다.
-
-🤖 AI가 탐지할 수 있는 객체들:
-• 사람, 동물 (고양이, 개, 새 등)
-• 교통수단 (자동차, 자전거, 버스 등) 
-• 생활용품 (의자, 책, 휴대폰 등)
-• 음식 (사과, 바나나, 피자 등)
-• 총 80가지 클래스의 객체
-
-💡 팁: 밝은 곳에서 명확한 객체가 포함된 이미지나 영상을 사용하면 더 정확한 결과를 얻을 수 있습니다!`);
+        /**
+         * 도움말 숨기기 함수
+         */
+        function hideHelp() {
+            const modal = document.getElementById('helpModal');
+            modal.style.display = 'none';
         }
 
         // 페이지 언로드 시 웹캠 정리

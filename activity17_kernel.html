@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컨볼루션 필터 체험 도구</title>
+    <link rel="stylesheet" href="stylefooter.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent-color: #0ea5e9;
+            --danger-color: #ef4444;
+            --danger-hover: #dc2626;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #1a1a1a;
+            --text-secondary: #6b7280;
+            --surface: rgba(255, 255, 255, 0.95);
+            --surface-hover: rgba(255, 255, 255, 0.98);
+            --border-radius: 20px;
+            --border-radius-sm: 12px;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --shadow-xl: 0 35px 60px -12px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 25%, #bae6fd 50%, #7dd3fc 75%, #59c0ec 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--border-radius);
+            box-shadow: 0 25px 50px -12px rgba(14, 165, 233, 0.15);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #97dcfc 0%, #82daff 25%, #86c2de 50%, #b2def5 75%, #cbd5f2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.15)"/><circle cx="75" cy="75" r="1.5" fill="rgba(255,255,255,0.12)"/><circle cx="50" cy="10" r="0.8" fill="rgba(255,255,255,0.18)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.4;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 300;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 1;
+            font-family: 'Do Hyeon', sans-serif;
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            opacity: 0.98;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 28px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            letter-spacing: -0.01em;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #9bcdfb 0%, #43b5d2 100%);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.3);
+        }
+
+        .file-input-button:hover {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.4);
+        }
+
+        select, button {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgba(229, 231, 235, 0.8);
+            border-radius: var(--border-radius-sm);
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .apply-button {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 1.1em;
+            letter-spacing: -0.01em;
+            box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.3);
+        }
+
+        .apply-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #fa742c 0%, #f67543 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4);
+        }
+
+        .apply-button:disabled {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-description {
+            background: rgba(186, 230, 253, 0.6);
+            padding: 16px;
+            border-radius: var(--border-radius-sm);
+            font-size: 0.95em;
+            color: #0c4a6e;
+            border: 1px solid rgba(125, 211, 252, 0.4);
+            margin-top: 12px;
+            line-height: 1.6;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .kernel-display {
+            background: rgba(240, 249, 255, 0.8);
+            padding: 20px;
+            border-radius: var(--border-radius-sm);
+            margin-top: 16px;
+            border: 2px solid rgba(186, 230, 253, 0.6);
+            box-shadow: 0 1px 3px 0 rgba(6, 182, 212, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .kernel-display h4 {
+            color: #0c4a6e;
+            margin-bottom: 16px;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .kernel-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+
+        .kernel-cell {
+            background: #ffffff;
+            padding: 12px 8px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9em;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .kernel-cell:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            transform: scale(1.05);
+        }
+
+        .kernel-editor {
+            background: rgba(254, 243, 199, 0.8);
+            padding: 24px;
+            border-radius: var(--border-radius-sm);
+            margin-top: 20px;
+            border: 2px solid rgba(251, 191, 36, 0.6);
+            box-shadow: 0 1px 3px 0 rgba(251, 191, 36, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .kernel-editor h4 {
+            color: #92400e;
+            margin-bottom: 16px;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .kernel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .kernel-input {
+            width: 100%;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: 'SF Mono', Monaco, monospace;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.2s ease;
+        }
+
+        .kernel-input:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            background: white;
+        }
+
+        .reset-kernel {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px 0 rgba(245, 158, 11, 0.2);
+        }
+
+        .reset-kernel:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px 0 rgba(245, 158, 11, 0.3);
+        }
+
+        .canvas-container {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .canvas-wrapper {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(186, 230, 253, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .canvas-wrapper:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px -10px rgba(6, 182, 212, 0.15);
+            border-color: rgba(125, 211, 252, 0.8);
+        }
+
+        .canvas-wrapper h3 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        canvas {
+            max-width: 100%;
+            border: 3px solid #f1f5f9;
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        canvas:hover {
+            border-color: #e2e8f0;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #06b6d4;
+            border-radius: 50%;
+            animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-panel {
+            background: rgba(186, 230, 253, 0.7);
+            padding: 24px;
+            border-radius: var(--border-radius-sm);
+            margin-top: 24px;
+            border: 2px solid rgba(125, 211, 252, 0.5);
+            box-shadow: 0 1px 3px 0 rgba(6, 182, 212, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .info-panel h4 {
+            color: #0c4a6e;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-panel ul {
+            color: #374151;
+            line-height: 1.7;
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-panel li {
+            padding: 3px 0;
+            padding-left: 10px;
+            position: relative;
+        }
+
+        .info-panel li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 4px;
+        }
+
+        .glass-effect {
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+
+
+        .micro-interaction {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .micro-interaction:hover {
+            transform: scale(1.02);
+        }
+
+        .micro-interaction:active {
+            transform: scale(0.98);
+        }
+
+        @media (max-width: 1400px) {
+            .main-content {
+                grid-template-columns: 350px 1fr;
+                gap: 25px;
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .canvas-container {
+                grid-template-rows: 1fr 1fr;
+                gap: 25px;
+            }
+            
+            .controls {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-primary: #f9fafb;
+                --text-secondary: #9ca3af;
+                --surface: rgba(17, 24, 39, 0.95);
+                --surface-hover: rgba(17, 24, 39, 0.98);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+      </div>
+    
+    <aside class="sidebar">
+        <nav>
+            <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="activity6_composite_explore.html" class="active"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <a href="activity17_Arbitrary_transfer.html" class="active"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+        </nav>
+    </aside>
+
+
+    <div class="container">
+        <div class="header">
+            <h1>🎨 컨볼루션 필터 체험 도구</h1>
+            <p>이미지에 다양한 필터를 적용하여 컨볼루션의 원리를 이해해보세요!</p>
+        </div>
+
+        <div class="main-content">
+            <div class="controls glass-effect">
+                <div class="control-group">
+                    <label>📁 이미지 업로드</label>
+                    <div class="file-input-wrapper micro-interaction">
+                        <input type="file" id="imageInput" class="file-input" accept="image/*" title="이미지 파일을 선택하세요" aria-label="이미지 파일 선택">
+                        <div class="file-input-button">
+                            <span>📸</span>
+                            <span>이미지 선택하기</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>필터 선택</label>
+                    <select id="filterSelect" class="micro-interaction" title="필터를 선택하세요">
+                        <option value="identity">항등 필터 - 원본 유지</option>
+                        <option value="blur">블러 - 흐림 효과</option>
+                        <option value="sharpen">샤프닝 - 선명하게</option>
+                        <option value="edge">엣지 감지 - 윤곽선 추출</option>
+                        <option value="emboss">엠보싱 - 양각 효과</option>
+                        <option value="gaussian">가우시안 블러 - 부드러운 흐림</option>
+                        <option value="custom">커스텀 - 직접 설정</option>
+                    </select>
+                    <div id="filterDescription" class="filter-description">
+                        항등 필터는 원본 이미지를 그대로 유지합니다. 컨볼루션의 기본 원리를 이해하는 데 도움이 됩니다.
+                    </div>
+                </div>
+
+                <div id="kernelDisplay" class="kernel-display">
+                    <h4>적용될 커널 행렬</h4>
+                    <div class="kernel-matrix" id="kernelMatrix">
+                        <div class="kernel-cell">0</div>
+                        <div class="kernel-cell">0</div>
+                        <div class="kernel-cell">0</div>
+                        <div class="kernel-cell">0</div>
+                        <div class="kernel-cell">1</div>
+                        <div class="kernel-cell">0</div>
+                        <div class="kernel-cell">0</div>
+                        <div class="kernel-cell">0</div>
+                        <div class="kernel-cell">0</div>
+                    </div>
+                </div>
+
+                <div id="kernelEditor" class="kernel-editor" style="display: none;">
+                    <h4>✏️ 커널 행렬 편집</h4>
+                    <div class="kernel-grid">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                        <input type="number" class="kernel-input" step="0.1" value="1">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                        <input type="number" class="kernel-input" step="0.1" value="0">
+                    </div>
+                    <button class="reset-kernel micro-interaction" onclick="resetKernel()">🔄 커널 초기화</button>
+                </div>
+
+                <button id="applyButton" class="apply-button micro-interaction" disabled>
+                    ✨ 필터 적용하기
+                </button>
+
+                <div class="info-panel">
+                    <h4>💡 사용 가이드</h4>
+                    <ul>
+                        <li>1. 먼저 이미지를 업로드하세요</li>
+                        <li>2. 다양한 필터를 선택해보세요</li>
+                        <li>3. 커널 행렬을 확인해보세요</li>
+                        <li>4. 커스텀 모드에서 직접 편집해보세요</li>
+                        <li>5. 원본과 결과를 비교해보세요</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <div class="canvas-wrapper micro-interaction">
+                    <h3>📷 원본 이미지</h3>
+                    <canvas id="originalCanvas"></canvas>
+                </div>
+                <div class="canvas-wrapper micro-interaction">
+                    <h3>✨ 필터 적용 결과</h3>
+                    <canvas id="resultCanvas"></canvas>
+                    <div id="loading" class="loading">
+                        <div class="loading-content">
+                            <div class="spinner"></div>
+                            <p>필터를 적용하는 중...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let originalImageData = null;
+        let currentKernel = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]; // 항등 필터
+
+        // 미리 정의된 커널들
+        const kernels = {
+            identity: [[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+            blur: [[1/9, 1/9, 1/9], [1/9, 1/9, 1/9], [1/9, 1/9, 1/9]],
+            sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]],
+            edge: [[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]],
+            emboss: [[-2, -1, 0], [-1, 1, 1], [0, 1, 2]],
+            gaussian: [[1/16, 2/16, 1/16], [2/16, 4/16, 2/16], [1/16, 2/16, 1/16]]
+        };
+
+        // 필터 설명
+        const descriptions = {
+            identity: "항등 필터는 원본 이미지를 그대로 유지합니다. 컨볼루션의 기본 원리를 이해하는 데 도움이 됩니다.",
+            blur: "블러 필터는 주변 픽셀의 평균값을 사용하여 이미지를 흐리게 만듭니다. 노이즈 제거에도 사용됩니다.",
+            sharpen: "샤프닝 필터는 중심 픽셀을 강조하고 주변 픽셀을 빼서 이미지를 더욱 선명하게 만듭니다.",
+            edge: "엣지 감지 필터는 이미지의 경계선과 윤곽선을 찾아내어 강조합니다. 객체 인식에 활용됩니다.",
+            emboss: "엠보싱 필터는 이미지에 3D 양각 효과를 주어 입체감을 만들어냅니다.",
+            gaussian: "가우시안 블러는 가중 평균을 사용하여 자연스럽고 부드러운 흐림 효과를 만듭니다.",
+            custom: "커스텀 모드에서는 3x3 커널 행렬의 값들을 직접 설정하여 나만의 필터를 만들 수 있습니다."
+        };
+
+        // DOM 요소들
+        const imageInput = document.getElementById('imageInput');
+        const filterSelect = document.getElementById('filterSelect');
+        const applyButton = document.getElementById('applyButton');
+        const originalCanvas = document.getElementById('originalCanvas');
+        const resultCanvas = document.getElementById('resultCanvas');
+        const loading = document.getElementById('loading');
+        const filterDescription = document.getElementById('filterDescription');
+        const kernelEditor = document.getElementById('kernelEditor');
+        const kernelDisplay = document.getElementById('kernelDisplay');
+        const kernelMatrix = document.getElementById('kernelMatrix');
+        const kernelInputs = document.querySelectorAll('.kernel-input');
+
+        // 이벤트 리스너
+        imageInput.addEventListener('change', handleImageUpload);
+        filterSelect.addEventListener('change', handleFilterChange);
+        applyButton.addEventListener('click', applyFilter);
+        
+        // 커널 입력값 변경 이벤트
+        kernelInputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                currentKernel[row][col] = parseFloat(input.value) || 0;
+                updateKernelDisplay();
+            });
+        });
+
+        // 커널 행렬 표시 업데이트
+        function updateKernelDisplay() {
+            const cells = kernelMatrix.querySelectorAll('.kernel-cell');
+            cells.forEach((cell, index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                const value = currentKernel[row][col];
+                
+                // 분수를 소수로 변환하여 표시
+                if (value < 1 && value > 0) {
+                    cell.textContent = value.toFixed(3);
+                } else {
+                    cell.textContent = value.toString();
+                }
+                
+                // 중심 셀 강조
+                if (index === 4) {
+                    cell.style.background = '#e0e7ff';
+                    cell.style.fontWeight = '700';
+                    cell.style.color = '#4f46e5';
+                    cell.style.borderColor = '#a5b4fc';
+                } else {
+                    cell.style.background = '#ffffff';
+                    cell.style.fontWeight = '600';
+                    cell.style.color = '#374151';
+                    cell.style.borderColor = '#e5e7eb';
+                }
+            });
+        }
+
+        // 이미지 업로드 처리
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // 캔버스 크기 조정 (최대 500px)
+                    const maxSize = 500;
+                    let { width, height } = img;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        const ratio = Math.min(maxSize / width, maxSize / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+
+                    // 원본 캔버스에 이미지 그리기
+                    originalCanvas.width = width;
+                    originalCanvas.height = height;
+                    const ctx = originalCanvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 이미지 데이터 저장
+                    originalImageData = ctx.getImageData(0, 0, width, height);
+                    
+                    // 결과 캔버스 크기 맞추기
+                    resultCanvas.width = width;
+                    resultCanvas.height = height;
+
+                    // 적용 버튼 활성화
+                    applyButton.disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 필터 변경 처리
+        function handleFilterChange() {
+            const selectedFilter = filterSelect.value;
+            
+            // 설명 업데이트
+            filterDescription.textContent = descriptions[selectedFilter];
+            
+            // 커스텀 모드일 때만 커널 에디터 표시
+            if (selectedFilter === 'custom') {
+                kernelEditor.style.display = 'block';
+            } else {
+                kernelEditor.style.display = 'none';
+                currentKernel = kernels[selectedFilter].map(row => [...row]);
+                updateKernelDisplay();
+            }
+        }
+
+        // 커널 초기화
+        function resetKernel() {
+            currentKernel = [[0, 0, 0], [0, 1, 0], [0, 0, 0]];
+            kernelInputs.forEach((input, index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                input.value = currentKernel[row][col];
+            });
+            updateKernelDisplay();
+        }
+
+        // 컨볼루션 연산 함수
+        function applyConvolution(imageData, kernel) {
+            const { data, width, height } = imageData;
+            const result = new Uint8ClampedArray(data.length);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const pixelIndex = (y * width + x) * 4;
+
+                    let r = 0, g = 0, b = 0;
+
+                    // 3x3 커널 적용
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const ny = Math.max(0, Math.min(height - 1, y + ky));
+                            const nx = Math.max(0, Math.min(width - 1, x + kx));
+                            const neighborIndex = (ny * width + nx) * 4;
+
+                            const kernelValue = kernel[ky + 1][kx + 1];
+
+                            r += data[neighborIndex] * kernelValue;
+                            g += data[neighborIndex + 1] * kernelValue;
+                            b += data[neighborIndex + 2] * kernelValue;
+                        }
+                    }
+
+                    result[pixelIndex] = Math.max(0, Math.min(255, r));
+                    result[pixelIndex + 1] = Math.max(0, Math.min(255, g));
+                    result[pixelIndex + 2] = Math.max(0, Math.min(255, b));
+                    result[pixelIndex + 3] = data[pixelIndex + 3]; // 알파값 유지
+                }
+            }
+
+            return new ImageData(result, width, height);
+        }
+
+        // 필터 적용
+        function applyFilter() {
+            if (!originalImageData) return;
+
+            loading.classList.add('show');
+            
+            // 비동기 처리로 UI 블로킹 방지
+            setTimeout(() => {
+                try {
+                    const resultImageData = applyConvolution(originalImageData, currentKernel);
+                    
+                    const ctx = resultCanvas.getContext('2d');
+                    ctx.putImageData(resultImageData, 0, 0);
+                    
+                    loading.classList.remove('show');
+                } catch (error) {
+                    console.error('필터 적용 중 오류:', error);
+                    loading.classList.remove('show');
+                    alert('필터 적용 중 오류가 발생했습니다.');
+                }
+            }, 100);
+        }
+
+        // 초기 설정
+        handleFilterChange();
+        updateKernelDisplay();
+    </script>
+</body>
+</html>

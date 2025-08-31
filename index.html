@@ -499,7 +499,7 @@
                     <img src="./homepageimage16.png" alt="피드백">
                 </div>
                 <div class="card-body">
-                    <h2 class="card-title">임의(Arbitrary) 신경망 스타일 변환</h2>
+                    <h2 class="card-title">임의(Arbitrary) 신경망 스타일 변환환</h2>
                     <p class="card-text">Arbitrary Transfer를 체험해보세요. 직접 적용하고 싶은 스타일 이미지를 업로드하고 스타일 변환을 해봅시다. </p>
                     <a href="./activity16_Arbitrary_transfer.html" class="btn">살펴보기</a>
                 </div>
@@ -507,12 +507,12 @@
 
             <div class="card">
                 <div class="card-image">
-                    <img src="./homepageimageready.png" alt="피드백">
+                    <img src="./homepageimage17.png" alt="피드백">
                 </div>
                 <div class="card-body">
-                    <h2 class="card-title">피드백을 받아 제작 예정</h2>
-                    <p class="card-text">필요한 것이 있다면 말씀주시면 능력껏 제작하겠습니다.</p>
-                    <a href="./#" class="btn">살펴보기</a>
+                    <h2 class="card-title">이미지 커널 필터 체험</h2>
+                    <p class="card-text">작은 3×3 커널을 이용해 이미지를 변환해봅시다. 블러, 샤프닝, 엣지 감지 등 다양한 효과를 체험하며 컨볼루션의 원리를 이해할 수 있습니다. </p>
+                    <a href="./activity17_kernel.html" class="btn">살펴보기</a>
                 </div>
             </div>
 
@@ -565,40 +565,100 @@
     </footer>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // 두 백엔드 서버에 핑을 보내는 함수
-            function pingServers() {
-                const server1Url = 'https://tjdgus1121-interpolation.onrender.com/ping'; // activity12_interpolation 백엔드
-                const server2Url = 'https://tjdgus1121-github-io.onrender.com/'; // activity9_mnist_recognizer 백엔드 (기본 경로 HEAD 요청)
+            // Render.com 서버를 깨우는 함수 (더 강력한 버전)
+            function wakeUpServer() {
+                const serverUrl = 'https://tjdgus1121-github-io.onrender.com/';
+                const maxRetries = 5; // 최대 재시도 횟수 증가
+                let retryCount = 0;
 
-                // 첫 번째 서버 핑 (GET 요청)
-                fetch(server1Url, { method: 'GET' })
-                    .then(response => {
-                        if (response.ok) {
-                            console.log(`서버 1 (${server1Url}) 핑 성공`);
-                        } else {
-                            console.warn(`서버 1 (${server1Url}) 핑 실패: ${response.status}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`서버 1 (${server1Url}) 핑 오류:`, error);
-                    });
+                function attemptWakeUp() {
+                    console.log(`🌅 Render.com 서버 깨우기 시도 ${retryCount + 1}/${maxRetries}...`);
+                    
+                    // 여러 방법으로 동시에 서버 깨우기
+                    const wakeUpMethods = [
+                        // 방법 1: fetch API
+                        fetch(serverUrl, { 
+                            method: 'GET',
+                            mode: 'cors',
+                            cache: 'no-cache',
+                            headers: {
+                                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                'Pragma': 'no-cache',
+                                'Expires': '0'
+                            }
+                        }),
+                        // 방법 2: XMLHttpRequest
+                        new Promise((resolve, reject) => {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', serverUrl, true);
+                            xhr.setRequestHeader('Cache-Control', 'no-cache');
+                            xhr.setRequestHeader('Pragma', 'no-cache');
+                            xhr.onload = () => resolve(xhr);
+                            xhr.onerror = () => reject(new Error('XHR failed'));
+                            xhr.send();
+                        }),
+                        // 방법 3: Image 객체로 요청
+                        new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.onload = () => resolve('Image loaded');
+                            img.onerror = () => reject(new Error('Image failed'));
+                            img.src = serverUrl + '?t=' + Date.now(); // 캐시 방지
+                        })
+                    ];
 
-                // 두 번째 서버 핑 (HEAD 요청 - 더 가벼움)
-                fetch(server2Url, { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            console.log(`서버 2 (${server2Url}) 핑 성공`);
-                        } else {
-                            console.warn(`서버 2 (${server2Url}) 핑 실패: ${response.status}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`서버 2 (${server2Url}) 핑 오류:`, error);
-                    });
+                    // 모든 방법을 동시에 시도
+                    Promise.allSettled(wakeUpMethods)
+                        .then(results => {
+                            const successCount = results.filter(r => r.status === 'fulfilled').length;
+                            console.log(`🎯 서버 깨우기 결과: ${successCount}/${wakeUpMethods.length} 성공`);
+                            
+                            if (successCount > 0) {
+                                console.log('✅ Render.com 서버가 성공적으로 깨어났습니다!');
+                            } else {
+                                retryWakeUp();
+                            }
+                        })
+                        .catch(error => {
+                            console.error(`서버 깨우기 실패:`, error);
+                            retryWakeUp();
+                        });
+                }
+
+                function retryWakeUp() {
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        // 지수 백오프: 1초, 2초, 4초, 8초 후 재시도
+                        const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 8000);
+                        console.log(`${delay/1000}초 후 재시도...`);
+                        setTimeout(attemptWakeUp, delay);
+                    } else {
+                        console.warn('⚠️ 서버 깨우기 최대 재시도 횟수 초과');
+                    }
+                }
+
+                // 첫 번째 시도 시작
+                attemptWakeUp();
             }
 
-            // 페이지 로드 시 서버 핑 시작
-            pingServers();
+            // 페이지 로드 시 즉시 서버 깨우기 시작
+            wakeUpServer();
+            
+            // 추가로 주기적으로 서버 상태 확인 (10분마다)
+            setInterval(wakeUpServer, 10 * 60 * 1000);
+            
+            // 사용자 상호작용 시에도 서버 깨우기 (클릭, 스크롤 등)
+            let userInteractionTimeout;
+            const userInteractionEvents = ['click', 'scroll', 'mousemove', 'keydown'];
+            
+            userInteractionEvents.forEach(event => {
+                document.addEventListener(event, () => {
+                    clearTimeout(userInteractionTimeout);
+                    userInteractionTimeout = setTimeout(() => {
+                        console.log('👤 사용자 상호작용 감지 - 서버 상태 확인 중...');
+                        wakeUpServer();
+                    }, 5000); // 5초 후 실행
+                }, { passive: true });
+            });
         });
     </script>
 </body>

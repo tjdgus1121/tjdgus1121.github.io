@@ -57,35 +57,44 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 100%);
+            background-size: 400% 400%;
+            animation: gradientMove 12s ease-in-out infinite;
+        }
+        @keyframes gradientMove {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
         }
 
         .container {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: #fff;
+            border-radius: 18px;
+            padding: 32px 24px;
+            box-shadow: 0 4px 24px 0 rgba(108,140,255,0.07);
+            margin-top: 32px;
         }
 
         h1 {
             text-align: center;
-            color: #333;
+            color: #1f284a;
             margin-bottom: 30px;
             font-family: "Do Hyeon";
-            font-weight: 300;
+            font-weight: 400;
             font-size: 3em;
+            letter-spacing: 1px;
         }
 
         .canvas-section {
             text-align: center;
             margin-bottom: 30px;
         }
-
         #drawingCanvas {
-            border: 2px solid #333;
+            border: 2.5px solid #6c8cff;
             cursor: crosshair;
-            background-color: white;
-            border-radius: 5px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px 0 rgba(108,140,255,0.08);
         }
 
         .controls {
@@ -94,32 +103,32 @@
         }
 
         button {
-            background-color: #4CAF50;
-            color: white;
+            background: #6c8cff;
+            color: #fff;
             border: none;
-            padding: 12px 24px;
+            padding: 14px 32px;
             margin: 0 10px;
-            border-radius: 5px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: none;
         }
-
         button:hover {
-            background-color: #45a049;
+            background: #4b5fc9;
+            transform: scale(1.04);
         }
-
         button:disabled {
-            background-color: #cccccc;
+            background: #cccccc;
             cursor: not-allowed;
         }
-
         .clear-btn {
-            background-color: #f44336;
+            background: #ffb6b9;
+            color: #fff;
         }
-
         .clear-btn:hover {
-            background-color: #da190b;
+            background: #ff8a9e;
         }
 
         .output-section {
@@ -127,30 +136,39 @@
         }
 
         .matrix-container {
+            background: #f8faff;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.04);
+            padding: 24px 0;
+            margin-top: 18px;
             display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
+            flex-direction: row;
+            gap: 32px;
             justify-content: center;
             align-items: flex-start;
         }
-
         .matrix-display {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            background-color: #fafafa;
+            border: none;
+            border-radius: 10px;
+            padding: 18px 10px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.04);
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-width: 0;
         }
-
         .matrix-title {
             font-weight: bold;
             margin-bottom: 15px;
             text-align: center;
-            color: #555;
+            color: #6c8cff;
+            font-size: 1.15em;
         }
-
+        .visual-matrix, .numeric-matrix {
+            border-radius: 8px;
+            box-shadow: 0 1px 4px 0 rgba(108,140,255,0.04);
+        }
         .visual-matrix {
             display: grid;
             grid-template-columns: repeat(28, 1fr);
@@ -284,19 +302,19 @@
 
         .stats {
             margin-top: 15px;
-            font-size: 14px;
-            color: #666;
+            font-size: 15px;
+            color: #6c8cff;
             text-align: center;
         }
 
         .instructions {
-            background-color: #e7f4f7;
-            border-left: 4px solid #2196F3;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 0 5px 5px 0;
+            background: linear-gradient(90deg, #e3f0ff 0%, #f8faff 100%);
+            border-left: 6px solid #6c8cff;
+            padding: 18px 24px;
+            margin-bottom: 24px;
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.04);
         }
-
         .instructions h3 {
             margin-top: 0;
             color: #1976D2;
@@ -341,6 +359,22 @@
             gap: 20px;
             align-items: flex-start;
         }
+        @media (max-width: 900px) {
+            .container {
+                padding: 10px 2vw;
+            }
+            .visual-matrix, .numeric-matrix, .compact-matrix {
+                width: 98vw;
+                height: 98vw;
+                max-width: 98vw;
+                max-height: 98vw;
+            }
+            .matrix-container {
+                flex-direction: column;
+                gap: 18px;
+                align-items: center;
+            }
+        }
     </style>
 </head>
 
@@ -368,6 +402,7 @@
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <a href="activity17_Arbitrary_transfer.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
         </nav>
     </aside>
     <div class="container">
