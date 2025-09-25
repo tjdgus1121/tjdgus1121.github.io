@@ -287,6 +287,13 @@
             min-width: 0;
         }
 
+        /* 스크롤 영역 안에서 실제 콘텐츠의 레이아웃 크기를 잡아줄 래퍼 */
+        .matrix-scroll-content {
+            position: relative;
+            width: fit-content;
+            height: fit-content;
+        }
+
         .matrix-table-container {
             overflow-x: auto;
             overflow-y: auto;
@@ -840,15 +847,27 @@
             });
 
             // 확대/축소 적용
+            // [수정]
             function applyZoom() {
                 zoomLevelEl.textContent = `${zoomLevel}%`;
+                const table = matrixOutput._table;
+                const scrollContent = matrixOutput._scrollContent;
+                if (!table || !scrollContent) return;
 
-                const table = matrixOutput.querySelector('.matrix-table');
-                if (table) {
-                    table.style.transform = `scale(${zoomLevel / 100})`;
-                    table.style.transformOrigin = 'top left';
-                }
+                const s = zoomLevel / 100;
+
+                // 1) 보이는 크기: transform으로 조절
+                table.style.transform = `scale(${s})`;
+                table.style.transformOrigin = 'top left';
+
+                // 2) 레이아웃 크기: 래퍼의 width/height에 반영 → 스크롤바 생성
+                //   (offsetWidth/Height는 스케일 전 원본 크기이므로 s를 곱해줌)
+                const w = table.offsetWidth * s;
+                const h = table.offsetHeight * s;
+                scrollContent.style.width = w + 'px';
+                scrollContent.style.height = h + 'px';
             }
+
 
             exportBtn.addEventListener('click', function () {
                 if (!currentMatrix) return;
@@ -1093,10 +1112,12 @@
 
                 // Use setTimeout to prevent UI freeze on large matrices
                 setTimeout(() => {
-                    const tableContainer = document.createElement('div');
+                    const tableContainer = document.createElement('div'); // 그대로 사용(외부 컨테이너)
+                    const scrollContent = document.createElement('div');  // ★ 스크롤용 래퍼
+                    scrollContent.className = 'matrix-scroll-content';
+
                     const table = document.createElement('table');
                     table.className = 'matrix-table';
-
                     // 행렬 크기에 따라 뷰 스타일 적용
                     const isLargeMatrix = matrix.length > 30 || (matrix[0] && matrix[0].length > 30);
 
@@ -1144,9 +1165,15 @@
                         table.appendChild(row);
                     }
 
-                    tableContainer.appendChild(table);
+                    scrollContent.appendChild(table);        // 표를 래퍼 안에 넣고
+                    tableContainer.appendChild(scrollContent);
                     matrixOutput.innerHTML = '';
                     matrixOutput.appendChild(tableContainer);
+
+                    // ★ 추후 applyZoom에서 접근할 수 있게 참조 저장
+                    matrixOutput._table = table;
+                    matrixOutput._scrollContent = scrollContent;
+
 
                     // 최초 렌더링 후 화면 크기에 맞게 스타일 조정
                     adjustMatrixViewForScreenSize();
