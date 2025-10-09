@@ -87,7 +87,10 @@
       position: relative;
       overflow: hidden;
     }
-
+    .transform-highlight {
+  background: rgba(255, 182, 193, 0.18); /* lightpink ~ #FFB6C1 */
+  transition: background 0.25s ease;
+}
     @keyframes gradient-shift {
       0% {
         background-position: 0% 50%;
@@ -166,6 +169,7 @@
       padding: 15px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      width:270px;
     }
 
     .matrix {
@@ -347,12 +351,6 @@
       font-size: 1.2rem;
     }
 
-    .binary-only {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
 
     .binary-only input[type="checkbox"] {
       width: 20px;
@@ -465,6 +463,11 @@
         align-items: center;
       }
     }
+    /* 스타일 파일의 가장 아래 또는 .matrix-container 정의보다 뒤에 */
+.matrix-container.transform-highlight{
+  background-color: rgba(246, 182, 255, 0.452) !important;
+}
+
   </style>
 </head>
 
@@ -543,10 +546,6 @@
           </select>
         </div>
         <h2>변환 행렬 T</h2>
-        <div class="binary-only">
-          <input type="checkbox" id="binary-only" checked>
-          <label for="binary-only">0과 1만 입력 가능</label>
-        </div>
         <div class="matrix" id="matrix-t"></div>
       </div>
     </div>
@@ -815,7 +814,7 @@
         }
       });
 
-      createMatrix('matrix-t', n, p, document.getElementById('binary-only').checked);
+      createMatrix('matrix-t', n, p, false);
       createResultMatrix(m, p);
 
       // 초기 색상 설정
@@ -952,12 +951,7 @@
       document.getElementById('matrix-a-cols').addEventListener('change', handleSizeChange);
       document.getElementById('matrix-t-cols').addEventListener('change', handleSizeChange);
 
-      // 이진 입력 모드 변경
-      document.getElementById('binary-only').addEventListener('change', function () {
-        const n = parseInt(document.getElementById('matrix-a-cols').value);
-        const p = parseInt(document.getElementById('matrix-t-cols').value);
-        createMatrix('matrix-t', n, p, this.checked);
-      });
+      
 
       // 버튼 이벤트
       document.getElementById('calculate-btn').addEventListener('click', calculateMatrixMultiplication);
@@ -971,18 +965,16 @@
     document.getElementById('current-year').textContent = new Date().getFullYear();
   </script>
 
-<!-- Role toggle + input coloring + UX + MOVE binary-only control to current transform matrix -->
+<!-- Role toggle (값 고정, binary-only 제거) + 입력색/UX -->
 <script>
 (function(){
-  // Prevent double-install
   if (window.__roleAllInstalled) return;
   window.__roleAllInstalled = true;
 
-  // ---- Helpers ----
   const $  = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
-  // Inject swap button if missing
+  // 스왑 버튼 주입
   document.addEventListener('DOMContentLoaded', function(){
     const container = $('.button-container');
     if (container && !$('#swap-role-btn')) {
@@ -990,12 +982,12 @@
       btn.id = 'swap-role-btn';
       btn.title = 'A×T와 T×A를 전환';
       btn.textContent = '역할 뒤집기 (A×T ↔ T×A)';
-      container.appendChild(btn);
+      container.prepend(btn);
     }
   });
 
-  // Mode state
-  window.isAT = true; // true: A×T, false: T×A
+  // 모드 상태: true=A×T, false=T×A
+  window.isAT = true;
 
   function dims() {
     const m = parseInt($('#matrix-a-rows')?.value || '1', 10);
@@ -1004,58 +996,36 @@
     return { m, n, p };
   }
 
-  // Fallbacks
-  const origUpdateColorForResultCell = window.updateColorForResultCell || function(cell){};
-  const origGetMatrixValues = window.getMatrixValues || function(id){
-    const rows = $$('#'+id+' .matrix-row');
-    return rows.map(r => $$('.matrix-cell input', r).map(inp => Number(inp.value||0)));
-  };
-  const origCreateResultMatrix = window.createResultMatrix || function(rows, cols){
-    const container = $('#matrix-r'); if (!container) return;
-    container.innerHTML = '';
-    for (let i=0;i<rows;i++){
-      const row = document.createElement('div'); row.className = 'matrix-row';
-      for (let j=0;j<cols;j++){
-        const cell = document.createElement('div'); cell.className = 'result-cell'; cell.textContent = '';
-        row.appendChild(cell);
+  // 현재 그리드 기준 값 읽기/쓰기 (역할 전환 시 값 보존용)
+  function readMatrixValues(id){
+    const { m, n, p } = dims();
+    let rows, cols;
+    if (id==='matrix-a'){ rows = m; cols = n; } else { rows = n; cols = p; }
+    const arr = Array.from({length: rows}, ()=>Array(cols).fill(0));
+    const inputs = $$('#'+id+' .matrix-cell input');
+    for(let i=0;i<rows;i++){
+      for(let j=0;j<cols;j++){
+        const idx = i*cols + j;
+        const v = parseInt(inputs[idx]?.value ?? '0', 10);
+        arr[i][j] = isNaN(v) ? 0 : v;
       }
-      container.appendChild(row);
     }
-  };
-
-  // ---- Calc override (supports role) ----
-  window.calculateMatrixMultiplication = function(){
-    try {
-      const A = origGetMatrixValues('matrix-a');
-      const T = origGetMatrixValues('matrix-t');
-      if (!A.length || !T.length) return;
-
-      const left  = isAT ? A : T;
-      const right = isAT ? T : A;
-
-      const lr = left.length, lc = left[0].length;
-      const rr = right.length, rc = right[0].length;
-      if (lc !== rr) { alert('행렬 크기가 곱셈에 맞지 않습니다. (내부 차원 불일치)'); return; }
-
-      const Rrows = lr, Rcols = rc;
-      const curRows = $$('#matrix-r .matrix-row').length;
-      const curCols = ($$('#matrix-r .matrix-row')[0]?.querySelectorAll('.result-cell').length) || 0;
-      if (curRows !== Rrows || curCols !== Rcols) origCreateResultMatrix(Rrows, Rcols);
-
-      const resultCells = $$('#matrix-r .result-cell');
-      for (let i=0;i<Rrows;i++){
-        for (let j=0;j<Rcols;j++){
-          let sum = 0;
-          for (let k=0;k<lc;k++) sum += left[i][k] * right[k][j];
-          const cell = resultCells[i*Rcols + j];
-          if (cell){ cell.textContent = String(sum); origUpdateColorForResultCell(cell, sum); }
-        }
+    return arr;
+  }
+  function writeMatrixValues(id, arr){
+    const inputs = $$('#'+id+' .matrix-cell input');
+    const rows = arr.length, cols = arr[0]?.length || 0;
+    for(let i=0;i<rows;i++){
+      for(let j=0;j<cols;j++){
+        const idx = i*cols + j, inp = inputs[idx];
+        if (!inp) continue;
+        inp.value = String(arr[i][j]);
+        if (typeof window.updateColorForInputA==='function') window.updateColorForInputA(inp);
       }
-      bindResultHover();
-    } catch(e){ console.error(e); }
-  };
+    }
+  }
 
-  // ---- Hover highlight override (role-aware) ----
+  // 결과 hover(역할 인식)
   window.highlightRelatedCells = function(rowIndex, colIndex){
     if (typeof window.removeHighlight === 'function') window.removeHighlight();
     if (isAT) {
@@ -1072,7 +1042,6 @@
       });
     }
   };
-
   window.bindResultHover = function(){
     const res = $('#matrix-r'); if (!res) return;
     const clone = res.cloneNode(true); res.parentNode.replaceChild(clone, res);
@@ -1085,19 +1054,58 @@
     });
   };
 
-  // ---- Input coloring switches with role ----
+  // 결과색 업데이트 fallback
+  const origUpdateColorForResultCell = window.updateColorForResultCell || function(){};
+
+  // 역할 인식 계산
+  function calcRoleAware(){
+    try{
+      const A = (window.getMatrixValues ? window.getMatrixValues('matrix-a') : readMatrixValues('matrix-a'));
+      const T = (window.getMatrixValues ? window.getMatrixValues('matrix-t') : readMatrixValues('matrix-t'));
+      const left  = isAT ? A : T;
+      const right = isAT ? T : A;
+
+      const lr = left.length, lc = left[0].length;
+      const rr = right.length, rc = right[0].length;
+      if (lc !== rr){ alert('행렬 크기가 곱셈에 맞지 않습니다. (내부 차원 불일치)'); return; }
+
+      const curRows = $$('#matrix-r .matrix-row').length;
+      const curCols = ($$('#matrix-r .matrix-row')[0]?.querySelectorAll('.result-cell').length) || 0;
+      if (curRows!==lr || curCols!==rc){
+        if (typeof window.createResultMatrix==='function') window.createResultMatrix(lr, rc);
+      }
+
+      const resultCells = $$('#matrix-r .result-cell');
+      for (let i=0;i<lr;i++){
+        for (let j=0;j<rc;j++){
+          let sum=0; for (let k=0;k<lc;k++) sum += left[i][k]*right[k][j];
+          const cell = resultCells[i*rc + j];
+          if (cell){ cell.textContent = String(sum); origUpdateColorForResultCell(cell, sum); }
+        }
+      }
+      bindResultHover();
+    }catch(e){ console.error(e); }
+  }
+  // 계산 버튼 재바인딩(옛 핸들러 제거)
+  function rebindCalculateButton(){
+    const btn = $('#calculate-btn'); if (!btn) return;
+    const clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+    clone.addEventListener('click', calcRoleAware);
+  }
+
+  // 입력색(입력 행렬만) / 중립화
   function forceNeutral(containerId, enable=true){
     const inputs = $$('#'+containerId+' .matrix-cell input');
-    inputs.forEach(inp => {
+    inputs.forEach(inp=>{
       if (enable){
-        inp.dataset.neutral = '1';
-        inp.style.backgroundColor = '';
-        inp.style.color = '';
+        inp.dataset.neutral='1';
+        inp.style.backgroundColor=''; inp.style.color='';
         if (!inp.__neutralListener){
           inp.__neutralListener = function(){ inp.style.backgroundColor=''; inp.style.color=''; };
           inp.addEventListener('input', inp.__neutralListener);
         }
-      } else {
+      }else{
         delete inp.dataset.neutral;
         if (inp.__neutralListener){ inp.removeEventListener('input', inp.__neutralListener); inp.__neutralListener=null; }
       }
@@ -1105,13 +1113,13 @@
   }
   function applyColored(containerId){
     const inputs = $$('#'+containerId+' .matrix-cell input');
-    inputs.forEach(inp => {
-      if (typeof window.updateColorForInputA === 'function'){
+    inputs.forEach(inp=>{
+      if (typeof window.updateColorForInputA==='function'){
         window.updateColorForInputA(inp);
         if (!inp.__colorListener){
           inp.__colorListener = function(){ window.updateColorForInputA(inp); };
           inp.addEventListener('input', inp.__colorListener);
-          inp.addEventListener('blur', inp.__colorListener);
+          inp.addEventListener('blur',  inp.__colorListener);
         }
       }
       if (inp.__neutralListener){ inp.removeEventListener('input', inp.__neutralListener); inp.__neutralListener=null; }
@@ -1119,93 +1127,26 @@
     });
   }
 
-  // ---- UX: select-all on focus/click ----
+  // UX: 포커스/클릭 시 전체 선택
   function enableSelectOnFocus(containerId){
     const cont = $('#'+containerId); if (!cont) return;
-    cont.addEventListener('focusin', (e)=>{ if (e.target && e.target.tagName==='INPUT') e.target.select(); });
-    cont.addEventListener('click',   (e)=>{ if (e.target && e.target.tagName==='INPUT') e.target.select(); });
+    cont.addEventListener('focusin', e=>{ if (e.target && e.target.tagName==='INPUT') e.target.select(); });
+    cont.addEventListener('click',   e=>{ if (e.target && e.target.tagName==='INPUT') e.target.select(); });
   }
 
-  // ---- Numeric / Binary format bindings ----
+  // 숫자 제한 (입력 행렬 쪽만 0~9 제한, 변환 행렬은 일반 숫자 입력)
   function bindNumeric0to9(containerId){
     $$('#'+containerId+' .matrix-cell input').forEach(inp=>{
-      if (!inp.__numListener){ inp.__numListener = function(){ this.value=this.value.replace(/[^0-9]/g,''); }; inp.addEventListener('input', inp.__numListener); }
-      if (!inp.__numBlur){ inp.__numBlur = function(){ if (this.value==='') this.value='0'; }; inp.addEventListener('blur', inp.__numBlur); }
-    });
-  }
-  function bindBinary01(containerId){
-    $$('#'+containerId+' .matrix-cell input').forEach(inp=>{
-      if (!inp.__binListener){ inp.__binListener = function(){ this.value=this.value.replace(/[^0-1]/g,''); }; inp.addEventListener('input', inp.__binListener); }
-      if (!inp.__binBlur){ inp.__binBlur = function(){ if (this.value==='') this.value='0'; }; inp.addEventListener('blur', inp.__binBlur); }
-    });
-  }
-  function unbindFormatListeners(containerId){
-    $$('#'+containerId+' .matrix-cell input').forEach(inp=>{
-      if (inp.__numListener){ inp.removeEventListener('input', inp.__numListener); inp.__numListener=null; }
-      if (inp.__numBlur){ inp.removeEventListener('blur', inp.__numBlur); inp.__numBlur=null; }
-      if (inp.__binListener){ inp.removeEventListener('input', inp.__binListener); inp.__binListener=null; }
-      if (inp.__binBlur){ inp.removeEventListener('blur', inp.__binBlur); inp.__binBlur=null; }
+      if (!inp.__numListener){ inp.__numListener=function(){ this.value=this.value.replace(/[^0-9]/g,''); }; inp.addEventListener('input', inp.__numListener); }
+      if (!inp.__numBlur){ inp.__numBlur=function(){ if (this.value==='') this.value='0'; }; inp.addEventListener('blur', inp.__numBlur); }
     });
   }
 
-  // ---- MOVE the binary-only control node to current transform matrix container ----
-  function relocateBinaryControl(){
-    const binWrap = $('.binary-only');
-    if (!binWrap) return;
-    // Which matrix container is transform now?
-    const transformContainer = isAT
-      ? $('#matrix-t')?.closest('.matrix-container')
-      : $('#matrix-a')?.closest('.matrix-container');
-    if (!transformContainer) return;
-
-    // Insert right before its matrix div (so it stays near inputs)
-    const matrixDiv = transformContainer.querySelector('.matrix');
-    if (matrixDiv && binWrap.parentNode !== transformContainer){
-      transformContainer.insertBefore(binWrap, matrixDiv);
-    }
-
-    // Update label
-    const binLbl = document.querySelector('label[for="binary-only"]');
-    if (binLbl) binLbl.textContent = '0과 1만 입력 가능 (변환 행렬)';
-  }
-
-  // ---- Rebuild matrices so binary-only applies to transform matrix ----
-  function rebuildForBinaryTarget(){
-    const bin = $('#binary-only');
-    const binaryOn = bin ? !!bin.checked : false;
-
-    const { m, n, p } = dims();
-    const createMatrix = window.createMatrix; // original
-
-    if (typeof createMatrix === 'function'){
-      if (isAT){
-        // input A: m×n, transform T: n×p
-        createMatrix('matrix-a', m, n, false);
-        createMatrix('matrix-t', n, p, binaryOn);
-      } else {
-        // input T: n×p, transform A: p×n
-        createMatrix('matrix-t', n, p, false);
-        createMatrix('matrix-a', p, n, binaryOn);
-      }
-    }
-
-    enableSelectOnFocus('matrix-a');
-    enableSelectOnFocus('matrix-t');
-
-    unbindFormatListeners('matrix-a');
-    unbindFormatListeners('matrix-t');
-    const transformId = isAT ? 'matrix-t' : 'matrix-a';
-    const inputId     = isAT ? 'matrix-a' : 'matrix-t';
-    if (binaryOn) bindBinary01(transformId);
-    bindNumeric0to9(inputId);
-  }
-
-  // ---- Apply role (labels, formula, sizes, coloring, binary placement) ----
+  // 라벨/수식/결과 크기 갱신
   const prevApplyRole = window.applyRole;
   window.applyRole = function(){
     const { m, n, p } = dims();
 
-    // 1) First, update labels/formula via original (if exists)
     if (prevApplyRole) prevApplyRole();
     else {
       const formulaEl = $('.formula');
@@ -1213,58 +1154,79 @@
       const rTitle = $('.result-container h2');
       if (rTitle) rTitle.textContent = isAT ? '결과 행렬 R = A × T' : '결과 행렬 R = T × A';
       const containers = $$('.matrices-container .matrix-container');
-      if (containers[0]) containers[0].querySelector('h2').textContent = isAT ? '입력 행렬 A' : '변환 행렬 A';
-      if (containers[1]) containers[1].querySelector('h2').textContent = isAT ? '변환 행렬 T' : '입력 행렬 T';
-      if (!isAT) { const aRowsSel = $('#matrix-a-rows'); if (aRowsSel && parseInt(aRowsSel.value,10)!==p){ aRowsSel.value=String(p); if (typeof window.handleSizeChange==='function') window.handleSizeChange(); } }
-      if (isAT) origCreateResultMatrix(m, p); else origCreateResultMatrix(n, n);
+      if (containers[0]) containers[0].querySelector('h2').textContent = isAT ? '입력 행렬 A' : '변환 행렬 T';
+      if (containers[1]) containers[1].querySelector('h2').textContent = isAT ? '변환 행렬 T' : '입력 행렬 A';
+      if (typeof window.createResultMatrix==='function') {
+        if (isAT) window.createResultMatrix(m, p); else window.createResultMatrix(n, n);
+      }
     }
 
-    // 2) Move the binary-only control under the current transform matrix
-    relocateBinaryControl();
+    // 입력 행렬만 컬러
+    if (isAT){
+      applyColored('matrix-a'); forceNeutral('matrix-t', true);
+      bindNumeric0to9('matrix-a');
+    } else {
+      applyColored('matrix-t'); forceNeutral('matrix-a', true);
+      bindNumeric0to9('matrix-t');
+    }
 
-    // 3) Rebuild matrices so binary-only restriction applies to transform
-    rebuildForBinaryTarget();
-
-    // 4) Input coloring: only input matrix colored
-    if (isAT){ applyColored('matrix-a'); forceNeutral('matrix-t', true); }
-    else     { applyColored('matrix-t'); forceNeutral('matrix-a', true); }
-
-    // 5) Recalculate
-    if (typeof window.calculateMatrixMultiplication === 'function') window.calculateMatrixMultiplication();
+    rebindCalculateButton();
+    calcRoleAware();
+    updateTransformHighlight();
   };
+  // 현재 변환 행렬 컨테이너에 연한 분홍 배경 지정
+function updateTransformHighlight(){
+  const aCont = document.querySelector('#matrix-a')?.closest('.matrix-container');
+  const tCont = document.querySelector('#matrix-t')?.closest('.matrix-container');
+  [aCont, tCont].forEach(c => c && c.classList.remove('transform-highlight'));
+
+  // isAT=true : 변환행렬은 T,  isAT=false : 변환행렬은 A
+  const target = isAT ? tCont : aCont;
+  if (target) target.classList.add('transform-highlight');
+}
+  // --- 역할 뒤집기: 값은 보존, 모드만 전환 ---
+  function onSwapClick(){
+    const A_keep = readMatrixValues('matrix-a');
+    const T_keep = readMatrixValues('matrix-t');
+
+    // 모드 전환 + UI 재적용 (이 시점에 그리드가 재생성될 수 있으므로 값 복원이 필요)
+    isAT = !isAT;
+    window.applyRole();
+
+    // 값 복원 (절대 교환하지 않음)
+    writeMatrixValues('matrix-a', A_keep);
+    writeMatrixValues('matrix-t', T_keep);
+
+    calcRoleAware();
+  }
 
   document.addEventListener('DOMContentLoaded', function(){
-    // Bind swap button
-    const swapBtn = $('#swap-role-btn');
-    if (swapBtn){
-      swapBtn.addEventListener('click', function(){
-        isAT = !isAT;
-        applyRole();
-      });
-    }
-
-    // Keep role in sync when size changes
-    ['#matrix-a-rows','#matrix-a-cols','#matrix-t-cols'].forEach(sel => {
-      const el = $(sel);
-      if (el){ el.addEventListener('change', applyRole); el.addEventListener('input', applyRole); }
-    });
-
-    // Binary checkbox reacts immediately
-    const bin = $('#binary-only');
-    if (bin){
-      bin.addEventListener('change', function(){
-        rebuildForBinaryTarget();
-        if (typeof window.calculateMatrixMultiplication === 'function') window.calculateMatrixMultiplication();
-      });
-    }
-
-    // Initial setup
     enableSelectOnFocus('matrix-a');
     enableSelectOnFocus('matrix-t');
-    applyRole();
+
+    // 역할 뒤집기 핸들러
+    const bindSwap = () => {
+      const swapBtn = $('#swap-role-btn');
+      if (swapBtn){
+        const clone = swapBtn.cloneNode(true);
+        swapBtn.parentNode.replaceChild(clone, swapBtn);
+        clone.addEventListener('click', onSwapClick);
+      }
+    };
+    bindSwap();
+
+    // 초기 세팅
+    window.applyRole();
+    rebindCalculateButton();
+calcRoleAware();
+updateTransformHighlight();   // ✅ 변환 행렬 컨테이너에 분홍 배경 적용/갱신
   });
 })();
 </script>
+
+
+
+
 
 </body>
 
