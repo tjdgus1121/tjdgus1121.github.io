@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RGB 행렬 추출기</title>
+    <meta
+      name="description"
+      content="이미지를 업로드해 150×150 픽셀로 샘플링하고, R/G/B 채널의 행렬 값을 추출·편집하며 색 변화 원리를 탐구하는 활동입니다."
+    />
+    <meta
+      name="keywords"
+      content="RGB, 행렬, 이미지 처리, 픽셀, 채널 분리, 수학 체험, 교육 활동, 디지털 색, 이미지 샘플링, 고등학교 수학"
+    />
+    <meta name="author" content="황성현" />
+    <meta name="robots" content="index, follow" />
+    <link
+      rel="canonical"
+      href="https://tjdgus1121.github.io/activity2_matrix_extract.html"
+    />
+
+    <!-- 사이트 소유권/검색엔진 검증(다른 페이지와 동일 값) -->
+    <meta
+      name="google-site-verification"
+      content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8"
+    />
+    <meta
+      name="naver-site-verification"
+      content="c020330e12eea0ae1a607097941a61b11590df69"
+    />
+    <meta name="msvalidate.01" content="08F18BF8F771D108EBF67209A4DE2D17" />
+
+    <!-- Open Graph (미리보기) -->
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="RGB 행렬 추출기 — 인공지능 수학 이미지 탐구"
+    />
+    <meta
+      property="og:description"
+      content="이미지를 올리고, R/G/B 행렬을 바로 편집하며 색의 조합을 실험해 보세요."
+    />
+    <meta
+      property="og:url"
+      content="https://tjdgus1121.github.io/activity4_rgb_channels2.html"
+    />
+    <!-- 공유용 이미지(1200×630 권장) — 전역 썸네일 사용 또는 전용 이미지가 있으면 교체 -->
+    <meta
+      property="og:image"
+      content="https://tjdgus1121.github.io/thumbnail.png"
+    />
+    <meta property="og:site_name" content="AI & 탐구수학" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="RGB 행렬 추출기 — 인공지능 수학 이미지 탐구"
+    />
+    <meta
+      name="twitter:description"
+      content="업로드한 사진의 R/G/B 행렬을 즉시 수정·반영하며 색 변화를 관찰하는 활동."
+    />
+    <meta
+      name="twitter:image"
+      content="https://tjdgus1121.github.io/thumbnail.png"
+    />
+
+    <!-- 추가 메타 -->
+    <meta name="theme-color" content="#4dabf7" />
+    <meta name="subject" content="AI 수학 교육 체험" />
+    <meta name="copyright" content="황성현" />
+    <meta name="reply-to" content="tjdgus1121@naver.com" />
+    <meta
+      name="url"
+      content="https://tjdgus1121.github.io/activity4_rgb_channels2.html"
+    />
+    <link rel="stylesheet" href="stylefooter.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="nav.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Arial, sans-serif;
+        background: #f5f6f8;
+        min-height: 100vh;
+        padding: 8px;
+      }
+
+      .container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+      }
+
+      header {
+        background: #343a40;
+        color: #fff;
+        padding: 16px 20px;
+      }
+
+      header h1 {
+        font-size: 50px;
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: center;
+        font-family: "Do Hyeon";
+        font-weight: 300;
+        letter-spacing: 2px;
+      }
+
+      header p {
+        opacity: 0.85;
+        font-size: 25px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .upload {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        text-align: center;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 0;
+        background: #4dabf7;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .btn:hover {
+        filter: brightness(0.96);
+      }
+
+      .btn.reset {
+        background: #ff6b6b;
+      }
+
+      .btn.download {
+        background: #20c997;
+      }
+
+      #fileName {
+        color: #495057;
+      }
+
+      .main {
+        display: grid;
+        grid-template-columns: 620px 1fr;
+        gap: 12px;
+        padding: 8px;
+        align-items: start;
+        min-height: calc(100vh - 180px);
+      }
+
+      @media (max-width: 1100px) {
+        .main {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 1200px) {
+        .main {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .panel h3 {
+        font-size: 13px;
+        color: #495057;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+
+      canvas {
+        display: block;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      #zoom {
+        image-rendering: pixelated;
+      }
+
+      .bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .bar .btn {
+        padding: 8px 12px;
+      }
+
+      .r {
+        background: #ff6b6b;
+      }
+
+      .g {
+        background: #51cf66;
+      }
+
+      .b {
+        background: #4dabf7;
+      }
+
+      .grid {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .head {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 12px 10px;
+        border-bottom: 1px solid #e9ecef;
+        flex-wrap: wrap;
+      }
+
+      .head .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+        min-width: 80px;
+      }
+
+      .head .size-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .head .size-control label {
+        font-size: 13px;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .head .size-control input[type="range"] {
+        width: 120px;
+      }
+
+      .head .size-control span {
+        font-size: 13px;
+        color: #495057;
+        min-width: 35px;
+      }
+
+      .badge {
+        font-weight: 800;
+        color: #fff;
+        padding: 3px 8px;
+        border-radius: 999px;
+      }
+
+      .wrap {
+        position: relative;
+        height: calc(100vh - 240px);
+        min-height: 600px;
+      }
+
+      .vgrid {
+        position: absolute;
+        inset: 0;
+        overflow: auto;
+        background: #fff;
+      }
+
+      .spacer {
+        position: relative;
+      }
+
+      .cells {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: grid;
+      }
+
+      .cell {
+        border: 1px solid #eef0f2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .cell input {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: transparent;
+        text-align: center;
+        font-family: "Courier New", monospace;
+      }
+
+      .cell input:focus {
+        outline: 2px solid #ffc107;
+        background: #fff7d1;
+      }
+
+      .io {
+        padding: 8px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .io .btn {
+        background: #51cf66;
+        padding: 10px 20px;
+      }
+
+      .io .btn.alt {
+        background: #4dabf7;
+      }
+
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 999;
+        transition: opacity 0.3s;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .alert {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000;
+        padding: 20px 32px;
+        border-radius: 12px;
+        font-weight: 700;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        min-width: 300px;
+        text-align: center;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .ok {
+        background: #fff;
+        color: #343a40;
+        border: 2px solid #4dabf7;
+      }
+
+      .err {
+        background: #ffe3e3;
+        color: #c92a2a;
+        border: 1px solid #ff6b6b;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="overlay" class="overlay"></div>
+    <div class="container">
+      <header>
+        <h1>RGB 행렬 추출 활동</h1>
+        <p>
+          한 번에 한 채널만 크게 볼수 있도록 편집하였습니다. 표를 클릭하고
+          숫자를 입력하면, 사진의 컬러가 바뀝니다.😁
+        </p>
+      </header>
+
+      <div class="upload">
+        <label class="btn" for="file">📁 이미지 업로드</label>
+        <input id="file" type="file" accept="image/*" />
+        <button class="btn download" id="downloadSample">
+          📥 체험파일 다운로드
+        </button>
+        <button class="btn reset" id="resetBtn">🔄 초기화</button>
+        <span id="fileName"></span>
+      </div>
+
+      <div id="alert" class="alert hidden"></div>
+
+      <div class="main" id="main" style="display: none">
+        <!-- 미리보기 왼쪽 배치 -->
+        <div class="panel preview">
+          <h3>⬇️업로드 한 사진⬇️</h3>
+          <canvas
+            id="orig"
+            width="150"
+            height="150"
+            style="display: none"
+          ></canvas>
+          <canvas id="zoom" width="600" height="600"></canvas>
+        </div>
+
+        <!-- 행렬 데이터 오른쪽 배치 -->
+        <section class="grid">
+          <div class="head">
+            <button id="btnR" class="btn r">R</button>
+            <button id="btnG" class="btn g">G</button>
+            <button id="btnB" class="btn b">B</button>
+            <div class="size-control">
+              <label for="cellSize">셀 크기:</label>
+              <input
+                type="range"
+                id="cellSize"
+                min="16"
+                max="40"
+                value="22"
+                step="2"
+              />
+              <span id="cellSizeValue">22px</span>
+            </div>
+          </div>
+          <div class="wrap">
+            <div class="vgrid" id="gridS">
+              <div class="spacer" id="spacerS"></div>
+              <div class="cells" id="cellsS"></div>
+            </div>
+          </div>
+          <div class="io">
+            <button class="btn alt" id="exportS">⬇️ CSV 내보내기</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // ===== 설정 =====
+      var SIZE = 150;
+      var CELL = 22;
+      var OVERSCAN = 4;
+      var CHANNELS = ["R", "G", "B"];
+
+      // ===== 상태 =====
+      var data = { R: [], G: [], B: [] };
+      var currentCh = "R";
+      var imageLoaded = false;
+
+      // ===== DOM =====
+      var file = document.getElementById("file");
+      var fileName = document.getElementById("fileName");
+      var main = document.getElementById("main");
+      var orig = document.getElementById("orig");
+      var zoom = document.getElementById("zoom");
+      var octx = orig.getContext("2d", { willReadFrequently: true });
+      var zctx = zoom.getContext("2d", { willReadFrequently: true });
+      var alertBox = document.getElementById("alert");
+      var overlay = document.getElementById("overlay");
+      var btnR = document.getElementById("btnR");
+      var btnG = document.getElementById("btnG");
+      var btnB = document.getElementById("btnB");
+      var resetBtn = document.getElementById("resetBtn");
+      var downloadSample = document.getElementById("downloadSample");
+      var cellSizeInput = document.getElementById("cellSize");
+      var cellSizeValue = document.getElementById("cellSizeValue");
+      var grid = {
+        wrap: document.getElementById("gridS"),
+        spacer: document.getElementById("spacerS"),
+        cells: document.getElementById("cellsS"),
+      };
+
+      // ===== 유틸 =====
+      function clamp(v) {
+        v = v | 0;
+        if (v < 0) return 0;
+        if (v > 255) return 255;
+        return v;
+      }
+
+      function showAlert(msg, ok, duration) {
+        if (ok === void 0) ok = true;
+        if (duration === void 0) duration = 2000;
+        overlay.classList.add("show");
+        alertBox.textContent = msg;
+        alertBox.className = "alert " + (ok ? "ok" : "err");
+        alertBox.classList.remove("hidden");
+        setTimeout(function () {
+          alertBox.classList.add("hidden");
+          overlay.classList.remove("show");
+        }, duration);
+      }
+
+      function hideAlert() {
+        alertBox.classList.add("hidden");
+        overlay.classList.remove("show");
+      }
+
+      function initArrays() {
+        var c, i, y, x;
+        for (i = 0; i < CHANNELS.length; i++) {
+          c = CHANNELS[i];
+          data[c] = new Array(SIZE);
+          for (y = 0; y < SIZE; y++) {
+            data[c][y] = new Array(SIZE);
+            for (x = 0; x < SIZE; x++) {
+              data[c][y][x] = 0;
+            }
+          }
+        }
+      }
+
+      function tintRGB(ch, v) {
+        v = clamp(v);
+        if (ch === "R") return "rgb(" + v + ",0,0)";
+        if (ch === "G") return "rgb(0," + v + ",0)";
+        return "rgb(0,0," + v + ")";
+      }
+
+      // 보색(Complementary) 계산: 원색 (v,0,0) → 보색 (255-v,255,255) 등
+      function compColor(ch, v) {
+        v = clamp(v);
+        var r = ch === "R" ? v : 0;
+        var g = ch === "G" ? v : 0;
+        var b = ch === "B" ? v : 0;
+        return "rgb(" + 255 + "," + (255 - g) + "," + (255 - b) + ")";
+      }
+
+      // 밝기 기반 텍스트 색상: 0~127 = 흰색, 128~255 = 보색(채널 반대색)
+      function textColorFor(v, ch) {
+        v = clamp(v);
+        if (v <= 127) return "#ffffff";
+        return compColor(ch, v);
+      }
+
+      // 고밝기에서 윤곽선으로 가독성 보강
+      function textShadowFor(v) {
+        return clamp(v) >= 128 ? "0 0 2px rgba(0,0,0,.45)" : "none";
+      }
+
+      // ===== 업로드 처리 =====
+      file.addEventListener("change", function (e) {
+        try {
+          var f = e.target.files && e.target.files[0];
+          if (!f) {
+            showAlert("파일이 선택되지 않았습니다.", false);
+            return;
+          }
+          var type = (f.type || "").toLowerCase();
+          if (type.indexOf("image/") !== 0) {
+            showAlert("이미지 파일만 업로드하세요.", false);
+            return;
+          }
+          if (type.indexOf("heic") !== -1 || type.indexOf("heif") !== -1) {
+            showAlert(
+              "HEIC/HEIF는 지원되지 않습니다. PNG/JPG를 사용하세요.",
+              false
+            );
+            return;
+          }
+          fileName.textContent = f.name;
+
+          if (window.createImageBitmap) {
+            window
+              .createImageBitmap(f)
+              .then(function (bmp) {
+                var tmp = document.createElement("canvas");
+                tmp.width = SIZE;
+                tmp.height = SIZE;
+                var tctx = tmp.getContext("2d", { willReadFrequently: true });
+                tctx.imageSmoothingEnabled = true;
+                tctx.imageSmoothingQuality = "high";
+                tctx.drawImage(bmp, 0, 0, SIZE, SIZE);
+                var id = tctx.getImageData(0, 0, SIZE, SIZE);
+                octx.putImageData(id, 0, 0);
+                extractFromCurrentCanvas();
+                showAlert("이미지가 로드되었습니다.", true, 1000);
+              })
+              .catch(function () {
+                loadViaImage(f);
+              });
+          } else {
+            loadViaImage(f);
+          }
+        } catch (err) {
+          console.error(err);
+          showAlert("업로드 오류: " + err.message, false);
+        }
+      });
+
+      function loadViaImage(file) {
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            octx.clearRect(0, 0, SIZE, SIZE);
+            octx.imageSmoothingEnabled = true;
+            octx.imageSmoothingQuality = "high";
+            octx.drawImage(img, 0, 0, SIZE, SIZE);
+            extractFromCurrentCanvas();
+            showAlert("이미지가 로드되었습니다.", true, 1000);
+          } finally {
+            URL.revokeObjectURL(url);
+          }
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+          showAlert("이미지를 불러오지 못했습니다.", false);
+        };
+        img.src = url;
+      }
+
+      function extractFromCurrentCanvas() {
+        initArrays();
+        var id = octx.getImageData(0, 0, SIZE, SIZE);
+        var a = id.data;
+        var p = 0,
+          y,
+          x,
+          rRow,
+          gRow,
+          bRow;
+        for (y = 0; y < SIZE; y++) {
+          rRow = data.R[y];
+          gRow = data.G[y];
+          bRow = data.B[y];
+          for (x = 0; x < SIZE; x++) {
+            rRow[x] = a[p++];
+            gRow[x] = a[p++];
+            bRow[x] = a[p++];
+            p++; // skip alpha
+          }
+        }
+        setupVirtualGridOnce();
+        updateGrid(currentCh);
+        redrawFromData();
+        main.style.display = "grid";
+        imageLoaded = true;
+      }
+
+      function redrawFromData() {
+        var id = octx.createImageData(SIZE, SIZE);
+        var a = id.data;
+        var p = 0,
+          y,
+          x,
+          rRow,
+          gRow,
+          bRow;
+        for (y = 0; y < SIZE; y++) {
+          rRow = data.R[y];
+          gRow = data.G[y];
+          bRow = data.B[y];
+          for (x = 0; x < SIZE; x++) {
+            a[p++] = rRow[x];
+            a[p++] = gRow[x];
+            a[p++] = bRow[x];
+            a[p++] = 255;
+          }
+        }
+        octx.putImageData(id, 0, 0);
+        zctx.imageSmoothingEnabled = false;
+        zctx.clearRect(0, 0, zoom.width, zoom.height);
+        zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
+      }
+
+      // ===== 가상 스크롤 =====
+      var viewState = { firstRow: -1, lastRow: -1, firstCol: -1, lastCol: -1 };
+      var gridReady = false;
+
+      function setupVirtualGridOnce() {
+        if (gridReady) return;
+        setupVirtualGrid();
+        gridReady = true;
+      }
+
+      function setupVirtualGrid() {
+        var total = SIZE * CELL;
+        grid.spacer.style.width = total + "px";
+        grid.spacer.style.height = total + "px";
+        grid.cells.style.gridTemplateColumns = "repeat(1," + CELL + "px)";
+        grid.cells.style.gridAutoRows = CELL + "px";
+
+        var scheduled = false;
+        grid.wrap.addEventListener("scroll", function () {
+          if (scheduled) return;
+          scheduled = true;
+          hideAlert();
+          requestAnimationFrame(function () {
+            updateGrid(currentCh);
+            scheduled = false;
+          });
+        });
+
+        grid.cells.addEventListener("change", function (e) {
+          var t = e.target;
+          if (!t || t.tagName !== "INPUT") return;
+          var r = parseInt(t.getAttribute("data-r"), 10);
+          var c = parseInt(t.getAttribute("data-c"), 10);
+          if (isNaN(r) || isNaN(c)) return;
+          var v = clamp(parseInt(t.value, 10) || 0);
+          t.value = v;
+          data[currentCh][r][c] = v;
+          var parent = t.parentElement;
+          if (parent) {
+            parent.style.backgroundColor = tintRGB(currentCh, v);
+          }
+          t.style.color = textColorFor(v, currentCh);
+          t.style.textShadow = textShadowFor(v);
+          scheduleRedraw();
+        });
+      }
+
+      function updateCellSize() {
+        var total = SIZE * CELL;
+        grid.spacer.style.width = total + "px";
+        grid.spacer.style.height = total + "px";
+        viewState.firstRow =
+          viewState.lastRow =
+          viewState.firstCol =
+          viewState.lastCol =
+            -1;
+        updateGrid(currentCh);
+      }
+
+      function updateGrid(ch) {
+        var scrollTop = grid.wrap.scrollTop,
+          scrollLeft = grid.wrap.scrollLeft;
+        var vw = grid.wrap.clientWidth,
+          vh = grid.wrap.clientHeight;
+
+        var firstRow = Math.floor(scrollTop / CELL) - OVERSCAN;
+        if (firstRow < 0) firstRow = 0;
+        var lastRow = Math.ceil((scrollTop + vh) / CELL) + OVERSCAN;
+        if (lastRow > SIZE) lastRow = SIZE;
+        var firstCol = Math.floor(scrollLeft / CELL) - OVERSCAN;
+        if (firstCol < 0) firstCol = 0;
+        var lastCol = Math.ceil((scrollLeft + vw) / CELL) + OVERSCAN;
+        if (lastCol > SIZE) lastCol = SIZE;
+
+        if (
+          viewState.firstRow === firstRow &&
+          viewState.lastRow === lastRow &&
+          viewState.firstCol === firstCol &&
+          viewState.lastCol === lastCol
+        )
+          return;
+        viewState.firstRow = firstRow;
+        viewState.lastRow = lastRow;
+        viewState.firstCol = firstCol;
+        viewState.lastCol = lastCol;
+
+        var cols = lastCol - firstCol;
+        grid.cells.style.top = firstRow * CELL + "px";
+        grid.cells.style.left = firstCol * CELL + "px";
+        grid.cells.style.gridTemplateColumns =
+          "repeat(" + cols + "," + CELL + "px)";
+        grid.cells.style.gridAutoRows = CELL + "px";
+
+        var frag = document.createDocumentFragment(),
+          r,
+          c,
+          div,
+          inp,
+          v,
+          fontSize = Math.max(9, Math.floor(CELL * 0.5));
+        for (r = firstRow; r < lastRow; r++) {
+          for (c = firstCol; c < lastCol; c++) {
+            div = document.createElement("div");
+            div.className = "cell";
+            div.style.width = CELL + "px";
+            div.style.height = CELL + "px";
+            v = data[ch][r][c];
+            div.style.backgroundColor = tintRGB(ch, v);
+
+            inp = document.createElement("input");
+            inp.type = "text";
+            inp.setAttribute("inputmode", "numeric");
+            inp.value = v;
+            inp.style.color = textColorFor(v, ch);
+            inp.style.textShadow = textShadowFor(v);
+            inp.style.fontSize = fontSize + "px";
+            inp.setAttribute("data-r", r);
+            inp.setAttribute("data-c", c);
+
+            div.appendChild(inp);
+            frag.appendChild(div);
+          }
+        }
+        grid.cells.innerHTML = "";
+        grid.cells.appendChild(frag);
+      }
+
+      // ===== 배치 =====
+      var redrawScheduled = false;
+      function scheduleRedraw() {
+        if (redrawScheduled) return;
+        redrawScheduled = true;
+        requestAnimationFrame(function () {
+          redrawFromData();
+          redrawScheduled = false;
+        });
+      }
+
+      // ===== CSV =====
+      function exportCSV(ch) {
+        showAlert(ch + " 채널을 내보내는 중입니다...");
+        setTimeout(function () {
+          var arr = data[ch],
+            y;
+          var parts = new Array(SIZE);
+          for (y = 0; y < SIZE; y++) {
+            parts[y] = arr[y].join(",");
+          }
+          var csv = parts.join("\n");
+          var blob = new Blob([csv], { type: "text/csv" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "channel_" + ch + "_" + SIZE + "x" + SIZE + ".csv";
+          a.click();
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
+
+      document.getElementById("exportS").onclick = function () {
+        if (!imageLoaded) {
+          showAlert("먼저 이미지를 업로드해주세요.", false);
+          return;
+        }
+        exportCSV(currentCh);
+      };
+
+      // ===== 채널 전환 =====
+      function setCurrentChannel(ch) {
+        if (!imageLoaded) {
+          showAlert("먼저 이미지를 업로드해주세요.", false);
+          return;
+        }
+        currentCh = ch;
+        showAlert(ch + " 채널을 적용했습니다.", true, 800);
+        btnR.style.opacity = ch === "R" ? "1" : "0.6";
+        btnG.style.opacity = ch === "G" ? "1" : "0.6";
+        btnB.style.opacity = ch === "B" ? "1" : "0.6";
+        updateGrid(currentCh);
+      }
+      btnR.onclick = function () {
+        setCurrentChannel("R");
+      };
+      btnG.onclick = function () {
+        setCurrentChannel("G");
+      };
+      btnB.onclick = function () {
+        setCurrentChannel("B");
+      };
+
+      // ===== 초기화 버튼 =====
+      resetBtn.onclick = function () {
+        if (confirm("모든 데이터가 초기화됩니다. 계속하시겠습니까?")) {
+          imageLoaded = false;
+          fileName.textContent = "";
+          main.style.display = "none";
+          file.value = "";
+          initArrays();
+          currentCh = "R";
+          btnR.style.opacity = "1";
+          btnG.style.opacity = "0.6";
+          btnB.style.opacity = "0.6";
+          showAlert("초기화되었습니다.", true, 800);
+        }
+      };
+
+      // ===== 체험파일 다운로드 =====
+      downloadSample.onclick = function () {
+        var a = document.createElement("a");
+        a.href = "./RGB체험.xlsm";
+        a.download = "RGB체험.xlsm";
+        a.click();
+        showAlert("체험파일을 다운로드합니다.", true, 800);
+      };
+
+      // ===== 셀 크기 조절 =====
+      cellSizeInput.addEventListener("input", function () {
+        CELL = parseInt(cellSizeInput.value, 10);
+        cellSizeValue.textContent = CELL + "px";
+        updateCellSize();
+      });
+
+      // 초기 준비
+      initArrays();
+      setupVirtualGridOnce();
+      updateGrid(currentCh);
+      btnR.style.opacity = "1";
+      btnG.style.opacity = "0.6";
+      btnB.style.opacity = "0.6";
+    </script>
+  </body>
+</html>
