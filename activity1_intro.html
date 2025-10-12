@@ -346,6 +346,48 @@
             }
         }
     </style>
+<style>
+
+/* === bracket-wrap: curved ( ) using percentage border-radius === */
+.bracket-wrap{
+  position: relative;
+  display: inline-block;
+  padding: 0 32px; /* space for brackets */
+}
+
+.bracket-wrap::before,
+.bracket-wrap::after{
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 22px;                 /* visual bracket thickness */
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 1;
+
+  border: 4px solid #2d2d2d;   /* bracket color & stroke width */
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+
+  /* Use percentage to make curvature adapt to element height */
+  /* First value: horizontal radius %, second: vertical radius % */
+  border-radius: 50% / 40%;
+}
+
+/* Left bracket ( */
+.bracket-wrap::before{
+  left: 0;
+  border-right-color: transparent;
+}
+
+/* Right bracket ) */
+.bracket-wrap::after{
+  right: 0;
+  border-left-color: transparent;
+}
+
+</style>
 </head>
 <body>
     <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
@@ -620,5 +662,23 @@
             }
         });
     </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const candidates = ['#matrix', '.binary-matrix', '.matrix.binary'];
+  let target = null;
+  for (const sel of candidates){
+    const el = document.querySelector(sel);
+    if (el){ target = el; break; }
+  }
+  if (target && !target.closest('.bracket-wrap')) {
+    const wrap = document.createElement('div');
+    wrap.className = 'bracket-wrap';
+    target.parentNode.insertBefore(wrap, target);
+    wrap.appendChild(target);
+  }
+});
+</script>
+
 </body>
 </html>
