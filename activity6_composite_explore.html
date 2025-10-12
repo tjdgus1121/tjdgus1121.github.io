@@ -291,13 +291,14 @@
         }
 
         .section-title {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            justify-content: center;;
         }
 
         .section-title::before {
@@ -309,8 +310,8 @@
         }
 
         .result-canvas {
-            width: 80%;
-            height: 70%;
+            width: 70%;
+            height: 60%;
             background: var(--light-gray);
             border-radius: var(--border-radius);
             display: block;
@@ -592,7 +593,8 @@
             border-collapse: collapse;
             width: 100%;
             font-size: 12px;
-            font-family: 'Orbitron', monospace;
+            font-weight:600;
+            font-family: 'arial', monospace;
         }
 
         .matrix-table td {
@@ -793,6 +795,30 @@
             }
         }
     </style>
+
+<style>
+/* layout fix: vertical upload cards on left; result on right */
+.work-area{
+  display:grid;
+  grid-template-columns:500px 1fr;
+  gap:1.5rem;
+  align-items:start;
+}
+.work-area .upload-section{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:1.5rem;
+  margin-bottom:0;
+}
+.work-area .result-section .result-canvas{
+  width:100%;
+  max-width:500px;
+  height:auto;
+}
+@media (max-width:1024px){
+  .work-area{ grid-template-columns:1fr; }
+}
+</style>
 </head>
 
 <body>
@@ -837,7 +863,8 @@
                 <p id="loadingMessage">이미지 처리 중...</p>
             </div>
         </div>
-        <div class="upload-section">
+        <div class="work-area">
+<div class="upload-section">
             <div class="upload-card">
                 <h3 class="upload-title">이미지 1</h3>
                 <div class="preview-container" id="preview1">
@@ -871,7 +898,7 @@
                     </div>
                     <div class="mode-buttons">
                         <button id="numberMode" class="mode-button">숫자 모드</button>
-                        <button id="colorMode" class="mode-button">명암 모드</button>
+                        <button id="colorMode" class="mode-button">그림 모드</button>
                         <button id="mixedMode" class="mode-button active">혼합 모드</button>
                     </div>
                 </div>
@@ -882,6 +909,7 @@
                 </div>
             </div>
         </div>
+</div>
         <div class="matrix-section">
             <div class="matrix-header">
                 <span class="matrix-title">픽셀 밝기값 행렬</span>
