@@ -685,7 +685,7 @@
         <h1>이미지 행렬 변환기</h1>
 
         <div class="upload-section" id="drop-zone">
-            <p>이미지를 드래그&드롭하거나 아래 버튼을 클릭하세요</p>
+            <p>이미지를 드래그&드롭, 붙여넣기하거나 아래 버튼을 클릭하세요</p>
             <input type="file" id="file-input" class="file-input" accept="image/*">
             <button class="upload-btn" id="upload-btn">이미지 업로드</button>
         </div>
@@ -1018,6 +1018,37 @@
                 }
             });
 
+            document.addEventListener('paste', handlePaste);
+
+            function handlePaste(event) {
+                const clipboardData = event.clipboardData || window.clipboardData;
+                if (!clipboardData) return;
+
+                const items = clipboardData.items;
+                if (items && items.length) {
+                    for (let i = 0; i < items.length; i++) {
+                        const item = items[i];
+                        if (item.kind === 'file' && item.type.startsWith('image/')) {
+                            const file = item.getAsFile();
+                            if (file) {
+                                loadImageFromFile(file);
+                                event.preventDefault();
+                            }
+                            return;
+                        }
+                    }
+                }
+
+                const files = clipboardData.files;
+                if (files && files.length) {
+                    const file = files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        loadImageFromFile(file);
+                        event.preventDefault();
+                    }
+                }
+            }
+
             // 화면 크기 변경 감지 및 대응
             window.addEventListener('resize', function () {
                 if (currentMatrix) {
@@ -1028,8 +1059,12 @@
 
             // Handle file selection
             function handleFileSelect(e) {
-                const file = fileInput.files[0];
+                const file = e?.target?.files?.[0] || (fileInput.files && fileInput.files[0]);
+                if (!file) return;
+                loadImageFromFile(file);
+            }
 
+            function loadImageFromFile(file) {
                 if (!file || !file.type.match('image.*')) {
                     alert('이미지 파일만 업로드 가능합니다.');
                     return;
@@ -1037,13 +1072,13 @@
 
                 const reader = new FileReader();
 
-                reader.onload = function (e) {
+                reader.onload = function (readerEvent) {
                     const img = new Image();
                     img.onload = function () {
                         uploadedImage = img;
 
                         // Show original image preview
-                        originalPreview.src = e.target.result;
+                        originalPreview.src = readerEvent.target.result;
 
                         // Show output section
                         outputSection.style.display = 'grid';
@@ -1054,7 +1089,7 @@
                         // 초기 버튼 강조
                         highlightActiveButton();
                     };
-                    img.src = e.target.result;
+                    img.src = readerEvent.target.result;
                 };
 
                 reader.readAsDataURL(file);
