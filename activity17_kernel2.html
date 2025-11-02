@@ -1,0 +1,1746 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description" content="이미지를 업로드하고 다양한 커널 필터(블러, 샤프닝, 엣지 감지 등)를 적용하며 컨볼루션의 원리를 체험하는 활동 페이지입니다.">
+    <meta name="keywords" content="커널, 컨볼루션, 이미지 필터, 블러, 샤프닝, 엣지 감지, 인공지능 수학, 이미지 처리, 교육 활동">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="커널 필터 체험 - 인공지능 수학 탐구">
+    <meta property="og:description" content="3×3 커널을 직접 조작하며 이미지가 어떻게 변형되는지 확인하고, 컨볼루션의 원리를 탐구해 보세요.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity17_kernel.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity17_kernel.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="커널 필터 체험">
+    <meta name="twitter:description" content="커널 행렬을 활용해 이미지를 변환하며 컨볼루션의 작동 원리를 탐구하는 활동입니다.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/activity17_kernel2.html">
+    <title>컨볼루션 필터 체험 도구</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="stylefooter.css">
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js"></script>
+    <title>합성곱(Convolution) 시각화</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #2c3e50;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #0ba1d8c6 0%, #0ca752 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            font-size: 1.15em;
+            opacity: 0.95;
+            font-weight: 400;
+        }
+        
+        .mode-toggle {
+            margin: 25px 0 0 0;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .mode-btn {
+            padding: 12px 35px;
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%);
+            color: #0c4a6e;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 12px 24px rgba(14, 165, 233, 0.22);
+        }
+        
+        .mode-btn:hover {
+            background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(14, 165, 233, 0.3);
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);
+            color: #1e1b4b;
+            font-weight: 700;
+            border-color: transparent;
+            box-shadow: 0 12px 26px rgba(129, 140, 248, 0.32);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .panel {
+            background: #fafbfc;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        
+        .panel h2 {
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 700;
+            border-bottom: 3px solid rgba(129, 140, 248, 0.35);
+            padding-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+        
+        .grid-container {
+            display: grid;
+            gap: 1px;
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: auto;
+            border: 2px solid #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        #input2d-grid {
+            display: grid;
+            gap: 1px;
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px auto;
+            overflow: auto;
+            border: 2px solid #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: fit-content;
+        }
+        
+        #output2d-grid {
+            display: grid;
+            gap: 1px;
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px auto;
+            overflow: auto;
+            border: 2px solid #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: fit-content;
+        }
+        
+        #kernel-grid {
+            display: grid;
+            gap: 1px;
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px auto;
+            overflow: auto;
+            border: 2px solid #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: fit-content;
+        }
+
+        #kernel-grid .grid-cell {
+            min-width: 68px;
+            min-height: 68px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .grid-cell.padded-zone {
+            background: rgba(76, 110, 245, 0.18) !important;
+            color: #1b2559 !important;
+            border: 2px dashed rgba(76, 110, 245, 0.5);
+            font-weight: 700;
+        }
+
+        .grid-cell.padded-zone.edge-padding {
+            background: rgba(255, 193, 7, 0.18) !important;
+            color: #4a3500 !important;
+            border: 2px dashed rgba(255, 193, 7, 0.5);
+        }
+        
+        .grid-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.1);
+            font-family: 'Courier New', monospace;
+            min-width: 40px;
+            min-height: 40px;
+        }
+        
+        .grid-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .grid-cell.active {
+            border: 3px solid #ff6b6b;
+            box-shadow: 0 0 15px rgba(255,107,107,0.6);
+        }
+        
+        .grid-cell.highlight {
+            border: 2px solid #ffd43b;
+            background: rgba(255,212,59,0.2) !important;
+        }
+        
+        .grid-cell.pair-0 { border: 3px solid #ff6b6b !important; }
+        .grid-cell.pair-1 { border: 3px solid #4dabf7 !important; }
+        .grid-cell.pair-2 { border: 3px solid #51cf66 !important; }
+        .grid-cell.pair-3 { border: 3px solid #ffd43b !important; }
+        .grid-cell.pair-4 { border: 3px solid #ff8787 !important; }
+        .grid-cell.pair-5 { border: 3px solid #b197fc !important; }
+        .grid-cell.pair-6 { border: 3px solid #69db7c !important; }
+        .grid-cell.pair-7 { border: 3px solid #ffa94d !important; }
+        .grid-cell.pair-8 { border: 3px solid #da77f2 !important; }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.95em;
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        select, input[type="range"] {
+            padding: 10px 14px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 0.95em;
+            outline: none;
+            transition: all 0.3s;
+            background: white;
+            width: 100%;
+        }
+        
+        select:focus, input[type="range"]:focus {
+            border-color: #34d399;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+        }
+        
+        select:hover {
+            border-color: #34d399;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #0f172a;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 0.95em;
+            box-shadow: 0 10px 24px rgba(148, 163, 184, 0.18);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 30px rgba(148, 163, 184, 0.28);
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5f5 100%);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 8px 18px rgba(148, 163, 184, 0.22);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-group button {
+            flex: 1;
+            min-width: 100px;
+            padding: 11px 10px;
+            font-size: 0.9em;
+        }
+        
+        .playback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 25px 0;
+        }
+        
+        .playback-controls button {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%);
+            color: #0f172a;
+            box-shadow: 0 12px 24px rgba(56, 189, 248, 0.25);
+        }
+        
+        .playback-controls button:hover {
+            transform: scale(1.08);
+            box-shadow: 0 16px 30px rgba(56, 189, 248, 0.3);
+        }
+        
+        .computation-display {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.88em;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        
+        .computation-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            border-bottom: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            margin: 2px 0;
+            border-radius: 4px;
+        }
+        
+        .computation-row.pair-0 { border-left: 4px solid #ff6b6b; background: rgba(255,107,107,0.05); }
+        .computation-row.pair-1 { border-left: 4px solid #4dabf7; background: rgba(77,171,247,0.05); }
+        .computation-row.pair-2 { border-left: 4px solid #51cf66; background: rgba(81,207,102,0.05); }
+        .computation-row.pair-3 { border-left: 4px solid #ffd43b; background: rgba(255,212,59,0.05); }
+        .computation-row.pair-4 { border-left: 4px solid #ff8787; background: rgba(255,135,135,0.05); }
+        .computation-row.pair-5 { border-left: 4px solid #b197fc; background: rgba(177,151,252,0.05); }
+        .computation-row.pair-6 { border-left: 4px solid #69db7c; background: rgba(105,219,124,0.05); }
+        .computation-row.pair-7 { border-left: 4px solid #ffa94d; background: rgba(255,169,77,0.05); }
+        .computation-row.pair-8 { border-left: 4px solid #da77f2; background: rgba(218,119,242,0.05); }
+        
+        .computation-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1.15em;
+        }
+        
+        .kernel-preset {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .kernel-preset button {
+            padding: 12px 8px;
+            font-size: 0.9em;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            color: #312e81;
+            border: 1px solid rgba(129, 140, 248, 0.25);
+            box-shadow: 0 8px 18px rgba(129, 140, 248, 0.12);
+        }
+        
+        .kernel-preset button:hover {
+            background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+            color: #1e1b4b;
+            border-color: transparent;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #ede9fe 100%);
+            border-left: 5px solid #38bdf8;
+            padding: 15px 18px;
+            margin: 18px 0;
+            border-radius: 10px;
+            font-size: 0.92em;
+            line-height: 1.6;
+            color: #1e293b;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.18);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #cbd5f5;
+            transition: all 0.3s;
+            box-shadow: 0 8px 18px rgba(129, 140, 248, 0.08);
+        }
+        
+        .checkbox-group:hover {
+            border-color: #818cf8;
+            background: #eef2ff;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #818cf8;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .speed-display {
+            text-align: center;
+            font-size: 0.95em;
+            color: #1e293b;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: linear-gradient(90deg, #bae6fd 0%, #a5b4fc 100%);
+            border-radius: 10px;
+            outline: none;
+            padding: 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #f9fafb;
+            border: 3px solid #60a5fa;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.28);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #f9fafb;
+            border: 3px solid #60a5fa;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.28);
+        }
+        
+        .d1-container {
+            display: none;
+        }
+        
+        .d1-container.active {
+            display: block;
+        }
+        
+        .d1-grid {
+            display: flex;
+            gap: 1px;
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border: 2px solid #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .d1-cell {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(0,0,0,0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .d1-cell:hover {
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin: 15px 0;
+        }
+
+        .zoom-controls button {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            font-size: 1.2em;
+            background: #f8fafc;
+            color: #4338ca;
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            box-shadow: 0 8px 18px rgba(129, 140, 248, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .zoom-controls button:hover {
+            background: linear-gradient(135deg, #93c5fd 0%, #818cf8 100%);
+            color: #0f172a;
+            border-color: transparent;
+        }
+        
+        .matrix-label {
+            text-align: center;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #1e293b;
+            margin: 18px 0 12px 0;
+            font-size: 1.15em;
+            padding: 10px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+            border-radius: 8px;
+            border: 2px solid #dbeafe;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <aside class="sidebar">
+        <nav>
+            <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="activity6_composite_explore.html" class="active"><i class="fa fa-layer-group"></i><span>합성
+                    원리</span></a>
+            <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
+                    변환</span></a>
+            <a href="activity17_kernel.html" class="active"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터
+                    체험</span></a>
+        </nav>
+    </aside>
+
+    <div class="container">
+        <header>
+            <h1>🧮 합성곱(Convolution) 시각화</h1>
+            <p class="subtitle">커널이 이미지를 순회하며 계산하는 과정을 체험하세요</p>
+            <div class="mode-toggle">
+                <button class="mode-btn" onclick="setMode('1d')">벡터 모드</button>
+                <button class="mode-btn active" onclick="setMode('2d')">행렬 모드</button>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <!-- 왼쪽 패널: 입력 -->
+            <div class="panel">
+                <h2>📥 입력</h2>
+                
+                <div class="d1-container" id="d1-input">
+                    <div class="control-group">
+                        <label>샘플 선택</label>
+                        <select onchange="loadSample1D(this.value)">
+                            <option value="custom">사용자 정의</option>
+                            <option value="step">계단 함수</option>
+                            <option value="wave">파동</option>
+                            <option value="random">랜덤</option>
+                        </select>
+                    </div>
+                    <div id="input1d-grid"></div>
+                    <div class="info-box">
+                        💡 1D의 창이 → 2D에선 3×3 창으로 확장됩니다
+                    </div>
+                </div>
+                
+                <div class="d1-container active" id="d2-input">
+                    <div class="control-group">
+                        <label>입력 크기</label>
+                        <select onchange="changeInputSize(this.value)">
+                            <option value="3">3×3</option>
+                            <option value="5">5×5</option>
+                            <option value="7">7×7</option>
+                            <option value="9" selected>9×9</option>
+                            <option value="11">11×11</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>샘플 선택</label>
+                        <select onchange="loadSample2D(this.value)">
+                            <option value="gaussian">가우시안 (중앙 밝음)</option>
+                            <option value="chess">체스보드</option>
+                            <option value="gradient">경사 (그라디언트)</option>
+                            <option value="cross">십자가</option>
+                            <option value="random">랜덤</option>
+                        </select>
+                    </div>
+                    
+                    <div class="matrix-label">입력 행렬 [<span id="input-size-label">9×9</span>]</div>
+                    
+                    <div class="zoom-controls">
+                        <button onclick="adjustZoom(-0.1)">➖</button>
+                        <button onclick="adjustZoom(0.1)">➕</button>
+                    </div>
+                    
+                    <div id="input2d-grid"></div>
+                    
+                    <div class="btn-group">
+                        <button onclick="randomizeInput()">🎲 무작위</button>
+                        <button onclick="resetInput()">🔄 리셋</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 가운데 패널: 시각화 -->
+            <div class="panel">
+                <h2>🔍 커널 & 연산</h2>
+                
+                <div class="control-group">
+                    <label>커널 크기</label>
+                    <select id="kernel-size" onchange="changeKernelSize(this.value)">
+                        <option value="1x3">1×3 (수평)</option>
+                        <option value="3x1">3×1 (수직)</option>
+                        <option value="3x3" selected>3×3</option>
+                        <option value="5x5">5×5</option>
+                    </select>
+                </div>
+                
+                <div class="kernel-preset">
+                    <button onclick="setKernel('blur')">평균 블러</button>
+                    <button onclick="setKernel('sobelX')">에지 (가로)</button>
+                    <button onclick="setKernel('sobelY')">에지 (세로)</button>
+                    <button onclick="setKernel('sharpen')">샤프닝</button>
+                    <button onclick="setKernel('laplacian')">라플라시안</button>
+                    <button onclick="setKernel('identity')">항등</button>
+                </div>
+                
+                <div id="kernel-grid"></div>
+                
+                <div class="matrix-label">커널 [<span id="kernel-size-label">3×3</span>]</div>
+                
+                <div class="playback-controls">
+                    <button onclick="stepBackward()">⏮</button>
+                    <button id="play-btn" onclick="togglePlay()">▶</button>
+                    <button onclick="stepForward()">⏭</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>재생 속도</label>
+                    <input type="range" min="0.25" max="2" step="0.25" value="1" oninput="setSpeed(this.value)">
+                    <div class="speed-display" id="speed-display">1.0&times;</div>
+                </div>
+                
+                <div class="computation-display" id="computation"></div>
+                
+                <div class="info-box">
+                    📌 합성곱 규칙: (창 속 수 × 커널 수) 모두 곱해 더한 값을 출력 격자의 해당 칸에 씁니다
+                </div>
+            </div>
+            
+            <!-- 오른쪽 패널: 출력 & 설정 -->
+            <div class="panel">
+                <h2>📤 출력 & 설정</h2>
+                
+                <div class="control-group">
+                    <label>패딩</label>
+                    <select id="padding" onchange="updateConvolution()">
+                        <option value="none">없음</option>
+                        <option value="zero" selected>0 패딩</option>
+                        <option value="edge">가장자리 복제</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>스트라이드</label>
+                    <select id="stride" onchange="updateConvolution()">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                    </select>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="normalize" onchange="updateConvolution()" checked>
+                    <label for="normalize">커널 합으로 나누기</label>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="clip" onchange="updateConvolution()" checked>
+                    <label for="clip">0-255로 클리핑</label>
+                </div>
+                
+                <div class="matrix-label">출력 행렬 [<span id="output-size-label">7×7</span>]</div>
+                
+                <div id="output2d-grid"></div>
+                
+                <div class="btn-group">
+                    <button onclick="downloadCSV()">💾 CSV 저장</button>
+                </div>
+                
+                <div class="info-box">
+                    💡 패딩: 테두리를 채우는 방법<br>
+                    💡 스트라이드: 몇 칸씩 이동할지<br>
+                    💡 블러=주변과 평균 → 부드러움<br>
+                    💡 엣지=갑작스런 변화 강조
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+          <div>
+            <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+            <div class="creator-info">
+              Designed & Developed by <span>황성현</span><br>
+              Contact : tjdgus1121@naver.com
+            </div>
+          </div>
+    
+          <div class="social-links">
+            <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+            <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+              <img src="naver.png" alt="메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';">
+            </a>
+          </div>
+    
+          <div class="copyright">
+            이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+            다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+          </div>
+      </footer>
+    <script>
+        // 상태 관리
+        const state = {
+            mode: '2d',
+            input2d: [],
+            input1d: [],
+            kernel: [],
+            output: [],
+            kernelSize: [3, 3],
+            inputSize: 9,
+            padding: 'zero',
+            stride: 1,
+            normalize: true,
+            clip: true,
+            currentPos: 0,
+            isPlaying: false,
+            speed: 1,
+            zoom: 1
+        };
+        
+        // 초기화
+        function init() {
+            createGaussian();
+            setKernel('blur');
+            updateConvolution();
+            render();
+            
+            // 키보드 이벤트
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    togglePlay();
+                } else if (e.code === 'ArrowLeft') {
+                    stepBackward();
+                } else if (e.code === 'ArrowRight') {
+                    stepForward();
+                }
+            });
+            updatePlayButton();
+        }
+        
+        // 모드 전환
+        function setMode(mode) {
+            state.mode = mode;
+            state.currentPos = 0;
+            state.isPlaying = false;
+            togglePlay(false);
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.d1-container').forEach(el => el.classList.remove('active'));
+            
+            if (mode === '1d') {
+                document.getElementById('d1-input').classList.add('active');
+                if (state.input1d.length === 0) {
+                    loadSample1D('step');
+                }
+            } else {
+                document.getElementById('d2-input').classList.add('active');
+            }
+            
+            updateConvolution();
+            render();
+        }
+        
+        // 샘플 생성
+        function createGaussian() {
+            const size = state.inputSize;
+            state.input2d = [];
+            const center = Math.floor(size / 2);
+            for (let i = 0; i < size; i++) {
+                state.input2d[i] = [];
+                for (let j = 0; j < size; j++) {
+                    const dist = Math.sqrt((i - center) ** 2 + (j - center) ** 2);
+                    state.input2d[i][j] = Math.round(255 * Math.exp(-dist * dist / (2 * (size / 4) ** 2)));
+                }
+            }
+        }
+        
+        function loadSample2D(type) {
+            const size = state.inputSize;
+            state.input2d = [];
+            
+            switch(type) {
+                case 'gaussian':
+                    createGaussian();
+                    break;
+                case 'chess':
+                    for (let i = 0; i < size; i++) {
+                        state.input2d[i] = [];
+                        for (let j = 0; j < size; j++) {
+                            state.input2d[i][j] = ((i + j) % 2 === 0) ? 255 : 0;
+                        }
+                    }
+                    break;
+                case 'gradient':
+                    for (let i = 0; i < size; i++) {
+                        state.input2d[i] = [];
+                        for (let j = 0; j < size; j++) {
+                            state.input2d[i][j] = Math.round(255 * j / (size - 1));
+                        }
+                    }
+                    break;
+                case 'cross':
+                    for (let i = 0; i < size; i++) {
+                        state.input2d[i] = [];
+                        for (let j = 0; j < size; j++) {
+                            state.input2d[i][j] = (i === Math.floor(size/2) || j === Math.floor(size/2)) ? 255 : 0;
+                        }
+                    }
+                    break;
+                case 'random':
+                    for (let i = 0; i < size; i++) {
+                        state.input2d[i] = [];
+                        for (let j = 0; j < size; j++) {
+                            state.input2d[i][j] = Math.round(Math.random() * 255);
+                        }
+                    }
+                    break;
+            }
+            updateConvolution();
+            render();
+        }
+        
+        function loadSample1D(type) {
+            const size = 10;
+            state.input1d = [];
+            
+            switch(type) {
+                case 'step':
+                    for (let i = 0; i < size; i++) {
+                        state.input1d[i] = i < size/2 ? 0 : 255;
+                    }
+                    break;
+                case 'wave':
+                    for (let i = 0; i < size; i++) {
+                        state.input1d[i] = Math.round(128 + 127 * Math.sin(i * Math.PI / 2));
+                    }
+                    break;
+                case 'random':
+                    for (let i = 0; i < size; i++) {
+                        state.input1d[i] = Math.round(Math.random() * 255);
+                    }
+                    break;
+            }
+            updateConvolution();
+            render();
+        }
+        
+        // 커널 설정
+        function changeKernelSize(size) {
+            const [h, w] = size.split('x').map(Number);
+            state.kernelSize = [h, w];
+            document.getElementById('kernel-size-label').textContent = `${h}×${w}`;
+            setKernel('blur');
+        }
+        
+        function setKernel(type) {
+            const [h, w] = state.kernelSize;
+            state.kernel = Array(h).fill(0).map(() => Array(w).fill(0));
+            
+            switch(type) {
+                case 'blur':
+                    for (let i = 0; i < h; i++) {
+                        for (let j = 0; j < w; j++) {
+                            state.kernel[i][j] = 1;
+                        }
+                    }
+                    document.getElementById('normalize').checked = true;
+                    break;
+                case 'sobelX':
+                    if (h === 3 && w === 3) {
+                        state.kernel = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+                    }
+                    document.getElementById('normalize').checked = false;
+                    break;
+                case 'sobelY':
+                    if (h === 3 && w === 3) {
+                        state.kernel = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+                    }
+                    document.getElementById('normalize').checked = false;
+                    break;
+                case 'sharpen':
+                    if (h === 3 && w === 3) {
+                        state.kernel = [[0, -1, 0], [-1, 5, -1], [0, -1, 0]];
+                    }
+                    document.getElementById('normalize').checked = false;
+                    break;
+                case 'laplacian':
+                    if (h === 3 && w === 3) {
+                        state.kernel = [[0, 1, 0], [1, -4, 1], [0, 1, 0]];
+                    }
+                    document.getElementById('normalize').checked = false;
+                    break;
+                case 'identity':
+                    const center = Math.floor(h / 2);
+                    state.kernel[center][Math.floor(w / 2)] = 1;
+                    document.getElementById('normalize').checked = false;
+                    break;
+            }
+            
+            state.normalize = document.getElementById('normalize').checked;
+            updateConvolution();
+            render();
+        }
+        // 합성곱 계산
+        function convolve2D(input, kernel, options) {
+            const {padding, stride, normalize, clip} = options;
+            const [kh, kw] = [kernel.length, kernel[0].length];
+            const [ih, iw] = [input.length, input[0].length];
+            
+            let padded = input;
+            let ph = ih, pw = iw;
+            
+            if (padding === 'zero') {
+                const padH = Math.floor(kh / 2);
+                const padW = Math.floor(kw / 2);
+                ph = ih + 2 * padH;
+                pw = iw + 2 * padW;
+                padded = Array(ph).fill(0).map(() => Array(pw).fill(0));
+                for (let i = 0; i < ih; i++) {
+                    for (let j = 0; j < iw; j++) {
+                        padded[i + padH][j + padW] = input[i][j];
+                    }
+                }
+            } else if (padding === 'edge') {
+                const padH = Math.floor(kh / 2);
+                const padW = Math.floor(kw / 2);
+                ph = ih + 2 * padH;
+                pw = iw + 2 * padW;
+                padded = Array(ph).fill(0).map(() => Array(pw).fill(0));
+                for (let i = 0; i < ph; i++) {
+                    for (let j = 0; j < pw; j++) {
+                        const si = Math.max(0, Math.min(ih - 1, i - padH));
+                        const sj = Math.max(0, Math.min(iw - 1, j - padW));
+                        padded[i][j] = input[si][sj];
+                    }
+                }
+            }
+            
+            const oh = Math.floor((ph - kh) / stride) + 1;
+            const ow = Math.floor((pw - kw) / stride) + 1;
+            const output = Array(oh).fill(0).map(() => Array(ow).fill(0));
+            
+            let kernelSum = 0;
+            for (let i = 0; i < kh; i++) {
+                for (let j = 0; j < kw; j++) {
+                    kernelSum += kernel[i][j];
+                }
+            }
+            if (kernelSum === 0) kernelSum = 1;
+            
+            for (let i = 0; i < oh; i++) {
+                for (let j = 0; j < ow; j++) {
+                    let sum = 0;
+                    for (let ki = 0; ki < kh; ki++) {
+                        for (let kj = 0; kj < kw; kj++) {
+                            sum += padded[i * stride + ki][j * stride + kj] * kernel[ki][kj];
+                        }
+                    }
+                    
+                    if (normalize && Math.abs(kernelSum) > 0.001) {
+                        sum /= kernelSum;
+                    }
+                    
+                    if (clip) {
+                        sum = Math.max(0, Math.min(255, Math.round(sum)));
+                    }
+                    
+                    output[i][j] = sum;
+                }
+            }
+            
+            return {output, padded};
+        }
+        
+        function convolve1D(input, kernel, options) {
+            const {padding, stride, normalize, clip} = options;
+            const kw = kernel[0].length;
+            const iw = input.length;
+            
+            let padded = [...input];
+            let pw = iw;
+            
+            if (padding === 'zero') {
+                const pad = Math.floor(kw / 2);
+                pw = iw + 2 * pad;
+                padded = Array(pw).fill(0);
+                for (let i = 0; i < iw; i++) {
+                    padded[i + pad] = input[i];
+                }
+            } else if (padding === 'edge') {
+                const pad = Math.floor(kw / 2);
+                pw = iw + 2 * pad;
+                padded = Array(pw).fill(0);
+                for (let i = 0; i < pw; i++) {
+                    const si = Math.max(0, Math.min(iw - 1, i - pad));
+                    padded[i] = input[si];
+                }
+            }
+            
+            const ow = Math.floor((pw - kw) / stride) + 1;
+            const output = Array(ow).fill(0);
+            
+            let kernelSum = kernel[0].reduce((a, b) => a + b, 0);
+            if (kernelSum === 0) kernelSum = 1;
+            
+            for (let i = 0; i < ow; i++) {
+                let sum = 0;
+                for (let j = 0; j < kw; j++) {
+                    sum += padded[i * stride + j] * kernel[0][j];
+                }
+                
+                if (normalize && Math.abs(kernelSum) > 0.001) {
+                    sum /= kernelSum;
+                }
+                
+                if (clip) {
+                    sum = Math.max(0, Math.min(255, Math.round(sum)));
+                }
+                
+                output[i] = sum;
+            }
+            
+            return {output, padded};
+        }
+        
+        function updateConvolution() {
+            state.padding = document.getElementById('padding').value;
+            state.stride = parseInt(document.getElementById('stride').value);
+            state.normalize = document.getElementById('normalize').checked;
+            state.clip = document.getElementById('clip').checked;
+            
+            const options = {
+                padding: state.padding,
+                stride: state.stride,
+                normalize: state.normalize,
+                clip: state.clip
+            };
+            
+            if (state.mode === '2d') {
+                const result = convolve2D(state.input2d, state.kernel, options);
+                state.output = result.output;
+                state.padded = result.padded;
+                
+                // 출력 크기 라벨 업데이트
+                document.getElementById('output-size-label').textContent = 
+                    `${state.output.length}\u00D7${state.output[0].length}`;
+            } else {
+                const result = convolve1D(state.input1d, state.kernel, options);
+                state.output = result.output;
+                state.padded1d = result.padded;
+                
+                document.getElementById('output-size-label').textContent = 
+                    `1\u00D7${state.output.length}`;
+            }
+            
+            state.currentPos = 0;
+            render();
+        }
+        
+        // 재생 컨트롤
+        let playInterval = null;
+
+        function updatePlayButton() {
+            const playBtn = document.getElementById('play-btn');
+            if (playBtn) {
+                playBtn.textContent = state.isPlaying ? '⏸' : '▶';
+            }
+        }
+
+        function startPlayLoop() {
+            if (playInterval) {
+                clearInterval(playInterval);
+            }
+            playInterval = setInterval(() => {
+                stepForward();
+                if (state.currentPos >= getTotalPositions() - 1) {
+                    togglePlay(false);
+                }
+            }, 1000 / state.speed);
+        }
+
+        function togglePlay(forceState) {
+            const desiredState = (typeof forceState === 'boolean') ? forceState : !state.isPlaying;
+
+            if (desiredState === state.isPlaying) {
+                if (desiredState && !playInterval) {
+                    startPlayLoop();
+                }
+                if (!desiredState && playInterval) {
+                    clearInterval(playInterval);
+                    playInterval = null;
+                }
+                updatePlayButton();
+                return;
+            }
+
+            state.isPlaying = desiredState;
+
+            if (state.isPlaying) {
+                startPlayLoop();
+            } else if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+            }
+
+            updatePlayButton();
+        }
+        
+        function stepForward() {
+            const total = getTotalPositions();
+            state.currentPos = Math.min(state.currentPos + 1, total - 1);
+            render();
+        }
+        
+        function stepBackward() {
+            state.currentPos = Math.max(state.currentPos - 1, 0);
+            render();
+        }
+        
+        function setSpeed(value) {
+            state.speed = parseFloat(value);
+            document.getElementById('speed-display').textContent = value + '\u00D7';
+            if (state.isPlaying) {
+                togglePlay(false);
+            }
+        }
+        
+        function getTotalPositions() {
+            if (state.mode === '2d') {
+                return state.output.length * state.output[0].length;
+            } else {
+                return state.output.length;
+            }
+        }
+        
+        // 렌더링
+        function render() {
+            if (state.mode === '2d') {
+                render2D();
+            } else {
+                render1D();
+            }
+            renderKernel();
+            renderComputation();
+        }
+        function render2D() {
+            const inputGrid = document.getElementById('input2d-grid');
+            const outputGrid = document.getElementById('output2d-grid');
+
+            const usePadded = state.padding !== 'none' && state.padded && state.padded.length;
+            const padH = Math.floor(state.kernelSize[0] / 2);
+            const padW = Math.floor(state.kernelSize[1] / 2);
+            const matrix = usePadded ? state.padded : state.input2d;
+            const rows = matrix ? matrix.length : 0;
+            const cols = rows && matrix[0] ? matrix[0].length : 0;
+
+            const inputSizeLabel = document.getElementById('input-size-label');
+            if (inputSizeLabel) {
+                if (usePadded) {
+                    inputSizeLabel.textContent = `${rows}\u00D7${cols}`;
+                } else if (state.input2d.length && state.input2d[0]) {
+                    inputSizeLabel.textContent = `${state.input2d.length}\u00D7${state.input2d[0].length}`;
+                }
+            }
+
+            inputGrid.style.gridTemplateColumns = `repeat(${cols || state.inputSize}, 1fr)`;
+            inputGrid.innerHTML = '';
+
+            if (!rows || !cols) {
+                outputGrid.innerHTML = '';
+                return;
+            }
+
+            const [oh, ow] = [state.output.length, state.output[0].length];
+            const outRow = Math.floor(state.currentPos / ow);
+            const outCol = state.currentPos % ow;
+
+            const [kh, kw] = state.kernelSize;
+            const startRow = outRow * state.stride;
+            const startCol = outCol * state.stride;
+
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+
+                    let displayValue = matrix[i][j];
+                    let backgroundValue = matrix[i][j];
+                    let textColor = backgroundValue > 127 ? 'black' : 'white';
+                    let clickHandler = null;
+
+                    if (usePadded) {
+                        const inOriginalRow = i >= padH && i < padH + state.input2d.length;
+                        const inOriginalCol = j >= padW && j < padW + (state.input2d[0] ? state.input2d[0].length : 0);
+                        const isPaddedCell = !(inOriginalRow && inOriginalCol);
+
+                        if (isPaddedCell) {
+                            cell.classList.add('padded-zone');
+                            if (state.padding === 'edge') {
+                                cell.classList.add('edge-padding');
+                            }
+                            if (state.padding === 'zero') {
+                                displayValue = 0;
+                                backgroundValue = 0;
+                                textColor = '#1b2559';
+                            }
+                            cell.style.cursor = 'default';
+                        } else {
+                            const originalRow = i - padH;
+                            const originalCol = j - padW;
+                            backgroundValue = state.input2d[originalRow][originalCol];
+                            displayValue = Math.round(backgroundValue);
+                            textColor = backgroundValue > 127 ? 'black' : 'white';
+                            clickHandler = () => editCell2D(originalRow, originalCol);
+                        }
+                    } else {
+                        clickHandler = () => editCell2D(i, j);
+                    }
+
+                    cell.textContent = Math.round(displayValue);
+                    cell.style.background = `rgb(${backgroundValue}, ${backgroundValue}, ${backgroundValue})`;
+                    cell.style.color = textColor;
+                    if (clickHandler) {
+                        cell.onclick = clickHandler;
+                    }
+
+                    if (i >= startRow && i < startRow + kh &&
+                        j >= startCol && j < startCol + kw) {
+                        const pairIdx = (i - startRow) * kw + (j - startCol);
+                        cell.classList.add(`pair-${pairIdx}`);
+                    }
+
+                    inputGrid.appendChild(cell);
+                }
+            }
+
+            // 출력 격자
+            if (state.output.length > 0) {
+                outputGrid.style.gridTemplateColumns = `repeat(${ow}, 1fr)`;
+                outputGrid.innerHTML = '';
+                
+                for (let i = 0; i < oh; i++) {
+                    for (let j = 0; j < ow; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        const idx = i * ow + j;
+                        
+                        if (idx <= state.currentPos) {
+                            const val = Math.abs(state.output[i][j]);
+                            cell.textContent = Math.round(state.output[i][j]);
+                            
+                            if (state.output[i][j] < 0) {
+                                cell.style.background = `rgba(0, 100, 255, ${Math.min(val / 255, 1)})`;
+                                cell.style.color = 'white';
+                            } else {
+                                const gray = state.clip ? val : Math.min(val, 255);
+                                cell.style.background = `rgb(${gray}, ${gray}, ${gray})`;
+                                cell.style.color = gray > 127 ? 'black' : 'white';
+                            }
+                        } else {
+                            cell.style.background = '#e0e0e0';
+                            cell.textContent = '?';
+                        }
+                        
+                        if (idx === state.currentPos) {
+                            cell.style.border = '4px solid #ff6b6b';
+                            cell.style.boxShadow = '0 0 20px rgba(255,107,107,0.8)';
+                        }
+                        
+                        cell.onmouseenter = () => highlightInputRegion(i, j);
+                        cell.onmouseleave = () => removeHighlights();
+                        
+                        outputGrid.appendChild(cell);
+                    }
+                }
+            }
+        }
+        
+        function render1D() {
+            const inputGrid = document.getElementById('input1d-grid');
+            inputGrid.className = 'd1-grid';
+            inputGrid.innerHTML = '';
+            
+            const kw = state.kernel[0].length;
+            const outIdx = state.currentPos;
+            const startPos = outIdx * state.stride;
+            
+            for (let i = 0; i < state.input1d.length; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'd1-cell';
+                const val = state.input1d[i];
+                cell.textContent = Math.round(val);
+                cell.style.background = `rgb(${val}, ${val}, ${val})`;
+                cell.style.color = val > 127 ? 'black' : 'white';
+                
+                if (i >= startPos && i < startPos + kw) {
+                    cell.classList.add('active');
+                }
+                
+                inputGrid.appendChild(cell);
+            }
+            
+            // 출력
+            const outputGrid = document.getElementById('output2d-grid');
+            outputGrid.className = 'd1-grid';
+            outputGrid.style.gridTemplateColumns = 'auto';
+            outputGrid.innerHTML = '';
+            
+            for (let i = 0; i < state.output.length; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'd1-cell';
+                
+                if (i <= state.currentPos) {
+                    const val = Math.abs(state.output[i]);
+                    cell.textContent = Math.round(state.output[i]);
+                    
+                    if (state.output[i] < 0) {
+                        cell.style.background = `rgba(0, 100, 255, ${Math.min(val / 255, 1)})`;
+                        cell.style.color = 'white';
+                    } else {
+                        const gray = state.clip ? val : Math.min(val, 255);
+                        cell.style.background = `rgb(${gray}, ${gray}, ${gray})`;
+                        cell.style.color = gray > 127 ? 'black' : 'white';
+                    }
+                } else {
+                    cell.style.background = '#e0e0e0';
+                    cell.textContent = '?';
+                }
+                
+                if (i === state.currentPos) {
+                    cell.classList.add('active');
+                }
+                
+                outputGrid.appendChild(cell);
+            }
+        }
+        
+        function renderKernel() {
+            const kernelGrid = document.getElementById('kernel-grid');
+            const [kh, kw] = state.kernelSize;
+            
+            kernelGrid.style.gridTemplateColumns = `repeat(${kw}, 1fr)`;
+            kernelGrid.className = 'grid-container';
+            kernelGrid.innerHTML = '';
+            
+            for (let i = 0; i < kh; i++) {
+                for (let j = 0; j < kw; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    const pairIdx = i * kw + j;
+                    cell.classList.add(`pair-${pairIdx}`);
+                    
+                    cell.textContent = state.kernel[i][j].toFixed(1);
+                    
+                    const val = state.kernel[i][j];
+                    const absVal = Math.abs(val);
+                    
+                    if (val > 0) {
+                        // 양수 값: 빨간색 계열
+                        if (absVal >= 3) {
+                            cell.style.background = '#ff6b6b';
+                            cell.style.color = 'white';
+                        } else if (absVal >= 1) {
+                            cell.style.background = '#ffa5a5';
+                            cell.style.color = '#333';
+                        } else if (absVal > 0) {
+                            cell.style.background = '#ffd4d4';
+                            cell.style.color = '#333';
+                        }
+                    } else if (val < 0) {
+                        // 음수 값: 파란색 계열
+                        if (absVal >= 3) {
+                            cell.style.background = '#4dabf7';
+                            cell.style.color = 'white';
+                        } else if (absVal >= 1) {
+                            cell.style.background = '#91c9ff';
+                            cell.style.color = '#333';
+                        } else if (absVal > 0) {
+                            cell.style.background = '#c5e3ff';
+                            cell.style.color = '#333';
+                        }
+                    } else {
+                        // 0 값: 밝은 회색
+                        cell.style.background = '#f8f9fa';
+                        cell.style.color = '#666';
+                    }
+                    
+                    cell.onclick = () => editKernel(i, j);
+                    kernelGrid.appendChild(cell);
+                }
+            }
+        }
+        
+        function renderComputation() {
+            const comp = document.getElementById('computation');
+            
+            if (state.mode === '2d') {
+                const [oh, ow] = [state.output.length, state.output[0].length];
+                const outRow = Math.floor(state.currentPos / ow);
+                const outCol = state.currentPos % ow;
+                
+                const [kh, kw] = state.kernelSize;
+                const startRow = outRow * state.stride;
+                const startCol = outCol * state.stride;
+                
+                let html = '<div style="font-weight:bold; margin-bottom:10px;">현재 계산:</div>';
+                let sum = 0;
+                let pairIdx = 0;
+                
+                for (let i = 0; i < kh; i++) {
+                    for (let j = 0; j < kw; j++) {
+                        const inputVal = state.padded && state.padded[startRow + i] ? 
+                            state.padded[startRow + i][startCol + j] : 0;
+                        const kernelVal = state.kernel[i][j];
+                        const product = inputVal * kernelVal;
+                        sum += product;
+                        
+                        html += `<div class="computation-row pair-${pairIdx}">
+                            <span><strong>(${i+1},${j+1})</strong> ${inputVal.toFixed(0)} × ${kernelVal.toFixed(1)}</span>
+                            <span>= ${product.toFixed(1)}</span>
+                        </div>`;
+                        pairIdx++;
+                    }
+                }
+                
+                let finalVal = sum;
+                if (state.normalize) {
+                    let kernelSum = 0;
+                    for (let i = 0; i < kh; i++) {
+                        for (let j = 0; j < kw; j++) {
+                            kernelSum += state.kernel[i][j];
+                        }
+                    }
+                    if (Math.abs(kernelSum) > 0.001) {
+                        finalVal = sum / kernelSum;
+                        html += `<div class="computation-row" style="border-left:none; background:#f8f9fa; margin-top:8px;">
+                            <span>합계: ${sum.toFixed(1)} ÷ ${kernelSum.toFixed(1)}</span>
+                            <span>= ${finalVal.toFixed(1)}</span>
+                        </div>`;
+                    }
+                } else {
+                    html += `<div class="computation-row" style="border-left:none; background:#f8f9fa; margin-top:8px;">
+                        <span>합계 (Σ)</span>
+                        <span>= ${sum.toFixed(1)}</span>
+                    </div>`;
+                }
+                
+                if (state.clip) {
+                    finalVal = Math.max(0, Math.min(255, Math.round(finalVal)));
+                }
+                
+                html += `<div class="computation-row" style="border-left:none; background:#e3f2fd; font-weight:bold; border:2px solid #1e293b;">
+                    <span>최종 출력값:</span>
+                    <span style="color:#1e293b; font-size:1.2em;">${finalVal.toFixed(0)}</span>
+                </div>`;
+                
+                comp.innerHTML = html;
+            } else {
+                const kw = state.kernel[0].length;
+                const startPos = state.currentPos * state.stride;
+                
+                let html = '<div style="font-weight:bold; margin-bottom:10px;">현재 계산:</div>';
+                let sum = 0;
+                
+                for (let j = 0; j < kw; j++) {
+                    const inputVal = state.padded1d[startPos + j] || 0;
+                    const kernelVal = state.kernel[0][j];
+                    const product = inputVal * kernelVal;
+                    sum += product;
+                    
+                    html += `<div class="computation-row pair-${j}">
+                        <span><strong>[${j+1}]</strong> ${inputVal.toFixed(0)} × ${kernelVal.toFixed(1)}</span>
+                        <span>= ${product.toFixed(1)}</span>
+                    </div>`;
+                }
+                
+                let finalVal = sum;
+                if (state.normalize) {
+                    const kernelSum = state.kernel[0].reduce((a, b) => a + b, 0);
+                    if (Math.abs(kernelSum) > 0.001) {
+                        finalVal = sum / kernelSum;
+                        html += `<div class="computation-row" style="border-left:none; background:#f8f9fa; margin-top:8px;">
+                            <span>합계: ${sum.toFixed(1)} ÷ ${kernelSum.toFixed(1)}</span>
+                            <span>= ${finalVal.toFixed(1)}</span>
+                        </div>`;
+                    }
+                } else {
+                    html += `<div class="computation-row" style="border-left:none; background:#f8f9fa; margin-top:8px;">
+                        <span>합계 (Σ)</span>
+                        <span>= ${sum.toFixed(1)}</span>
+                    </div>`;
+                }
+                
+                if (state.clip) {
+                    finalVal = Math.max(0, Math.min(255, Math.round(finalVal)));
+                }
+                
+                html += `<div class="computation-row" style="border-left:none; background:#e3f2fd; font-weight:bold; border:2px solid #1e293b;">
+                    <span>최종 출력값:</span>
+                    <span style="color:#1e293b; font-size:1.2em;">${finalVal.toFixed(0)}</span>
+                </div>`;
+                
+                comp.innerHTML = html;
+            }
+        }
+        
+        function highlightInputRegion(outRow, outCol) {
+            const inputGrid = document.getElementById('input2d-grid');
+            const cells = inputGrid.querySelectorAll('.grid-cell');
+
+            const [kh, kw] = state.kernelSize;
+            const startRow = outRow * state.stride;
+            const startCol = outCol * state.stride;
+
+            cells.forEach((cell) => {
+                const i = parseInt(cell.dataset.row, 10);
+                const j = parseInt(cell.dataset.col, 10);
+                if (Number.isNaN(i) || Number.isNaN(j)) return;
+
+                if (i >= startRow && i < startRow + kh &&
+                    j >= startCol && j < startCol + kw) {
+                    cell.classList.add('highlight');
+                }
+            });
+        }
+        
+        function removeHighlights() {
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+        }
+        
+        function editCell2D(i, j) {
+            const val = prompt(`셀 [${i}, ${j}] 값 입력 (0-255):`, state.input2d[i][j]);
+            if (val !== null) {
+                const num = parseFloat(val);
+                if (!isNaN(num)) {
+                    state.input2d[i][j] = Math.max(0, Math.min(255, num));
+                    updateConvolution();
+                }
+            }
+        }
+        
+        function editKernel(i, j) {
+            const val = prompt(`커널 [${i}, ${j}] 값 입력:`, state.kernel[i][j]);
+            if (val !== null) {
+                const num = parseFloat(val);
+                if (!isNaN(num)) {
+                    state.kernel[i][j] = num;
+                    updateConvolution();
+                }
+            }
+        }
+        
+        // 유틸리티
+        function changeInputSize(size) {
+            state.inputSize = parseInt(size);
+            document.getElementById('input-size-label').textContent = `${size}\u00D7${size}`;
+            loadSample2D('gaussian');
+        }
+        
+        function randomizeInput() {
+            for (let i = 0; i < state.inputSize; i++) {
+                for (let j = 0; j < state.inputSize; j++) {
+                    state.input2d[i][j] = Math.round(Math.random() * 255);
+                }
+            }
+            updateConvolution();
+        }
+        
+        function resetInput() {
+            createGaussian();
+            updateConvolution();
+        }
+        
+        function adjustZoom(delta) {
+            state.zoom = Math.max(0.5, Math.min(2, state.zoom + delta));
+            const grid = document.getElementById('input2d-grid');
+            grid.style.transform = `scale(${state.zoom})`;
+            grid.style.transformOrigin = 'center center';
+        }
+        
+        function downloadCSV() {
+            let csv = 'Input Matrix\n';
+            if (state.mode === '2d') {
+                state.input2d.forEach(row => {
+                    csv += row.join(',') + '\n';
+                });
+            } else {
+                csv += state.input1d.join(',') + '\n';
+            }
+            
+            csv += '\nKernel\n';
+            state.kernel.forEach(row => {
+                csv += row.join(',') + '\n';
+            });
+            
+            csv += '\nOutput\n';
+            if (state.mode === '2d') {
+                state.output.forEach(row => {
+                    csv += row.join(',') + '\n';
+                });
+            } else {
+                csv += state.output.join(',') + '\n';
+            }
+            
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'convolution_result.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // 페이지 로드 시 초기화
+        init();
+    </script>
+</body>
+</html>
