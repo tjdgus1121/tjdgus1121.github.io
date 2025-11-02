@@ -221,6 +221,22 @@
             background-color: #6A1B9A;
         }
 
+        #excel-copy-btn {
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+        }
+
+        #excel-copy-btn:hover {
+            background-color: #2e7d32;
+            transform: scale(1.1);
+        }
+
+        #excel-copy-btn:disabled {
+            opacity: 0.85;
+            cursor: default;
+            transform: none;
+            pointer-events: none;
+        }
+
         #export-btn {
             background: linear-gradient(135deg, #607D8B 0%, #90A4AE 100%);
             /* 블루그레이 */
@@ -719,6 +735,7 @@
                     <button class="upload-btn" id="numbers-mode-btn">숫자 모드</button>
                     <button class="upload-btn" id="mixed-mode-btn">혼합 모드</button>
                     <button class="upload-btn" id="toggle-compact-btn">컴팩트 보기</button>
+                    <button class="upload-btn" id="excel-copy-btn">Excel 복사</button>
                     <button class="upload-btn" id="export-btn">CSV 내보내기</button>
                 </div>
 
@@ -776,6 +793,7 @@
             const colorModeBtn = document.getElementById('color-mode-btn');
             const numbersModeBtn = document.getElementById('numbers-mode-btn');
             const mixedModeBtn = document.getElementById('mixed-mode-btn');
+            const excelCopyBtn = document.getElementById('excel-copy-btn');
             const exportBtn = document.getElementById('export-btn');
             const matrixSize = document.getElementById('matrix-size');
             const toggleCompactBtn = document.getElementById('toggle-compact-btn');
@@ -850,6 +868,64 @@
                 }
             }
 
+            excelCopyBtn.addEventListener('click', function () {
+                if (!currentMatrix) return;
+
+                const tsvContent = currentMatrix.map(row => row.join('\t')).join('\r\n');
+                const showSuccess = () => provideCopyFeedback(excelCopyBtn, '복사 완료!');
+                const showFailure = () => provideCopyFeedback(excelCopyBtn, '복사 실패');
+
+                if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+                    navigator.clipboard.writeText(tsvContent).then(showSuccess).catch(() => {
+                        fallbackCopyToClipboard(tsvContent, showSuccess, showFailure);
+                    });
+                } else {
+                    fallbackCopyToClipboard(tsvContent, showSuccess, showFailure);
+                }
+            });
+
+            function provideCopyFeedback(button, message, duration = 1500) {
+                if (!button.dataset.originalText) {
+                    button.dataset.originalText = button.textContent;
+                }
+
+                button.textContent = message;
+                button.disabled = true;
+                button.blur();
+
+                setTimeout(() => {
+                    button.textContent = button.dataset.originalText;
+                    button.disabled = false;
+                }, duration);
+            }
+
+            function fallbackCopyToClipboard(text, onSuccess, onFailure) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                textarea.style.pointerEvents = 'none';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                let copied = false;
+
+                try {
+                    copied = document.execCommand('copy');
+                } catch (err) {
+                    copied = false;
+                } finally {
+                    document.body.removeChild(textarea);
+                }
+
+                if (copied) {
+                    onSuccess();
+                } else {
+                    onFailure();
+                }
+            }
+
             exportBtn.addEventListener('click', function () {
                 if (!currentMatrix) return;
 
@@ -871,7 +947,7 @@
             // 활성화된 버튼 강조 표시
             function highlightActiveButton() {
                 // 모든 모드 버튼에서 'active' 클래스 제거
-                [colorModeBtn, numbersModeBtn, mixedModeBtn, toggleCompactBtn, exportBtn].forEach(btn => {
+                [colorModeBtn, numbersModeBtn, mixedModeBtn, toggleCompactBtn, exportBtn, excelCopyBtn].forEach(btn => {
                     btn.classList.remove('active');
                 });
 
@@ -888,8 +964,9 @@
                 if (compactView) {
                     toggleCompactBtn.classList.add('active');
                 }
-                // exportBtn은 항상 비활성화 상태
+                // exportBtn과 excelCopyBtn은 항상 비활성화 상태 유지
                 exportBtn.classList.remove('active');
+                excelCopyBtn.classList.remove('active');
             }
 
             // 매트릭스 디스플레이 모드 업데이트
