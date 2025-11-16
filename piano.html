@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지수법칙 피아노 - 음계와 주파수</title>
+    
+    <!-- MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2a5298;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .top-row {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Calculator Section - Windows Style */
+        .calculator-section {
+            flex: 0 0 380px;
+            background: #f3f3f3;
+            border-radius: 15px;
+            padding: 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .calculator-title {
+            font-size: 1.2em;
+            color: #333;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .calculator-display {
+            background: white;
+            padding: 20px 20px 15px 20px;
+        }
+
+        .calc-history {
+            color: #999;
+            font-size: 0.75em;
+            min-height: 60px;
+            max-height: 60px;
+            overflow-y: auto;
+            text-align: right;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .calc-history::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .calc-history::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        .calc-history div {
+            margin: 2px 0;
+        }
+
+        .calc-expression {
+            color: #666;
+            font-size: 0.9em;
+            min-height: 20px;
+            text-align: right;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .calc-screen {
+            color: #000;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-align: right;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            word-break: break-all;
+        }
+
+        .calculator-body {
+            background: #f3f3f3;
+            padding: 10px;
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+
+        .calc-btn {
+            padding: 18px;
+            background: #fafafa;
+            color: #000;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .calc-btn:hover {
+            background: #e8e8e8;
+        }
+
+        .calc-btn:active {
+            background: #d8d8d8;
+        }
+
+        .calc-btn.function {
+            background: #f0f0f0;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .calc-btn.function:hover {
+            background: #e0e0e0;
+        }
+
+        .calc-btn.power {
+            background: #34c759;
+            color: white;
+            font-size: 1em;
+            font-weight: 700;
+        }
+
+        .calc-btn.power:hover {
+            background: #2fb350;
+        }
+
+        .calc-btn.power:active {
+            background: #28a045;
+        }
+
+        .calc-btn.operator {
+            background: #f5a623;
+            color: white;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .calc-btn.operator:hover {
+            background: #e09612;
+        }
+
+        .calc-btn.operator:active {
+            background: #cc8510;
+        }
+
+        .calc-btn.equal {
+            background: #0078d4;
+            color: white;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .calc-btn.equal:hover {
+            background: #006cbd;
+        }
+
+        .manual-section {
+            flex: 1;
+            max-width: 640px;
+            background: white;
+            border-radius: 15px;
+            padding: 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .manual-title {
+            font-size: 1.2em;
+            color: #333;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .manual-content {
+            padding: 20px;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        .manual-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .manual-content::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 3px;
+        }
+
+        .manual-content h4 {
+            color: #2a5298;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .manual-content p {
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+        }
+
+        .manual-content .formula-box {
+            background: #f8f9fa;
+            border-left: 4px solid #0078d4;
+            padding: 12px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .manual-content .step {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 8px 0;
+            font-size: 0.85em;
+        }
+
+        .manual-content .tip {
+            background: #d1ecf1;
+            border-left: 4px solid #0dcaf0;
+            padding: 10px;
+            margin: 8px 0;
+            font-size: 0.85em;
+        }
+
+        .example-section {
+            margin: 15px;
+            padding: 0;
+        }
+
+        /* Piano Section */
+        .piano-section {
+            width: 100%;
+        }
+
+        .piano-title {
+            font-size: 1.5em;
+            color: #2a5298;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        .piano-container {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 15px;
+            padding: 30px 20px 20px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .piano-keys {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+            height: 330px;
+        }
+
+        .keys-wrapper {
+            position: relative;
+            display: flex;
+        }
+
+        /* White Keys - 1.5x larger */
+        .key.white {
+            width: 105px;
+            height: 330px;
+            background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+            border: 2px solid #333;
+            border-radius: 0 0 10px 10px;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 8px;
+            padding-top: 120px;
+            z-index: 1;
+        }
+
+        .key.white:hover {
+            background: linear-gradient(180deg, #e8f4ff 0%, #d0e8ff 100%);
+            transform: translateY(-3px);
+        }
+
+        .key.white:active,
+        .key.white.playing {
+            background: linear-gradient(180deg, #4a90e2 0%, #2a5298 100%);
+            transform: translateY(3px);
+        }
+
+        /* Black Keys - width 1.5x, height 0.7x of original 140px */
+        .key.black {
+            width: 67.5px;
+            height: 98px;
+            background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
+            border: 2px solid #000;
+            border-radius: 0 0 8px 8px;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 6px;
+            z-index: 2;
+        }
+
+        .key.black:hover {
+            background: linear-gradient(180deg, #333 0%, #1a1a1a 100%);
+            transform: translateY(-3px);
+        }
+
+        .key.black:active,
+        .key.black.playing {
+            background: linear-gradient(180deg, #5fa3d0 0%, #3a7bc8 100%);
+            transform: translateY(2px);
+        }
+
+        .key.playing {
+            animation: pulse 0.3s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.05) translateY(-5px); }
+        }
+
+        /* Position black keys - adjusted for 1.5x width */
+        .black-key-1 { left: 72px; }
+        .black-key-2 { left: 177px; }
+        .black-key-4 { left: 387px; }
+        .black-key-5 { left: 492px; }
+        .black-key-6 { left: 597px; }
+        .black-key-8 { left: 807px; }
+        .black-key-9 { left: 912px; }
+
+        .key-label {
+            font-size: 1em;
+            font-weight: bold;
+            color: #333;
+            background: rgba(200, 200, 200, 0.8);
+            padding: 5px 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .key.black .key-label {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            font-size: 0.85em;
+        }
+
+        .key.playing .key-label {
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .key-note {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .key.black .key-note {
+            color: white;
+            font-size: 0.95em;
+            margin-bottom: 6px;
+        }
+
+        .key.playing .key-note {
+            color: white;
+        }
+
+        .key-semitone {
+            font-size: 0.85em;
+            color: #999;
+            margin-bottom: auto;
+        }
+
+        .key.black .key-semitone {
+            color: #ccc;
+            font-size: 0.75em;
+        }
+
+        .key.playing .key-semitone {
+            color: white;
+        }
+
+        .frequency-input {
+            width: 90px;
+            padding: 8px 6px;
+            border: 2px solid #4a90e2;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.95em;
+            font-weight: bold;
+            background: white;
+            margin-top: 8px;
+        }
+
+        .key.black .frequency-input {
+            width: 77px;
+            font-size: 0.8em;
+            padding: 6px 4px;
+        }
+
+        .frequency-input:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 8px rgba(74, 144, 226, 0.5);
+        }
+
+        .play-button {
+            margin-top: 8px;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #4a90e2 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .key.black .play-button {
+            padding: 6px 10px;
+            font-size: 0.75em;
+        }
+
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(74, 144, 226, 0.4);
+        }
+
+        .keyboard-guide {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            color: #ecf0f1;
+        }
+
+        .keyboard-guide strong {
+            color: #a8d0e6;
+        }
+
+        .keyboard-guide div {
+            margin: 5px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .piano-keys {
+                transform: scale(0.85);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .top-row {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .calculator-section,
+            .manual-section {
+                width: 100%;
+                max-width: 500px;
+            }
+
+            .piano-keys {
+                transform: scale(0.7);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .piano-keys {
+                transform: scale(0.55);
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .piano-keys {
+                transform: scale(0.4);
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎹 지수법칙 피아노</h1>
+        <p class="subtitle">2의 거듭제곱으로 음계의 주파수를 계산하고 소리를 들어보세요!</p>
+
+        <div class="main-layout">
+            <!-- Top Row: Calculator and Manual -->
+            <div class="top-row">
+                <!-- Calculator Section -->
+                <div class="calculator-section">
+                    <div class="calculator-title">계산기</div>
+                    
+                    <div class="calculator-display">
+                        <div class="calc-history" id="calcHistory"></div>
+                        <div class="calc-expression" id="calcExpression"></div>
+                        <div class="calc-screen" id="calcScreen">0</div>
+                    </div>
+
+                    <div class="calculator-body">
+                        <div class="calc-buttons">
+                            <button class="calc-btn function" onclick="clearCalc()">C</button>
+                            <button class="calc-btn function" onclick="backspace()">⌫</button>
+                            <button class="calc-btn power" onclick="powerTwo()">$2^x$</button>
+                            <button class="calc-btn operator" onclick="appendOperator('/')">/</button>
+                            
+                            <button class="calc-btn" onclick="appendNumber('7')">7</button>
+                            <button class="calc-btn" onclick="appendNumber('8')">8</button>
+                            <button class="calc-btn" onclick="appendNumber('9')">9</button>
+                            <button class="calc-btn operator" onclick="appendOperator('*')">×</button>
+                            
+                            <button class="calc-btn" onclick="appendNumber('4')">4</button>
+                            <button class="calc-btn" onclick="appendNumber('5')">5</button>
+                            <button class="calc-btn" onclick="appendNumber('6')">6</button>
+                            <button class="calc-btn operator" onclick="appendOperator('-')">−</button>
+                            
+                            <button class="calc-btn" onclick="appendNumber('1')">1</button>
+                            <button class="calc-btn" onclick="appendNumber('2')">2</button>
+                            <button class="calc-btn" onclick="appendNumber('3')">3</button>
+                            <button class="calc-btn operator" onclick="appendOperator('+')">+</button>
+                            
+                            <button class="calc-btn" onclick="toggleSign()">+/−</button>
+                            <button class="calc-btn" onclick="appendNumber('0')">0</button>
+                            <button class="calc-btn" onclick="appendNumber('.')">.</button>
+                            <button class="calc-btn equal" onclick="calculateResult()">=</button>
+                        </div>
+                    </div>
+
+                    <div class="example-section"></div>
+                </div>
+
+                <!-- Manual Section -->
+                <div class="manual-section">
+                    <div class="manual-title">📖 주파수 계산 설명서</div>
+                    
+                    <div class="manual-content">
+                        <div class="formula-box">
+                            <strong>기본 공식:</strong><br>
+                            <div style="font-size: 1.4em; margin: 15px 0; text-align: center;">
+                                $$f = f_0 \times 2^{\frac{n}{12}}$$
+                            </div>
+                            <span style="font-size: 0.9em;">
+                                여기서 $f_0 = 440\text{Hz}$ (A4), $n =$ 반음 수
+                            </span>
+                        </div>
+
+                        <h4>🎯 계산 방법</h4>
+                        
+                        <div class="step">
+                            <strong>1단계:</strong> 반음 수$(n)$를 12로 나누기<br>
+                            예: $n=1 \rightarrow \frac{1}{12} = 0.0833\ldots$
+                        </div>
+                        
+                        <div class="step">
+                            <strong>2단계:</strong> 2의 거듭제곱 계산 ($2^x$ 버튼)<br>
+                            예: $2^{0.0833} = 1.0595\ldots$
+                        </div>
+                        
+                        <div class="step">
+                            <strong>3단계:</strong> 440을 곱하기<br>
+                            예: $1.0595 \times 440 = 466.16\text{ Hz}$ (A#4)
+                        </div>
+
+                        <h4>💡 실전 예제</h4>
+                        
+                        <p><strong>예제 1: A#4 (466Hz) 계산</strong></p>
+                        <p>① $1 \div 12 =$ → $0.0833\ldots$</p>
+                        <p>② $2^x$ 클릭 → $1.0595\ldots$</p>
+                        <p>③ $\times 440 =$ → $466.16$ Hz ✓</p>
+                        
+                        <p><strong>예제 2: C4 (262Hz) 계산</strong></p>
+                        <p>① $-9 \div 12 =$ → $-0.75$</p>
+                        <p>② $2^x$ 클릭 → $0.5946\ldots$</p>
+                        <p>③ $\times 440 =$ → $261.63$ Hz ✓</p>
+                        
+                        <p><strong>예제 3: C5 (523Hz) 계산</strong></p>
+                        <p>① $3 \div 12 =$ → $0.25$</p>
+                        <p>② $2^x$ 클릭 → $1.1892\ldots$</p>
+                        <p>③ $\times 440 =$ → $523.25$ Hz ✓</p>
+
+                        <div class="tip">
+                            <strong>💡 팁:</strong> 계산 기록이 계산기 위쪽 명령 표시줄에 저장됩니다. 스크롤하여 이전 계산을 확인하세요!
+                        </div>
+
+                        <h4>📊 건반별 n값 참고표</h4>
+                        <p>$\text{C4}=-9$, $\text{C}\sharp\text{4}=-8$, $\text{D4}=-7$, $\text{D}\sharp\text{4}=-6$, $\text{E4}=-5$</p>
+                        <p>$\text{F4}=-4$, $\text{F}\sharp\text{4}=-3$, $\text{G4}=-2$, $\text{G}\sharp\text{4}=-1$, $\text{A4}=0$</p>
+                        <p>$\text{A}\sharp\text{4}=1$, $\text{B4}=2$, $\text{C5}=3$, $\text{C}\sharp\text{5}=4$, $\text{D5}=5$</p>
+                        <p>$\text{D}\sharp\text{5}=6$, $\text{E5}=7$, $\text{F5}=8$</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Piano Section -->
+            <div class="piano-section">
+                <div class="piano-title">🎵 인터랙티브 피아노</div>
+                <p class="instruction">
+                    각 건반에 주파수를 입력하고 재생 버튼을 눌러보세요!<br>
+                    키보드 또는 마우스로 건반을 연주할 수 있습니다.
+                </p>
+
+                <div class="piano-container">
+                    <div class="piano-keys" id="pianoKeys"></div>
+                    
+                    <div class="keyboard-guide">
+                        <div><strong>⌨️ 키보드 단축키</strong></div>
+                        <div>흰 건반: A(C4) S(D4) D(E4) F(F4) G(G4) H(A4) J(B4) K(C5) L(D5) ;(E5) '(F5)</div>
+                        <div>검은 건반: W(C#4) E(D#4) T(F#4) Y(G#4) U(A#4) O(C#5) P(D#5)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio Context
+        let audioContext = null;
+        let currentOscillators = {};
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Calculator state
+        let currentExpression = '';
+        let currentValue = '0';
+        let lastResult = null;
+        let calculationHistory = [];
+        let lastOperator = null;
+        let lastOperand = null;
+
+        function addToHistory(calculation, result) {
+            calculationHistory.push(`${calculation} = ${result}`);
+            if (calculationHistory.length > 10) {
+                calculationHistory.shift();
+            }
+            updateHistory();
+        }
+
+        function updateHistory() {
+            const historyDiv = document.getElementById('calcHistory');
+            historyDiv.innerHTML = calculationHistory.map(h => `<div>${h}</div>`).join('');
+            historyDiv.scrollTop = historyDiv.scrollHeight;
+        }
+
+        function appendNumber(num) {
+            if (currentValue === '0' && num !== '.') {
+                currentValue = num;
+            } else if (currentValue.length < 16) {
+                currentValue += num;
+            }
+            lastOperator = null; // 숫자 입력 시 연속 계산 초기화
+            lastOperand = null;
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (currentExpression === '' && lastResult !== null) {
+                currentExpression = lastResult + ' ' + op + ' ';
+            } else {
+                currentExpression += currentValue + ' ' + op + ' ';
+            }
+            currentValue = '0';
+            lastOperator = null; // 연산자 변경 시 연속 계산 초기화
+            lastOperand = null;
+            updateDisplay();
+        }
+
+        function clearCalc() {
+            currentExpression = '';
+            currentValue = '0';
+            lastResult = null;
+            lastOperator = null;
+            lastOperand = null;
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (currentValue.length > 1) {
+                currentValue = currentValue.slice(0, -1);
+            } else {
+                currentValue = '0';
+            }
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            if (currentValue !== '0') {
+                currentValue = currentValue.startsWith('-') ? currentValue.slice(1) : '-' + currentValue;
+                updateDisplay();
+            }
+        }
+
+        function powerTwo() {
+            const num = parseFloat(currentValue);
+            if (!isNaN(num)) {
+                const result = Math.pow(2, num);
+                const displayResult = parseFloat(result.toFixed(10)).toString();
+                addToHistory(`2^${currentValue}`, displayResult);
+                currentValue = displayResult;
+                lastResult = currentValue;
+                currentExpression = '';
+                lastOperator = null;
+                lastOperand = null;
+                updateDisplay();
+            }
+        }
+
+        function calculateResult() {
+            // 연속 계산: = 만 누르는 경우
+            if (currentExpression === '' && lastOperator && lastOperand) {
+                try {
+                    const num1 = parseFloat(currentValue);
+                    const num2 = parseFloat(lastOperand);
+                    let result;
+                    
+                    switch(lastOperator) {
+                        case '+':
+                            result = num1 + num2;
+                            break;
+                        case '-':
+                            result = num1 - num2;
+                            break;
+                        case '*':
+                            result = num1 * num2;
+                            break;
+                        case '/':
+                            result = num1 / num2;
+                            break;
+                        default:
+                            return;
+                    }
+                    
+                    const displayResult = parseFloat(result.toFixed(10)).toString();
+                    const opSymbol = lastOperator === '*' ? '×' : lastOperator === '-' ? '−' : lastOperator;
+                    addToHistory(`${currentValue} ${opSymbol} ${lastOperand}`, displayResult);
+                    
+                    currentValue = displayResult;
+                    lastResult = displayResult;
+                    updateDisplay();
+                    return;
+                } catch (error) {
+                    currentValue = 'Error';
+                    updateDisplay();
+                    return;
+                }
+            }
+            
+            // 일반 계산
+            if (currentExpression === '') return;
+            
+            try {
+                const fullExpression = currentExpression + currentValue;
+                const result = eval(fullExpression.replace('×', '*').replace('−', '-'));
+                const displayResult = parseFloat(result.toFixed(10)).toString();
+                
+                // 마지막 연산자와 피연산자 저장
+                const parts = currentExpression.trim().split(' ');
+                if (parts.length >= 2) {
+                    const operator = parts[parts.length - 1];
+                    lastOperator = operator === '×' ? '*' : operator === '−' ? '-' : operator;
+                    lastOperand = currentValue;
+                }
+                
+                addToHistory(fullExpression.replace('*', '×').replace('-', '−'), displayResult);
+                
+                lastResult = displayResult;
+                currentValue = displayResult;
+                currentExpression = '';
+                updateDisplay();
+            } catch (error) {
+                currentValue = 'Error';
+                lastOperator = null;
+                lastOperand = null;
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('calcScreen').textContent = currentValue;
+            document.getElementById('calcExpression').textContent = currentExpression;
+        }
+
+        // Piano configuration
+        const whiteNotes = [
+            { name: 'C', key: 'A', defaultFreq: 261.63, semitone: -9, octave: 4 },
+            { name: 'D', key: 'S', defaultFreq: 293.66, semitone: -7, octave: 4 },
+            { name: 'E', key: 'D', defaultFreq: 329.63, semitone: -5, octave: 4 },
+            { name: 'F', key: 'F', defaultFreq: 349.23, semitone: -4, octave: 4 },
+            { name: 'G', key: 'G', defaultFreq: 392.00, semitone: -2, octave: 4 },
+            { name: 'A', key: 'H', defaultFreq: 440.00, semitone: 0, octave: 4 },
+            { name: 'B', key: 'J', defaultFreq: 493.88, semitone: 2, octave: 4 },
+            { name: 'C', key: 'K', defaultFreq: 523.25, semitone: 3, octave: 5 },
+            { name: 'D', key: 'L', defaultFreq: 587.33, semitone: 5, octave: 5 },
+            { name: 'E', key: ';', defaultFreq: 659.25, semitone: 7, octave: 5 },
+            { name: 'F', key: '\'', defaultFreq: 698.46, semitone: 8, octave: 5 }
+        ];
+
+        const blackNotes = [
+            { name: 'C#', key: 'W', defaultFreq: 277.18, position: 1, semitone: -8, octave: 4 },
+            { name: 'D#', key: 'E', defaultFreq: 311.13, position: 2, semitone: -6, octave: 4 },
+            { name: 'F#', key: 'T', defaultFreq: 369.99, position: 4, semitone: -3, octave: 4 },
+            { name: 'G#', key: 'Y', defaultFreq: 415.30, position: 5, semitone: -1, octave: 4 },
+            { name: 'A#', key: 'U', defaultFreq: 466.16, position: 6, semitone: 1, octave: 4 },
+            { name: 'C#', key: 'O', defaultFreq: 554.37, position: 8, semitone: 4, octave: 5 },
+            { name: 'D#', key: 'P', defaultFreq: 622.25, position: 9, semitone: 6, octave: 5 }
+        ];
+
+        function createPiano() {
+            const pianoKeys = document.getElementById('pianoKeys');
+            const keysWrapper = document.createElement('div');
+            keysWrapper.className = 'keys-wrapper';
+            
+            // Create white keys
+            whiteNotes.forEach((note, index) => {
+                const key = document.createElement('div');
+                key.className = 'key white';
+                key.dataset.index = `white-${index}`;
+                
+                const keyLabel = document.createElement('div');
+                keyLabel.className = 'key-label';
+                keyLabel.textContent = note.key;
+                
+                const keyNote = document.createElement('div');
+                keyNote.className = 'key-note';
+                keyNote.textContent = `${note.name}${note.octave}`;
+                
+                const keySemitone = document.createElement('div');
+                keySemitone.className = 'key-semitone';
+                keySemitone.textContent = `n=${note.semitone}`;
+                
+                const freqInput = document.createElement('input');
+                freqInput.type = 'number';
+                freqInput.className = 'frequency-input';
+                freqInput.id = `freq-white-${index}`;
+                freqInput.value = note.defaultFreq.toFixed(2);
+                freqInput.placeholder = 'Hz';
+                
+                // 클릭 시 전체 선택
+                freqInput.addEventListener('click', function() {
+                    this.select();
+                });
+                
+                // 포커스 시 전체 선택
+                freqInput.addEventListener('focus', function() {
+                    this.select();
+                });
+                
+                const playBtn = document.createElement('button');
+                playBtn.className = 'play-button';
+                playBtn.textContent = '▶';
+                playBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    playCustomFrequency(`white-${index}`);
+                };
+                
+                key.appendChild(keyLabel);
+                key.appendChild(keyNote);
+                key.appendChild(keySemitone);
+                key.appendChild(freqInput);
+                key.appendChild(playBtn);
+                
+                key.addEventListener('mousedown', () => playNote(`white-${index}`));
+                key.addEventListener('mouseup', () => stopNote(`white-${index}`));
+                key.addEventListener('mouseleave', () => stopNote(`white-${index}`));
+                
+                keysWrapper.appendChild(key);
+            });
+            
+            // Create black keys
+            blackNotes.forEach((note, index) => {
+                const key = document.createElement('div');
+                key.className = `key black black-key-${note.position}`;
+                key.dataset.index = `black-${index}`;
+                
+                const keyLabel = document.createElement('div');
+                keyLabel.className = 'key-label';
+                keyLabel.textContent = note.key;
+                
+                const keyNote = document.createElement('div');
+                keyNote.className = 'key-note';
+                keyNote.textContent = `${note.name}${note.octave}`;
+                
+                const keySemitone = document.createElement('div');
+                keySemitone.className = 'key-semitone';
+                keySemitone.textContent = `n=${note.semitone}`;
+                
+                const freqInput = document.createElement('input');
+                freqInput.type = 'number';
+                freqInput.className = 'frequency-input';
+                freqInput.id = `freq-black-${index}`;
+                freqInput.value = note.defaultFreq.toFixed(2);
+                freqInput.placeholder = 'Hz';
+                
+                // 클릭 시 전체 선택
+                freqInput.addEventListener('click', function() {
+                    this.select();
+                });
+                
+                // 포커스 시 전체 선택
+                freqInput.addEventListener('focus', function() {
+                    this.select();
+                });
+                
+                const playBtn = document.createElement('button');
+                playBtn.className = 'play-button';
+                playBtn.textContent = '▶';
+                playBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    playCustomFrequency(`black-${index}`);
+                };
+                
+                key.appendChild(keyLabel);
+                key.appendChild(keyNote);
+                key.appendChild(keySemitone);
+                key.appendChild(freqInput);
+                key.appendChild(playBtn);
+                
+                key.addEventListener('mousedown', () => playNote(`black-${index}`));
+                key.addEventListener('mouseup', () => stopNote(`black-${index}`));
+                key.addEventListener('mouseleave', () => stopNote(`black-${index}`));
+                
+                keysWrapper.appendChild(key);
+            });
+            
+            pianoKeys.appendChild(keysWrapper);
+        }
+
+        function playNote(keyId) {
+            initAudio();
+            
+            // 이미 재생 중이면 즉시 중지하고 다시 재생
+            if (currentOscillators[keyId]) {
+                stopNote(keyId);
+            }
+            
+            const freqInput = document.getElementById(`freq-${keyId}`);
+            const frequency = parseFloat(freqInput.value);
+            
+            if (isNaN(frequency)) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start();
+            currentOscillators[keyId] = { oscillator, gainNode };
+            
+            const key = document.querySelector(`[data-index="${keyId}"]`);
+            if (key) key.classList.add('playing');
+        }
+
+        function stopNote(keyId) {
+            if (currentOscillators[keyId]) {
+                const { oscillator, gainNode } = currentOscillators[keyId];
+                
+                // 즉시 중지
+                try {
+                    gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
+                    
+                    setTimeout(() => {
+                        try {
+                            oscillator.stop();
+                        } catch (e) {
+                            // 이미 중지된 경우 무시
+                        }
+                    }, 50);
+                } catch (e) {
+                    // 에러 무시
+                }
+                
+                delete currentOscillators[keyId];
+                
+                const key = document.querySelector(`[data-index="${keyId}"]`);
+                if (key) key.classList.remove('playing');
+            }
+        }
+
+        function playCustomFrequency(keyId) {
+            playNote(keyId);
+            setTimeout(() => stopNote(keyId), 500);
+        }
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            // 입력 필드에서 타이핑 중이면 무시
+            if (e.target.tagName === 'INPUT') {
+                return;
+            }
+            
+            const key = e.key.toUpperCase();
+            
+            // 숫자 키 (0-9) - 계산기 입력
+            if (e.key >= '0' && e.key <= '9') {
+                appendNumber(e.key);
+                e.preventDefault();
+                return;
+            }
+            
+            // 소수점
+            if (e.key === '.') {
+                appendNumber('.');
+                e.preventDefault();
+                return;
+            }
+            
+            // 연산자
+            if (e.key === '+') {
+                appendOperator('+');
+                e.preventDefault();
+                return;
+            }
+            if (e.key === '-') {
+                appendOperator('-');
+                e.preventDefault();
+                return;
+            }
+            if (e.key === '*') {
+                appendOperator('*');
+                e.preventDefault();
+                return;
+            }
+            if (e.key === '/') {
+                appendOperator('/');
+                e.preventDefault();
+                return;
+            }
+            
+            // Enter 또는 = 키로 계산
+            if (e.key === 'Enter' || e.key === '=') {
+                calculateResult();
+                e.preventDefault();
+                return;
+            }
+            
+            // Backspace
+            if (e.key === 'Backspace') {
+                backspace();
+                e.preventDefault();
+                return;
+            }
+            
+            // Escape로 초기화
+            if (e.key === 'Escape') {
+                clearCalc();
+                e.preventDefault();
+                return;
+            }
+            
+            // 피아노 건반 (알파벳 키)
+            const whiteIndex = whiteNotes.findIndex(note => note.key === key);
+            if (whiteIndex !== -1) {
+                playNote(`white-${whiteIndex}`);
+                return;
+            }
+            
+            const blackIndex = blackNotes.findIndex(note => note.key === key);
+            if (blackIndex !== -1) {
+                playNote(`black-${blackIndex}`);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toUpperCase();
+            
+            const whiteIndex = whiteNotes.findIndex(note => note.key === key);
+            if (whiteIndex !== -1) {
+                stopNote(`white-${whiteIndex}`);
+                return;
+            }
+            
+            const blackIndex = blackNotes.findIndex(note => note.key === key);
+            if (blackIndex !== -1) {
+                stopNote(`black-${blackIndex}`);
+            }
+        });
+
+        // Initialize
+        createPiano();
+        
+        // Render MathJax after page loads
+        window.addEventListener('load', function() {
+            if (window.MathJax) {
+                MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
+            }
+        });
+    </script>
+</body>
+</html>
