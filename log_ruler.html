@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그 계산자 (슬라이드 룰)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(14, 165, 233, 0.2);
+            border: 1px solid rgba(125, 211, 252, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #0c4a6e;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(14, 165, 233, 0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #0369a1;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .learning-objectives {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+        }
+
+        .learning-objectives h3 {
+            color: #0284c7;
+            margin-bottom: 10px;
+        }
+
+        .learning-objectives ul {
+            list-style-position: inside;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #92400e;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .input-group label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #0c4a6e;
+        }
+
+        .input-group input {
+            width: 120px;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #7dd3fc;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            align-self: flex-end;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        button:nth-of-type(1) {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        }
+
+        button:nth-of-type(1):hover {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        }
+
+        button:nth-of-type(2) {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        button:nth-of-type(2):hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        /* 로그자 본체 */
+        .slide-rule-container {
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            padding: 60px 40px;
+            border-radius: 12px;
+            margin: 30px 0;
+            box-shadow: inset 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .slide-rule-body {
+            position: relative;
+            height: 140px;
+            background: linear-gradient(to bottom, #c8c8c8, #e0e0e0, #c8c8c8);
+            border: 3px solid #555;
+            border-radius: 8px;
+            margin: 0 auto;
+            width: 90%;
+            max-width: 1000px;
+            min-width: 600px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            overflow: visible;
+        }
+
+        /* C척 (미끄럼자) */
+        .scale-c {
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            right: 50px;
+            height: 40px;
+            background: linear-gradient(to bottom, #fffef8, #fffaed);
+            border: 2px solid #999;
+            border-radius: 2px;
+            cursor: move;
+            z-index: 10;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            padding: 0 10px;
+        }
+
+        .scale-c:active {
+            cursor: grabbing;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* D척 (고정자) */
+        .scale-d {
+            position: absolute;
+            bottom: 20px;
+            left: 50px;
+            right: 50px;
+            height: 40px;
+            background: linear-gradient(to bottom, #fafafa, #f0f0f0);
+            border: 2px solid #999;
+            border-radius: 2px;
+            z-index: 1;
+            padding: 0 10px;
+        }
+
+        /* 척 라벨 */
+        .scale-label {
+            position: absolute;
+            left: -35px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* 눈금 */
+        .tick {
+            position: absolute;
+            top: 0;
+            width: 1.5px;
+            background: #000;
+        }
+
+        .tick.major {
+            height: 30px;
+            width: 2px;
+        }
+
+        .tick.minor {
+            height: 18px;
+        }
+
+        .tick.micro {
+            height: 12px;
+            background: #444;
+        }
+
+        .tick-label {
+            position: absolute;
+            top: 32px;
+            font-size: 13px;
+            font-weight: bold;
+            transform: translateX(-50%);
+            color: #000;
+        }
+
+        /* 투명 커서 */
+        .hairline-cursor {
+            position: absolute;
+            width: 100px;
+            height: 180px;
+            background: rgba(220, 220, 220, 0.25);
+            border: 2px solid #666;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            cursor: grab;
+            backdrop-filter: blur(0.5px);
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+            display: none;
+        }
+
+        .hairline-cursor:active {
+            cursor: grabbing;
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .hairline-vertical {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: rgba(220, 0, 0, 0.9);
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 4px rgba(220, 0, 0, 0.6);
+        }
+
+        .hairline-horizontal {
+            position: absolute;
+            width: 100%;
+            height: 1.5px;
+            background: rgba(220, 0, 0, 0.7);
+            left: 0;
+        }
+
+        .hairline-top {
+            top: 35%;
+        }
+
+        .hairline-bottom {
+            bottom: 35%;
+        }
+
+        /* 결과 및 설명 */
+        .result {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+
+        .explanation {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid #0ea5e9;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+        }
+
+        .explanation h3 {
+            color: #0369a1;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            line-height: 1.8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .formula {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 12px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .operation-selector {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(251, 146, 60, 0.2);
+        }
+
+        .operation-selector label {
+            font-weight: bold;
+            margin-right: 20px;
+            font-size: 16px;
+            color: #9a3412;
+        }
+
+        .operation-selector input[type="radio"] {
+            margin: 0 5px 0 15px;
+            transform: scale(1.2);
+            accent-color: #f97316;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📏 로그 계산자 (슬라이드 룰)</h1>
+        <p class="subtitle">로그의 성질을 이용한 곱셈·나눗셈 계산기</p>
+
+        <div class="learning-objectives">
+            <h3>🎯 학습 목표</h3>
+            <ul>
+                <li><strong>로그의 실용적 가치:</strong> 계산기 없던 시대의 실제 계산 도구 체험</li>
+                <li><strong>로그의 핵심 성질:</strong> log(a × b) = log(a) + log(b), log(a ÷ b) = log(a) - log(b)</li>
+                <li><strong>로그 스케일:</strong> 등비수열이 등차수열로 변환되는 원리 이해</li>
+                <li><strong>근사값 계산:</strong> 눈금 사이 값을 읽는 실용적 계산 능력</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            💡 <strong>사용법:</strong> 숫자를 입력하거나 노란색 C척(미끄럼자)을 직접 드래그해보세요!
+        </div>
+
+        <div class="operation-selector">
+            <label>연산 선택:</label>
+            <input type="radio" name="operation" value="multiply" id="opMultiply" checked>
+            <label for="opMultiply">곱셈 (×)</label>
+            <input type="radio" name="operation" value="divide" id="opDivide">
+            <label for="opDivide">나눗셈 (÷)</label>
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label>첫 번째 수 (a)</label>
+                <input type="number" id="num1" min="1" max="10" step="0.1" value="2">
+            </div>
+            <div class="input-group">
+                <label>두 번째 수 (b)</label>
+                <input type="number" id="num2" min="1" max="10" step="0.1" value="3">
+            </div>
+            <button onclick="calculate()">계산하기</button>
+            <button onclick="resetSlider()">초기화</button>
+        </div>
+
+        <div class="slide-rule-container">
+            <div class="slide-rule-body">
+                <span class="scale-label" style="left: 10px; top: 40px;">C</span>
+                <span class="scale-label" style="left: 10px; bottom: 40px;">D</span>
+                
+                <div class="scale-c" id="scaleC"></div>
+                <div class="scale-d" id="scaleD"></div>
+                
+                <div class="hairline-cursor" id="cursor">
+                    <div class="hairline-vertical"></div>
+                    <div class="hairline-horizontal hairline-top"></div>
+                    <div class="hairline-horizontal hairline-bottom"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="result" style="display: none;"></div>
+        <div id="explanation" style="display: none;"></div>
+    </div>
+
+    <script>
+        const scaleC = document.getElementById('scaleC');
+        const scaleD = document.getElementById('scaleD');
+        const cursor = document.getElementById('cursor');
+        
+        let isDragging = false;
+        let isDraggingCursor = false;
+        let currentX = 0;
+        let initialX = 0;
+        let xOffset = 0;
+        let cursorX = 0;
+        let cursorInitialX = 0;
+        let cursorXOffset = 0;
+
+        // 로그 스케일로 위치 계산 (1-10 범위)
+        function logToPosition(value, containerWidth) {
+            if (value <= 1) return 0;
+            if (value >= 10) return containerWidth;
+            return Math.log10(value) * containerWidth;
+        }
+
+        // 위치에서 로그값 계산
+        function positionToLog(position, containerWidth) {
+            const ratio = position / containerWidth;
+            return Math.pow(10, ratio);
+        }
+
+        // 눈금 그리기 (더 정교하게)
+        function drawTicks(element, showLabels = true) {
+            // 기존 눈금 제거
+            const existingTicks = element.querySelectorAll('.tick, .tick-label');
+            existingTicks.forEach(tick => tick.remove());
+            
+            // padding을 제외한 실제 컨텐츠 너비 사용
+            const width = element.clientWidth - 20; // padding 10px * 2
+
+            // 주요 눈금 (1, 2, 3, ..., 10)
+            for (let i = 1; i <= 10; i++) {
+                const pos = logToPosition(i, width) + 10; // padding 고려
+                
+                const tick = document.createElement('div');
+                tick.className = 'tick major';
+                tick.style.left = pos + 'px';
+                element.appendChild(tick);
+
+                if (showLabels) {
+                    const label = document.createElement('div');
+                    label.className = 'tick-label';
+                    label.style.left = pos + 'px';
+                    label.textContent = i === 10 ? '10' : i;
+                    element.appendChild(label);
+                }
+            }
+
+            // 각 구간별 세밀한 눈금
+            for (let i = 1; i < 10; i++) {
+                // 1-2 구간: 0.1 단위로 매우 촘촘
+                if (i === 1) {
+                    for (let j = 1; j <= 9; j++) {
+                        const value = 1 + j * 0.1;
+                        const pos = logToPosition(value, width) + 10;
+                        
+                        const tick = document.createElement('div');
+                        if (j === 5) {
+                            tick.className = 'tick minor';
+                        } else {
+                            tick.className = 'tick micro';
+                        }
+                        tick.style.left = pos + 'px';
+                        element.appendChild(tick);
+                        
+                        // 0.02 단위 미세 눈금 (1.0-1.2 구간만)
+                        if (j <= 2) {
+                            for (let k = 2; k <= 8; k += 2) {
+                                const microValue = 1 + (j - 1) * 0.1 + k * 0.01;
+                                const microPos = logToPosition(microValue, width) + 10;
+                                const microTick = document.createElement('div');
+                                microTick.className = 'tick micro';
+                                microTick.style.left = microPos + 'px';
+                                microTick.style.height = '8px';
+                                microTick.style.background = '#888';
+                                element.appendChild(microTick);
+                            }
+                        }
+                    }
+                }
+                // 2-4 구간: 0.1 단위
+                else if (i >= 2 && i < 4) {
+                    for (let j = 1; j <= 9; j++) {
+                        const value = i + j * 0.1;
+                        const pos = logToPosition(value, width) + 10;
+                        
+                        const tick = document.createElement('div');
+                        if (j === 5) {
+                            tick.className = 'tick minor';
+                        } else if (j % 2 === 0) {
+                            tick.className = 'tick micro';
+                        } else {
+                            continue;
+                        }
+                        tick.style.left = pos + 'px';
+                        element.appendChild(tick);
+                    }
+                }
+                // 4-10 구간: 0.2 단위
+                else {
+                    for (let j = 2; j <= 8; j += 2) {
+                        const value = i + j * 0.1;
+                        const pos = logToPosition(value, width) + 10;
+                        
+                        const tick = document.createElement('div');
+                        if (j === 5) {
+                            tick.className = 'tick minor';
+                        } else {
+                            tick.className = 'tick micro';
+                        }
+                        tick.style.left = pos + 'px';
+                        element.appendChild(tick);
+                    }
+                }
+            }
+        }
+
+        // 초기 눈금 그리기
+        drawTicks(scaleC, true);
+        drawTicks(scaleD, true);
+
+        // 초기 계산 실행 (커서를 보이게 하기 위해)
+        window.addEventListener('load', function() {
+            calculate();
+        });
+
+        // C척 드래그 이벤트
+        scaleC.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        scaleC.addEventListener('touchstart', dragStart);
+        document.addEventListener('touchmove', drag);
+        document.addEventListener('touchend', dragEnd);
+
+        // 커서 드래그 이벤트
+        cursor.addEventListener('mousedown', cursorDragStart);
+        cursor.addEventListener('touchstart', cursorDragStart);
+
+        function dragStart(e) {
+            if (e.type === 'touchstart') {
+                initialX = e.touches[0].clientX - xOffset;
+            } else {
+                initialX = e.clientX - xOffset;
+            }
+
+            if (e.target === scaleC || scaleC.contains(e.target)) {
+                isDragging = true;
+            }
+        }
+
+        function cursorDragStart(e) {
+            e.stopPropagation();
+            if (e.type === 'touchstart') {
+                cursorInitialX = e.touches[0].clientX - cursorXOffset;
+            } else {
+                cursorInitialX = e.clientX - cursorXOffset;
+            }
+            isDraggingCursor = true;
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+
+                if (e.type === 'touchmove') {
+                    currentX = e.touches[0].clientX - initialX;
+                } else {
+                    currentX = e.clientX - initialX;
+                }
+
+                const maxOffset = scaleC.offsetWidth;
+                currentX = Math.max(-maxOffset, Math.min(maxOffset, currentX));
+
+                xOffset = currentX;
+                scaleC.style.transform = `translateX(${currentX}px)`;
+            }
+
+            if (isDraggingCursor) {
+                e.preventDefault();
+
+                if (e.type === 'touchmove') {
+                    cursorX = e.touches[0].clientX - cursorInitialX;
+                } else {
+                    cursorX = e.clientX - cursorInitialX;
+                }
+
+                const slideRuleBody = document.querySelector('.slide-rule-body');
+                const minPos = 50;
+                const maxPos = slideRuleBody.offsetWidth - 50;
+                
+                const absolutePos = cursorX + slideRuleBody.offsetWidth / 2;
+                const clampedPos = Math.max(minPos, Math.min(maxPos, absolutePos));
+                
+                cursorXOffset = cursorX;
+                cursor.style.left = clampedPos + 'px';
+            }
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            isDragging = false;
+            
+            cursorInitialX = cursorX;
+            isDraggingCursor = false;
+        }
+
+        function getOperation() {
+            return document.querySelector('input[name="operation"]:checked').value;
+        }
+
+        function calculate() {
+            const a = parseFloat(document.getElementById('num1').value);
+            const b = parseFloat(document.getElementById('num2').value);
+            const operation = getOperation();
+
+            if (a < 1 || a > 10 || b < 1 || b > 10) {
+                alert('1부터 10 사이의 숫자를 입력해주세요!');
+                return;
+            }
+
+            const width = scaleD.clientWidth;
+            
+            if (operation === 'multiply') {
+                calculateMultiply(a, b, width);
+            } else {
+                calculateDivide(a, b, width);
+            }
+        }
+
+        function calculateMultiply(a, b, width) {
+            // padding을 제외한 실제 너비
+            const actualWidth = width - 20;
+            
+            // C척의 1을 D척의 a 위치에 맞춤
+            const slideOffset = logToPosition(a, actualWidth);
+            xOffset = slideOffset;
+            currentX = slideOffset;
+            scaleC.style.transform = `translateX(${slideOffset}px)`;
+
+            // 커서를 C척의 b 위치로
+            const cursorPos = logToPosition(b, actualWidth) + slideOffset + 60; // 50(left) + 10(padding)
+            cursor.style.left = cursorPos + 'px';
+            cursor.style.display = 'block';
+
+            // 결과 계산
+            const result = a * b;
+            const logA = Math.log10(a);
+            const logB = Math.log10(b);
+            const logResult = logA + logB;
+
+            displayMultiplyResult(a, b, result, logA, logB, logResult);
+        }
+
+        function calculateDivide(a, b, width) {
+            // padding을 제외한 실제 너비
+            const actualWidth = width - 20;
+            
+            // C척의 b를 D척의 a 위치에 맞춤
+            const slideOffset = logToPosition(a, actualWidth) - logToPosition(b, actualWidth);
+            xOffset = slideOffset;
+            currentX = slideOffset;
+            scaleC.style.transform = `translateX(${slideOffset}px)`;
+
+            // 커서를 C척의 1 위치로
+            const cursorPos = slideOffset + 60; // 50(left) + 10(padding)
+            cursor.style.left = cursorPos + 'px';
+            cursor.style.display = 'block';
+
+            // 결과 계산
+            const result = a / b;
+            const logA = Math.log10(a);
+            const logB = Math.log10(b);
+            const logResult = logA - logB;
+
+            displayDivideResult(a, b, result, logA, logB, logResult);
+        }
+
+        function displayMultiplyResult(a, b, result, logA, logB, logResult) {
+            const resultDiv = document.getElementById('result');
+            const explanationDiv = document.getElementById('explanation');
+
+            resultDiv.innerHTML = `
+                <div class="result">
+                    ${a} × ${b} = (??)
+                    <div style="font-size: 16px; margin-top: 10px; opacity: 0.9;">
+                        커서가 가리키는 D척의 눈금을 읽어보세요!
+                    </div>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+
+            explanationDiv.innerHTML = `
+                <div class="explanation">
+                    <h3>📐 곱셈 계산 과정</h3>
+                    
+                    <div class="step">
+                        <strong>1단계:</strong> C척을 오른쪽으로 이동시켜 C척의 <strong>1</strong>을 D척의 <strong>${a}</strong>에 맞춥니다.
+                        <div class="formula">C척이 log(${a}) = ${logA.toFixed(4)}만큼 이동</div>
+                    </div>
+
+                    <div class="step">
+                        <strong>2단계:</strong> 투명 커서를 C척의 <strong>${b}</strong> 위치로 이동시킵니다.
+                        <div class="formula">추가로 log(${b}) = ${logB.toFixed(4)}만큼 이동</div>
+                    </div>
+
+                    <div class="step">
+                        <strong>3단계:</strong> 커서가 가리키는 D척의 눈금을 읽으면 답입니다!
+                        <div class="formula">
+                            log(${a}) + log(${b}) = ${logA.toFixed(4)} + ${logB.toFixed(4)} = ${logResult.toFixed(4)}<br>
+                            10<sup>${logResult.toFixed(4)}</sup> ≈ <strong>${result.toFixed(3)}</strong>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <strong>💡 핵심 원리:</strong> 
+                        <div class="formula">
+                            <strong>log(a × b) = log(a) + log(b)</strong>
+                        </div>
+                        로그 스케일에서 <em>거리의 합</em>이 곱셈의 결과가 됩니다!
+                    </div>
+                </div>
+            `;
+            explanationDiv.style.display = 'block';
+        }
+
+        function displayDivideResult(a, b, result, logA, logB, logResult) {
+            const resultDiv = document.getElementById('result');
+            const explanationDiv = document.getElementById('explanation');
+
+            resultDiv.innerHTML = `
+                <div class="result">
+                    ${a} ÷ ${b} = (??)
+                    <div style="font-size: 16px; margin-top: 10px; opacity: 0.9;">
+                        커서가 가리키는 D척의 눈금을 읽어보세요!
+                    </div>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+
+            explanationDiv.innerHTML = `
+                <div class="explanation">
+                    <h3>📐 나눗셈 계산 과정</h3>
+                    
+                    <div class="step">
+                        <strong>1단계:</strong> C척을 이동시켜 C척의 <strong>${b}</strong>를 D척의 <strong>${a}</strong>에 맞춥니다.
+                        <div class="formula">C척이 log(${a}) - log(${b}) = ${logResult.toFixed(4)}만큼 이동</div>
+                    </div>
+
+                    <div class="step">
+                        <strong>2단계:</strong> 투명 커서를 C척의 <strong>1</strong> 위치로 이동시킵니다.
+                    </div>
+
+                    <div class="step">
+                        <strong>3단계:</strong> 커서가 가리키는 D척의 눈금을 읽으면 답입니다!
+                        <div class="formula">
+                            log(${a}) - log(${b}) = ${logA.toFixed(4)} - ${logB.toFixed(4)} = ${logResult.toFixed(4)}<br>
+                            10<sup>${logResult.toFixed(4)}</sup> ≈ <strong>${result.toFixed(3)}</strong>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <strong>💡 핵심 원리:</strong> 
+                        <div class="formula">
+                            <strong>log(a ÷ b) = log(a) - log(b)</strong>
+                        </div>
+                        로그 스케일에서 <em>거리의 차</em>가 나눗셈의 결과가 됩니다!
+                    </div>
+                </div>
+            `;
+            explanationDiv.style.display = 'block';
+        }
+
+        function resetSlider() {
+            xOffset = 0;
+            currentX = 0;
+            scaleC.style.transform = 'translateX(0)';
+            
+            cursorX = 0;
+            cursorXOffset = 0;
+            cursor.style.display = 'none';
+            cursor.style.left = '50%';
+            
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('explanation').style.display = 'none';
+            document.getElementById('num1').value = 2;
+            document.getElementById('num2').value = 3;
+            document.getElementById('opMultiply').checked = true;
+        }
+
+        // 입력값 변경시 자동 계산
+        document.getElementById('num1').addEventListener('change', calculate);
+        document.getElementById('num2').addEventListener('change', calculate);
+        document.querySelectorAll('input[name="operation"]').forEach(radio => {
+            radio.addEventListener('change', calculate);
+        });
+
+        // 창 크기 변경시 재조정
+        window.addEventListener('resize', function() {
+            drawTicks(scaleC, true);
+            drawTicks(scaleD, true);
+        });
+    </script>
+</body>
+</html>
