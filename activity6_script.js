@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const matrixContainer = document.getElementById('matrixContainer');
     const pixelInfo = document.getElementById('pixelInfo');
     const downloadCSV = document.getElementById('downloadCSV');
+    const copyToExcel = document.getElementById('copyToExcel');
 
     // 셀 크기 조절 요소
     const increaseSize = document.getElementById('increaseSize');
@@ -62,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
     mixedMode.addEventListener('click', () => setDisplayMode('mixed'));
 
     downloadCSV.addEventListener('click', downloadMatrixAsCSV);
+    copyToExcel.addEventListener('click', copyMatrixToExcel);
 
     // 셀 크기 조절 이벤트
     increaseSize.addEventListener('click', () => {
@@ -799,5 +801,118 @@ function downloadMatrixAsCSV() {
     document.body.removeChild(link);
 }
 
+// Excel 복사 함수
+function copyMatrixToExcel() {
+    if (!state.resultImage || state.resultImage.length === 0) {
+        alert('복사할 데이터가 없습니다.');
+        return;
+    }
+
+    try {
+        // 탭으로 구분된 텍스트 생성 (Excel 형식)
+        const excelData = state.resultImage
+            .map(row => row.join('\t'))
+            .join('\n');
+
+        // 클립보드에 복사
+        navigator.clipboard.writeText(excelData)
+            .then(() => {
+                showCopySuccessMessage();
+            })
+            .catch(err => {
+                // 구형 브라우저 대체 방법
+                fallbackCopyToClipboard(excelData);
+            });
+    } catch (error) {
+        console.error('Excel 복사 중 오류:', error);
+        alert('클립보드 복사에 실패했습니다.');
+    }
+}
+
+function showCopySuccessMessage() {
+    const existingMessage = document.getElementById('copySuccessMessage');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    const message = document.createElement('div');
+    message.id = 'copySuccessMessage';
+    message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 1.5rem 3rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        z-index: 10000;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-align: center;
+        animation: fadeInOut 2s ease-in-out;
+    `;
+    message.innerHTML = `
+        <i class="fa fa-check-circle" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+        Excel 형식으로 복사되었습니다!<br>
+        <small style="font-size: 0.9rem; opacity: 0.9;">Excel에서 Ctrl+V로 붙여넣기하세요</small>
+    `;
+
+    if (!document.getElementById('copySuccessAnimation')) {
+        const style = document.createElement('style');
+        style.id = 'copySuccessAnimation';
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translate(-50%, -60%); }
+                15% { opacity: 1; transform: translate(-50%, -50%); }
+                85% { opacity: 1; transform: translate(-50%, -50%); }
+                100% { opacity: 0; transform: translate(-50%, -40%); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(message);
+    setTimeout(() => {
+        message.remove();
+    }, 2000);
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        border: none;
+        outline: none;
+        boxShadow: none;
+        background: transparent;
+    `;
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccessMessage();
+        } else {
+            alert('클립보드 복사에 실패했습니다. 브라우저가 이 기능을 지원하지 않습니다.');
+        }
+    } catch (err) {
+        console.error('Fallback 복사 실패:', err);
+        alert('클립보드 복사에 실패했습니다.');
+    }
+
+    document.body.removeChild(textArea);
+}
+
 // 푸터 연도 업데이트
-document.getElementById('current-year').textContent = new Date().getFullYear(); 
+document.getElementById('current-year').textContent = new Date().getFullYear();
