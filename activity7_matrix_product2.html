@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="이미지를 10x10 픽셀로 변환하고 행렬 연산(T×A, A×T)을 시각화하여 선형대수의 변환 행렬 개념을 직관적으로 학습할 수 있는 교육용 도구입니다.">
+    <meta name="keywords" content="행렬 변환, 선형대수, 수학 교육, 행렬 연산, 이미지 변환, 픽셀 아트, 교육용 도구, 행렬 곱셈, 시각화, 고등학교 수학">
+    <meta name="author" content="갈루아">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="행렬 변환 시각화 - 이미지로 배우는 선형대수">
+    <meta property="og:description" content="이미지를 픽셀화하고 행렬 연산으로 변환해보세요! 행과 열을 섞고, 변환 행렬을 조정하여 원본을 복구하는 과정에서 선형대수를 체험합니다.">
+    <meta property="og:url" content="">
+    <meta property="og:site_name" content="행렬 변환 시각화">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="행렬 변환 시각화 - 이미지로 배우는 선형대수">
+    <meta name="twitter:description" content="이미지를 픽셀화하고 행렬 연산으로 변환해보세요! 행렬 곱셈을 시각적으로 이해하는 교육용 도구입니다.">
+    
+    <!-- 교육용 메타데이터 -->
+    <meta name="educational-level" content="고등학교, 대학교 1학년">
+    <meta name="subject" content="수학, 선형대수">
+    <meta name="learning-objectives" content="행렬 곱셈 이해, 변환 행렬 개념 학습, 행과 열 연산의 차이 파악">
+    
+    <title>행렬 변환 시각화 - 이미지로 배우는 선형대수</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="stylefooter.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4a90e2;
+            --primary-dark: #357abd;
+            --secondary: #5cb85c;
+            --accent: #f0ad4e;
+            --bg-light: #fafbfc;
+            --bg-white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-gray: #7f8c8d;
+            --border: #dfe6e9;
+            --success: #5cb85c;
+            --danger: #d9534f;
+            --matrix-1: #e3f2fd;
+            --matrix-1-border: #90caf9;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #e8f4f8 0%, #f5f9fa 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: var(--bg-white);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .upload-section {
+            background: var(--bg-light);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary);
+            background: #e3f2fd;
+            transform: scale(1.01);
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: var(--primary);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .upload-label:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+
+        .sample-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(92, 184, 92, 0.3);
+        }
+
+        .sample-btn:hover {
+            background: #4cae4c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(92, 184, 92, 0.4);
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .upload-info {
+            margin-top: 10px;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 30px;
+        }
+
+        .workspace.row-mode {
+            /* T, A, R 순서 */
+        }
+
+        .workspace.col-mode {
+            /* A, T, R 순서 */
+        }
+
+        .workspace .panel:nth-child(1) { order: 1; } /* 기본: A */
+        .workspace .panel:nth-child(2) { order: 2; } /* 기본: T */
+        .workspace .panel:nth-child(3) { order: 3; } /* 기본: R */
+
+        .workspace.row-mode .panel:nth-child(1) { order: 2; } /* A */
+        .workspace.row-mode .panel:nth-child(2) { order: 1; } /* T */
+        .workspace.row-mode .panel:nth-child(3) { order: 3; } /* R */
+
+        .panel {
+            background: var(--bg-light);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .switch-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .switch-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .switch-label {
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: var(--border);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.4);
+        }
+
+        .toggle-switch .slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .slider {
+            left: 33px;
+        }
+
+        .toggle-switch:hover {
+            transform: scale(1.05);
+        }
+
+        .operation-label {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--primary);
+            font-weight: 900;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .image-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pixel-grid {
+            display: inline-grid;
+            gap: 2px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--border);
+        }
+
+        .pixel-cell {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        .pixel-cell:hover {
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .matrix-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .matrix-grid {
+            display: inline-grid;
+            gap: 2px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--secondary);
+        }
+
+        .matrix-cell {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: white;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .matrix-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .matrix-cell:active {
+            transform: scale(0.95);
+        }
+
+        .matrix-cell.value-1 {
+            background: #c5e1a5;
+            border: 2px solid #9ccc65;
+            color: #33691e;
+            font-weight: 900;
+            box-shadow: 0 2px 8px rgba(156, 204, 101, 0.3);
+        }
+
+        .matrix-cell.value-0 {
+            background: #fafafa;
+            color: #bdbdbd;
+        }
+
+        .matrix-with-labels {
+            display: inline-grid;
+            grid-template-columns: repeat(11, 40px);
+            gap: 2px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid #90caf9;
+        }
+
+        .matrix-label {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #1565c0;
+            background: #e1f5fe;
+            border-radius: 5px;
+            border: 1px solid #b3e5fc;
+        }
+
+        .matrix-empty {
+            width: 40px;
+            height: 40px;
+        }
+
+        .matrix-cell.highlight {
+            background: #fef3c7;
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #6d28d9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-accent:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .operation-section {
+            background: var(--bg-light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .operation-section .panel-title {
+            grid-column: 1 / -1;
+        }
+
+        .operation-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .operation-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .operation-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .matrix-presets {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            background: #e8f5e9;
+            border-left: 4px solid var(--success);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .info-box-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+
+        .step-boxes {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+
+        .step-box {
+            background: white;
+            border: 2px solid var(--success);
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .step-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(92, 184, 92, 0.3);
+        }
+
+        .step-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--success);
+            margin-bottom: 10px;
+        }
+
+        .step-text {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1.29rem;
+            color: var(--text-dark);
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        @media (max-width: 1200px) {
+            .step-boxes {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .step-boxes {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .shuffle-info {
+            background: #fff9e6;
+            border-left: 4px solid var(--accent);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            line-height: 1.6;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .shuffle-info.hidden {
+            display: none;
+        }
+
+        .shuffle-title {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .swap-boxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .swap-box {
+            background: white;
+            border: 2px solid var(--danger);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .swap-box .swap-row {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1.69rem;
+            font-weight: 400;
+            color: var(--danger);
+            line-height: 1.4;
+        }
+
+        .swap-box .swap-text {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1.19rem;
+            color: var(--text-gray);
+            margin-top: 5px;
+        }
+
+        .info-placeholder {
+            background: #f8f9fa;
+            border: 2px dashed var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .pixel-cell.no-number {
+            color: transparent !important;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 1200px) {
+            .workspace {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .controls {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .pixel-cell {
+                width: 30px;
+                height: 30px;
+                font-size: 0.6rem;
+            }
+
+            .matrix-cell {
+                width: 35px;
+                height: 35px;
+            }
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .label-text {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <aside class="sidebar">
+        <nav>
+            <a href="index.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="activity6_composite_explore.html" class="active"><i class="fa fa-layer-group"></i><span>합성
+                    원리</span></a>
+            <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
+                    변환</span></a>
+            <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+        </nav>
+    </aside>
+
+    <div class="container">
+        <header>
+            <h1>🎨 행렬 변환 시각화</h1>
+            <p class="subtitle">이미지를 픽셀화하고 행렬 연산으로 변환해보세요!</p>
+        </header>
+
+        <div class="upload-section" id="uploadSection">
+            <label for="imageInput" class="upload-label">
+                📁 이미지 업로드 / 변경하기
+            </label>
+            <input type="file" id="imageInput" accept="image/*">
+            <button class="sample-btn" onclick="loadSampleImage()">🎲 샘플 사진 불러오기</button>
+            <p class="upload-info">이미지를 선택하세요 (10×10으로 변환됩니다)</p>
+        </div>
+
+        <div id="mainWorkspace" class="hidden">
+            <!-- 사용 방법 (5단계 박스) -->
+            <div class="info-box">
+                <div class="info-box-title">📚 사용 방법</div>
+                <div class="step-boxes">
+                    <div class="step-box">
+                        <div class="step-number">1️⃣</div>
+                        <div class="step-text">행 섞기 또는<br>열 섞기<br>스위치 선택</div>
+                    </div>
+                    <div class="step-box">
+                        <div class="step-number">2️⃣</div>
+                        <div class="step-text">"이미지 섞기"<br>버튼으로<br>이미지 섞기</div>
+                    </div>
+                    <div class="step-box">
+                        <div class="step-number">3️⃣</div>
+                        <div class="step-text">변환 행렬(T)의<br>값을 클릭하여<br>0↔1 조정</div>
+                    </div>
+                    <div class="step-box">
+                        <div class="step-number">4️⃣</div>
+                        <div class="step-text">"행렬 연산 실행"<br>버튼으로<br>결과 확인</div>
+                    </div>
+                    <div class="step-box">
+                        <div class="step-number">💡</div>
+                        <div class="step-text">목표: 섞인<br>이미지를 원래대로<br>복구하는 변환 행렬 찾기!</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="workspace" id="workspace">
+                <!-- A 이미지 -->
+                <div class="panel">
+                    <div class="panel-title">🖼️ 이미지 A</div>
+                    <div class="image-display">
+                        <div class="toggle-section">
+                            <button class="toggle-btn active" onclick="toggleDisplay('both')">숫자+그림</button>
+                            <button class="toggle-btn" onclick="toggleDisplay('image')">그림만</button>
+                        </div>
+                        <div id="originalPixelGrid" class="pixel-grid"></div>
+                    </div>
+                </div>
+
+                <!-- T 변환 행렬 -->
+                <div class="panel">
+                    <div class="panel-title">🔢 변환 행렬 T</div>
+                    <div class="matrix-container">
+                        <div class="label-text">클릭으로 0↔1 변경</div>
+                        <div id="transformMatrixWithLabels" class="matrix-with-labels">
+                            <!-- 11x11 그리드로 자동 생성 -->
+                        </div>
+                        <div class="matrix-presets">
+                            <button class="btn btn-accent" onclick="setIdentityMatrix()">항등 행렬</button>
+                            <button class="btn btn-accent" onclick="clearMatrix()">0으로 초기화</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- R 결과 -->
+                <div class="panel">
+                    <div class="panel-title">✨ 결과 R</div>
+                    <div class="image-display">
+                        <div class="toggle-section">
+                            <button class="toggle-btn active" onclick="toggleResultDisplay('both')">숫자+그림</button>
+                            <button class="toggle-btn" onclick="toggleResultDisplay('image')">그림만</button>
+                        </div>
+                        <div class="label-text" id="resultLabel">연산 전</div>
+                        <div id="resultPixelGrid" class="pixel-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 조작 메뉴 (2열 레이아웃) -->
+            <div class="operation-section">
+                <div class="panel-title">🎮 조작 메뉴</div>
+                
+                <!-- 왼쪽 컬럼: 컨트롤 -->
+                <div class="operation-controls">
+                    <div class="switch-container">
+                        <div class="switch-wrapper">
+                            <div class="switch-label">행 섞기</div>
+                            <div class="toggle-switch" id="rowShuffleSwitch" onclick="selectShuffleMode('row')">
+                                <div class="slider"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="switch-wrapper">
+                            <div class="switch-label">열 섞기</div>
+                            <div class="toggle-switch" id="colShuffleSwitch" onclick="selectShuffleMode('col')">
+                                <div class="slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="operation-label" id="operationLabel">A</div>
+                    
+                    <div class="operation-buttons">
+                        <button class="btn btn-danger" onclick="shuffleImage()" id="shuffleBtn" disabled>🔀 이미지 섞기</button>
+                        <button class="btn btn-success" onclick="applyTransform()" id="applyBtn" disabled>▶️ 행렬 연산 실행</button>
+                        <button class="btn btn-secondary" onclick="resetAll()">🔄 초기화</button>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽 컬럼: 정보 표시 -->
+                <div class="operation-info">
+                    <div id="shuffleInfo" class="shuffle-info hidden">
+                        <!-- 섞기 정보가 여기에 표시됩니다 -->
+                    </div>
+                    <div id="infoPlaceholder" class="info-placeholder">
+                        섞기 모드를 선택하고<br>"이미지 섞기"를 실행하세요
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <footer class="footer" style="width:100%;">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        const SIZE = 10;
+        let originalImageData = [];
+        let currentImageData = [];
+        let transformMatrix = [];
+        let pixelColors = [];
+        let originalPixelColors = []; // 원본 색상 저장
+        let shuffleMode = null; // 'row' 또는 'col'
+        let isShuffled = false; // 실제로 섞였는지 여부
+        let lastShuffleInfo = '';
+
+        // 항등 행렬 초기화
+        function initializeIdentityMatrix() {
+            transformMatrix = [];
+            for (let i = 0; i < SIZE; i++) {
+                transformMatrix[i] = [];
+                for (let j = 0; j < SIZE; j++) {
+                    transformMatrix[i][j] = (i === j) ? 1 : 0;
+                }
+            }
+        }
+
+        // 이미지 업로드
+        const uploadSection = document.getElementById('uploadSection');
+        const imageInput = document.getElementById('imageInput');
+        const mainWorkspace = document.getElementById('mainWorkspace');
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageUpload(file);
+            }
+        });
+
+        function handleImageUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    pixelizeImage(img);
+                    mainWorkspace.classList.remove('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function pixelizeImage(img) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = SIZE;
+            canvas.height = SIZE;
+            
+            ctx.drawImage(img, 0, 0, SIZE, SIZE);
+            const imageData = ctx.getImageData(0, 0, SIZE, SIZE);
+            
+            originalImageData = [];
+            pixelColors = [];
+            originalPixelColors = []; // 원본 색상 저장
+            
+            for (let i = 0; i < SIZE; i++) {
+                originalImageData[i] = [];
+                pixelColors[i] = [];
+                originalPixelColors[i] = [];
+                for (let j = 0; j < SIZE; j++) {
+                    const index = (i * SIZE + j) * 4;
+                    let r = imageData.data[index];
+                    let g = imageData.data[index + 1];
+                    let b = imageData.data[index + 2];
+                    const a = imageData.data[index + 3];
+                    
+                    // 투명한 픽셀(alpha < 128)을 흰색으로 변환
+                    if (a < 128) {
+                        r = 255;
+                        g = 255;
+                        b = 255;
+                    }
+                    
+                    const gray = Math.round((r + g + b) / 3);
+                    originalImageData[i][j] = gray;
+                    pixelColors[i][j] = `rgb(${r}, ${g}, ${b})`;
+                    originalPixelColors[i][j] = `rgb(${r}, ${g}, ${b})`;
+                }
+            }
+            
+            currentImageData = JSON.parse(JSON.stringify(originalImageData));
+            initializeIdentityMatrix();
+            
+            renderPixelGrid(originalImageData, pixelColors, 'originalPixelGrid');
+            renderTransformMatrix();
+            renderPixelGrid(currentImageData, pixelColors, 'resultPixelGrid');
+        }
+
+        // 섞기 모드 선택 (즉시 섞지 않음)
+        function selectShuffleMode(mode) {
+            const rowSwitch = document.getElementById('rowShuffleSwitch');
+            const colSwitch = document.getElementById('colShuffleSwitch');
+            const operationLabel = document.getElementById('operationLabel');
+            const workspace = document.getElementById('workspace');
+            const shuffleBtn = document.getElementById('shuffleBtn');
+            const applyBtn = document.getElementById('applyBtn');
+            const placeholder = document.getElementById('infoPlaceholder');
+            
+            if (shuffleMode === mode) {
+                // 같은 스위치 다시 클릭 시 OFF
+                shuffleMode = null;
+                rowSwitch.classList.remove('active');
+                colSwitch.classList.remove('active');
+                operationLabel.textContent = 'A';
+                workspace.classList.remove('row-mode', 'col-mode');
+                shuffleBtn.disabled = true;
+                applyBtn.disabled = true;
+                
+                // 이미 섞여있었다면 원상복구
+                if (isShuffled) {
+                    currentImageData = JSON.parse(JSON.stringify(originalImageData));
+                    pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
+                    renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
+                    isShuffled = false;
+                    document.getElementById('shuffleInfo').classList.add('hidden');
+                    placeholder.style.display = 'flex';
+                }
+            } else {
+                // 다른 모드 선택
+                shuffleMode = mode;
+                shuffleBtn.disabled = false;
+                applyBtn.disabled = false; // 섞기 전에도 연산 가능
+                
+                if (mode === 'row') {
+                    rowSwitch.classList.add('active');
+                    colSwitch.classList.remove('active');
+                    operationLabel.textContent = 'T × A';
+                    workspace.classList.add('row-mode');
+                    workspace.classList.remove('col-mode');
+                } else {
+                    colSwitch.classList.add('active');
+                    rowSwitch.classList.remove('active');
+                    operationLabel.textContent = 'A × T';
+                    workspace.classList.add('col-mode');
+                    workspace.classList.remove('row-mode');
+                }
+                
+                // 이미 섞여있었다면 원상복구
+                if (isShuffled) {
+                    currentImageData = JSON.parse(JSON.stringify(originalImageData));
+                    pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
+                    renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
+                    isShuffled = false;
+                    document.getElementById('shuffleInfo').classList.add('hidden');
+                    placeholder.style.display = 'flex';
+                }
+            }
+        }
+
+        // 이미지 섞기 실행
+        function shuffleImage() {
+            if (!shuffleMode) {
+                alert('먼저 행 섞기 또는 열 섞기를 선택하세요!');
+                return;
+            }
+            
+            // 원본에서 다시 시작
+            currentImageData = JSON.parse(JSON.stringify(originalImageData));
+            pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
+            
+            if (shuffleMode === 'row') {
+                shuffleRows();
+            } else {
+                shuffleCols();
+            }
+            
+            isShuffled = true;
+        }
+
+        function renderPixelGrid(data, colors, elementId) {
+            const grid = document.getElementById(elementId);
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${SIZE}, 1fr)`;
+            
+            for (let i = 0; i < SIZE; i++) {
+                for (let j = 0; j < SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'pixel-cell';
+                    cell.style.backgroundColor = colors[i][j];
+                    cell.textContent = data[i][j];
+                    
+                    // 밝은 색이면 텍스트 어둡게 (가중 평균 방식)
+                    const rgb = colors[i][j].match(/\d+/g);
+                    const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+                    cell.style.color = brightness > 128 ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)';
+                    cell.style.fontWeight = '700';
+                    cell.style.textShadow = brightness > 128 ? 'none' : '0 1px 2px rgba(0,0,0,0.5)';
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function renderTransformMatrix() {
+            const grid = document.getElementById('transformMatrixWithLabels');
+            grid.innerHTML = '';
+            
+            // 11x11 그리드 생성 (첫 행과 첫 열은 레이블)
+            for (let i = 0; i < SIZE + 1; i++) {
+                for (let j = 0; j < SIZE + 1; j++) {
+                    if (i === 0 && j === 0) {
+                        // (0,0)은 빈 공간
+                        const empty = document.createElement('div');
+                        empty.className = 'matrix-empty';
+                        grid.appendChild(empty);
+                    } else if (i === 0) {
+                        // 첫 행: 열 번호 (1~10)
+                        const label = document.createElement('div');
+                        label.className = 'matrix-label';
+                        label.textContent = j;
+                        grid.appendChild(label);
+                    } else if (j === 0) {
+                        // 첫 열: 행 번호 (1~10)
+                        const label = document.createElement('div');
+                        label.className = 'matrix-label';
+                        label.textContent = i;
+                        grid.appendChild(label);
+                    } else {
+                        // 실제 행렬 셀
+                        const cell = document.createElement('div');
+                        cell.className = 'matrix-cell';
+                        
+                        const actualRow = i - 1;
+                        const actualCol = j - 1;
+                        
+                        // 값에 따라 클래스 추가
+                        if (transformMatrix[actualRow][actualCol] === 1) {
+                            cell.classList.add('value-1');
+                        } else {
+                            cell.classList.add('value-0');
+                        }
+                        
+                        cell.textContent = transformMatrix[actualRow][actualCol];
+                        
+                        // 클릭으로 0↔1 토글
+                        cell.addEventListener('click', function() {
+                            transformMatrix[actualRow][actualCol] = transformMatrix[actualRow][actualCol] === 1 ? 0 : 1;
+                            
+                            // 셀 업데이트
+                            this.textContent = transformMatrix[actualRow][actualCol];
+                            this.classList.remove('value-0', 'value-1');
+                            if (transformMatrix[actualRow][actualCol] === 1) {
+                                this.classList.add('value-1');
+                            } else {
+                                this.classList.add('value-0');
+                            }
+                        });
+                        
+                        grid.appendChild(cell);
+                    }
+                }
+            }
+        }
+
+        function shuffleRows() {
+            const numSwaps = 2 + Math.floor(Math.random() * 2); // 2-3개
+            const swapped = new Set();
+            const swapInfo = [];
+            
+            for (let k = 0; k < numSwaps; k++) {
+                let i, j;
+                do {
+                    i = Math.floor(Math.random() * SIZE);
+                    j = Math.floor(Math.random() * SIZE);
+                } while (i === j || swapped.has(i) || swapped.has(j));
+                
+                swapped.add(i);
+                swapped.add(j);
+                swapInfo.push({ row1: i+1, row2: j+1 });
+                
+                // 이미지 데이터 행 교환
+                [currentImageData[i], currentImageData[j]] = [currentImageData[j], currentImageData[i]];
+                
+                // 색상 정보도 실제로 교환
+                const tempRow = [];
+                for (let col = 0; col < SIZE; col++) {
+                    tempRow.push(pixelColors[i][col]);
+                }
+                for (let col = 0; col < SIZE; col++) {
+                    pixelColors[i][col] = pixelColors[j][col];
+                }
+                for (let col = 0; col < SIZE; col++) {
+                    pixelColors[j][col] = tempRow[col];
+                }
+            }
+            
+            lastShuffleInfo = swapInfo;
+            renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
+            
+            // 섞기 정보 표시 (박스 형태)
+            const shuffleInfoDiv = document.getElementById('shuffleInfo');
+            const placeholder = document.getElementById('infoPlaceholder');
+            
+            let boxesHTML = swapInfo.map(swap => `
+                <div class="swap-box">
+                    <div class="swap-row">${swap.row1}행<br>↕<br>${swap.row2}행</div>
+                    <div class="swap-text">교환됨</div>
+                </div>
+            `).join('');
+            
+            shuffleInfoDiv.innerHTML = `
+                <div class="shuffle-title">🔀 행 섞기 완료!</div>
+                <div class="swap-boxes">${boxesHTML}</div>
+            `;
+            shuffleInfoDiv.classList.remove('hidden');
+            placeholder.style.display = 'none';
+        }
+
+        function shuffleCols() {
+            const numSwaps = 2 + Math.floor(Math.random() * 2); // 2-3개
+            const swapped = new Set();
+            const swapInfo = [];
+            
+            for (let k = 0; k < numSwaps; k++) {
+                let i, j;
+                do {
+                    i = Math.floor(Math.random() * SIZE);
+                    j = Math.floor(Math.random() * SIZE);
+                } while (i === j || swapped.has(i) || swapped.has(j));
+                
+                swapped.add(i);
+                swapped.add(j);
+                swapInfo.push({ col1: i+1, col2: j+1 });
+                
+                // 이미지 데이터 열 교환
+                for (let row = 0; row < SIZE; row++) {
+                    [currentImageData[row][i], currentImageData[row][j]] = 
+                    [currentImageData[row][j], currentImageData[row][i]];
+                    
+                    // 색상 정보도 실제로 교환
+                    [pixelColors[row][i], pixelColors[row][j]] = 
+                    [pixelColors[row][j], pixelColors[row][i]];
+                }
+            }
+            
+            lastShuffleInfo = swapInfo;
+            renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
+            
+            // 섞기 정보 표시 (박스 형태)
+            const shuffleInfoDiv = document.getElementById('shuffleInfo');
+            const placeholder = document.getElementById('infoPlaceholder');
+            
+            let boxesHTML = swapInfo.map(swap => `
+                <div class="swap-box">
+                    <div class="swap-row">${swap.col1}열<br>↕<br>${swap.col2}열</div>
+                    <div class="swap-text">교환됨</div>
+                </div>
+            `).join('');
+            
+            shuffleInfoDiv.innerHTML = `
+                <div class="shuffle-title">🔀 열 섞기 완료!</div>
+                <div class="swap-boxes">${boxesHTML}</div>
+            `;
+            shuffleInfoDiv.classList.remove('hidden');
+            placeholder.style.display = 'none';
+        }
+
+        function applyTransform() {
+            if (!shuffleMode) {
+                alert('먼저 행 섞기 또는 열 섞기 모드를 선택하세요!');
+                return;
+            }
+            
+            let result = [];
+            let resultColors = [];
+            
+            if (shuffleMode === 'row') {
+                // T × A
+                for (let i = 0; i < SIZE; i++) {
+                    result[i] = [];
+                    resultColors[i] = [];
+                    for (let j = 0; j < SIZE; j++) {
+                        let sum = 0;
+                        let colorR = 0, colorG = 0, colorB = 0;
+                        let count = 0;
+                        
+                        for (let k = 0; k < SIZE; k++) {
+                            sum += transformMatrix[i][k] * currentImageData[k][j];
+                            if (transformMatrix[i][k] === 1) {
+                                const rgb = pixelColors[k][j].match(/\d+/g);
+                                colorR += parseInt(rgb[0]);
+                                colorG += parseInt(rgb[1]);
+                                colorB += parseInt(rgb[2]);
+                                count++;
+                            }
+                        }
+                        result[i][j] = Math.round(sum);
+                        
+                        count = count || 1;
+                        resultColors[i][j] = `rgb(${Math.round(colorR/count)}, ${Math.round(colorG/count)}, ${Math.round(colorB/count)})`;
+                    }
+                }
+            } else {
+                // A × T
+                for (let i = 0; i < SIZE; i++) {
+                    result[i] = [];
+                    resultColors[i] = [];
+                    for (let j = 0; j < SIZE; j++) {
+                        let sum = 0;
+                        let colorR = 0, colorG = 0, colorB = 0;
+                        let count = 0;
+                        
+                        for (let k = 0; k < SIZE; k++) {
+                            sum += currentImageData[i][k] * transformMatrix[k][j];
+                            if (transformMatrix[k][j] === 1) {
+                                const rgb = pixelColors[i][k].match(/\d+/g);
+                                colorR += parseInt(rgb[0]);
+                                colorG += parseInt(rgb[1]);
+                                colorB += parseInt(rgb[2]);
+                                count++;
+                            }
+                        }
+                        result[i][j] = Math.round(sum);
+                        
+                        count = count || 1;
+                        resultColors[i][j] = `rgb(${Math.round(colorR/count)}, ${Math.round(colorG/count)}, ${Math.round(colorB/count)})`;
+                    }
+                }
+            }
+            
+            renderPixelGrid(result, resultColors, 'resultPixelGrid');
+            document.getElementById('resultLabel').textContent = shuffleMode === 'row' ? 'T × A 결과' : 'A × T 결과';
+        }
+
+        function setIdentityMatrix() {
+            initializeIdentityMatrix();
+            renderTransformMatrix();
+            alert('항등 행렬로 설정되었습니다!');
+        }
+
+        function clearMatrix() {
+            for (let i = 0; i < SIZE; i++) {
+                for (let j = 0; j < SIZE; j++) {
+                    transformMatrix[i][j] = 0;
+                }
+            }
+            renderTransformMatrix();
+            alert('행렬이 0으로 초기화되었습니다!');
+        }
+
+        function resetAll() {
+            currentImageData = JSON.parse(JSON.stringify(originalImageData));
+            pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
+            initializeIdentityMatrix();
+            
+            // 모든 상태 초기화
+            shuffleMode = null;
+            isShuffled = false;
+            document.getElementById('rowShuffleSwitch').classList.remove('active');
+            document.getElementById('colShuffleSwitch').classList.remove('active');
+            document.getElementById('operationLabel').textContent = 'A';
+            document.getElementById('workspace').classList.remove('row-mode', 'col-mode');
+            document.getElementById('shuffleBtn').disabled = true;
+            document.getElementById('applyBtn').disabled = true;
+            
+            renderPixelGrid(originalImageData, originalPixelColors, 'originalPixelGrid');
+            renderTransformMatrix();
+            renderPixelGrid(originalImageData, originalPixelColors, 'resultPixelGrid');
+            
+            // 섞기 정보 숨기기, placeholder 표시
+            document.getElementById('shuffleInfo').classList.add('hidden');
+            document.getElementById('infoPlaceholder').style.display = 'flex';
+            document.getElementById('resultLabel').textContent = '연산 전';
+            
+            alert('모든 값이 초기화되었습니다!');
+        }
+
+        // 숫자/그림 표시 토글
+        let displayMode = 'both';
+        let resultDisplayMode = 'both';
+        
+        function toggleDisplay(mode) {
+            displayMode = mode;
+            
+            // 버튼 활성화 상태 변경
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 픽셀 셀의 숫자 표시/숨김
+            const cells = document.querySelectorAll('#originalPixelGrid .pixel-cell');
+            cells.forEach(cell => {
+                if (mode === 'image') {
+                    cell.classList.add('no-number');
+                } else {
+                    cell.classList.remove('no-number');
+                }
+            });
+        }
+
+        function toggleResultDisplay(mode) {
+            resultDisplayMode = mode;
+            
+            // 버튼 활성화 상태 변경
+            const resultPanel = document.getElementById('resultPixelGrid').closest('.panel');
+            resultPanel.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 결과 픽셀 셀의 숫자 표시/숨김
+            const cells = document.querySelectorAll('#resultPixelGrid .pixel-cell');
+            cells.forEach(cell => {
+                if (mode === 'image') {
+                    cell.classList.add('no-number');
+                } else {
+                    cell.classList.remove('no-number');
+                }
+            });
+        }
+
+        // 샘플 이미지 불러오기
+        function loadSampleImage() {
+            const randomNum = Math.floor(Math.random() * 10); // 0-9
+            const sampleNum = String(randomNum).padStart(2, '0');
+            const sampleUrl = `image/sampleimage${sampleNum}.png`;
+            
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                pixelizeImage(img);
+                mainWorkspace.classList.remove('hidden');
+            };
+            img.onerror = () => {
+                alert(`샘플 이미지를 불러올 수 없습니다.\n파일명: ${sampleUrl}\n\nimage 폴더에 sampleimage00.png ~ sampleimage09.png 파일이 있는지 확인하세요.`);
+            };
+            img.src = sampleUrl;
+        }
+
+        // 현재 연도 설정
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+   
+    </script>
+</body>
+</html>
