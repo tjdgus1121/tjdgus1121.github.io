@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ 암산 챌린지</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', system-ui, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #222;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* 시작 화면 */
+        #startScreen {
+            display: block;
+        }
+
+        .rules {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .rules h3 {
+            color: #222;
+            margin-bottom: 10px;
+        }
+
+        .rules ul {
+            list-style-position: inside;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin: 10px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #1976D2;
+        }
+
+        .btn:active {
+            background: #1565C0;
+        }
+
+        /* 게임 화면 */
+        #gameScreen {
+            display: none;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .score {
+            color: #222;
+        }
+
+        .timer {
+            color: #e74c3c;
+            font-size: 1.5em;
+        }
+
+        .timer.warning {
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .problem {
+            font-size: 3em;
+            margin: 40px 0;
+            color: #333;
+            font-weight: bold;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-area {
+            margin: 30px 0;
+        }
+
+        #answer {
+            font-size: 2em;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            text-align: center;
+            outline: none;
+        }
+
+        #answer:focus {
+            border-color: #2196F3;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .key {
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            font-size: 1.5em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-weight: 600;
+        }
+
+        .key:hover {
+            background: #e0e0e0;
+        }
+
+        .key:active {
+            background: #d0d0d0;
+        }
+
+        .key.zero {
+            grid-column: span 2;
+        }
+
+        .key.delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .key.enter {
+            background: #2196F3;
+            color: white;
+            grid-column: span 3;
+        }
+
+        .key.enter:hover {
+            background: #1976D2;
+        }
+
+        .key.enter:active {
+            background: #1565C0;
+        }
+
+        /* 결과 화면 */
+        #resultScreen {
+            display: none;
+        }
+
+        .final-score {
+            font-size: 4em;
+            color: #222;
+            margin: 20px 0;
+            font-weight: 700;
+        }
+
+        .nickname-input {
+            margin: 20px 0;
+        }
+
+        .nickname-input input {
+            font-size: 1.2em;
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .nickname-input input:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .ranking {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .ranking h3 {
+            color: #222;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            align-items: center;
+            border: 1px solid #eee;
+        }
+
+        .rank-item.top1 {
+            background: #FFF9E6;
+            border-color: #FFD700;
+            font-weight: 600;
+        }
+
+        .rank-item.top2 {
+            background: #F5F5F5;
+            border-color: #C0C0C0;
+            font-weight: 600;
+        }
+
+        .rank-item.top3 {
+            background: #FFF5E6;
+            border-color: #CD7F32;
+            font-weight: 600;
+        }
+
+        .rank-number {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .rank-name {
+            flex: 1;
+            text-align: left;
+        }
+
+        .rank-score {
+            font-weight: bold;
+        }
+
+        /* 효과 */
+        .flash-red {
+            animation: flashRed 0.5s;
+        }
+
+        @keyframes flashRed {
+            0%, 100% { background: white; }
+            50% { background: #ff6b6b; }
+        }
+
+        .correct-effect {
+            animation: correctPulse 0.3s;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #27ae60; }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 로딩 표시 */
+        .loading {
+            color: #666;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .problem {
+                font-size: 2em;
+            }
+
+            #answer {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 시작 화면 -->
+        <div id="startScreen">
+            <h1>⚡ 암산 챌린지</h1>
+            <p class="subtitle">두뇌 워밍업 게임</p>
+            
+            <div class="rules">
+                <h3>📋 게임 규칙</h3>
+                <ul>
+                    <li>60초 동안 최대한 많은 문제를 풀어보세요!</li>
+                    <li>사칙연산(+, -, ×, ÷)이 랜덤으로 나옵니다</li>
+                    <li>틀리면 빨간 화면이 깜박입니다</li>
+                    <li>맞을 때까지 계속 도전하세요!</li>
+                    <li>점수는 맞힌 문제 개수입니다</li>
+                </ul>
+            </div>
+
+            <button class="btn" onclick="showRanking()">🏆 랭킹 보기</button>
+            <button class="btn" onclick="startGame()">🚀 게임 시작</button>
+        </div>
+
+        <!-- 게임 화면 -->
+        <div id="gameScreen">
+            <div class="game-header">
+                <div class="score">점수: <span id="score">0</span></div>
+                <div class="timer" id="timer">60</div>
+            </div>
+
+            <div class="problem" id="problem">준비...</div>
+
+            <div class="input-area">
+                <input type="text" id="answer" readonly placeholder="답을 입력하세요">
+            </div>
+
+            <div class="keypad">
+                <button class="key" onclick="inputNumber('1')">1</button>
+                <button class="key" onclick="inputNumber('2')">2</button>
+                <button class="key" onclick="inputNumber('3')">3</button>
+                <button class="key" onclick="inputNumber('4')">4</button>
+                <button class="key" onclick="inputNumber('5')">5</button>
+                <button class="key" onclick="inputNumber('6')">6</button>
+                <button class="key" onclick="inputNumber('7')">7</button>
+                <button class="key" onclick="inputNumber('8')">8</button>
+                <button class="key" onclick="inputNumber('9')">9</button>
+                <button class="key zero" onclick="inputNumber('0')">0</button>
+                <button class="key delete" onclick="deleteNumber()">←</button>
+                <button class="key enter" onclick="checkAnswer()">확인</button>
+            </div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="resultScreen">
+            <h1>🎉 게임 종료!</h1>
+            <div class="final-score" id="finalScore">0</div>
+            <p class="subtitle">문제를 맞혔습니다!</p>
+
+            <div class="nickname-input">
+                <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="10">
+                <button class="btn" onclick="saveScore()">💾 점수 저장</button>
+            </div>
+
+            <div class="ranking" id="rankingList">
+                <h3>🏆 TOP 10 랭킹</h3>
+                <div class="loading">랭킹을 불러오는 중...</div>
+            </div>
+
+            <button class="btn" onclick="restart()">🔄 다시 하기</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
+        import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
+
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyByINWX--S22R-9bimPBZd_QR9eEv5Zz9Y",
+            authDomain: "math-game-13f34.firebaseapp.com",
+            databaseURL: "https://math-game-13f34-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "math-game-13f34",
+            storageBucket: "math-game-13f34.firebasestorage.app",
+            messagingSenderId: "535602430178",
+            appId: "1:535602430178:web:189013bcddd14bf4885ebb"
+        };
+
+        // Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // 게임 변수
+        let score = 0;
+        let timeLeft = 60;
+        let currentProblem = null;
+        let currentAnswer = null;
+        let gameTimer = null;
+        let gameActive = false;
+
+        // 문제 생성
+        function generateProblem() {
+            const operations = ['+', '-', '×', '÷'];
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            let num1, num2, answer;
+            
+            // 1자리 또는 2자리 숫자 생성
+            const is2Digit = Math.random() > 0.5;
+            num1 = is2Digit ? Math.floor(Math.random() * 90) + 10 : Math.floor(Math.random() * 9) + 1;
+            num2 = Math.floor(Math.random() * 9) + 1;
+            
+            switch(operation) {
+                case '+':
+                    answer = num1 + num2;
+                    break;
+                case '-':
+                    // 음수 방지
+                    if (num1 < num2) {
+                        [num1, num2] = [num2, num1];
+                    }
+                    answer = num1 - num2;
+                    break;
+                case '×':
+                    answer = num1 * num2;
+                    break;
+                case '÷':
+                    // 나누어떨어지게 만들기
+                    answer = num2;
+                    num1 = num2 * (Math.floor(Math.random() * 9) + 1);
+                    break;
+            }
+            
+            return {
+                text: `${num1} ${operation} ${num2}`,
+                answer: answer
+            };
+        }
+
+        // 새 문제 표시
+        function showNewProblem() {
+            currentProblem = generateProblem();
+            currentAnswer = currentProblem.answer;
+            document.getElementById('problem').textContent = currentProblem.text;
+            document.getElementById('answer').value = '';
+        }
+
+        // 숫자 입력
+        window.inputNumber = function(num) {
+            if (!gameActive) return;
+            const input = document.getElementById('answer');
+            input.value += num;
+        }
+
+        // 숫자 삭제
+        window.deleteNumber = function() {
+            if (!gameActive) return;
+            const input = document.getElementById('answer');
+            input.value = input.value.slice(0, -1);
+        }
+
+        // 답 확인
+        window.checkAnswer = function() {
+            if (!gameActive) return;
+            
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            
+            if (isNaN(userAnswer)) return;
+            
+            if (userAnswer === currentAnswer) {
+                // 정답
+                score++;
+                document.getElementById('score').textContent = score;
+                document.getElementById('problem').classList.add('correct-effect');
+                setTimeout(() => {
+                    document.getElementById('problem').classList.remove('correct-effect');
+                }, 300);
+                showNewProblem();
+            } else {
+                // 오답 - 빨간 화면 깜박임
+                document.querySelector('.container').classList.add('flash-red');
+                setTimeout(() => {
+                    document.querySelector('.container').classList.remove('flash-red');
+                }, 500);
+            }
+        }
+
+        // 키보드 입력 처리
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            if (e.key >= '0' && e.key <= '9') {
+                window.inputNumber(e.key);
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                window.deleteNumber();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                window.checkAnswer();
+            }
+        });
+
+        // 게임 시작
+        window.startGame = function() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            score = 0;
+            timeLeft = 60;
+            gameActive = true;
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = timeLeft;
+            
+            showNewProblem();
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if (timeLeft <= 10) {
+                    document.getElementById('timer').classList.add('warning');
+                }
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // 게임 종료
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+            document.getElementById('finalScore').textContent = score;
+            
+            loadRanking();
+        }
+
+        // 점수 저장
+        window.saveScore = async function() {
+            const nickname = document.getElementById('nickname').value.trim();
+            
+            if (!nickname) {
+                alert('닉네임을 입력해주세요!');
+                return;
+            }
+            
+            try {
+                const scoresRef = ref(database, 'scores');
+                await push(scoresRef, {
+                    nickname: nickname,
+                    score: score,
+                    timestamp: Date.now()
+                });
+                
+                alert('점수가 저장되었습니다! 🎉');
+                document.getElementById('nickname').value = '';
+                loadRanking();
+            } catch (error) {
+                console.error('점수 저장 오류:', error);
+                alert('점수 저장에 실패했습니다. Firebase 설정을 확인해주세요.');
+            }
+        }
+
+        // 랭킹 로드
+        function loadRanking() {
+            try {
+                const scoresRef = ref(database, 'scores');
+                const topScoresQuery = query(
+                    scoresRef,
+                    orderByChild('score'),
+                    limitToLast(10)
+                );
+                
+                onValue(topScoresQuery, (snapshot) => {
+                    const scores = [];
+                    snapshot.forEach((childSnapshot) => {
+                        scores.push(childSnapshot.val());
+                    });
+                    
+                    // 점수 내림차순 정렬
+                    scores.sort((a, b) => b.score - a.score);
+                    
+                    displayRanking(scores);
+                });
+            } catch (error) {
+                console.error('랭킹 로드 오류:', error);
+                document.getElementById('rankingList').innerHTML = '<h3>🏆 TOP 10 랭킹</h3><p>랭킹을 불러올 수 없습니다.</p>';
+            }
+        }
+
+        // 랭킹 표시
+        function displayRanking(scores) {
+            const rankingList = document.getElementById('rankingList');
+            
+            if (scores.length === 0) {
+                rankingList.innerHTML = '<h3>🏆 TOP 10 랭킹</h3><p>아직 랭킹이 없습니다. 첫 번째 도전자가 되어보세요!</p>';
+                return;
+            }
+            
+            let html = '<h3>🏆 TOP 10 랭킹</h3>';
+            
+            scores.forEach((item, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                let medal = '';
+                
+                if (rank === 1) {
+                    rankClass = 'top1';
+                    medal = '🥇 ';
+                } else if (rank === 2) {
+                    rankClass = 'top2';
+                    medal = '🥈 ';
+                } else if (rank === 3) {
+                    rankClass = 'top3';
+                    medal = '🥉 ';
+                }
+                
+                html += `
+                    <div class="rank-item ${rankClass}">
+                        <span class="rank-number">${medal}${rank}위</span>
+                        <span class="rank-name">${item.nickname}</span>
+                        <span class="rank-score">${item.score}점</span>
+                    </div>
+                `;
+            });
+            
+            rankingList.innerHTML = html;
+        }
+
+        // 랭킹 보기
+        window.showRanking = function() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+            document.getElementById('finalScore').textContent = '-';
+            document.querySelector('.subtitle').textContent = '';
+            document.querySelector('.nickname-input').classList.add('hidden');
+            
+            loadRanking();
+        }
+
+        // 재시작
+        window.restart = function() {
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.querySelector('.nickname-input').classList.remove('hidden');
+            document.querySelector('.subtitle').textContent = '두뇌 워밍업 게임';
+            document.getElementById('timer').classList.remove('warning');
+        }
+    </script>
+</body>
+</html>
