@@ -12,12 +12,12 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', system-ui, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             background: #f5f5f5;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             padding: 20px;
         }
 
@@ -42,11 +42,6 @@
             color: #666;
             margin-bottom: 30px;
             font-size: 1.1em;
-        }
-
-        /* 시작 화면 */
-        #startScreen {
-            display: block;
         }
 
         .rules {
@@ -76,9 +71,9 @@
             font-size: 1.2em;
             border-radius: 8px;
             cursor: pointer;
-            transition: background 0.2s;
             margin: 10px;
             font-weight: 600;
+            transition: background 0.2s;
         }
 
         .btn:hover {
@@ -89,9 +84,8 @@
             background: #1565C0;
         }
 
-        /* 게임 화면 */
-        #gameScreen {
-            display: none;
+        .hidden {
+            display: none !important;
         }
 
         .game-header {
@@ -198,9 +192,22 @@
             background: #1565C0;
         }
 
-        /* 결과 화면 */
-        #resultScreen {
-            display: none;
+        .flash-red {
+            animation: flashRed 0.5s;
+        }
+
+        @keyframes flashRed {
+            0%, 100% { background: white; }
+            50% { background: #ff6b6b; }
+        }
+
+        .correct-effect {
+            animation: correctPulse 0.3s;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #27ae60; }
         }
 
         .final-score {
@@ -287,30 +294,6 @@
             font-weight: bold;
         }
 
-        /* 효과 */
-        .flash-red {
-            animation: flashRed 0.5s;
-        }
-
-        @keyframes flashRed {
-            0%, 100% { background: white; }
-            50% { background: #ff6b6b; }
-        }
-
-        .correct-effect {
-            animation: correctPulse 0.3s;
-        }
-
-        @keyframes correctPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); color: #27ae60; }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* 로딩 표시 */
         .loading {
             color: #666;
             margin: 20px 0;
@@ -358,7 +341,7 @@
         </div>
 
         <!-- 게임 화면 -->
-        <div id="gameScreen">
+        <div id="gameScreen" class="hidden">
             <div class="game-header">
                 <div class="score">점수: <span id="score">0</span></div>
                 <div class="timer" id="timer">60</div>
@@ -387,11 +370,11 @@
         </div>
 
         <!-- 결과 화면 -->
-        <div id="resultScreen">
+        <div id="resultScreen" class="hidden">
             <h1>🎉 게임 종료!</h1>
             <div class="final-score" id="finalScore">0</div>
             <p class="subtitle">문제를 맞혔습니다!</p>
-
+            
             <div class="nickname-input">
                 <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="10">
                 <button class="btn" onclick="saveScore()">💾 점수 저장</button>
@@ -406,12 +389,10 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
-        import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyByINWX--S22R-9bimPBZd_QR9eEv5Zz9Y",
             authDomain: "math-game-13f34.firebaseapp.com",
@@ -422,26 +403,31 @@
             appId: "1:535602430178:web:189013bcddd14bf4885ebb"
         };
 
-        // Firebase 초기화
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        
+        // Firebase를 전역으로 노출
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebasePush = push;
+        window.firebaseOnValue = onValue;
+        window.firebaseQuery = query;
+        window.firebaseOrderByChild = orderByChild;
+        window.firebaseLimitToLast = limitToLast;
+    </script>
 
-        // 게임 변수
+    <script>
         let score = 0;
         let timeLeft = 60;
-        let currentProblem = null;
         let currentAnswer = null;
         let gameTimer = null;
         let gameActive = false;
 
-        // 문제 생성
         function generateProblem() {
             const operations = ['+', '-', '×', '÷'];
             const operation = operations[Math.floor(Math.random() * operations.length)];
             
             let num1, num2, answer;
-            
-            // 1자리 또는 2자리 숫자 생성
             const is2Digit = Math.random() > 0.5;
             num1 = is2Digit ? Math.floor(Math.random() * 90) + 10 : Math.floor(Math.random() * 9) + 1;
             num2 = Math.floor(Math.random() * 9) + 1;
@@ -451,60 +437,47 @@
                     answer = num1 + num2;
                     break;
                 case '-':
-                    // 음수 방지
-                    if (num1 < num2) {
-                        [num1, num2] = [num2, num1];
-                    }
+                    if (num1 < num2) [num1, num2] = [num2, num1];
                     answer = num1 - num2;
                     break;
                 case '×':
                     answer = num1 * num2;
                     break;
                 case '÷':
-                    // 나누어떨어지게 만들기
-                    answer = num2;
-                    num1 = num2 * (Math.floor(Math.random() * 9) + 1);
+                    // 나누어떨어지는 나눗셈 만들기
+                    const quotient = Math.floor(Math.random() * 9) + 1;  // 1~9의 몫
+                    num1 = num2 * quotient;  // 나눠질 수 = 나누는 수 × 몫
+                    answer = quotient;  // 정답은 몫
                     break;
             }
             
-            return {
-                text: `${num1} ${operation} ${num2}`,
-                answer: answer
-            };
+            return { text: `${num1} ${operation} ${num2}`, answer };
         }
 
-        // 새 문제 표시
         function showNewProblem() {
-            currentProblem = generateProblem();
-            currentAnswer = currentProblem.answer;
-            document.getElementById('problem').textContent = currentProblem.text;
+            const problem = generateProblem();
+            currentAnswer = problem.answer;
+            document.getElementById('problem').textContent = problem.text;
             document.getElementById('answer').value = '';
         }
 
-        // 숫자 입력
-        window.inputNumber = function(num) {
+        function inputNumber(num) {
             if (!gameActive) return;
-            const input = document.getElementById('answer');
-            input.value += num;
+            document.getElementById('answer').value += num;
         }
 
-        // 숫자 삭제
-        window.deleteNumber = function() {
+        function deleteNumber() {
             if (!gameActive) return;
             const input = document.getElementById('answer');
             input.value = input.value.slice(0, -1);
         }
 
-        // 답 확인
-        window.checkAnswer = function() {
+        function checkAnswer() {
             if (!gameActive) return;
-            
             const userAnswer = parseInt(document.getElementById('answer').value);
-            
             if (isNaN(userAnswer)) return;
             
             if (userAnswer === currentAnswer) {
-                // 정답
                 score++;
                 document.getElementById('score').textContent = score;
                 document.getElementById('problem').classList.add('correct-effect');
@@ -513,7 +486,6 @@
                 }, 300);
                 showNewProblem();
             } else {
-                // 오답 - 빨간 화면 깜박임
                 document.querySelector('.container').classList.add('flash-red');
                 setTimeout(() => {
                     document.querySelector('.container').classList.remove('flash-red');
@@ -521,23 +493,7 @@
             }
         }
 
-        // 키보드 입력 처리
-        document.addEventListener('keydown', (e) => {
-            if (!gameActive) return;
-            
-            if (e.key >= '0' && e.key <= '9') {
-                window.inputNumber(e.key);
-            } else if (e.key === 'Backspace') {
-                e.preventDefault();
-                window.deleteNumber();
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                window.checkAnswer();
-            }
-        });
-
-        // 게임 시작
-        window.startGame = function() {
+        function startGame() {
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.remove('hidden');
             
@@ -550,6 +506,8 @@
             
             showNewProblem();
             
+            if(gameTimer) clearInterval(gameTimer);
+            
             gameTimer = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer').textContent = timeLeft;
@@ -559,69 +517,85 @@
                 }
                 
                 if (timeLeft <= 0) {
-                    endGame();
+                    gameActive = false;
+                    clearInterval(gameTimer);
+                    document.getElementById('gameScreen').classList.add('hidden');
+                    document.getElementById('resultScreen').classList.remove('hidden');
+                    document.getElementById('finalScore').textContent = score;
+                    loadRanking();
                 }
             }, 1000);
         }
 
-        // 게임 종료
-        function endGame() {
-            gameActive = false;
-            clearInterval(gameTimer);
-            
-            document.getElementById('gameScreen').classList.add('hidden');
-            document.getElementById('resultScreen').classList.remove('hidden');
-            document.getElementById('finalScore').textContent = score;
-            
-            loadRanking();
-        }
-
-        // 점수 저장
-        window.saveScore = async function() {
+        async function saveScore() {
             const nickname = document.getElementById('nickname').value.trim();
-            
             if (!nickname) {
                 alert('닉네임을 입력해주세요!');
                 return;
             }
             
             try {
-                const scoresRef = ref(database, 'scores');
-                await push(scoresRef, {
+                const scoresRef = window.firebaseRef(window.firebaseDB, 'scores');
+                await window.firebasePush(scoresRef, {
                     nickname: nickname,
                     score: score,
                     timestamp: Date.now()
                 });
-                
                 alert('점수가 저장되었습니다! 🎉');
                 document.getElementById('nickname').value = '';
                 loadRanking();
             } catch (error) {
                 console.error('점수 저장 오류:', error);
-                alert('점수 저장에 실패했습니다. Firebase 설정을 확인해주세요.');
+                alert('점수 저장에 실패했습니다.');
             }
         }
 
-        // 랭킹 로드
         function loadRanking() {
             try {
-                const scoresRef = ref(database, 'scores');
-                const topScoresQuery = query(
-                    scoresRef,
-                    orderByChild('score'),
-                    limitToLast(10)
+                const scoresRef = window.firebaseRef(window.firebaseDB, 'scores');
+                const topScoresQuery = window.firebaseQuery(
+                    scoresRef, 
+                    window.firebaseOrderByChild('score'), 
+                    window.firebaseLimitToLast(10)
                 );
                 
-                onValue(topScoresQuery, (snapshot) => {
+                window.firebaseOnValue(topScoresQuery, (snapshot) => {
                     const scores = [];
-                    snapshot.forEach((childSnapshot) => {
-                        scores.push(childSnapshot.val());
+                    snapshot.forEach((child) => {
+                        scores.push(child.val());
                     });
-                    
-                    // 점수 내림차순 정렬
                     scores.sort((a, b) => b.score - a.score);
                     
-                    displayRanking(scores);
+                    let html = '<h3>🏆 TOP 10 랭킹</h3>';
+                    if (scores.length === 0) {
+                        html += '<p>아직 랭킹이 없습니다. 첫 번째 도전자가 되어보세요!</p>';
+                    } else {
+                        scores.forEach((item, index) => {
+                            const rank = index + 1;
+                            let rankClass = '';
+                            let medal = '';
+                            
+                            if (rank === 1) {
+                                rankClass = 'top1';
+                                medal = '🥇 ';
+                            } else if (rank === 2) {
+                                rankClass = 'top2';
+                                medal = '🥈 ';
+                            } else if (rank === 3) {
+                                rankClass = 'top3';
+                                medal = '🥉 ';
+                            }
+                            
+                            html += `
+                                <div class="rank-item ${rankClass}">
+                                    <span class="rank-number">${medal}${rank}위</span>
+                                    <span class="rank-name">${item.nickname}</span>
+                                    <span class="rank-score">${item.score}점</span>
+                                </div>
+                            `;
+                        });
+                    }
+                    document.getElementById('rankingList').innerHTML = html;
                 });
             } catch (error) {
                 console.error('랭킹 로드 오류:', error);
@@ -629,47 +603,7 @@
             }
         }
 
-        // 랭킹 표시
-        function displayRanking(scores) {
-            const rankingList = document.getElementById('rankingList');
-            
-            if (scores.length === 0) {
-                rankingList.innerHTML = '<h3>🏆 TOP 10 랭킹</h3><p>아직 랭킹이 없습니다. 첫 번째 도전자가 되어보세요!</p>';
-                return;
-            }
-            
-            let html = '<h3>🏆 TOP 10 랭킹</h3>';
-            
-            scores.forEach((item, index) => {
-                const rank = index + 1;
-                let rankClass = '';
-                let medal = '';
-                
-                if (rank === 1) {
-                    rankClass = 'top1';
-                    medal = '🥇 ';
-                } else if (rank === 2) {
-                    rankClass = 'top2';
-                    medal = '🥈 ';
-                } else if (rank === 3) {
-                    rankClass = 'top3';
-                    medal = '🥉 ';
-                }
-                
-                html += `
-                    <div class="rank-item ${rankClass}">
-                        <span class="rank-number">${medal}${rank}위</span>
-                        <span class="rank-name">${item.nickname}</span>
-                        <span class="rank-score">${item.score}점</span>
-                    </div>
-                `;
-            });
-            
-            rankingList.innerHTML = html;
-        }
-
-        // 랭킹 보기
-        window.showRanking = function() {
+        function showRanking() {
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('resultScreen').classList.remove('hidden');
             document.getElementById('finalScore').textContent = '-';
@@ -679,14 +613,27 @@
             loadRanking();
         }
 
-        // 재시작
-        window.restart = function() {
+        function restart() {
             document.getElementById('resultScreen').classList.add('hidden');
             document.getElementById('startScreen').classList.remove('hidden');
             document.querySelector('.nickname-input').classList.remove('hidden');
             document.querySelector('.subtitle').textContent = '두뇌 워밍업 게임';
             document.getElementById('timer').classList.remove('warning');
         }
+
+        // 키보드 입력
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            if (e.key >= '0' && e.key <= '9') {
+                inputNumber(e.key);
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                deleteNumber();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                checkAnswer();
+            }
+        });
     </script>
 </body>
 </html>
