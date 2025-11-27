@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소리의 맥놀이 현상 탐구 - 삼각함수의 실생활 응용</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #764ba2;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            cursor: pointer;
+            font-weight: 500;
+            color: #555;
+        }
+
+        /* 상단 컨트롤 그리드 */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .control-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* 파형 표시 영역 */
+        .visualization-area {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .frequency-control {
+            margin-bottom: 20px;
+            padding: 18px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+        }
+
+        .frequency-display {
+            display: inline-block;
+            background: #764ba2;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin-left: 10px;
+            font-size: 0.95em;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .note-display {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin-left: 8px;
+            font-size: 0.9em;
+        }
+
+        .slider {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            outline: none;
+            margin: 12px 0;
+        }
+
+        .slider1 {
+            background: linear-gradient(90deg, #ffd89b 0%, #ff9a9e 100%);
+        }
+
+        .slider2 {
+            background: linear-gradient(90deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            border: 3px solid #764ba2;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            border: 3px solid #764ba2;
+        }
+
+        .beat-info {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .beat-frequency {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #764ba2;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .control-box {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+
+        .control-box.highlight {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #ff6b6b;
+        }
+
+        .control-box.zoom {
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid #667eea;
+        }
+
+        .control-box.amplitude {
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid #9c27b0;
+        }
+
+        .control-box-label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 0.95em;
+        }
+
+        .control-box-label.highlight {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .control-box-label.zoom {
+            color: #764ba2;
+            font-weight: 600;
+        }
+
+        .control-box-label.amplitude {
+            color: #9c27b0;
+            font-weight: 600;
+        }
+
+        .value-display {
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.85em;
+        }
+
+        .value-display.zoom {
+            background: #667eea;
+        }
+
+        .value-display.amplitude {
+            background: #9c27b0;
+        }
+
+        .range-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .range-slider.volume {
+            background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+        }
+
+        .range-slider.speed {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        .range-slider.zoom {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .range-slider.amplitude {
+            background: linear-gradient(90deg, #9c27b0 0%, #e91e63 100%);
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4caf50;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .range-slider.speed::-webkit-slider-thumb {
+            background: #ff6b6b;
+        }
+
+        .range-slider.zoom::-webkit-slider-thumb {
+            background: #667eea;
+        }
+
+        .range-slider.amplitude::-webkit-slider-thumb {
+            background: #9c27b0;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .play-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .preset-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            font-size: 0.9em;
+            padding: 10px 20px;
+        }
+
+        .preset-btn.beat {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+        }
+
+        canvas {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: white;
+            margin-bottom: 20px;
+        }
+
+        .canvas-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+        }
+
+        .mission-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 2px dashed #ff9800;
+        }
+
+        .mission-title {
+            font-weight: bold;
+            color: #e65100;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .mission-item {
+            margin: 7px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.9em;
+        }
+
+        .mission-item::before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            color: #ff9800;
+        }
+
+        .theory-section {
+            background: linear-gradient(135deg, #e3ffe7 0%, #d9e7ff 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .theory-content {
+            line-height: 1.8;
+            color: #444;
+        }
+
+        .formula {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #764ba2;
+            font-family: 'Courier New', monospace;
+        }
+
+        .formula-title {
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 1200px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 소리의 맥놀이 현상 탐구</h1>
+        <p class="subtitle">삼각함수가 만드는 신기한 소리의 세계</p>
+
+        <div class="checkbox-container">
+            <input type="checkbox" id="showFormulas" checked>
+            <label for="showFormulas" class="checkbox-label">수식 표시</label>
+        </div>
+
+        <!-- 상단: 컨트롤 영역 -->
+        <div class="controls-grid">
+            <!-- 왼쪽: 주파수 조절 -->
+            <div class="control-section">
+                <div class="section-title">🎚️ 주파수 조절</div>
+                
+                <div class="frequency-control">
+                    <div class="control-label">
+                        주파수 1 (f₁): 
+                        <span class="frequency-display" id="freq1Display">440 Hz</span>
+                        <span class="note-display" id="note1Display">A4</span>
+                    </div>
+                    <input type="range" class="slider slider1" id="freq1Slider" 
+                           min="200" max="800" value="440" step="1">
+                </div>
+
+                <div class="frequency-control">
+                    <div class="control-label">
+                        주파수 2 (f₂): 
+                        <span class="frequency-display" id="freq2Display">444 Hz</span>
+                        <span class="note-display" id="note2Display">A4#</span>
+                    </div>
+                    <input type="range" class="slider slider2" id="freq2Slider" 
+                           min="200" max="800" value="444" step="1">
+                </div>
+
+                <div class="beat-info">
+                    <div style="text-align: center; color: #666; margin-bottom: 5px; font-size: 0.9em;">맥놀이 주파수</div>
+                    <div class="beat-frequency" id="beatFrequency">4 Hz</div>
+                    <div style="text-align: center; color: #666; font-size: 0.85em;">
+                        1초에 <span id="beatCount">4</span>번 울림
+                    </div>
+                </div>
+
+                <div class="control-box">
+                    <label class="control-box-label">🔊 음량 조절</label>
+                    <input type="range" class="range-slider volume" id="volumeSlider" 
+                           min="0" max="100" value="30" step="1">
+                </div>
+
+                <div class="play-controls">
+                    <button class="play-btn" id="playBtn">▶️ 재생</button>
+                    <button class="stop-btn" id="stopBtn">⏹️ 정지</button>
+                </div>
+
+                <div class="mission-box">
+                    <div class="mission-title">🎯 탐구 미션</div>
+                    <div class="mission-item">1초에 정확히 2번 울리는 맥놀이 만들기</div>
+                    <div class="mission-item">맥놀이가 전혀 없는 상태 만들기</div>
+                    <div class="mission-item">기타 튜닝 상황 재현 (E2: 82.4Hz)</div>
+                    <div class="mission-item">10Hz 이상의 빠른 맥놀이 만들기</div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 시각화 조절 -->
+            <div class="control-section">
+                <div class="section-title">🎨 시각화 조절</div>
+
+                <div class="control-box highlight">
+                    <label class="control-box-label highlight">
+                        ⏱️ 애니메이션 속도
+                        <span class="value-display" id="speedDisplay">0.50x</span>
+                    </label>
+                    <input type="range" class="range-slider speed" id="speedSlider" 
+                           min="0" max="100" value="50" step="1">
+                    <div class="range-labels">
+                        <span>정지 (0.00x)</span>
+                        <span>0.50x</span>
+                        <span>최대 (1.00x)</span>
+                    </div>
+                </div>
+
+                <div class="control-box zoom">
+                    <label class="control-box-label zoom">
+                        🔍 시간축 확대 (X축)
+                        <span class="value-display zoom" id="zoomDisplay">50ms</span>
+                    </label>
+                    <input type="range" class="range-slider zoom" id="zoomSlider" 
+                           min="1" max="1000" value="50" step="1">
+                    <div class="range-labels">
+                        <span>확대 (1ms) ←</span>
+                        <span>→ 축소 (1000ms)</span>
+                    </div>
+                </div>
+
+                <div class="control-box amplitude">
+                    <label class="control-box-label amplitude">
+                        📏 파형 1, 2 진폭 (Y축)
+                        <span class="value-display amplitude" id="amplitudeDisplay">100%</span>
+                    </label>
+                    <input type="range" class="range-slider amplitude" id="amplitudeSlider" 
+                           min="20" max="200" value="100" step="5">
+                    <div class="range-labels">
+                        <span>축소 (20%)</span>
+                        <span>기본 (100%)</span>
+                        <span>확대 (200%)</span>
+                    </div>
+                </div>
+
+                <div class="control-box amplitude">
+                    <label class="control-box-label amplitude">
+                        📐 합성파형 진폭 (Y축)
+                        <span class="value-display amplitude" id="combinedAmplitudeDisplay">50%</span>
+                    </label>
+                    <input type="range" class="range-slider amplitude" id="combinedAmplitudeSlider" 
+                           min="10" max="100" value="50" step="5">
+                    <div class="range-labels">
+                        <span>축소 (10%)</span>
+                        <span>기본 (50%)</span>
+                        <span>확대 (100%)</span>
+                    </div>
+                </div>
+
+                <div class="play-controls">
+                    <button class="preset-btn" id="presetFullBtn">📊 파형 전체보기</button>
+                    <button class="preset-btn beat" id="presetBeatBtn">🎵 맥놀이 관찰</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단: 파형 표시 영역 -->
+        <div class="visualization-area">
+            <div class="canvas-label">파형 1 (빨간색)</div>
+            <canvas id="wave1Canvas"></canvas>
+            
+            <div class="canvas-label">파형 2 (파란색)</div>
+            <canvas id="wave2Canvas"></canvas>
+            
+            <div class="canvas-label">합성 파형 (보라색) + 봉투선 (주황색)</div>
+            <canvas id="combinedCanvas"></canvas>
+        </div>
+
+        <div class="theory-section" id="theorySection">
+            <h2 style="color: #764ba2; margin-bottom: 15px;">📚 이론적 배경</h2>
+            <div class="theory-content">
+                <p>두 개의 비슷한 주파수를 가진 소리가 만나면 <strong>맥놀이(Beat)</strong> 현상이 발생합니다. 
+                이는 두 파동의 간섭으로 인해 소리가 주기적으로 커졌다 작아지는 현상입니다.</p>
+
+                <div class="formula">
+                    <div class="formula-title">개별 파형 (삼각함수)</div>
+                    y₁ = A sin(2πf₁t)<br>
+                    y₂ = A sin(2πf₂t)
+                </div>
+
+                <div class="formula">
+                    <div class="formula-title">합성 파형 (삼각함수의 합)</div>
+                    y = y₁ + y₂ = A[sin(2πf₁t) + sin(2πf₂t)]<br><br>
+                    삼각함수 합차 공식 적용:<br>
+                    y = 2A cos[2π((f₁-f₂)/2)t] × sin[2π((f₁+f₂)/2)t]
+                </div>
+
+                <div class="formula">
+                    <div class="formula-title">맥놀이 주파수</div>
+                    f_beat = |f₁ - f₂|<br>
+                    <span style="color: #666; font-size: 0.9em;">
+                    예) 440Hz와 444Hz → 맥놀이 주파수 = 4Hz (1초에 4번)
+                    </span>
+                </div>
+
+                <p style="margin-top: 20px;">
+                <strong>💡 핵심 개념:</strong><br>
+                • <strong>봉투선(Envelope)</strong>: 2A cos[2π((f₁-f₂)/2)t] 부분으로, 진폭이 주기적으로 변하는 패턴<br>
+                • <strong>반송파(Carrier)</strong>: sin[2π((f₁+f₂)/2)t] 부분으로, 평균 주파수의 빠른 진동<br>
+                • 맥놀이는 기타 튜닝, 피아노 조율, 음향 기기 조정 등에서 실제로 활용됩니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // 상수 정의
+        // ============================================
+        const CONFIG = {
+            CANVAS: {
+                HEIGHT: 180,
+                SAMPLES_PER_PIXEL_MIN: 1,
+                SAMPLES_PER_PIXEL_MAX: 4,
+                SAMPLES_THRESHOLD: 200
+            },
+            WAVE: {
+                AMPLITUDE_RATIO: 0.35,
+                LINE_WIDTH: 2.5,
+                PEAK_RADIUS: 5,
+                PEAK_THRESHOLD: 0.85,
+                BEAT_POINT_RADIUS: 8
+            },
+            COLORS: {
+                WAVE1: '#ff4444',
+                WAVE2: '#4444ff',
+                COMBINED: '#8844ff',
+                ENVELOPE: '#ff8800',
+                BEAT_MAX: '#ff0000',
+                BEAT_MIN: '#00ff00',
+                GRID: '#e0e0e0',
+                GRID_CENTER: '#999'
+            },
+            AUDIO: {
+                MAX_VOLUME: 0.3
+            }
+        };
+
+        // ============================================
+        // 유틸리티 함수
+        // ============================================
+        function frequencyToNote(freq) {
+            const A4 = 440;
+            const semitones = Math.round(12 * Math.log2(freq / A4));
+            const octave = Math.floor((semitones + 57) / 12);
+            const noteIndex = ((semitones % 12) + 12) % 12;
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            return `${notes[noteIndex]}${octave}`;
+        }
+
+        // ============================================
+        // DOM 요소 참조
+        // ============================================
+        const elements = {
+            canvas: {
+                wave1: document.getElementById('wave1Canvas'),
+                wave2: document.getElementById('wave2Canvas'),
+                combined: document.getElementById('combinedCanvas')
+            },
+            controls: {
+                freq1Slider: document.getElementById('freq1Slider'),
+                freq2Slider: document.getElementById('freq2Slider'),
+                volumeSlider: document.getElementById('volumeSlider'),
+                speedSlider: document.getElementById('speedSlider'),
+                zoomSlider: document.getElementById('zoomSlider'),
+                amplitudeSlider: document.getElementById('amplitudeSlider'),
+                combinedAmplitudeSlider: document.getElementById('combinedAmplitudeSlider'),
+                playBtn: document.getElementById('playBtn'),
+                stopBtn: document.getElementById('stopBtn'),
+                presetFullBtn: document.getElementById('presetFullBtn'),
+                presetBeatBtn: document.getElementById('presetBeatBtn'),
+                showFormulas: document.getElementById('showFormulas')
+            },
+            displays: {
+                freq1: document.getElementById('freq1Display'),
+                freq2: document.getElementById('freq2Display'),
+                note1: document.getElementById('note1Display'),
+                note2: document.getElementById('note2Display'),
+                beatFrequency: document.getElementById('beatFrequency'),
+                beatCount: document.getElementById('beatCount'),
+                speed: document.getElementById('speedDisplay'),
+                zoom: document.getElementById('zoomDisplay'),
+                amplitude: document.getElementById('amplitudeDisplay'),
+                combinedAmplitude: document.getElementById('combinedAmplitudeDisplay')
+            },
+            sections: {
+                theory: document.getElementById('theorySection')
+            }
+        };
+
+        // 컨텍스트 가져오기
+        const ctx = {
+            wave1: elements.canvas.wave1.getContext('2d'),
+            wave2: elements.canvas.wave2.getContext('2d'),
+            combined: elements.canvas.combined.getContext('2d')
+        };
+
+        // ============================================
+        // 캔버스 설정
+        // ============================================
+        function setupCanvas() {
+            const width = elements.canvas.wave1.offsetWidth;
+            const height = CONFIG.CANVAS.HEIGHT;
+            
+            Object.values(elements.canvas).forEach(canvas => {
+                canvas.width = width;
+                canvas.height = height;
+            });
+        }
+
+        // ============================================
+        // 오디오 상태 관리
+        // ============================================
+        const audioState = {
+            context: null,
+            oscillator1: null,
+            oscillator2: null,
+            gainNode: null,
+            isPlaying: false
+        };
+
+        // ============================================
+        // 애니메이션 상태 관리
+        // ============================================
+        const animationState = {
+            startTime: Date.now(),
+            pausedTime: 0,
+            lastFrameTime: Date.now()
+        };
+
+        // ============================================
+        // 주파수 및 디스플레이 업데이트
+        // ============================================
+        function updateFrequencies() {
+            const f1 = parseFloat(elements.controls.freq1Slider.value);
+            const f2 = parseFloat(elements.controls.freq2Slider.value);
+            
+            elements.displays.freq1.textContent = `${f1} Hz`;
+            elements.displays.freq2.textContent = `${f2} Hz`;
+            elements.displays.note1.textContent = frequencyToNote(f1);
+            elements.displays.note2.textContent = frequencyToNote(f2);
+            
+            const beatFreq = Math.abs(f1 - f2);
+            elements.displays.beatFrequency.textContent = `${beatFreq.toFixed(1)} Hz`;
+            elements.displays.beatCount.textContent = beatFreq.toFixed(1);
+            
+            if (audioState.isPlaying) {
+                audioState.oscillator1.frequency.value = f1;
+                audioState.oscillator2.frequency.value = f2;
+            }
+        }
+
+        function updateVolume() {
+            if (audioState.gainNode) {
+                const volume = elements.controls.volumeSlider.value / 100 * CONFIG.AUDIO.MAX_VOLUME;
+                audioState.gainNode.gain.value = volume;
+            }
+        }
+
+        function updateSpeed() {
+            const speedValue = parseFloat(elements.controls.speedSlider.value) / 100;
+            elements.displays.speed.textContent = speedValue.toFixed(2) + 'x';
+        }
+
+        function updateZoom() {
+            const zoomValue = elements.controls.zoomSlider.value;
+            elements.displays.zoom.textContent = `${zoomValue}ms`;
+        }
+
+        function updateAmplitude() {
+            const amplitudeValue = elements.controls.amplitudeSlider.value;
+            elements.displays.amplitude.textContent = `${amplitudeValue}%`;
+        }
+
+        function updateCombinedAmplitude() {
+            const amplitudeValue = elements.controls.combinedAmplitudeSlider.value;
+            elements.displays.combinedAmplitude.textContent = `${amplitudeValue}%`;
+        }
+
+        // ============================================
+        // 캔버스 그리기 유틸리티
+        // ============================================
+        function drawGrid(context, width, height) {
+            const centerY = height / 2;
+            
+            // 세로/가로 격자
+            context.strokeStyle = CONFIG.COLORS.GRID;
+            context.lineWidth = 0.5;
+            
+            const timeStep = width / 10;
+            for (let x = timeStep; x < width; x += timeStep) {
+                context.beginPath();
+                context.moveTo(x, 0);
+                context.lineTo(x, height);
+                context.stroke();
+            }
+            
+            const ampStep = height / 6;
+            for (let y = ampStep; y < height; y += ampStep) {
+                context.beginPath();
+                context.moveTo(0, y);
+                context.lineTo(width, y);
+                context.stroke();
+            }
+            
+            // X축 (중심선 - 가로)
+            context.strokeStyle = CONFIG.COLORS.GRID_CENTER;
+            context.lineWidth = 1.5;
+            context.beginPath();
+            context.moveTo(0, centerY);
+            context.lineTo(width, centerY);
+            context.stroke();
+            
+            // Y축 (왼쪽 - 세로)
+            context.beginPath();
+            context.moveTo(0, 0);
+            context.lineTo(0, height);
+            context.stroke();
+        }
+
+        function drawWaveform(context, width, height, frequency, color, currentTime, timeScale, step, amplitudeScale) {
+            const centerY = height / 2;
+            const amplitude = height * CONFIG.WAVE.AMPLITUDE_RATIO * amplitudeScale;
+            
+            context.strokeStyle = color;
+            context.lineWidth = CONFIG.WAVE.LINE_WIDTH;
+            context.beginPath();
+            
+            const peaks = [];
+            let prevY = centerY;
+            let prevPrevY = centerY;
+            
+            for (let x = 0; x < width; x += step) {
+                const t = (x / width) * timeScale + currentTime;
+                const y = centerY + amplitude * Math.sin(2 * Math.PI * frequency * t);
+                
+                // 마루만 찾기 (위쪽 극값만)
+                if (x > step) {
+                    const isPeak = prevY < prevPrevY && prevY < y && prevY < centerY;
+                    
+                    if (isPeak && Math.abs(prevY - centerY) > amplitude * CONFIG.WAVE.PEAK_THRESHOLD) {
+                        peaks.push({x: x - step, y: prevY});
+                    }
+                }
+                
+                prevPrevY = prevY;
+                prevY = y;
+                
+                if (x === 0) context.moveTo(x, y);
+                else context.lineTo(x, y);
+            }
+            context.stroke();
+            
+            // 마루만 표시
+            context.fillStyle = color;
+            peaks.forEach(peak => {
+                context.beginPath();
+                context.arc(peak.x, peak.y, CONFIG.WAVE.PEAK_RADIUS, 0, 2 * Math.PI);
+                context.fill();
+            });
+            
+            return peaks;
+        }
+
+        function drawEnvelope(context, width, height, beatFreq, currentTime, timeScale, amplitudeScale) {
+            const centerY = height / 2;
+            const amplitude = height * CONFIG.WAVE.AMPLITUDE_RATIO * amplitudeScale;
+            
+            context.strokeStyle = CONFIG.COLORS.ENVELOPE;
+            context.lineWidth = 3;
+            context.setLineDash([8, 4]);
+            
+            // 봉투선 데이터 수집
+            const envelopePoints = [];
+            
+            // 상단 봉투선
+            context.beginPath();
+            for (let x = 0; x < width; x += 2) {
+                const t = (x / width) * timeScale + currentTime;
+                const envelope = Math.abs(2 * amplitude * Math.cos(Math.PI * beatFreq * t));
+                const y = centerY - envelope;
+                envelopePoints.push({x, t, envelope, y});
+                if (x === 0) context.moveTo(x, y);
+                else context.lineTo(x, y);
+            }
+            context.stroke();
+            
+            // 하단 봉투선
+            context.beginPath();
+            for (let x = 0; x < width; x += 2) {
+                const t = (x / width) * timeScale + currentTime;
+                const envelope = Math.abs(2 * amplitude * Math.cos(Math.PI * beatFreq * t));
+                const y = centerY + envelope;
+                if (x === 0) context.moveTo(x, y);
+                else context.lineTo(x, y);
+            }
+            context.stroke();
+            context.setLineDash([]);
+            
+            return envelopePoints;
+        }
+
+        function drawBeatPoints(context, envelopePoints, centerY, amplitude) {
+            if (envelopePoints.length < 3) return;
+            
+            // 최대/최소 지점 찾기
+            const beatPoints = [];
+            for (let i = 1; i < envelopePoints.length - 1; i++) {
+                const prev = envelopePoints[i - 1].envelope;
+                const curr = envelopePoints[i].envelope;
+                const next = envelopePoints[i + 1].envelope;
+                
+                // 극대값 (울림 최대)
+                if (curr > prev && curr > next && curr > amplitude * 1.5) {
+                    beatPoints.push({
+                        x: envelopePoints[i].x,
+                        type: 'max',
+                        y: centerY
+                    });
+                }
+                // 극소값 (울림 최소)
+                else if (curr < prev && curr < next && curr < amplitude * 0.3) {
+                    beatPoints.push({
+                        x: envelopePoints[i].x,
+                        type: 'min',
+                        y: centerY
+                    });
+                }
+            }
+            
+            // 최대/최소 지점 강조 표시
+            beatPoints.forEach(point => {
+                context.fillStyle = point.type === 'max' ? CONFIG.COLORS.BEAT_MAX : CONFIG.COLORS.BEAT_MIN;
+                context.globalAlpha = 0.3;
+                
+                // 세로선으로 표시
+                context.fillRect(point.x - 2, 0, 4, centerY * 2);
+                
+                context.globalAlpha = 1.0;
+                
+                // 중심점 표시
+                context.beginPath();
+                context.arc(point.x, point.y, CONFIG.WAVE.BEAT_POINT_RADIUS, 0, 2 * Math.PI);
+                context.fill();
+                
+                // 라벨
+                context.font = 'bold 11px sans-serif';
+                context.fillStyle = point.type === 'max' ? CONFIG.COLORS.BEAT_MAX : CONFIG.COLORS.BEAT_MIN;
+                const label = point.type === 'max' ? '울림 최대' : '울림 최소';
+                const labelWidth = context.measureText(label).width;
+                context.fillText(label, point.x - labelWidth / 2, point.y - 12);
+            });
+        }
+
+        // ============================================
+        // 메인 그리기 함수
+        // ============================================
+        function drawWaves() {
+            const f1 = parseFloat(elements.controls.freq1Slider.value);
+            const f2 = parseFloat(elements.controls.freq2Slider.value);
+            const width = elements.canvas.wave1.width;
+            const height = CONFIG.CANVAS.HEIGHT;
+            const centerY = height / 2;
+            const amplitudeScale = parseFloat(elements.controls.amplitudeSlider.value) / 100;
+            const combinedAmplitudeScale = parseFloat(elements.controls.combinedAmplitudeSlider.value) / 100;
+            const amplitude = height * CONFIG.WAVE.AMPLITUDE_RATIO * amplitudeScale;
+            const combinedAmplitude = height * CONFIG.WAVE.AMPLITUDE_RATIO * combinedAmplitudeScale;
+            
+            // 시간 계산
+            const speedValue = parseFloat(elements.controls.speedSlider.value) / 100;
+            const currentRealTime = Date.now();
+            const deltaTime = currentRealTime - animationState.lastFrameTime;
+            animationState.lastFrameTime = currentRealTime;
+            
+            if (speedValue > 0) {
+                animationState.pausedTime += deltaTime * speedValue;
+            }
+            
+            const currentTime = (animationState.startTime + animationState.pausedTime) / 1000;
+            const timeScale = parseFloat(elements.controls.zoomSlider.value) * 0.001;
+            
+            // 샘플링 조정
+            const maxFreq = Math.max(f1, f2);
+            const samplesPerPixel = Math.max(
+                CONFIG.CANVAS.SAMPLES_PER_PIXEL_MIN, 
+                Math.min(CONFIG.CANVAS.SAMPLES_PER_PIXEL_MAX, maxFreq / CONFIG.CANVAS.SAMPLES_THRESHOLD)
+            );
+            const step = 1 / samplesPerPixel;
+            
+            // 주기 계산
+            const period1 = 1000 / f1;
+            const period2 = 1000 / f2;
+            const zoomValue = parseFloat(elements.controls.zoomSlider.value);
+            const cycles1 = zoomValue / period1;
+            const cycles2 = zoomValue / period2;
+            
+            // Wave 1 그리기
+            ctx.wave1.fillStyle = 'white';
+            ctx.wave1.fillRect(0, 0, width, height);
+            drawGrid(ctx.wave1, width, height);
+            drawWaveform(ctx.wave1, width, height, f1, CONFIG.COLORS.WAVE1, currentTime, timeScale, step, amplitudeScale);
+            
+            ctx.wave1.fillStyle = '#333';
+            ctx.wave1.font = '12px sans-serif';
+            ctx.wave1.fillText(`주기: ${cycles1.toFixed(1)}개`, 10, 20);
+            
+            // Wave 2 그리기
+            ctx.wave2.fillStyle = 'white';
+            ctx.wave2.fillRect(0, 0, width, height);
+            drawGrid(ctx.wave2, width, height);
+            drawWaveform(ctx.wave2, width, height, f2, CONFIG.COLORS.WAVE2, currentTime, timeScale, step, amplitudeScale);
+            
+            ctx.wave2.fillStyle = '#333';
+            ctx.wave2.font = '12px sans-serif';
+            ctx.wave2.fillText(`주기: ${cycles2.toFixed(1)}개`, 10, 20);
+            
+            // Combined Wave 그리기 (독립적인 Y축 스케일)
+            ctx.combined.fillStyle = 'white';
+            ctx.combined.fillRect(0, 0, width, height);
+            drawGrid(ctx.combined, width, height);
+            
+            const beatFreq = Math.abs(f1 - f2);
+            const avgFreq = (f1 + f2) / 2;
+            
+            // 합성 파형 (독립 스케일 적용)
+            ctx.combined.strokeStyle = CONFIG.COLORS.COMBINED;
+            ctx.combined.lineWidth = CONFIG.WAVE.LINE_WIDTH;
+            ctx.combined.beginPath();
+            
+            for (let x = 0; x < width; x += step) {
+                const t = (x / width) * timeScale + currentTime;
+                const envelope = 2 * combinedAmplitude * Math.cos(Math.PI * beatFreq * t);
+                const carrier = Math.sin(2 * Math.PI * avgFreq * t);
+                const y = centerY + envelope * carrier;
+                
+                if (x === 0) ctx.combined.moveTo(x, y);
+                else ctx.combined.lineTo(x, y);
+            }
+            ctx.combined.stroke();
+            
+            // 봉투선 그리기 (독립 스케일 적용)
+            const envelopePoints = drawEnvelope(ctx.combined, width, height, beatFreq, currentTime, timeScale, combinedAmplitudeScale);
+            
+            // 울림 최대/최소 지점 강조
+            drawBeatPoints(ctx.combined, envelopePoints, centerY, combinedAmplitude);
+            
+            // 정보 표시
+            ctx.combined.fillStyle = '#333';
+            ctx.combined.font = '12px sans-serif';
+            const beatPeriod = beatFreq > 0 ? 1000 / beatFreq : 0;
+            const beatCycles = beatFreq > 0 ? zoomValue / beatPeriod : 0;
+            const avgCycles = (cycles1 + cycles2) / 2;
+            ctx.combined.fillText(`평균 주기: ${avgCycles.toFixed(1)}개 | 맥놀이 주기: ${beatCycles.toFixed(2)}개`, 10, 20);
+            ctx.combined.fillText(`시간 범위: ${zoomValue}ms`, width - 100, 20);
+        }
+
+        // ============================================
+        // 오디오 제어
+        // ============================================
+        function startSound() {
+            if (audioState.isPlaying) return;
+            
+            audioState.context = new (window.AudioContext || window.webkitAudioContext)();
+            audioState.oscillator1 = audioState.context.createOscillator();
+            audioState.oscillator2 = audioState.context.createOscillator();
+            audioState.gainNode = audioState.context.createGain();
+            
+            audioState.oscillator1.type = 'sine';
+            audioState.oscillator2.type = 'sine';
+            audioState.oscillator1.frequency.value = parseFloat(elements.controls.freq1Slider.value);
+            audioState.oscillator2.frequency.value = parseFloat(elements.controls.freq2Slider.value);
+            
+            audioState.gainNode.gain.value = elements.controls.volumeSlider.value / 100 * CONFIG.AUDIO.MAX_VOLUME;
+            
+            audioState.oscillator1.connect(audioState.gainNode);
+            audioState.oscillator2.connect(audioState.gainNode);
+            audioState.gainNode.connect(audioState.context.destination);
+            
+            audioState.oscillator1.start();
+            audioState.oscillator2.start();
+            
+            audioState.isPlaying = true;
+        }
+
+        function stopSound() {
+            if (!audioState.isPlaying) return;
+            
+            audioState.oscillator1.stop();
+            audioState.oscillator2.stop();
+            audioState.context.close();
+            
+            audioState.isPlaying = false;
+        }
+
+        // ============================================
+        // 프리셋 기능
+        // ============================================
+        function setFullWaveView() {
+            const avgFreq = (parseFloat(elements.controls.freq1Slider.value) + 
+                           parseFloat(elements.controls.freq2Slider.value)) / 2;
+            const targetCycles = 8;
+            const targetTime = Math.round((1000 / avgFreq) * targetCycles);
+            const zoomValue = Math.min(1000, Math.max(1, targetTime));
+            
+            elements.controls.zoomSlider.value = zoomValue;
+            updateZoom();
+        }
+
+        function setBeatObservationView() {
+            const beatFreq = Math.abs(parseFloat(elements.controls.freq1Slider.value) - 
+                                     parseFloat(elements.controls.freq2Slider.value));
+            
+            if (beatFreq > 0) {
+                const targetCycles = 1.5;
+                const targetTime = Math.round((1000 / beatFreq) * targetCycles);
+                const zoomValue = Math.min(1000, Math.max(1, targetTime));
+                
+                elements.controls.zoomSlider.value = zoomValue;
+            } else {
+                elements.controls.zoomSlider.value = 100;
+            }
+            updateZoom();
+        }
+
+        // ============================================
+        // 이벤트 리스너 등록
+        // ============================================
+        elements.controls.freq1Slider.addEventListener('input', updateFrequencies);
+        elements.controls.freq2Slider.addEventListener('input', updateFrequencies);
+        elements.controls.volumeSlider.addEventListener('input', updateVolume);
+        elements.controls.speedSlider.addEventListener('input', updateSpeed);
+        elements.controls.zoomSlider.addEventListener('input', updateZoom);
+        elements.controls.amplitudeSlider.addEventListener('input', updateAmplitude);
+        elements.controls.combinedAmplitudeSlider.addEventListener('input', updateCombinedAmplitude);
+        elements.controls.playBtn.addEventListener('click', startSound);
+        elements.controls.stopBtn.addEventListener('click', stopSound);
+        elements.controls.presetFullBtn.addEventListener('click', setFullWaveView);
+        elements.controls.presetBeatBtn.addEventListener('click', setBeatObservationView);
+        elements.controls.showFormulas.addEventListener('change', (e) => {
+            elements.sections.theory.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        // ============================================
+        // 초기화 및 애니메이션 시작
+        // ============================================
+        setupCanvas();
+        window.addEventListener('resize', setupCanvas);
+        updateFrequencies();
+        updateSpeed();
+        updateAmplitude();
+        updateCombinedAmplitude();
+        
+        function animate() {
+            drawWaves();
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
