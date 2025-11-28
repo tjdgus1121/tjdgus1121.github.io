@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회전행렬 중심점 체험</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: #fafafa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        /* 파일 업로드 버튼 스타일링 */
+        .file-upload-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .file-upload-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .file-upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-upload-button::before {
+            content: "📁";
+            font-size: 1.3em;
+        }
+
+        .file-name-display {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9em;
+            min-height: 20px;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .angle-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .info-panel {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .canvas-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .canvas-title {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        canvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            cursor: crosshair;
+            max-width: 100%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .instruction {
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 회전행렬 중심점 체험</h1>
+        <p class="subtitle">이미지를 클릭하여 회전 중심점을 지정하고 회전행렬의 작동 원리를 체험해보세요</p>
+
+        <div class="instruction">
+            <strong>💡 사용 방법:</strong> 이미지를 업로드하고, 캔버스를 클릭하여 회전 중심점을 지정하세요. 슬라이더로 회전 각도를 조절하며 중심점에 따라 회전 결과가 어떻게 달라지는지 관찰해보세요!
+        </div>
+
+        <div class="upload-section">
+            <div class="file-upload-wrapper">
+                <input type="file" id="imageUpload" accept="image/*">
+                <div class="file-upload-button">
+                    이미지 업로드
+                </div>
+            </div>
+            <div class="file-name-display" id="fileNameDisplay"></div>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>🔄 회전 각도: <span class="angle-display" id="angleDisplay">0°</span></label>
+                    <input type="range" id="angleSlider" min="0" max="360" value="0" step="1">
+                </div>
+            </div>
+
+            <div class="control-row">
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="compareMode">
+                        <label for="compareMode" style="margin: 0;">비교 모드</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showAxes" checked>
+                        <label for="showAxes" style="margin: 0;">좌표축 표시</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showOriginal" checked>
+                        <label for="showOriginal" style="margin: 0;">원본 이미지 표시</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-row">
+                <div class="info-item">
+                    <div class="info-label">회전 각도</div>
+                    <div class="info-value" id="angleInfo">0.0°</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">중심점 1 좌표</div>
+                    <div class="info-value" id="centerInfo1">(0.0, 0.0)</div>
+                </div>
+                <div class="info-item" id="centerInfo2Container" style="display: none;">
+                    <div class="info-label">중심점 2 좌표</div>
+                    <div class="info-value" id="centerInfo2">(0.0, 0.0)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <div class="canvas-wrapper">
+                <div class="canvas-title">회전 결과</div>
+                <canvas id="canvas1" width="600" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const angleSlider = document.getElementById('angleSlider');
+        const angleDisplay = document.getElementById('angleDisplay');
+        const compareMode = document.getElementById('compareMode');
+        const showAxes = document.getElementById('showAxes');
+        const showOriginal = document.getElementById('showOriginal');
+        
+        const canvas1 = document.getElementById('canvas1');
+        const ctx1 = canvas1.getContext('2d');
+        
+        let canvas2, ctx2;
+        let image = null;
+        let center1 = { x: 300, y: 300 };
+        let center2 = { x: 300, y: 300 };
+        let angle = 0;
+
+        // 초기 안내 메시지
+        drawPlaceholder(ctx1, canvas1);
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = `선택된 파일: ${file.name}`;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image = new Image();
+                    image.onload = () => {
+                        // 이미지 중앙을 초기 중심점으로
+                        center1 = { x: canvas1.width / 2, y: canvas1.height / 2 };
+                        center2 = { x: canvas1.width / 2, y: canvas1.height / 2 };
+                        updateDisplay();
+                    };
+                    image.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        angleSlider.addEventListener('input', (e) => {
+            angle = parseInt(e.target.value);
+            angleDisplay.textContent = angle + '°';
+            updateDisplay();
+        });
+
+        compareMode.addEventListener('change', () => {
+            if (compareMode.checked) {
+                createCompareMode();
+            } else {
+                removeCompareMode();
+            }
+            updateDisplay();
+        });
+
+        showAxes.addEventListener('change', updateDisplay);
+        showOriginal.addEventListener('change', updateDisplay);
+
+        canvas1.addEventListener('click', (e) => {
+            if (!image) return;
+            const rect = canvas1.getBoundingClientRect();
+            const scaleX = canvas1.width / rect.width;
+            const scaleY = canvas1.height / rect.height;
+            center1.x = (e.clientX - rect.left) * scaleX;
+            center1.y = (e.clientY - rect.top) * scaleY;
+            updateDisplay();
+        });
+
+        function createCompareMode() {
+            if (!canvas2) {
+                canvas2 = document.createElement('canvas');
+                canvas2.width = 600;
+                canvas2.height = 600;
+                canvas2.id = 'canvas2';
+                canvas2.style.cursor = 'crosshair';
+                ctx2 = canvas2.getContext('2d');
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'canvas-wrapper';
+                wrapper.innerHTML = '<div class="canvas-title">비교 (다른 중심점)</div>';
+                wrapper.appendChild(canvas2);
+                document.getElementById('canvasContainer').appendChild(wrapper);
+
+                canvas2.addEventListener('click', (e) => {
+                    if (!image) return;
+                    const rect = canvas2.getBoundingClientRect();
+                    const scaleX = canvas2.width / rect.width;
+                    const scaleY = canvas2.height / rect.height;
+                    center2.x = (e.clientX - rect.left) * scaleX;
+                    center2.y = (e.clientY - rect.top) * scaleY;
+                    updateDisplay();
+                });
+
+                document.getElementById('centerInfo2Container').style.display = 'block';
+            }
+        }
+
+        function removeCompareMode() {
+            if (canvas2) {
+                canvas2.parentElement.remove();
+                canvas2 = null;
+                ctx2 = null;
+                document.getElementById('centerInfo2Container').style.display = 'none';
+            }
+        }
+
+        function updateDisplay() {
+            // 정보 패널 업데이트
+            document.getElementById('angleInfo').textContent = angle.toFixed(1) + '°';
+            document.getElementById('centerInfo1').textContent = `(${center1.x.toFixed(1)}, ${center1.y.toFixed(1)})`;
+            if (compareMode.checked) {
+                document.getElementById('centerInfo2').textContent = `(${center2.x.toFixed(1)}, ${center2.y.toFixed(1)})`;
+            }
+
+            // Canvas 1 그리기
+            drawRotatedImage(ctx1, canvas1, center1);
+
+            // Canvas 2 그리기 (비교 모드일 때)
+            if (compareMode.checked && canvas2) {
+                drawRotatedImage(ctx2, canvas2, center2);
+            }
+        }
+
+        function drawRotatedImage(ctx, canvas, center) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!image) {
+                drawPlaceholder(ctx, canvas);
+                return;
+            }
+
+            // 원본 이미지 표시
+            if (showOriginal.checked) {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                const scale = Math.min(canvas.width / image.width, canvas.height / image.height) * 0.8;
+                const imgW = image.width * scale;
+                const imgH = image.height * scale;
+                const imgX = (canvas.width - imgW) / 2;
+                const imgY = (canvas.height - imgH) / 2;
+                ctx.drawImage(image, imgX, imgY, imgW, imgH);
+                ctx.restore();
+            }
+
+            // 회전된 이미지 그리기
+            ctx.save();
+            ctx.translate(center.x, center.y);
+            ctx.rotate(angle * Math.PI / 180);
+            ctx.translate(-center.x, -center.y);
+
+            const scale = Math.min(canvas.width / image.width, canvas.height / image.height) * 0.8;
+            const imgW = image.width * scale;
+            const imgH = image.height * scale;
+            const imgX = (canvas.width - imgW) / 2;
+            const imgY = (canvas.height - imgH) / 2;
+            ctx.drawImage(image, imgX, imgY, imgW, imgH);
+            ctx.restore();
+
+            // 좌표축 표시
+            if (showAxes.checked) {
+                drawAxes(ctx, canvas);
+            }
+
+            // 중심점 십자선 그리기
+            drawCrosshair(ctx, center);
+        }
+
+        function drawAxes(ctx, canvas) {
+            ctx.save();
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+
+            // X축
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+
+            // Y축
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // 축 레이블
+            ctx.fillStyle = '#999';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('X', canvas.width - 20, canvas.height / 2 - 10);
+            ctx.fillText('Y', canvas.width / 2 + 10, 20);
+        }
+
+        function drawCrosshair(ctx, center) {
+            ctx.save();
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+
+            const size = 20;
+
+            // 십자선
+            ctx.beginPath();
+            ctx.moveTo(center.x - size, center.y);
+            ctx.lineTo(center.x + size, center.y);
+            ctx.moveTo(center.x, center.y - size);
+            ctx.lineTo(center.x, center.y + size);
+            ctx.stroke();
+
+            // 중심점 원
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff4444';
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawPlaceholder(ctx, canvas) {
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#999';
+            ctx.font = '20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('이미지를 업로드하세요', canvas.width / 2, canvas.height / 2);
+        }
+    </script>
+</body>
+</html>
