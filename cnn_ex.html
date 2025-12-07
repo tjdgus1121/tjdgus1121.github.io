@@ -601,7 +601,9 @@
                     console.log('학습된 모델 로드 시도 중...');
                     model = await tf.loadLayersModel('./cifar10_model/model.json');
                     console.log('✅ 학습된 모델 로드 성공!');
+                    console.log('모델 레이어 수:', model.layers.length);
                 } catch (loadError) {
+                    console.error('모델 로드 실패:', loadError);
                     console.warn('학습된 모델을 찾을 수 없습니다. 무작위 가중치 모델을 생성합니다.');
                     console.warn('모델을 학습하려면: python train_cifar10.py');
 
@@ -726,21 +728,40 @@
         async function processImage() {
             if (!currentImage) return;
 
+            console.log('이미지 처리 시작...');
+
             // Process through all layers
             const tensor = tf.browser.fromPixels(currentImage)
                 .resizeBilinear([224, 224])
                 .expandDims(0)
                 .div(255.0);
 
+            console.log('입력 텐서 생성 완료:', tensor.shape);
+
             layerOutputs = [];
             layerOutputs.push(tensor); // Input
 
-            // Get intermediate outputs
-            let current = tensor;
+            // Get intermediate outputs using intermediate models
+            // This avoids InputLayer error
+            try {
+                for (let i = 0; i < model.layers.length; i++) {
+                    console.log(`레이어 ${i} 처리 중: ${model.layers[i].name}`);
 
-            for (let i = 0; i < model.layers.length; i++) {
-                current = model.layers[i].apply(current);
-                layerOutputs.push(current);
+                    // Create intermediate model up to this layer
+                    const intermediateModel = tf.model({
+                        inputs: model.inputs,
+                        outputs: model.layers[i].output
+                    });
+
+                    const output = intermediateModel.predict(tensor);
+                    layerOutputs.push(output);
+
+                    console.log(`레이어 ${i} 출력 shape:`, output.shape);
+                }
+                console.log('✅ 모든 레이어 처리 완료!');
+            } catch (error) {
+                console.error('❌ 레이어 처리 중 오류:', error);
+                throw error;
             }
         }
 
