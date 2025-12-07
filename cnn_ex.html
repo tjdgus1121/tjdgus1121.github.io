@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN 탐험기 - 합성곱 신경망 체험</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        
+        :root {
+            --primary: #4A90E2;
+            --secondary: #7B68EE;
+            --accent: #F39C12;
+            --success: #27AE60;
+            --dark: #2C3E50;
+            --darker: #ECF0F1;
+            --light: #2C3E50;
+            --background: #FFFFFF;
+            --card-bg: #F8F9FA;
+            --border: #DDE6ED;
+            --text-primary: #2C3E50;
+            --text-secondary: #5D6D7E;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #E3F2FD 0%, #FFF9E6 50%, #F3E5F5 100%);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Subtle pattern background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(123, 104, 238, 0.03) 0%, transparent 50%);
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+        
+        .upload-section {
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary);
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-btn {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 16px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .control-btn {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: var(--background);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 14px 36px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+        
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--border);
+            transform: translateY(-50%);
+            z-index: 0;
+            border-radius: 2px;
+        }
+
+        .progress-step {
+            background: var(--background);
+            border: 2px solid var(--border);
+            padding: 10px 18px;
+            border-radius: 24px;
+            font-size: 0.85rem;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        .progress-step.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+            transform: scale(1.05);
+        }
+
+        .progress-step.completed {
+            border-color: var(--success);
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--success);
+        }
+        
+        .visualization {
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            min-height: 600px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .layer-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        
+        .layer-content {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .layer-content.active {
+            opacity: 1;
+        }
+        
+        .feature-maps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .feature-map {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .feature-map:nth-child(n) {
+            animation-delay: calc(0.05s * var(--index));
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .feature-map canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            image-rendering: pixelated;
+        }
+        
+        .feature-map-label {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 500;
+        }
+        
+        .input-preview {
+            text-align: center;
+        }
+        
+        .input-preview canvas {
+            width: 320px;
+            height: 320px;
+            border: 3px solid var(--primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.2);
+            image-rendering: auto;
+            image-rendering: crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        .input-preview img {
+            width: 320px;
+            height: 320px;
+            object-fit: contain;
+            border: 3px solid var(--primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.2);
+            background: var(--background);
+        }
+        
+        .prediction-results {
+            display: grid;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .prediction-bar {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+            animation-delay: calc(0.1s * var(--index));
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .prediction-label {
+            font-family: 'Noto Sans KR', sans-serif;
+            min-width: 100px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .prediction-bar-fill {
+            flex: 1;
+            height: 30px;
+            background: var(--border);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prediction-bar-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: var(--percentage);
+            transition: width 0.8s ease;
+        }
+
+        .prediction-value {
+            font-family: 'Noto Sans KR', sans-serif;
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .layer-info {
+            background: rgba(74, 144, 226, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 24px;
+            margin-top: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .layer-info h3 {
+            font-family: 'Noto Sans KR', sans-serif;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .layer-info p {
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+
+        .layer-info ul {
+            color: var(--text-primary);
+        }
+
+        .layer-info strong {
+            color: var(--primary);
+        }
+
+        .layer-info code {
+            background: rgba(74, 144, 226, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: var(--secondary);
+        }
+        
+        .matrix-demo {
+            display: grid;
+            grid-template-columns: auto auto auto auto auto;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .matrix {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .matrix-cell {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            margin: 2px;
+            background: rgba(74, 144, 226, 0.1);
+            border-radius: 5px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .operator {
+            font-size: 2rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            color: var(--text-primary);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .upload-section {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .progress-bar {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .feature-maps {
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CNN EXPLORER</h1>
+            <div class="subtitle">합성곱 신경망 시각화 체험</div>
+        </header>
+        
+        <div class="upload-section">
+            <h2 style="color: var(--primary); margin-bottom: 15px; font-size: 1.3rem;">📸 이미지를 업로드하여 CNN의 작동 방식을 체험해보세요!</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 25px; line-height: 1.6;">
+                강아지, 고양이, 자동차, 비행기 등 다양한 이미지로 테스트해보세요.<br>
+                CNN이 이미지를 어떻게 학습하는지 단계별로 확인할 수 있습니다.
+            </p>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept="image/*">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    이미지 업로드
+                </button>
+            </div>
+            <p style="color: var(--text-secondary); margin-top: 20px; font-size: 0.9rem;">
+                ✅ <strong>학습된 모델:</strong> CIFAR-10 데이터셋으로 학습된 모델을 사용합니다.<br>
+                실제 이미지 분류 결과를 확인하면서 CNN의 작동 원리를 체험할 수 있습니다!
+            </p>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="prevBtn" onclick="previousLayer()" disabled>
+                ← 이전 레이어
+            </button>
+            <button class="control-btn" id="startBtn" onclick="startProcessing()" disabled>
+                처리 시작
+            </button>
+            <button class="control-btn" id="nextBtn" onclick="nextLayer()" disabled>
+                다음 레이어 →
+            </button>
+        </div>
+        
+        <div class="progress-bar" id="progressBar"></div>
+        
+        <div class="visualization" id="visualization">
+            <div class="loading hidden" id="loading">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 20px; font-size: 1.2rem;">모델 로딩 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let model;
+        let currentImage;
+        let currentLayer = 0;
+        let layerOutputs = [];
+        
+        const LAYER_NAMES = [
+            'Input Image',
+            'Conv2D #1 (16 filters)',
+            'ReLU Activation #1',
+            'MaxPooling2D #1',
+            'Conv2D #2 (32 filters)',
+            'ReLU Activation #2',
+            'MaxPooling2D #2',
+            'Conv2D #3 (64 filters)',
+            'ReLU Activation #3',
+            'MaxPooling2D #3',
+            'Flatten',
+            'Dense Layer',
+            'Output (Softmax)'
+        ];
+        
+        const CLASS_NAMES = [
+            '비행기', '자동차', '새', '고양이', '사슴',
+            '강아지', '개구리', '말', '배', '트럭'
+        ];
+        
+        // Initialize
+        window.addEventListener('load', async () => {
+            createProgressBar();
+            await loadModel();
+            // Sample images removed - users should upload their own images
+        });
+        
+        function createProgressBar() {
+            const bar = document.getElementById('progressBar');
+            LAYER_NAMES.forEach((name, i) => {
+                const step = document.createElement('div');
+                step.className = 'progress-step';
+                step.textContent = name;
+                step.id = `step-${i}`;
+                bar.appendChild(step);
+            });
+        }
+        
+        async function loadModel() {
+            const loading = document.getElementById('loading');
+            loading.classList.remove('hidden');
+
+            try {
+                // Try to load trained model first
+                try {
+                    console.log('학습된 모델 로드 시도 중...');
+                    model = await tf.loadLayersModel('./cifar10_model/model.json');
+                    console.log('✅ 학습된 모델 로드 성공!');
+                } catch (loadError) {
+                    console.warn('학습된 모델을 찾을 수 없습니다. 무작위 가중치 모델을 생성합니다.');
+                    console.warn('모델을 학습하려면: python train_cifar10.py');
+
+                    // Create model with random weights as fallback
+                    model = tf.sequential({
+                        layers: [
+                            // Conv Block 1
+                            tf.layers.conv2d({
+                                inputShape: [224, 224, 3],
+                                filters: 16,
+                                kernelSize: 3,
+                                padding: 'same',
+                                activation: 'linear',
+                                name: 'conv1'
+                            }),
+                            tf.layers.activation({activation: 'relu', name: 'relu1'}),
+                            tf.layers.maxPooling2d({poolSize: 2, name: 'pool1'}), // 224->112
+
+                            // Conv Block 2
+                            tf.layers.conv2d({
+                                filters: 32,
+                                kernelSize: 3,
+                                padding: 'same',
+                                activation: 'linear',
+                                name: 'conv2'
+                            }),
+                            tf.layers.activation({activation: 'relu', name: 'relu2'}),
+                            tf.layers.maxPooling2d({poolSize: 2, name: 'pool2'}), // 112->56
+
+                            // Conv Block 3
+                            tf.layers.conv2d({
+                                filters: 64,
+                                kernelSize: 3,
+                                padding: 'same',
+                                activation: 'linear',
+                                name: 'conv3'
+                            }),
+                            tf.layers.activation({activation: 'relu', name: 'relu3'}),
+                            tf.layers.maxPooling2d({poolSize: 2, name: 'pool3'}), // 56->28
+
+                            // Dense
+                            tf.layers.flatten({name: 'flatten'}),
+                            tf.layers.dense({units: 128, activation: 'relu', name: 'dense'}),
+                            tf.layers.dense({units: 10, activation: 'softmax', name: 'output'})
+                        ]
+                    });
+
+                    model.compile({
+                        optimizer: 'adam',
+                        loss: 'categoricalCrossentropy',
+                        metrics: ['accuracy']
+                    });
+
+                    console.log('⚠️ 무작위 가중치 모델 생성 완료 (예측 정확도 낮음)');
+                }
+
+                console.log('Model loaded successfully');
+            } catch (error) {
+                console.error('Error loading model:', error);
+            }
+
+            loading.classList.add('hidden');
+        }
+
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const img = new Image();
+                img.onload = async () => {
+                    currentImage = img;
+                    currentLayer = 0;
+
+                    // 즉시 처리 시작
+                    await processImage();
+
+                    // 첫 레이어 표시
+                    updateVisualization();
+
+                    // 버튼 활성화
+                    document.getElementById('nextBtn').disabled = false;
+                    document.getElementById('startBtn').disabled = true;
+                };
+                img.src = URL.createObjectURL(file);
+            }
+        });
+
+        function showCurrentLayer() {
+            const viz = document.getElementById('visualization');
+            
+            // Update progress bar
+            document.querySelectorAll('.progress-step').forEach((s, i) => {
+                s.classList.remove('active', 'completed');
+                if (i === currentLayer) s.classList.add('active');
+                else if (i < currentLayer) s.classList.add('completed');
+            });
+            
+            // Clear and show content
+            viz.innerHTML = '';
+            
+            const content = document.createElement('div');
+            content.className = 'layer-content';
+            
+            const title = document.createElement('div');
+            title.className = 'layer-title';
+            title.textContent = LAYER_NAMES[currentLayer];
+            content.appendChild(title);
+            
+            if (currentLayer === 0) {
+                showInputLayer(content);
+            } else if (layerOutputs[currentLayer]) {
+                showIntermediateLayer(content, currentLayer);
+            }
+            
+            viz.appendChild(content);
+            
+            // Trigger fade in
+            setTimeout(() => {
+                content.classList.add('active');
+            }, 50);
+        }
+        
+        async function processImage() {
+            if (!currentImage) return;
+
+            // Process through all layers
+            const tensor = tf.browser.fromPixels(currentImage)
+                .resizeBilinear([224, 224])
+                .expandDims(0)
+                .div(255.0);
+
+            layerOutputs = [];
+            layerOutputs.push(tensor); // Input
+
+            // Get intermediate outputs
+            let current = tensor;
+
+            for (let i = 0; i < model.layers.length; i++) {
+                current = model.layers[i].apply(current);
+                layerOutputs.push(current);
+            }
+        }
+
+        async function startProcessing() {
+            if (!currentImage) return;
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = false;
+
+            await processImage();
+            currentLayer = 0;
+            updateVisualization();
+        }
+        
+        function updateVisualization() {
+            showCurrentLayer();
+            
+            // Update button states
+            document.getElementById('prevBtn').disabled = currentLayer === 0;
+            document.getElementById('nextBtn').disabled = currentLayer >= LAYER_NAMES.length - 1 || layerOutputs.length === 0;
+        }
+        
+        function showLayerContent() {
+            // This function is now integrated into showCurrentLayer
+        }
+        
+        async function showInputLayer(container) {
+            const preview = document.createElement('div');
+            preview.className = 'input-preview';
+
+            // 원본 이미지와 32x32 리사이즈 이미지를 함께 표시
+            const imageContainer = document.createElement('div');
+            imageContainer.style.display = 'flex';
+            imageContainer.style.justifyContent = 'center';
+            imageContainer.style.gap = '30px';
+            imageContainer.style.alignItems = 'center';
+            imageContainer.style.flexWrap = 'wrap';
+
+            // 원본 이미지
+            const originalDiv = document.createElement('div');
+            originalDiv.style.textAlign = 'center';
+            const originalImg = document.createElement('img');
+            originalImg.src = currentImage.src;
+            originalImg.style.opacity = '0';
+            originalImg.style.maxWidth = '280px';
+            originalImg.style.maxHeight = '280px';
+            originalImg.style.border = '3px solid var(--primary)';
+            originalImg.style.borderRadius = '12px';
+            originalImg.style.boxShadow = '0 4px 20px rgba(74, 144, 226, 0.2)';
+
+            const originalLabel = document.createElement('div');
+            originalLabel.textContent = '원본 이미지';
+            originalLabel.style.marginTop = '10px';
+            originalLabel.style.color = 'var(--text-secondary)';
+            originalLabel.style.fontFamily = 'Noto Sans KR';
+            originalLabel.style.fontWeight = '600';
+
+            originalDiv.appendChild(originalImg);
+            originalDiv.appendChild(originalLabel);
+
+            // 화살표
+            const arrow = document.createElement('div');
+            arrow.innerHTML = '→';
+            arrow.style.fontSize = '3rem';
+            arrow.style.color = 'var(--primary)';
+
+            // 리사이즈된 이미지 (32x32)
+            const resizedDiv = document.createElement('div');
+            resizedDiv.style.textAlign = 'center';
+
+            if (layerOutputs.length > 0) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 224;
+                canvas.height = 224;
+                canvas.style.width = '224px';
+                canvas.style.height = '224px';
+                canvas.style.border = '3px solid var(--secondary)';
+                canvas.style.borderRadius = '12px';
+                canvas.style.boxShadow = '0 4px 20px rgba(123, 104, 238, 0.2)';
+
+                const tensorData = await layerOutputs[0].squeeze().array();
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.createImageData(224, 224);
+
+                for (let i = 0; i < 224; i++) {
+                    for (let j = 0; j < 224; j++) {
+                        const idx = (i * 224 + j) * 4;
+                        imageData.data[idx] = tensorData[i][j][0] * 255;     // R
+                        imageData.data[idx + 1] = tensorData[i][j][1] * 255; // G
+                        imageData.data[idx + 2] = tensorData[i][j][2] * 255; // B
+                        imageData.data[idx + 3] = 255;                       // A
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                const resizedLabel = document.createElement('div');
+                resizedLabel.textContent = 'CNN 입력 (224×224)';
+                resizedLabel.style.marginTop = '10px';
+                resizedLabel.style.color = 'var(--text-secondary)';
+                resizedLabel.style.fontFamily = 'Noto Sans KR';
+                resizedLabel.style.fontWeight = '600';
+
+                resizedDiv.appendChild(canvas);
+                resizedDiv.appendChild(resizedLabel);
+            }
+
+            imageContainer.appendChild(originalDiv);
+            if (layerOutputs.length > 0) {
+                imageContainer.appendChild(arrow);
+                imageContainer.appendChild(resizedDiv);
+            }
+
+            preview.appendChild(imageContainer);
+
+            // Fade in animation
+            setTimeout(() => {
+                originalImg.style.transition = 'opacity 0.5s ease';
+                originalImg.style.opacity = '1';
+            }, 100);
+
+            const info = document.createElement('div');
+            info.className = 'layer-info';
+            info.innerHTML = `
+                <h3>📷 입력 이미지</h3>
+                <p><strong>첫 번째 단계:</strong> 업로드한 이미지를 CNN에 입력합니다.</p>
+                <p><strong>리사이징:</strong> 모든 이미지를 224×224 픽셀로 크기를 맞춥니다. (ImageNet 표준)</p>
+                <p><strong>정규화:</strong> RGB 각 채널의 픽셀값을 0~255 범위에서 0~1로 변환합니다.</p>
+                <p><strong>Shape:</strong> (배치크기=1, 높이=224, 너비=224, 채널=3) → <code>[1, 224, 224, 3]</code></p>
+                <p><strong>총 픽셀 수:</strong> 224 × 224 × 3 = 150,528개의 값</p>
+                <p style="margin-top: 15px; padding: 10px; background: rgba(0,240,255,0.1); border-radius: 5px;">
+                    💡 <strong>왜 224×224인가요?</strong> ImageNet 대회와 VGG, ResNet 등 유명한 CNN 모델들이 224×224 크기를 표준으로 사용합니다.
+                    이 크기는 충분한 세부사항을 보존하면서도 계산 효율성을 유지합니다.
+                </p>
+            `;
+
+            container.appendChild(preview);
+            container.appendChild(info);
+        }
+        
+        async function showIntermediateLayer(container, layerIdx) {
+            const output = layerOutputs[layerIdx];
+            const shape = output.shape;
+            
+            if (layerIdx === LAYER_NAMES.length - 1) {
+                // Output layer - show predictions
+                await showPredictions(container, output);
+            } else if (shape.length === 4 && shape[3] <= 64) {
+                // Convolutional or pooling layer
+                await showFeatureMaps(container, output);
+            } else if (shape.length === 2) {
+                // Dense layer
+                showDenseLayer(container, output);
+            }
+            
+            addLayerInfo(container, layerIdx);
+        }
+        
+        async function showFeatureMaps(container, tensor) {
+            const maps = document.createElement('div');
+            maps.className = 'feature-maps';
+            
+            const data = await tensor.squeeze().array();
+            const numFilters = data[0][0].length;
+            
+            for (let f = 0; f < numFilters; f++) {
+                const mapDiv = document.createElement('div');
+                mapDiv.className = 'feature-map';
+                mapDiv.style.setProperty('--index', f);
+                
+                const canvas = document.createElement('canvas');
+                const height = data.length;
+                const width = data[0].length;
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.createImageData(width, height);
+                
+                // Normalize and visualize
+                let min = Infinity, max = -Infinity;
+                for (let i = 0; i < height; i++) {
+                    for (let j = 0; j < width; j++) {
+                        const val = data[i][j][f];
+                        min = Math.min(min, val);
+                        max = Math.max(max, val);
+                    }
+                }
+                
+                for (let i = 0; i < height; i++) {
+                    for (let j = 0; j < width; j++) {
+                        const val = data[i][j][f];
+                        const normalized = ((val - min) / (max - min)) * 255;
+                        const idx = (i * width + j) * 4;
+                        
+                        // Cyan-magenta colormap
+                        imageData.data[idx] = normalized * 0.3;
+                        imageData.data[idx + 1] = normalized;
+                        imageData.data[idx + 2] = normalized;
+                        imageData.data[idx + 3] = 255;
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                
+                const label = document.createElement('div');
+                label.className = 'feature-map-label';
+                label.textContent = `Filter ${f + 1}`;
+                
+                mapDiv.appendChild(canvas);
+                mapDiv.appendChild(label);
+                maps.appendChild(mapDiv);
+            }
+            
+            container.appendChild(maps);
+        }
+        
+        async function showPredictions(container, tensor) {
+            // Add info box about predictions
+            const disclaimer = document.createElement('div');
+            disclaimer.className = 'layer-info';
+            disclaimer.style.background = 'rgba(39, 174, 96, 0.1)';
+            disclaimer.style.borderLeft = '4px solid var(--success)';
+            disclaimer.innerHTML = `
+                <h3>🎯 예측 결과</h3>
+                <p><strong>최종 분류 결과:</strong> 모델이 각 클래스별 확률을 계산했습니다.</p>
+                <p>가장 높은 확률을 가진 클래스가 모델의 예측입니다.</p>
+                <p style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 5px;">
+                    💡 <strong>참고:</strong> 학습된 모델을 사용하면 실제 이미지 분류 성능을 확인할 수 있습니다.<br>
+                    모델 학습: <code>python train_cifar10.py</code>
+                </p>
+            `;
+            container.appendChild(disclaimer);
+
+            const predictions = await tensor.data();
+            const results = document.createElement('div');
+            results.className = 'prediction-results';
+
+            const sortedIndices = Array.from(predictions)
+                .map((prob, idx) => ({prob, idx}))
+                .sort((a, b) => b.prob - a.prob);
+
+            sortedIndices.forEach((item, i) => {
+                const bar = document.createElement('div');
+                bar.className = 'prediction-bar';
+                bar.style.setProperty('--index', i);
+
+                const label = document.createElement('div');
+                label.className = 'prediction-label';
+                label.textContent = CLASS_NAMES[item.idx];
+
+                const fill = document.createElement('div');
+                fill.className = 'prediction-bar-fill';
+                fill.style.setProperty('--percentage', `${item.prob * 100}%`);
+
+                const value = document.createElement('div');
+                value.className = 'prediction-value';
+                value.textContent = `${(item.prob * 100).toFixed(1)}%`;
+
+                bar.appendChild(label);
+                bar.appendChild(fill);
+                bar.appendChild(value);
+                results.appendChild(bar);
+            });
+
+            container.appendChild(results);
+        }
+        
+        function showDenseLayer(container, tensor) {
+            const info = document.createElement('div');
+            info.className = 'layer-info';
+            info.innerHTML = `
+                <h3>완전 연결층 (Fully Connected)</h3>
+                <p>평탄화된 특징들이 ${tensor.shape[1]}개의 뉴런과 연결됩니다.</p>
+                <p>각 뉴런은 이전 층의 모든 값들과 가중치를 곱하고 더하는 연산을 수행합니다.</p>
+            `;
+            container.appendChild(info);
+        }
+        
+        function addLayerInfo(container, layerIdx) {
+            const info = document.createElement('div');
+            info.className = 'layer-info';
+            
+            const descriptions = {
+                1: `<h3>🔍 1단계: 합성곱 층 #1 (Convolution Layer)</h3>
+                    <p><strong>무엇을 하나요?</strong> 16개의 3×3 작은 필터(커널)가 이미지 전체를 슬라이딩하면서 특징을 찾습니다.</p>
+                    <p><strong>어떤 특징을 찾나요?</strong> 각 필터는 다른 패턴을 감지합니다:</p>
+                    <ul style="margin-left: 20px;">
+                        <li>수평/수직 엣지 (가장자리)</li>
+                        <li>대각선 라인</li>
+                        <li>색상 변화</li>
+                        <li>질감 패턴</li>
+                    </ul>
+                    <p><strong>Shape 변화:</strong> [1, 224, 224, 3] → [1, 224, 224, 16]</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 <strong>핵심:</strong> 필터가 "슬라이딩 윈도우"처럼 움직이며 이미지의 모든 부분을 검사합니다!
+                    </p>`,
+                2: `<h3>⚡ 2단계: ReLU 활성화 함수</h3>
+                    <p><strong>무엇을 하나요?</strong> 음수 값을 모두 0으로 바꿉니다.</p>
+                    <p><strong>수식:</strong> <code>f(x) = max(0, x)</code></p>
+                    <p><strong>왜 필요한가요?</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>비선형성 추가: 복잡한 패턴을 학습할 수 있게 함</li>
+                        <li>계산이 빠름: 단순한 비교 연산</li>
+                        <li>희소성: 많은 값이 0이 되어 효율적</li>
+                    </ul>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 <strong>예시:</strong> -5 → 0, 3.2 → 3.2, 0.1 → 0.1
+                    </p>`,
+                3: `<h3>📐 3단계: 맥스 풀링 #1 (Max Pooling)</h3>
+                    <p><strong>무엇을 하나요?</strong> 2×2 영역을 보고 그 중 가장 큰 값만 선택합니다.</p>
+                    <p><strong>효과:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>이미지 크기 절반으로 축소 (224×224 → 112×112)</li>
+                        <li>중요한 특징만 남김</li>
+                        <li>계산량 75% 감소</li>
+                        <li>위치 변화에 강인해짐 (약간 움직여도 인식)</li>
+                    </ul>
+                    <p><strong>Shape 변화:</strong> [1, 224, 224, 16] → [1, 112, 112, 16]</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 <strong>비유:</strong> 사진을 축소해도 무엇인지 알아볼 수 있는 것처럼!
+                    </p>`,
+                4: `<h3>🔍 4단계: 합성곱 층 #2 (32 filters)</h3>
+                    <p><strong>무엇이 다른가요?</strong> 이번에는 32개의 필터로 더 복잡하고 추상적인 특징을 찾습니다.</p>
+                    <p><strong>학습하는 특징:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>1층의 간단한 엣지들을 조합</li>
+                        <li>곡선, 모서리, 패턴</li>
+                        <li>물체의 부분들 (귀, 바퀴, 날개 등)</li>
+                    </ul>
+                    <p><strong>Shape 변화:</strong> [1, 112, 112, 16] → [1, 112, 112, 32]</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 <strong>핵심:</strong> 필터 수가 증가하면서 더 다양한 특징을 학습합니다!
+                    </p>`,
+                5: `<h3>⚡ 5단계: ReLU 활성화 함수 #2</h3>
+                    <p><strong>역할:</strong> 다시 한번 음수를 제거하여 비선형성을 강화합니다.</p>
+                    <p>두 번째 합성곱 층의 출력에서도 음수 값들을 0으로 만들어 모델이 더 복잡한 패턴을 학습할 수 있게 합니다.</p>`,
+                6: `<h3>📐 6단계: 맥스 풀링 #2</h3>
+                    <p><strong>무엇을 하나요?</strong> 다시 한번 크기를 절반으로 줄입니다.</p>
+                    <p><strong>Shape 변화:</strong> [1, 112, 112, 32] → [1, 56, 56, 32]</p>
+                    <p><strong>결과:</strong> 56×56 크기로 축소되었지만, 중요한 특징은 모두 보존!</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 원본 224×224에서 56×56으로 줄었지만, 32개 필터가 각각 다른 특징을 담고 있습니다.
+                    </p>`,
+                7: `<h3>🔍 7단계: 합성곱 층 #3 (64 filters)</h3>
+                    <p><strong>무엇이 다른가요?</strong> 이번에는 64개의 필터로 가장 복잡한 고수준 특징을 추출합니다.</p>
+                    <p><strong>학습하는 특징:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>물체의 전체적인 형태</li>
+                        <li>복잡한 패턴 조합</li>
+                        <li>고수준 추상 개념 (얼굴, 바퀴, 날개 등)</li>
+                    </ul>
+                    <p><strong>Shape 변화:</strong> [1, 56, 56, 32] → [1, 56, 56, 64]</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 <strong>핵심:</strong> 층이 깊어질수록 더 추상적이고 의미 있는 특징을 학습합니다!
+                    </p>`,
+                8: `<h3>⚡ 8단계: ReLU 활성화 함수 #3</h3>
+                    <p><strong>역할:</strong> 세 번째 합성곱 층의 출력에서 음수를 제거합니다.</p>
+                    <p>가장 깊은 층에서도 비선형 변환을 적용하여 복잡한 패턴을 학습할 수 있게 합니다.</p>`,
+                9: `<h3>📐 9단계: 맥스 풀링 #3</h3>
+                    <p><strong>무엇을 하나요?</strong> 마지막으로 한번 더 크기를 줄입니다.</p>
+                    <p><strong>Shape 변화:</strong> [1, 56, 56, 64] → [1, 28, 28, 64]</p>
+                    <p><strong>결과:</strong> 28×28 크기, 64개 채널의 고수준 특징 맵</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 224×224에서 28×28로 8배 축소되었지만, 64개의 풍부한 특징을 담고 있습니다!
+                    </p>`,
+                10: `<h3>🔄 10단계: 평탄화 (Flatten)</h3>
+                    <p><strong>무엇을 하나요?</strong> 3D 데이터를 1D 배열로 쭉 펼칩니다.</p>
+                    <p><strong>변환 과정:</strong></p>
+                    <p>28×28×64 = 50,176개의 값을 일렬로 나열</p>
+                    <p><strong>Shape 변화:</strong> [1, 28, 28, 64] → [1, 50176]</p>
+                    <p><strong>왜 필요한가요?</strong> 다음 단계인 Dense Layer는 1D 입력만 받을 수 있습니다.</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 <strong>비유:</strong> 퍼즐 조각들을 한 줄로 쭉 늘어놓는 것과 같습니다!
+                    </p>`,
+                11: `<h3>🧠 11단계: 은닉층 (Dense/Fully Connected Layer)</h3>
+                    <p><strong>무엇을 하나요?</strong> 50,176개의 특징을 128개로 압축하며 종합합니다.</p>
+                    <p><strong>완전 연결(Fully Connected)이란?</strong></p>
+                    <p>모든 입력(50,176개)이 모든 출력(128개)과 연결됩니다.</p>
+                    <p>총 연결 개수: 50,176 × 128 = 6,422,528개!</p>
+                    <p><strong>Shape 변화:</strong> [1, 50176] → [1, 128]</p>
+                    <p><strong>역할:</strong> 추출된 모든 특징들을 보고 "이건 고양이일까? 비행기일까?"를 판단할 준비를 합니다.</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 모든 증거를 종합해서 결론을 내리는 단계!
+                    </p>`,
+                12: `<h3>🎯 12단계: 출력층 (Output Layer with Softmax)</h3>
+                    <p><strong>무엇을 하나요?</strong> 128개의 값을 10개 클래스의 확률로 변환합니다.</p>
+                    <p><strong>Softmax 함수의 역할:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>모든 출력값을 0~1 사이의 확률로 변환</li>
+                        <li>모든 확률의 합은 항상 100% (1.0)</li>
+                        <li>가장 높은 값이 모델의 최종 예측</li>
+                    </ul>
+                    <p><strong>Shape 변화:</strong> [1, 128] → [1, 10]</p>
+                    <p><strong>10개 클래스:</strong> 비행기, 자동차, 새, 고양이, 사슴, 강아지, 개구리, 말, 배, 트럭</p>
+                    <p style="margin-top: 10px; padding: 8px; background: rgba(255,235,59,0.1); border-radius: 5px;">
+                        💡 <strong>예시:</strong> "이 이미지가 강아지일 확률 45%, 고양이일 확률 30%, ..." 처럼 각 클래스별 확률을 계산합니다.
+                    </p>`
+            };
+            
+            if (descriptions[layerIdx]) {
+                info.innerHTML = descriptions[layerIdx];
+                container.appendChild(info);
+            }
+        }
+        
+        function previousLayer() {
+            if (currentLayer > 0) {
+                currentLayer--;
+                updateVisualization();
+            }
+        }
+        
+        function nextLayer() {
+            if (currentLayer < LAYER_NAMES.length - 1 && layerOutputs.length > 0) {
+                currentLayer++;
+                updateVisualization();
+            }
+        }
+    </script>
+</body>
+</html>
