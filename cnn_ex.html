@@ -730,6 +730,13 @@
 
             console.log('이미지 처리 시작...');
 
+            // Clean up previous outputs
+            if (layerOutputs.length > 0) {
+                layerOutputs.forEach(t => {
+                    if (t && t.dispose) t.dispose();
+                });
+            }
+
             // Process through all layers
             const tensor = tf.browser.fromPixels(currentImage)
                 .resizeBilinear([224, 224])
@@ -742,23 +749,40 @@
             layerOutputs.push(tensor); // Input
 
             // Get intermediate outputs using intermediate models
-            // This avoids InputLayer error
+            // Skip InputLayer (first layer is always InputLayer)
             try {
                 for (let i = 0; i < model.layers.length; i++) {
-                    console.log(`레이어 ${i} 처리 중: ${model.layers[i].name}`);
+                    const layer = model.layers[i];
+
+                    // Skip InputLayer
+                    if (layer.getClassName() === 'InputLayer') {
+                        console.log(`레이어 ${i} 스킵: InputLayer`);
+                        continue;
+                    }
+
+                    console.log(`레이어 ${i} 처리 중: ${layer.name} (${layer.getClassName()})`);
 
                     // Create intermediate model up to this layer
                     const intermediateModel = tf.model({
                         inputs: model.inputs,
-                        outputs: model.layers[i].output
+                        outputs: layer.output
                     });
 
                     const output = intermediateModel.predict(tensor);
                     layerOutputs.push(output);
 
-                    console.log(`레이어 ${i} 출력 shape:`, output.shape);
+                    // Log output values for final layer (predictions)
+                    if (i === model.layers.length - 1) {
+                        const predValues = await output.data();
+                        console.log('최종 출력값 (softmax):', Array.from(predValues));
+                        const sum = Array.from(predValues).reduce((a, b) => a + b, 0);
+                        console.log('확률 합계:', sum, '(1.0이어야 정상)');
+                    }
+
+                    console.log(`  출력 shape:`, output.shape);
                 }
                 console.log('✅ 모든 레이어 처리 완료!');
+                console.log(`총 ${layerOutputs.length}개의 출력 (입력 포함)`);
             } catch (error) {
                 console.error('❌ 레이어 처리 중 오류:', error);
                 throw error;
