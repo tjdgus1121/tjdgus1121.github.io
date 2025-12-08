@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하노이의 탑 - 수학적 사고 체험</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 50%, #9FA8DA 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1A237E;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #5E35B1;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .game-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #5D4037;
+        }
+
+        select, input, button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: 2px solid #8D6E63;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button {
+            background: #6D4C41;
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #5D4037;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            background: #BCAAA4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: #F5F5DC;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 3px solid #8D6E63;
+            font-weight: bold;
+            color: #3E2723;
+        }
+
+        .stat-value {
+            color: #D84315;
+            font-size: 1.3em;
+        }
+
+        .game-canvas {
+            position: relative;
+            height: 400px;
+            max-width: 900px;
+            margin: 0 auto;
+            background: linear-gradient(to bottom, #FAFAFA 0%, #E8D5C4 100%);
+            border-radius: 15px;
+            border: 3px solid #8D6E63;
+            margin-bottom: 20px;
+        }
+
+        .base {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            width: 90%;
+            height: 20px;
+            background: linear-gradient(to bottom, #5D4037 0%, #3E2723 100%);
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .pole-container {
+            position: absolute;
+            bottom: 30px;
+            width: 30%;
+            height: 270px;
+            cursor: pointer;
+        }
+
+        .pole-container:nth-child(2) { left: 3%; }
+        .pole-container:nth-child(3) { left: 35%; }
+        .pole-container:nth-child(4) { left: 67%; }
+
+        .pole {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 250px;
+            background: linear-gradient(to right, #6D4C41 0%, #5D4037 50%, #4E342E 100%);
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+
+        .pole::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(circle, #8D6E63 0%, #6D4C41 100%);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .pole-container:hover .pole {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .pole-container.selected .pole {
+            background: linear-gradient(to right, #FF6F00 0%, #E65100 50%, #D84315 100%);
+        }
+
+        .disk {
+            position: absolute;
+            height: 30px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 
+                0 4px 8px rgba(0,0,0,0.2),
+                inset 0 2px 4px rgba(255,255,255,0.4);
+            transition: all 0.3s;
+            left: 50%;
+            cursor: pointer;
+        }
+
+        .disk.selected {
+            transform: translateX(-50%) translateY(-10px) scale(1.1);
+            box-shadow: 
+                0 8px 20px rgba(255, 215, 0, 0.6),
+                0 0 20px rgba(255, 215, 0, 0.4),
+                inset 0 2px 4px rgba(255,255,255,0.6);
+            border: 3px solid #FFD700;
+            z-index: 100;
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 
+                    0 8px 20px rgba(255, 215, 0, 0.6),
+                    0 0 20px rgba(255, 215, 0, 0.4),
+                    inset 0 2px 4px rgba(255,255,255,0.6);
+            }
+            50% {
+                box-shadow: 
+                    0 8px 20px rgba(255, 215, 0, 0.8),
+                    0 0 30px rgba(255, 215, 0, 0.6),
+                    inset 0 2px 4px rgba(255,255,255,0.6);
+            }
+        }
+
+        .disk:hover {
+            transform: translateX(-50%) translateY(-5px);
+            box-shadow: 
+                0 6px 12px rgba(0,0,0,0.3),
+                inset 0 2px 4px rgba(255,255,255,0.4);
+        }
+
+        .hint {
+            text-align: center;
+            color: #5D4037;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .message-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            display: none;
+        }
+
+        .message-overlay.show {
+            display: block;
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+            z-index: 1000;
+            text-align: center;
+            min-width: 400px;
+            border: 4px solid #8D6E63;
+            display: none;
+        }
+
+        .message-box.show {
+            display: block;
+        }
+
+        .message-box h2 {
+            color: #3E2723;
+            margin-bottom: 20px;
+        }
+
+        .message-box p {
+            margin: 10px 0;
+            font-size: 1.1em;
+            color: #5D4037;
+        }
+
+        .message-box button {
+            margin: 10px;
+        }
+
+        .warning-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #D32F2F;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .warning-toast.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .leaderboard {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .leaderboard h2 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .difficulty-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: #F5F5F5;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.2s;
+            font-size: 15px;
+        }
+
+        .tab:hover {
+            background: #e8eaf6;
+            border-color: #667eea;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        .leaderboard-table th {
+            background: #5848a8;
+            color: white;
+            padding: 16px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 17px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .leaderboard-table th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .leaderboard-table th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        .leaderboard-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #E0E0E0;
+            color: #424242;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .leaderboard-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .leaderboard-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .leaderboard-table tbody tr:nth-child(even) {
+            background: #F5F5F5;
+        }
+
+        .leaderboard-table tbody tr:hover {
+            background: #E8E8E8;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            padding: 40px;
+            font-size: 15px;
+        }
+
+        .delete-btn {
+            padding: 6px 12px;
+            background: #e53935;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .delete-btn:hover {
+            background: #c62828;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8em; }
+            .game-canvas { height: 300px; }
+            .pole-container { height: 200px; }
+            .pole { height: 180px; }
+            .message-box { min-width: 300px; padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗼 하노이의 탑</h1>
+        <p class="subtitle">수열의 규칙을 발견해보세요!</p>
+
+        <div class="game-section">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="difficulty">원판 개수:</label>
+                    <select id="difficulty">
+                        <option value="2">2개</option>
+                        <option value="3" selected>3개</option>
+                        <option value="4">4개</option>
+                        <option value="5">5개</option>
+                        <option value="6">6개</option>
+                    </select>
+                </div>
+                <button id="startBtn">게임 시작</button>
+                <button id="resetBtn" disabled>다시하기</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    이동 횟수: <span class="stat-value" id="moves">0</span>
+                </div>
+                <div class="stat-item">
+                    시간: <span class="stat-value" id="timer">0.0</span>초
+                </div>
+            </div>
+
+            <div class="game-canvas" id="gameCanvas">
+                <div class="base"></div>
+                <div class="pole-container" data-pole="0">
+                    <div class="pole"></div>
+                </div>
+                <div class="pole-container" data-pole="1">
+                    <div class="pole"></div>
+                </div>
+                <div class="pole-container" data-pole="2">
+                    <div class="pole"></div>
+                </div>
+            </div>
+
+            <p class="hint">원판을 클릭하고, 이동할 기둥을 클릭하세요. 큰 원판 위에 작은 원판만 놓을 수 있습니다.</p>
+        </div>
+
+        <div class="leaderboard">
+            <h2>🏆 명예의 전당</h2>
+            <div class="difficulty-tabs" id="difficultyTabs"></div>
+            <div id="leaderboardContent" class="loading">리더보드를 불러오는 중...</div>
+        </div>
+    </div>
+
+    <div class="warning-toast" id="warningToast"></div>
+    <div class="message-overlay" id="messageOverlay"></div>
+    <div class="message-box" id="messageBox"></div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getDatabase, ref, push, set, onValue, remove } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5yAZcBfdMYLQC0gIoltw9TX5rZmxz1r4",
+            authDomain: "hanoi-tower-2dbc9.firebaseapp.com",
+            databaseURL: "https://hanoi-tower-2dbc9-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "hanoi-tower-2dbc9",
+            storageBucket: "hanoi-tower-2dbc9.firebasestorage.app",
+            messagingSenderId: "349601550598",
+            appId: "1:349601550598:web:d69d02f446d1754dcece87"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        class HanoiTower {
+            constructor() {
+                this.disks = 3;
+                this.towers = [[], [], []];
+                this.moves = 0;
+                this.selectedTower = null;
+                this.gameStarted = false;
+                this.startTime = null;
+                this.timerInterval = null;
+                this.diskColors = [
+                    '#E57373', // 밝은 빨강
+                    '#FFB74D', // 밝은 오렌지
+                    '#FFD54F', // 밝은 노랑
+                    '#81C784', // 밝은 초록
+                    '#64B5F6', // 밝은 파랑
+                    '#BA68C8'  // 밝은 보라
+                ];
+                
+                this.initElements();
+                this.initEvents();
+                this.createDifficultyTabs();
+                
+                // 초기 원판 표시
+                this.setupInitialDisks();
+                
+                // 리더보드 로드 (비동기)
+                setTimeout(() => this.loadLeaderboard(3), 100);
+            }
+
+            initElements() {
+                this.difficultySelect = document.getElementById('difficulty');
+                this.startBtn = document.getElementById('startBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.movesDisplay = document.getElementById('moves');
+                this.timerDisplay = document.getElementById('timer');
+                this.gameCanvas = document.getElementById('gameCanvas');
+                this.warningToast = document.getElementById('warningToast');
+                this.messageOverlay = document.getElementById('messageOverlay');
+                this.messageBox = document.getElementById('messageBox');
+            }
+
+            initEvents() {
+                this.startBtn.addEventListener('click', () => this.startGame());
+                this.resetBtn.addEventListener('click', () => this.resetGame());
+                
+                this.difficultySelect.addEventListener('change', () => {
+                    if (!this.gameStarted) {
+                        this.disks = parseInt(this.difficultySelect.value);
+                        this.setupInitialDisks();
+                    }
+                });
+
+                // 기둥 클릭 이벤트
+                document.querySelectorAll('.pole-container').forEach(container => {
+                    container.addEventListener('click', (e) => {
+                        const poleIndex = parseInt(container.dataset.pole);
+                        this.handlePoleClick(poleIndex);
+                    });
+                });
+            }
+
+            setupInitialDisks() {
+                this.towers = [[], [], []];
+                for (let i = this.disks; i >= 1; i--) {
+                    this.towers[0].push(i);
+                }
+                this.renderDisks();
+            }
+
+            createDifficultyTabs() {
+                const tabsContainer = document.getElementById('difficultyTabs');
+                for (let i = 2; i <= 6; i++) {
+                    const tab = document.createElement('button');
+                    tab.className = 'tab' + (i === 3 ? ' active' : '');
+                    tab.textContent = `${i}개`;
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        this.loadLeaderboard(i);
+                    });
+                    tabsContainer.appendChild(tab);
+                }
+            }
+
+            startGame() {
+                this.gameStarted = true;
+                this.moves = 0;
+                this.selectedTower = null;
+                this.startTime = Date.now();
+                this.movesDisplay.textContent = '0';
+                this.timerDisplay.textContent = '0.0';
+                
+                // 타이머 시작
+                this.timerInterval = setInterval(() => this.updateTimer(), 100);
+                
+                this.startBtn.disabled = true;
+                this.resetBtn.disabled = false;
+                this.difficultySelect.disabled = true;
+                
+                // 원판 재배치
+                this.setupInitialDisks();
+            }
+
+            updateTimer() {
+                if (this.startTime) {
+                    const elapsed = (Date.now() - this.startTime) / 1000;
+                    this.timerDisplay.textContent = elapsed.toFixed(1);
+                }
+            }
+
+            resetGame() {
+                this.stopTimer();
+                this.gameStarted = false;
+                this.moves = 0;
+                this.selectedTower = null;
+                this.startTime = null;
+                this.movesDisplay.textContent = '0';
+                this.timerDisplay.textContent = '0.0';
+                
+                document.querySelectorAll('.pole-container').forEach(container => {
+                    container.classList.remove('selected');
+                });
+                document.querySelectorAll('.disk').forEach(d => d.classList.remove('selected'));
+                
+                this.startBtn.disabled = false;
+                this.resetBtn.disabled = true;
+                this.difficultySelect.disabled = false;
+                
+                this.setupInitialDisks();
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            handlePoleClick(poleIndex) {
+                if (!this.gameStarted) return;
+
+                if (this.selectedTower === null) {
+                    // 첫 번째 클릭 - 원판 선택
+                    if (this.towers[poleIndex].length > 0) {
+                        this.selectedTower = poleIndex;
+                        
+                        // 기둥 하이라이트
+                        document.querySelectorAll('.pole-container').forEach(c => c.classList.remove('selected'));
+                        document.querySelector(`.pole-container[data-pole="${poleIndex}"]`).classList.add('selected');
+                        
+                        // 원판 하이라이트
+                        document.querySelectorAll('.disk').forEach(d => d.classList.remove('selected'));
+                        const selectedDiskSize = this.towers[poleIndex][this.towers[poleIndex].length - 1];
+                        const disksInPole = document.querySelectorAll(`.pole-container[data-pole="${poleIndex}"] .disk`);
+                        disksInPole.forEach(disk => {
+                            if (parseInt(disk.textContent) === selectedDiskSize) {
+                                disk.classList.add('selected');
+                            }
+                        });
+                    }
+                } else {
+                    // 두 번째 클릭 - 원판 이동
+                    this.moveDisk(this.selectedTower, poleIndex);
+                    this.selectedTower = null;
+                    document.querySelectorAll('.pole-container').forEach(c => c.classList.remove('selected'));
+                    document.querySelectorAll('.disk').forEach(d => d.classList.remove('selected'));
+                }
+            }
+
+            moveDisk(fromPole, toPole) {
+                if (fromPole === toPole) return;
+
+                const fromArray = this.towers[fromPole];
+                const toArray = this.towers[toPole];
+
+                if (fromArray.length === 0) return;
+
+                const disk = fromArray[fromArray.length - 1];
+
+                // 이동 가능 여부 확인 - 큰 원판 위에 작은 원판만 올 수 있음
+                if (toArray.length === 0 || disk < toArray[toArray.length - 1]) {
+                    // 이동 가능
+                    fromArray.pop();
+                    toArray.push(disk);
+                    this.moves++;
+                    this.movesDisplay.textContent = this.moves;
+                    this.renderDisks();
+
+                    // 승리 확인
+                    if (this.towers[2].length === this.disks) {
+                        this.gameWon();
+                    }
+                } else {
+                    // 이동 불가 - 경고 표시
+                    this.showWarning('큰 원판 위에 작은 원판만 놓을 수 있습니다!');
+                }
+            }
+
+            showWarning(message) {
+                this.warningToast.textContent = message;
+                this.warningToast.classList.add('show');
+                setTimeout(() => {
+                    this.warningToast.classList.remove('show');
+                }, 2000);
+            }
+
+            renderDisks() {
+                // 기존 원판 모두 제거
+                document.querySelectorAll('.disk').forEach(disk => disk.remove());
+
+                // 각 기둥의 원판 그리기
+                this.towers.forEach((tower, towerIndex) => {
+                    tower.forEach((diskSize, position) => {
+                        this.createDisk(diskSize, towerIndex, position);
+                    });
+                });
+            }
+
+            createDisk(size, towerIndex, position) {
+                const container = document.querySelector(`.pole-container[data-pole="${towerIndex}"]`);
+                const disk = document.createElement('div');
+                disk.className = 'disk';
+                
+                const maxWidth = 180;
+                const minWidth = 60;
+                const width = minWidth + (maxWidth - minWidth) * (size / this.disks);
+                
+                disk.style.width = width + 'px';
+                disk.style.bottom = (position * 32) + 'px';
+                disk.style.transform = 'translateX(-50%)';
+                disk.style.background = `linear-gradient(to bottom, ${this.diskColors[size - 1]} 0%, ${this.adjustBrightness(this.diskColors[size - 1], -20)} 100%)`;
+                disk.textContent = size;
+                
+                // 원판 클릭 시 해당 기둥 선택
+                disk.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this.gameStarted && this.towers[towerIndex][this.towers[towerIndex].length - 1] === size) {
+                        this.handlePoleClick(towerIndex);
+                    }
+                });
+                
+                container.appendChild(disk);
+            }
+
+            adjustBrightness(color, percent) {
+                const num = parseInt(color.replace("#",""), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = (num >> 16) + amt;
+                const G = (num >> 8 & 0x00FF) + amt;
+                const B = (num & 0x0000FF) + amt;
+                return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 +
+                    (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255))
+                    .toString(16).slice(1);
+            }
+
+            gameWon() {
+                this.stopTimer();
+                const finalTime = ((Date.now() - this.startTime) / 1000).toFixed(1);
+                const minMoves = Math.pow(2, this.disks) - 1;
+                
+                if (this.moves === minMoves) {
+                    this.showWinMessage(finalTime, true);
+                } else {
+                    this.showWinMessage(finalTime, false, minMoves);
+                }
+            }
+
+            showWinMessage(time, isOptimal, minMoves = null) {
+                let content = `<h2>🎉 축하합니다!</h2>`;
+                content += `<p>이동 횟수: <strong>${this.moves}</strong>회</p>`;
+                content += `<p>걸린 시간: <strong>${time}</strong>초</p>`;
+                
+                if (isOptimal) {
+                    content += `<p style="color: #2E7D32; font-weight: bold; margin-top: 15px;">✨ 최소 이동 횟수로 완성했습니다!</p>`;
+                    content += `<p style="font-size: 0.95em; margin-top: 10px;">다른 난이도에서도 규칙을 찾아보세요!</p>`;
+                    content += `<div style="margin-top: 20px;">
+                        <input type="text" id="nickname" placeholder="닉네임 입력 (중복 불가)" 
+                               style="width: 100%; margin-bottom: 10px;" maxlength="15">
+                    </div>`;
+                    content += `<button id="saveScore">기록 저장</button>`;
+                } else {
+                    content += `<p style="color: #D84315; margin-top: 15px;">최소 이동 횟수는 <strong>${minMoves}</strong>회입니다.</p>`;
+                    content += `<p style="font-size: 0.95em;">최소 이동 횟수로 다시 도전해보세요!</p>`;
+                }
+                
+                content += `<button id="closeMessage">닫기</button>`;
+                
+                this.messageBox.innerHTML = content;
+                this.messageOverlay.classList.add('show');
+                this.messageBox.classList.add('show');
+                
+                if (isOptimal) {
+                    const saveBtn = document.getElementById('saveScore');
+                    const nicknameInput = document.getElementById('nickname');
+                    
+                    saveBtn.addEventListener('click', async () => {
+                        const nickname = nicknameInput.value.trim();
+                        if (!nickname) {
+                            alert('닉네임을 입력해주세요!');
+                            return;
+                        }
+
+                        if (!this.filterNickname(nickname)) {
+                            alert('부적절한 닉네임입니다. 다른 닉네임을 사용해주세요!');
+                            return;
+                        }
+
+                        const isDuplicate = await this.checkNicknameDuplicate(nickname, this.disks);
+                        if (isDuplicate) {
+                            alert('이미 사용중인 닉네임입니다. 다른 닉네임을 사용해주세요!');
+                            return;
+                        }
+
+                        await this.saveScore(nickname, this.disks, this.moves, parseFloat(time));
+                        this.hideMessage();
+                        this.loadLeaderboard(this.disks);
+                        this.resetGame();
+                    });
+                }
+                
+                document.getElementById('closeMessage').addEventListener('click', () => {
+                    this.hideMessage();
+                    this.resetGame();
+                });
+            }
+
+            hideMessage() {
+                this.messageOverlay.classList.remove('show');
+                this.messageBox.classList.remove('show');
+            }
+
+            async generateFingerprint() {
+                try {
+                    // 실제 IP 가져오기 (여러 API 시도)
+                    let ip = null;
+
+                    try {
+                        const response = await fetch('https://api.ipify.org?format=json', { timeout: 3000 });
+                        const data = await response.json();
+                        ip = data.ip;
+                    } catch (e) {
+                        try {
+                            const response = await fetch('https://api.my-ip.io/ip', { timeout: 3000 });
+                            const text = await response.text();
+                            ip = text.trim();
+                        } catch (e2) {
+                            // API 실패 시 fallback
+                        }
+                    }
+
+                    if (ip) {
+                        // IP 마스킹 (마지막 옥텟만 숨김 - 앞 6자리 공개)
+                        const parts = ip.split('.');
+                        if (parts.length === 4) {
+                            // IPv4: xxx.xxx.xxx.*** 형식
+                            return `${parts[0]}.${parts[1]}.${parts[2]}.***`;
+                        } else {
+                            // IPv6인 경우 간단히 처리
+                            return ip.substring(0, 20) + '***';
+                        }
+                    }
+                } catch (error) {
+                    console.log('IP fetch failed, using fallback');
+                }
+
+                // Fallback: 브라우저 핑거프린트 기반
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('fingerprint', 2, 2);
+
+                const fingerprint = canvas.toDataURL() +
+                    navigator.userAgent +
+                    navigator.language +
+                    screen.colorDepth +
+                    screen.width + 'x' + screen.height;
+
+                let hash = 0;
+                for (let i = 0; i < fingerprint.length; i++) {
+                    const char = fingerprint.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+
+                const num = Math.abs(hash);
+                const part1 = (num % 223) + 1;
+                const part2 = ((num >> 8) % 256);
+                const part3 = ((num >> 16) % 256);
+
+                return `${part1}.${part2}.${part3}.***`;
+            }
+
+            filterNickname(nickname) {
+                // 부적절한 단어 필터링
+                const blockedWords = [
+                    '섹스', '성관계', '야동', '포르노', '자위',
+                    '성교', '섹', '씹', '개새', '병신',
+                    '미친', 'fuck', 'shit', 'sex', 'porn',
+                    '쓰레기', '바보', '멍청', '죽어', '디져',
+                    'ㅅㅅ', 'ㅈㄹ', 'ㅂㅅ', 'ㅅㅂ'
+                ];
+
+                const lowerNickname = nickname.toLowerCase();
+                for (let word of blockedWords) {
+                    if (lowerNickname.includes(word.toLowerCase())) {
+                        return false;
+                    }
+                }
+
+                // 연속된 특수문자 방지
+                if (/[!@#$%^&*()]{3,}/.test(nickname)) {
+                    return false;
+                }
+
+                // 공백만 있는지 확인
+                if (nickname.trim().length === 0) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            async checkNicknameDuplicate(nickname, difficulty) {
+                return new Promise((resolve) => {
+                    const scoresRef = ref(database, `hanoi/difficulty${difficulty}`);
+                    onValue(scoresRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            const exists = Object.values(data).some(score => score.nickname === nickname);
+                            resolve(exists);
+                        } else {
+                            resolve(false);
+                        }
+                    }, { onlyOnce: true });
+                });
+            }
+
+            async saveScore(nickname, difficulty, moves, time) {
+                try {
+                    const scoresRef = ref(database, `hanoi/difficulty${difficulty}`);
+                    const newScoreRef = push(scoresRef);
+                    const fingerprint = await this.generateFingerprint();
+
+                    await set(newScoreRef, {
+                        nickname: nickname,
+                        moves: moves,
+                        time: time,
+                        fingerprint: fingerprint,
+                        timestamp: Date.now()
+                    });
+
+                    this.showWarning('기록이 저장되었습니다!');
+                } catch (error) {
+                    console.error('Error saving score:', error);
+                    alert('기록 저장에 실패했습니다.');
+                }
+            }
+
+            async deleteScore(difficulty, scoreId) {
+                const password = prompt('관리자 비밀번호를 입력하세요:');
+                if (password !== 'hanoi2024admin') {
+                    alert('비밀번호가 올바르지 않습니다.');
+                    return;
+                }
+
+                if (!confirm('정말로 이 기록을 삭제하시겠습니까?')) {
+                    return;
+                }
+
+                try {
+                    const scoreRef = ref(database, `hanoi/difficulty${difficulty}/${scoreId}`);
+                    await remove(scoreRef);
+                    this.showWarning('기록이 삭제되었습니다!');
+                    this.loadLeaderboard(difficulty);
+                } catch (error) {
+                    console.error('Error deleting score:', error);
+                    alert('기록 삭제에 실패했습니다.');
+                }
+            }
+
+            loadLeaderboard(difficulty) {
+                const content = document.getElementById('leaderboardContent');
+                content.innerHTML = '<p class="loading">리더보드를 불러오는 중...</p>';
+                
+                const scoresRef = ref(database, `hanoi/difficulty${difficulty}`);
+                
+                const timeoutId = setTimeout(() => {
+                    content.innerHTML = '<p class="loading">리더보드를 불러올 수 없습니다. 게임은 정상적으로 진행됩니다.</p>';
+                }, 3000);
+                
+                onValue(scoresRef, (snapshot) => {
+                    clearTimeout(timeoutId);
+                    const data = snapshot.val();
+
+                    if (!data) {
+                        content.innerHTML = '<p class="loading">아직 기록이 없습니다. 첫 번째 도전자가 되어보세요!</p>';
+                        return;
+                    }
+
+                    const scoresWithIds = Object.entries(data).map(([id, score]) => ({ id, ...score }));
+                    const scores = scoresWithIds.sort((a, b) => a.time - b.time).slice(0, 20);
+
+                    let tableHTML = `
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th>순위</th>
+                                    <th>닉네임</th>
+                                    <th>이동 횟수</th>
+                                    <th>시간</th>
+                                    <th>디바이스</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    scores.forEach((score, index) => {
+                        const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                        // 기존 fingerprint가 없으면 닉네임 기반으로 임시 생성
+                        let displayIP = score.fingerprint;
+                        if (!displayIP) {
+                            const hash = score.nickname.split('').reduce((acc, char) => {
+                                return ((acc << 5) - acc) + char.charCodeAt(0);
+                            }, 0);
+                            const num = Math.abs(hash);
+                            const part1 = (num % 223) + 1;
+                            displayIP = `${part1}.***.***.***`;
+                        }
+                        tableHTML += `
+                            <tr class="${rankClass}">
+                                <td>${index + 1}</td>
+                                <td>${score.nickname}</td>
+                                <td>${score.moves}회</td>
+                                <td>${score.time.toFixed(1)}초</td>
+                                <td style="color: #888; font-size: 14px;">${displayIP}</td>
+                                <td><button class="delete-btn" data-id="${score.id}" data-difficulty="${difficulty}">삭제</button></td>
+                            </tr>
+                        `;
+                    });
+
+                    tableHTML += '</tbody></table>';
+                    content.innerHTML = tableHTML;
+
+                    // 삭제 버튼 이벤트 리스너 추가
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const scoreId = e.target.dataset.id;
+                            const diff = e.target.dataset.difficulty;
+                            this.deleteScore(diff, scoreId);
+                        });
+                    });
+                }, { 
+                    onlyOnce: true,
+                    onError: (error) => {
+                        clearTimeout(timeoutId);
+                        console.error('Leaderboard error:', error);
+                        content.innerHTML = '<p class="loading">리더보드를 불러올 수 없습니다.</p>';
+                    }
+                });
+            }
+        }
+
+        // 게임 초기화
+        const game = new HanoiTower();
+    </script>
+</body>
+</html>
