@@ -784,6 +784,17 @@
                 다음 레이어 →
             </button>
         </div>
+
+        <div style="text-align: center; margin: 20px 0; padding: 12px; background: rgba(74, 144, 226, 0.08); border-radius: 10px; border: 1px solid rgba(74, 144, 226, 0.2);">
+            <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                ⌨️ <strong>키보드 단축키:</strong>
+                <kbd style="background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; font-family: monospace; margin: 0 3px;">←</kbd>
+                <kbd style="background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; font-family: monospace; margin: 0 3px;">→</kbd>
+                로 레이어 이동 |
+                <kbd style="background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; font-family: monospace; margin: 0 3px;">ESC</kbd>
+                로 닫기
+            </p>
+        </div>
         
         <div class="progress-bar" id="progressBar"></div>
         
@@ -1543,13 +1554,21 @@
 
             html += '<div style="margin-bottom: 20px;">';
             html += '<h3>🎯 작동 방식</h3>';
-            html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">';
-            html += '<pre style="margin: 0; font-family: monospace; line-height: 1.8;">입력 (2×2):        출력 (1×1):\n';
-            html += '┌─────┬─────┐\n';
-            html += '│ 0.2 │ 0.7 │\n';
-            html += '├─────┼─────┤      →    0.9\n';
-            html += '│ 0.5 │ 0.9 │\n';
-            html += '└─────┴─────┘</pre>';
+            html += '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 30px;">';
+            html += '<div style="text-align: center;">';
+            html += '<div style="font-weight: 600; color: var(--primary); margin-bottom: 10px;">입력 (2×2):</div>';
+            html += '<table style="border-collapse: collapse; margin: 0 auto; font-family: monospace; font-size: 1rem;">';
+            html += '<tr><td style="border: 2px solid #999; padding: 10px; background: rgba(74, 144, 226, 0.1);">0.2</td><td style="border: 2px solid #999; padding: 10px; background: rgba(74, 144, 226, 0.1);">0.7</td></tr>';
+            html += '<tr><td style="border: 2px solid #999; padding: 10px; background: rgba(74, 144, 226, 0.1);">0.5</td><td style="border: 2px solid #999; padding: 10px; background: rgba(74, 144, 226, 0.3); font-weight: bold;">0.9</td></tr>';
+            html += '</table>';
+            html += '</div>';
+            html += '<div style="font-size: 2rem; color: var(--primary);">→</div>';
+            html += '<div style="text-align: center;">';
+            html += '<div style="font-weight: 600; color: var(--primary); margin-bottom: 10px;">출력 (1×1):</div>';
+            html += '<table style="border-collapse: collapse; margin: 0 auto; font-family: monospace; font-size: 1rem;">';
+            html += '<tr><td style="border: 2px solid #999; padding: 10px; background: rgba(39, 174, 96, 0.2); font-weight: bold;">0.9</td></tr>';
+            html += '</table>';
+            html += '</div>';
             html += '</div>';
             html += '</div>';
 
@@ -1746,11 +1765,33 @@
             }
         });
 
-        // Close modal with ESC key
+        // Keyboard navigation: Arrow keys and ESC
         window.addEventListener('keydown', (e) => {
+            // Close modals with ESC
             if (e.key === 'Escape') {
                 closeModal();
                 closeInfoPanel();
+                return;
+            }
+
+            // Prevent navigation if modal is open
+            const modal = document.getElementById('featureMapModal');
+            const infoPanel = document.getElementById('infoPanel');
+            if (modal.classList.contains('active') || infoPanel.classList.contains('active')) {
+                return;
+            }
+
+            // Navigate layers with arrow keys
+            if (e.key === 'ArrowRight' || e.key === 'Right') {
+                e.preventDefault();
+                if (currentLayer < LAYER_NAMES.length - 1 && layerOutputs.length > 0) {
+                    nextLayer();
+                }
+            } else if (e.key === 'ArrowLeft' || e.key === 'Left') {
+                e.preventDefault();
+                if (currentLayer > 0) {
+                    previousLayer();
+                }
             }
         });
 
