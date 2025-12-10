@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Convolution Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 50%, #ADD8E6 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.8em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4A90E2, #7B68EE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            background: rgba(135, 206, 235, 0.15);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(135, 206, 235, 0.3);
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 20px;
+        }
+
+        .control-section {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid rgba(135, 206, 235, 0.4);
+        }
+
+        .control-section h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-section-description {
+            color: #555;
+            font-size: 0.8em;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.75em;
+            color: #2c3e50;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        input[type="number"],
+        input[type="file"],
+        select {
+            padding: 8px;
+            border: 2px solid rgba(135, 206, 235, 0.5);
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 0.9em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #4CAF50;
+            color: white;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .animation-controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .animation-controls button {
+            padding: 8px 16px;
+            font-size: 0.85em;
+        }
+
+        .animation-controls #playBtn {
+            background: #4CAF50;
+        }
+
+        .animation-controls #playBtn:hover:not(:disabled) {
+            background: #45a049;
+        }
+
+        .animation-controls #pauseBtn {
+            background: #FF9800;
+        }
+
+        .animation-controls #pauseBtn:hover:not(:disabled) {
+            background: #F57C00;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+        }
+
+        .animation-controls #resetBtn {
+            background: #f44336;
+        }
+
+        .animation-controls #resetBtn:hover:not(:disabled) {
+            background: #d32f2f;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        /* 커널 시각화 패널 */
+        .kernel-display {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 3px solid #2196F3;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+        }
+
+        .kernel-display h3 {
+            text-align: center;
+            color: #1976D2;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .kernel-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .kernel-cell {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #1976D2;
+            border: 2px solid #2196F3;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .kernel-cell.center {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-color: #388E3C;
+            transform: scale(1.05);
+        }
+
+        /* 메인 이미지 디스플레이 영역 */
+        .main-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .image-section {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            border: 3px solid rgba(135, 206, 235, 0.5);
+        }
+
+        .image-section h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            color: #2c3e50;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 700px;
+            background: #000;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        canvas {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            image-rendering: pixelated;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        /* 픽셀 크기 조절을 위한 스케일링 */
+        .canvas-container canvas {
+            width: 700px;
+            height: 700px;
+            object-fit: contain;
+        }
+
+        /* 커널 오버레이 */
+        .kernel-overlay {
+            position: absolute;
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+
+        .kernel-overlay-border {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(255, 0, 0, 0.9);
+            box-sizing: border-box;
+        }
+
+        .kernel-overlay-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+
+        .kernel-grid-cell {
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            box-sizing: border-box;
+        }
+
+        /* 결과 하이라이트 */
+        .result-highlight {
+            position: absolute;
+            pointer-events: none;
+            border: 2px solid rgba(0, 255, 0, 0.9);
+            display: none;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+
+        .kernel-editor {
+            background: rgba(255, 235, 59, 0.15);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 193, 7, 0.5);
+        }
+
+        .kernel-editor h3 {
+            text-align: center;
+            color: #F57C00;
+            margin-bottom: 20px;
+        }
+
+        .kernel-grid {
+            display: grid;
+            gap: 6px;
+            justify-content: center;
+            margin: 10px 0;
+            grid-template-columns: repeat(3, 64px);
+        }
+
+        .kernel-grid input {
+            width: 64px;
+            height: 64px;
+            text-align: center;
+            font-size: 1em;
+            font-weight: bold;
+            border: 2px solid rgba(255, 193, 7, 0.5);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .feature-maps {
+            background: rgba(156, 39, 176, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border: 2px solid rgba(156, 39, 176, 0.3);
+        }
+
+        .feature-maps h3 {
+            color: #7B1FA2;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .feature-maps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-map-item {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(156, 39, 176, 0.2);
+        }
+
+        .feature-map-item canvas {
+            width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+        }
+
+        .feature-map-item h4 {
+            margin-top: 12px;
+            font-size: 0.95em;
+            color: #7B1FA2;
+        }
+
+        .pooling-section {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 3px solid #FF9800;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .pooling-section h2 {
+            text-align: center;
+            color: #F57C00;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1em;
+            color: #2e7d32;
+            border: 2px solid #4CAF50;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        @media (max-width: 1600px) {
+            .controls {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-display {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .canvas-container canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 CNN Convolution Visualizer</h1>
+
+        <div class="controls">
+            <!-- 1단계: 이미지 업로드 -->
+            <div class="control-section">
+                <h3>📁 1단계: 이미지 업로드</h3>
+                <p class="control-section-description">분석할 이미지를 선택하세요</p>
+                <div class="control-group">
+                    <div class="control-item">
+                        <input type="file" id="imageUpload" accept="image/*" style="font-size: 1.05em;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2단계: 이미지 설정 -->
+            <div class="control-section">
+                <h3>⚙️ 2단계: 이미지 크기 설정</h3>
+                <p class="control-section-description">이미지를 몇 개의 픽셀로 나눌지 설정하세요 (예: 32×32)</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="control-item">
+                        <label for="gridWidth">가로 픽셀 수</label>
+                    </div>
+                    <div class="control-item">
+                        <label for="gridHeight">세로 픽셀 수</label>
+                    </div>
+                    <div class="control-item">
+                        <input type="number" id="gridWidth" value="32" min="8" max="128">
+                    </div>
+                    <div class="control-item">
+                        <input type="number" id="gridHeight" value="32" min="8" max="128">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3단계: 커널 선택 -->
+            <div class="control-section">
+                <h3>🎯 3단계: 필터(커널) 선택</h3>
+                <p class="control-section-description">이미지에 적용할 필터를 선택하세요</p>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="kernelSelect">필터 종류</label>
+                        <select id="kernelSelect" style="font-size: 1.05em;">
+                            <option value="identity">Identity (원본)</option>
+                            <option value="edge_detection">Edge Detection (윤곽선 검출)</option>
+                            <option value="sharpen">Sharpen (선명하게)</option>
+                            <option value="blur">Box Blur (흐리게)</option>
+                            <option value="gaussian">Gaussian Blur (부드럽게 흐리게)</option>
+                            <option value="emboss">Emboss (엠보싱)</option>
+                            <option value="outline">Outline (외곽선)</option>
+                            <option value="sobel_x">Sobel X (가로 엣지)</option>
+                            <option value="sobel_y">Sobel Y (세로 엣지)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4단계: 추가 옵션 -->
+            <div class="control-section">
+                <h3>🔧 4단계: 추가 옵션</h3>
+                <p class="control-section-description">원하는 추가 기능을 선택하세요</p>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label>애니메이션 속도</label>
+                        <select id="animSpeed" style="font-size: 0.9em;">
+                            <option value="1">x1 (느림)</option>
+                            <option value="2" selected>x2 (보통)</option>
+                            <option value="4">x4 (빠름)</option>
+                            <option value="8">x8 (매우 빠름)</option>
+                            <option value="16">x16 (초고속)</option>
+                            <option value="32">x32 (최고속)</option>
+                        </select>
+                    </div>
+                    <div class="control-item checkbox-group">
+                        <input type="checkbox" id="showFeatureMaps">
+                        <label for="showFeatureMaps">다양한 필터</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5단계: 애니메이션 제어 -->
+            <div class="control-section">
+                <h3>▶️ 5단계: 시각화 시작</h3>
+                <p class="control-section-description">필터가 이미지를 어떻게 처리하는지 확인하세요</p>
+                <div class="animation-controls">
+                    <button id="playBtn" disabled>▶ 재생</button>
+                    <button id="pauseBtn" disabled>⏸ 일시정지</button>
+                    <button id="resetBtn" disabled>🔄 리셋</button>
+                </div>
+            </div>
+
+            <!-- 6단계: 현재 커널 편집 -->
+            <div class="control-section" id="kernelEditSection" style="display: none;">
+                <h3>✏️ 현재 커널 편집</h3>
+                <p class="control-section-description">커널 값을 수정하고 적용하세요</p>
+                <div class="kernel-grid" id="kernelGrid" style="margin-top: 10px;"></div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <button id="applyKernelBtn">커널 적용</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel" id="infoPanel">
+            이미지를 업로드하면 자동으로 컨볼루션이 계산됩니다. "재생" 버튼을 클릭하여 시각화를 시작하세요.
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- 메인 이미지 디스플레이 -->
+        <div class="main-display">
+            <div class="image-section">
+                <h2>📷 원본 이미지</h2>
+                <div class="canvas-container" id="originalContainer">
+                    <canvas id="originalCanvas"></canvas>
+                    <div class="kernel-overlay" id="kernelOverlay">
+                        <div class="kernel-overlay-border"></div>
+                        <div class="kernel-overlay-grid" id="kernelGrid3x3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-section">
+                <h2>✨ Convolution 결과</h2>
+                <div class="canvas-container" id="resultContainer">
+                    <canvas id="resultCanvas"></canvas>
+                    <div class="result-highlight" id="resultHighlight"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pooling 결과 -->
+        <div id="poolingResult" class="pooling-section" style="display: none;">
+            <h2>🔽 Pooling 결과 (Max Pool 2x2)</h2>
+            <div class="canvas-container">
+                <canvas id="poolingCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Feature Maps -->
+        <div id="featureMapsContainer" class="feature-maps" style="display: none;">
+            <h3>🎨 Feature Maps (다양한 커널)</h3>
+            <div class="feature-maps-grid" id="featureMapsGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let originalImageData = null;
+        let pixelatedImageData = null;
+        let currentKernel = null;
+        let animationInterval = null;
+        let currentStep = 0;
+        let totalSteps = 0;
+        let isAnimating = false;
+        let precomputedResult = null;
+
+        // 캔버스 요소
+        const originalCanvas = document.getElementById('originalCanvas');
+        const resultCanvas = document.getElementById('resultCanvas');
+        const poolingCanvas = document.getElementById('poolingCanvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const resultCtx = resultCanvas.getContext('2d');
+        const poolingCtx = poolingCanvas.getContext('2d');
+        const kernelOverlay = document.getElementById('kernelOverlay');
+        const kernelGrid3x3 = document.getElementById('kernelGrid3x3');
+        const resultHighlight = document.getElementById('resultHighlight');
+        const originalContainer = document.getElementById('originalContainer');
+        const resultContainer = document.getElementById('resultContainer');
+
+        // 컨트롤 요소
+        const imageUpload = document.getElementById('imageUpload');
+        const gridWidth = document.getElementById('gridWidth');
+        const gridHeight = document.getElementById('gridHeight');
+        const kernelSelect = document.getElementById('kernelSelect');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const infoPanel = document.getElementById('infoPanel');
+        const progressFill = document.getElementById('progressFill');
+        const showFeatureMaps = document.getElementById('showFeatureMaps');
+        const kernelGrid = document.getElementById('kernelGrid');
+        const kernelEditSection = document.getElementById('kernelEditSection');
+
+        // 미리 정의된 커널들
+        const kernels = {
+            identity: [
+                [0, 0, 0],
+                [0, 1, 0],
+                [0, 0, 0]
+            ],
+            edge_detection: [
+                [-1, -1, -1],
+                [-1,  8, -1],
+                [-1, -1, -1]
+            ],
+            sharpen: [
+                [ 0, -1,  0],
+                [-1,  5, -1],
+                [ 0, -1,  0]
+            ],
+            blur: [
+                [1/9, 1/9, 1/9],
+                [1/9, 1/9, 1/9],
+                [1/9, 1/9, 1/9]
+            ],
+            gaussian: [
+                [1/16, 2/16, 1/16],
+                [2/16, 4/16, 2/16],
+                [1/16, 2/16, 1/16]
+            ],
+            emboss: [
+                [-2, -1,  0],
+                [-1,  1,  1],
+                [ 0,  1,  2]
+            ],
+            outline: [
+                [-1, -1, -1],
+                [-1,  8, -1],
+                [-1, -1, -1]
+            ],
+            sobel_x: [
+                [-1, 0, 1],
+                [-2, 0, 2],
+                [-1, 0, 1]
+            ],
+            sobel_y: [
+                [-1, -2, -1],
+                [ 0,  0,  0],
+                [ 1,  2,  1]
+            ]
+        };
+
+        // 커널 시각화 및 편집 가능하게 표시
+        function displayKernel(kernel) {
+            kernelGrid.innerHTML = '';
+
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = '0.1';
+                    input.value = kernel[i][j].toFixed(1);
+                    input.className = 'kernel-input';
+                    kernelGrid.appendChild(input);
+                }
+            }
+
+            kernelEditSection.style.display = 'block';
+        }
+
+        // 3x3 격자 생성
+        function createKernelOverlayGrid() {
+            kernelGrid3x3.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'kernel-grid-cell';
+                kernelGrid3x3.appendChild(cell);
+            }
+        }
+
+        // 커널 오버레이 위치 업데이트
+        function updateKernelOverlay(x, y) {
+            const canvasRect = originalCanvas.getBoundingClientRect();
+            const containerRect = originalContainer.getBoundingClientRect();
+
+            const canvasWidth = originalCanvas.width;
+            const canvasHeight = originalCanvas.height;
+
+            // 캔버스의 실제 표시 크기
+            const displayWidth = canvasRect.width;
+            const displayHeight = canvasRect.height;
+
+            // 픽셀 하나의 크기
+            const pixelWidth = displayWidth / canvasWidth;
+            const pixelHeight = displayHeight / canvasHeight;
+
+            // 3x3 커널 크기
+            const kernelDisplayWidth = pixelWidth * 3;
+            const kernelDisplayHeight = pixelHeight * 3;
+
+            // 캔버스의 왼쪽 상단 위치 (컨테이너 기준)
+            const canvasLeft = (containerRect.width - displayWidth) / 2;
+            const canvasTop = (containerRect.height - displayHeight) / 2;
+
+            // 커널 오버레이 위치 (중앙 기준으로 -1 픽셀부터 시작)
+            const left = canvasLeft + (x - 1) * pixelWidth;
+            const top = canvasTop + (y - 1) * pixelHeight;
+
+            kernelOverlay.style.left = left + 'px';
+            kernelOverlay.style.top = top + 'px';
+            kernelOverlay.style.width = kernelDisplayWidth + 'px';
+            kernelOverlay.style.height = kernelDisplayHeight + 'px';
+            kernelOverlay.style.display = 'block';
+        }
+
+        // 결과 하이라이트 위치 업데이트
+        function updateResultHighlight(x, y) {
+            const canvasRect = resultCanvas.getBoundingClientRect();
+            const containerRect = resultContainer.getBoundingClientRect();
+
+            const canvasWidth = resultCanvas.width;
+            const canvasHeight = resultCanvas.height;
+
+            // 캔버스의 실제 표시 크기
+            const displayWidth = canvasRect.width;
+            const displayHeight = canvasRect.height;
+
+            // 픽셀 하나의 크기
+            const pixelWidth = displayWidth / canvasWidth;
+            const pixelHeight = displayHeight / canvasHeight;
+
+            // 캔버스의 왼쪽 상단 위치 (컨테이너 기준)
+            const canvasLeft = (containerRect.width - displayWidth) / 2;
+            const canvasTop = (containerRect.height - displayHeight) / 2;
+
+            // 결과 하이라이트 위치 (단일 픽셀)
+            const left = canvasLeft + x * pixelWidth;
+            const top = canvasTop + y * pixelHeight;
+
+            resultHighlight.style.left = left + 'px';
+            resultHighlight.style.top = top + 'px';
+            resultHighlight.style.width = pixelWidth + 'px';
+            resultHighlight.style.height = pixelHeight + 'px';
+            resultHighlight.style.display = 'block';
+        }
+
+        // 현재 커널 가져오기 (편집된 값 포함)
+        function getCurrentKernel() {
+            const inputs = kernelGrid.querySelectorAll('.kernel-input');
+            const kernel = [];
+            for (let i = 0; i < 3; i++) {
+                kernel[i] = [];
+                for (let j = 0; j < 3; j++) {
+                    kernel[i][j] = parseFloat(inputs[i * 3 + j].value) || 0;
+                }
+            }
+            return kernel;
+        }
+
+        // 이미지 업로드 처리
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    processImage(img);
+                    updateInfo('이미지가 로드되었습니다. 자동으로 설정을 적용합니다...');
+                    // 자동 적용
+                    applySettings();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 이미지 처리 및 픽셀화
+        function processImage(img) {
+            const width = parseInt(gridWidth.value);
+            const height = parseInt(gridHeight.value);
+
+            // 원본 캔버스 설정
+            originalCanvas.width = width;
+            originalCanvas.height = height;
+
+            // 이미지를 캔버스에 그리기 (자동 리샘플링으로 픽셀화)
+            originalCtx.drawImage(img, 0, 0, width, height);
+
+            // 픽셀 데이터 저장
+            originalImageData = originalCtx.getImageData(0, 0, width, height);
+            pixelatedImageData = new ImageData(
+                new Uint8ClampedArray(originalImageData.data),
+                width,
+                height
+            );
+        }
+
+        // 컨볼루션 연산
+        function applyConvolution(imageData, kernel, x, y) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+
+            let r = 0, g = 0, b = 0;
+
+            // 3x3 커널 적용
+            for (let ky = -1; ky <= 1; ky++) {
+                for (let kx = -1; kx <= 1; kx++) {
+                    const pixelX = x + kx;
+                    const pixelY = y + ky;
+
+                    // 경계 처리 (패딩)
+                    if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < height) {
+                        const idx = (pixelY * width + pixelX) * 4;
+                        const kernelValue = kernel[ky + 1][kx + 1];
+
+                        r += data[idx] * kernelValue;
+                        g += data[idx + 1] * kernelValue;
+                        b += data[idx + 2] * kernelValue;
+                    }
+                }
+            }
+
+            // 값 클램핑
+            return {
+                r: Math.max(0, Math.min(255, r)),
+                g: Math.max(0, Math.min(255, g)),
+                b: Math.max(0, Math.min(255, b))
+            };
+        }
+
+        // 전체 이미지에 컨볼루션 적용 (사전 계산)
+        function precomputeConvolution(imageData, kernel) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const result = new ImageData(width, height);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const color = applyConvolution(imageData, kernel, x, y);
+                    const idx = (y * width + x) * 4;
+
+                    result.data[idx] = color.r;
+                    result.data[idx + 1] = color.g;
+                    result.data[idx + 2] = color.b;
+                    result.data[idx + 3] = 255;
+                }
+            }
+
+            return result;
+        }
+
+        // Max Pooling 적용
+        function applyMaxPooling(imageData) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const newWidth = Math.floor(width / 2);
+            const newHeight = Math.floor(height / 2);
+            const result = new ImageData(newWidth, newHeight);
+
+            for (let y = 0; y < newHeight; y++) {
+                for (let x = 0; x < newWidth; x++) {
+                    let maxR = 0, maxG = 0, maxB = 0;
+
+                    // 2x2 영역에서 최대값 찾기
+                    for (let dy = 0; dy < 2; dy++) {
+                        for (let dx = 0; dx < 2; dx++) {
+                            const srcX = x * 2 + dx;
+                            const srcY = y * 2 + dy;
+                            if (srcX < width && srcY < height) {
+                                const idx = (srcY * width + srcX) * 4;
+                                maxR = Math.max(maxR, imageData.data[idx]);
+                                maxG = Math.max(maxG, imageData.data[idx + 1]);
+                                maxB = Math.max(maxB, imageData.data[idx + 2]);
+                            }
+                        }
+                    }
+
+                    const idx = (y * newWidth + x) * 4;
+                    result.data[idx] = maxR;
+                    result.data[idx + 1] = maxG;
+                    result.data[idx + 2] = maxB;
+                    result.data[idx + 3] = 255;
+                }
+            }
+
+            return result;
+        }
+
+        // 애니메이션으로 컨볼루션 적용 (최적화 버전)
+        function animateConvolution() {
+            if (!pixelatedImageData || !currentKernel || !precomputedResult) return;
+
+            const width = pixelatedImageData.width;
+            const height = pixelatedImageData.height;
+
+            // 부분 결과를 표시할 ImageData (기존 결과 유지 또는 새로 생성)
+            let partialResult;
+            if (currentStep > 0) {
+                // 일시정지 후 재개: 현재 캔버스 상태 유지
+                partialResult = resultCtx.getImageData(0, 0, width, height);
+            } else {
+                // 처음 시작: 캔버스 크기 설정 및 초기화
+                resultCanvas.width = width;
+                resultCanvas.height = height;
+                partialResult = new ImageData(width, height);
+                // 검은 배경으로 초기화
+                for (let i = 0; i < partialResult.data.length; i += 4) {
+                    partialResult.data[i + 3] = 255;
+                }
+            }
+
+            totalSteps = width * height;
+
+            const animSpeedMultiplier = parseInt(document.getElementById('animSpeed').value);
+
+            // 기본 애니메이션 속도 (ms)
+            const baseSpeed = 30;
+
+            // 배치 크기 (속도 배율에 따라 한 번에 처리할 픽셀 수)
+            const batchSize = animSpeedMultiplier;
+
+            animationInterval = setInterval(() => {
+                if (currentStep >= totalSteps) {
+                    stopAnimation();
+                    kernelOverlay.style.display = 'none';
+                    resultHighlight.style.display = 'none';
+                    updateInfo('✅ 컨볼루션이 완료되었습니다!');
+                    return;
+                }
+
+                // 배치 처리
+                const endStep = Math.min(currentStep + batchSize, totalSteps);
+
+                for (let step = currentStep; step < endStep; step++) {
+                    const x = step % width;
+                    const y = Math.floor(step / width);
+                    const idx = (y * width + x) * 4;
+
+                    // 사전 계산된 결과에서 복사
+                    partialResult.data[idx] = precomputedResult.data[idx];
+                    partialResult.data[idx + 1] = precomputedResult.data[idx + 1];
+                    partialResult.data[idx + 2] = precomputedResult.data[idx + 2];
+                    partialResult.data[idx + 3] = 255;
+                }
+
+                // 현재 처리 중인 픽셀 위치에 커널 오버레이 표시
+                const currentX = (endStep - 1) % width;
+                const currentY = Math.floor((endStep - 1) / width);
+                updateKernelOverlay(currentX, currentY);
+                updateResultHighlight(currentX, currentY);
+
+                resultCtx.putImageData(partialResult, 0, 0);
+
+                currentStep = endStep;
+                updateProgress((currentStep / totalSteps) * 100);
+                updateInfo(`⚙️ 처리 중: ${currentStep} / ${totalSteps} 픽셀 (위치: ${currentX}, ${currentY})`);
+            }, baseSpeed);
+
+            isAnimating = true;
+            playBtn.disabled = true;
+            pauseBtn.disabled = false;
+        }
+
+        // Pooling 결과 표시
+        function showPoolingResult(convolutedImage) {
+            const pooled = applyMaxPooling(convolutedImage);
+            poolingCanvas.width = pooled.width;
+            poolingCanvas.height = pooled.height;
+            poolingCtx.putImageData(pooled, 0, 0);
+            document.getElementById('poolingResult').style.display = 'block';
+        }
+
+        // Feature Maps 생성
+        function generateFeatureMaps() {
+            if (!pixelatedImageData) return;
+
+            const featureMapsGrid = document.getElementById('featureMapsGrid');
+            featureMapsGrid.innerHTML = '';
+
+            const featureKernels = ['edge_detection', 'sharpen', 'blur', 'gaussian', 'emboss', 'sobel_x', 'sobel_y', 'outline'];
+
+            featureKernels.forEach(kernelName => {
+                const kernel = kernels[kernelName];
+                const result = precomputeConvolution(pixelatedImageData, kernel);
+
+                const item = document.createElement('div');
+                item.className = 'feature-map-item';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = result.width;
+                canvas.height = result.height;
+                const ctx = canvas.getContext('2d');
+                ctx.putImageData(result, 0, 0);
+
+                const title = document.createElement('h4');
+                title.textContent = kernelName.replace(/_/g, ' ').toUpperCase();
+
+                item.appendChild(canvas);
+                item.appendChild(title);
+                featureMapsGrid.appendChild(item);
+            });
+        }
+
+        // 애니메이션 정지
+        function stopAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            isAnimating = false;
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+
+        // 진행률 업데이트
+        function updateProgress(percent) {
+            progressFill.style.width = percent + '%';
+        }
+
+        // 정보 패널 업데이트
+        function updateInfo(text) {
+            infoPanel.textContent = text;
+        }
+
+        // 자동 적용 함수
+        function applySettings() {
+            if (!pixelatedImageData) {
+                return;
+            }
+
+            // 커널 선택
+            const selectedKernel = kernelSelect.value;
+            currentKernel = kernels[selectedKernel];
+
+            // 커널 시각화 (편집 가능)
+            displayKernel(currentKernel);
+
+            // 결과 사전 계산 (속도 향상)
+            updateInfo('🔄 컨볼루션 결과를 계산 중...');
+            setTimeout(() => {
+                precomputedResult = precomputeConvolution(pixelatedImageData, currentKernel);
+
+                stopAnimation();
+                currentStep = 0;
+                updateProgress(0);
+                kernelOverlay.style.display = 'none';
+                resultHighlight.style.display = 'none';
+
+                // Feature Maps 표시
+                if (showFeatureMaps.checked) {
+                    generateFeatureMaps();
+                    document.getElementById('featureMapsContainer').style.display = 'block';
+                } else {
+                    document.getElementById('featureMapsContainer').style.display = 'none';
+                }
+
+                updateInfo('✅ 설정이 적용되었습니다. "재생" 버튼을 클릭하여 애니메이션을 시작하세요.');
+                playBtn.disabled = false;
+                resetBtn.disabled = false;
+            }, 100);
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (!isAnimating) {
+                animateConvolution();
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            stopAnimation();
+            updateInfo('⏸ 애니메이션이 일시정지되었습니다.');
+        });
+
+        resetBtn.addEventListener('click', () => {
+            stopAnimation();
+            currentStep = 0;
+            updateProgress(0);
+            resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+            kernelOverlay.style.display = 'none';
+            resultHighlight.style.display = 'none';
+            updateInfo('🔄 리셋되었습니다. "재생" 버튼을 클릭하여 다시 시작하세요.');
+        });
+
+        // 커널 선택 시 자동 적용
+        kernelSelect.addEventListener('change', () => {
+            applySettings();
+        });
+
+        // 픽셀 크기 변경 시 자동 재처리
+        gridWidth.addEventListener('change', () => {
+            if (originalImageData && imageUpload.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        processImage(img);
+                        applySettings();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(imageUpload.files[0]);
+            }
+        });
+
+        gridHeight.addEventListener('change', () => {
+            if (originalImageData && imageUpload.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        processImage(img);
+                        applySettings();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(imageUpload.files[0]);
+            }
+        });
+
+        // 수정된 커널 적용
+        document.getElementById('applyKernelBtn').addEventListener('click', () => {
+            if (!pixelatedImageData) {
+                return;
+            }
+
+            // 현재 편집된 커널 가져오기
+            currentKernel = getCurrentKernel();
+
+            // 결과 사전 계산
+            updateInfo('🔄 수정된 커널로 컨볼루션 결과를 계산 중...');
+            setTimeout(() => {
+                precomputedResult = precomputeConvolution(pixelatedImageData, currentKernel);
+
+                stopAnimation();
+                currentStep = 0;
+                updateProgress(0);
+                kernelOverlay.style.display = 'none';
+                resultHighlight.style.display = 'none';
+
+                // Feature Maps 표시
+                if (showFeatureMaps.checked) {
+                    generateFeatureMaps();
+                    document.getElementById('featureMapsContainer').style.display = 'block';
+                } else {
+                    document.getElementById('featureMapsContainer').style.display = 'none';
+                }
+
+                updateInfo('✅ 수정된 커널이 적용되었습니다. "재생" 버튼을 클릭하여 애니메이션을 시작하세요.');
+                playBtn.disabled = false;
+                resetBtn.disabled = false;
+            }, 100);
+        });
+
+        // Feature Maps 체크박스 변경 시
+        showFeatureMaps.addEventListener('change', () => {
+            if (pixelatedImageData && precomputedResult) {
+                if (showFeatureMaps.checked) {
+                    generateFeatureMaps();
+                    document.getElementById('featureMapsContainer').style.display = 'block';
+                } else {
+                    document.getElementById('featureMapsContainer').style.display = 'none';
+                }
+            }
+        });
+
+        // 초기화
+        createKernelOverlayGrid();
+        updateInfo('이미지를 업로드하면 자동으로 컨볼루션이 계산됩니다. "재생" 버튼을 클릭하여 시각화를 시작하세요.');
+    </script>
+</body>
+</html>
