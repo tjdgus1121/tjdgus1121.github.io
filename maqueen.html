@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제스처 인식 로봇 제어</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        /* Video Section */
+        #webcam-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #webcam {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        /* Model Upload Section */
+        .model-upload {
+            margin-bottom: 20px;
+        }
+
+        .model-upload input {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .model-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .model-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .model-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Prediction Display */
+        .predictions {
+            margin-top: 20px;
+        }
+
+        .prediction-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .prediction-item.active {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .prediction-label {
+            font-weight: bold;
+            width: 100px;
+            font-size: 1.1em;
+        }
+
+        .prediction-bar-container {
+            flex: 1;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+
+        .prediction-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+            border-radius: 12px;
+        }
+
+        .prediction-value {
+            font-weight: bold;
+            width: 50px;
+            text-align: right;
+        }
+
+        /* Bluetooth Section */
+        .bluetooth-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f, #a8e063);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349, #f45c43);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Connection Status */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-indicator.disconnected .status-dot {
+            background: #dc3545;
+        }
+
+        .status-indicator.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-indicator.connected .status-dot {
+            background: #28a745;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Settings */
+        .settings {
+            margin-top: 20px;
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .setting-item input[type="range"] {
+            width: 100%;
+        }
+
+        .setting-value {
+            display: inline-block;
+            margin-left: 10px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        /* Command History */
+        .command-history {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .command-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .command-item .timestamp {
+            color: #999;
+            font-size: 0.8em;
+        }
+
+        /* Emergency Stop */
+        .emergency-stop {
+            margin-top: 20px;
+        }
+
+        .btn-emergency {
+            width: 100%;
+            padding: 30px;
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #eb3349, #f45c43);
+            color: white;
+            border: 5px solid #c62828;
+            animation: emergency-pulse 1.5s infinite;
+        }
+
+        @keyframes emergency-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(235, 51, 73, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(235, 51, 73, 0.8); }
+        }
+
+        /* Info Panel */
+        .info-panel {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-item .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-item .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI 제스처 인식 로봇 제어</h1>
+
+        <div class="main-grid">
+            <!-- Left Column: Video & Predictions -->
+            <div class="card">
+                <h2>📹 실시간 제스처 인식</h2>
+                
+                <div class="model-upload">
+                    <label for="modelUrl" style="display: block; margin-bottom: 10px; font-weight: bold;">
+                        Teachable Machine 모델 URL:
+                    </label>
+                    <input type="text" id="modelUrl" placeholder="https://teachablemachine.withgoogle.com/models/...">
+                    <div id="modelStatus" class="model-status" style="display: none;"></div>
+                </div>
+
+                <button id="startBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">
+                    웹캠 시작 & 모델 로드
+                </button>
+
+                <div id="webcam-container">
+                    <canvas id="webcam"></canvas>
+                    <div class="video-overlay">
+                        <span id="currentCommand">대기 중...</span>
+                    </div>
+                </div>
+
+                <div class="predictions" id="predictions">
+                    <!-- Predictions will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Right Column: Bluetooth Controls -->
+            <div class="card">
+                <h2>🔵 Bluetooth 제어</h2>
+
+                <div class="status-indicator disconnected" id="connectionStatus">
+                    <div class="status-dot"></div>
+                    <span>연결 안됨</span>
+                </div>
+
+                <div class="bluetooth-controls">
+                    <button id="connectBtn" class="btn btn-primary">
+                        🔗 마이크로비트 연결
+                    </button>
+                    <button id="disconnectBtn" class="btn btn-danger" disabled>
+                        ❌ 연결 해제
+                    </button>
+                    <button id="toggleSendBtn" class="btn btn-success" disabled>
+                        ▶️ 자동 전송 시작
+                    </button>
+                </div>
+
+                <div class="settings">
+                    <h3 style="margin-bottom: 15px; color: #555;">⚙️ 설정</h3>
+                    <div class="setting-item">
+                        <label>신뢰도 임계값: <span class="setting-value" id="thresholdValue">70%</span></label>
+                        <input type="range" id="thresholdSlider" min="50" max="95" value="70" step="5">
+                    </div>
+                    <div class="setting-item">
+                        <label>전송 간격: <span class="setting-value" id="intervalValue">500ms</span></label>
+                        <input type="range" id="intervalSlider" min="100" max="2000" value="500" step="100">
+                    </div>
+                </div>
+
+                <div class="emergency-stop">
+                    <button id="emergencyBtn" class="btn btn-emergency" disabled>
+                        🛑 긴급 정지
+                    </button>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 10px; color: #555;">📝 명령 히스토리</h3>
+                    <div class="command-history" id="commandHistory">
+                        <div style="text-align: center; color: #999;">명령이 아직 없습니다.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Info Panel -->
+            <div class="card info-panel">
+                <h2>📊 시스템 정보</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="label">총 전송 횟수</div>
+                        <div class="value" id="totalCommands">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">현재 명령</div>
+                        <div class="value" id="currentCommandInfo">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">신뢰도</div>
+                        <div class="value" id="confidenceInfo">0%</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">연결 상태</div>
+                        <div class="value" id="connectionInfo">미연결</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script>
+        // Global variables
+        let model, webcam, maxPredictions;
+        let isModelLoaded = false;
+        let bluetoothDevice = null;
+        let txCharacteristic = null;
+        let isAutoSending = false;
+        let lastCommand = null;
+        let sendInterval = null;
+        let totalCommandCount = 0;
+
+        // Command mapping - 숫자로 전송 (마이크로비트 코드와 매칭)
+        const commandMap = {
+            'Go': '1',      // Forward
+            'Right': '2',
+            'Left': '3',
+            'Back': '4',    // Back (추가)
+            'Stop': '0'     // Stop
+        };
+
+        // Settings
+        let confidenceThreshold = 0.7;
+        let sendIntervalMs = 500;
+
+        // DOM elements
+        const startBtn = document.getElementById('startBtn');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const toggleSendBtn = document.getElementById('toggleSendBtn');
+        const emergencyBtn = document.getElementById('emergencyBtn');
+        const modelUrlInput = document.getElementById('modelUrl');
+        const modelStatus = document.getElementById('modelStatus');
+        const predictionsDiv = document.getElementById('predictions');
+        const commandHistoryDiv = document.getElementById('commandHistory');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        const intervalSlider = document.getElementById('intervalSlider');
+        const thresholdValue = document.getElementById('thresholdValue');
+        const intervalValue = document.getElementById('intervalValue');
+
+        // Initialize
+        async function init() {
+            const modelURL = modelUrlInput.value.trim();
+            
+            if (!modelURL) {
+                showModelStatus('모델 URL을 입력해주세요.', 'error');
+                return;
+            }
+
+            startBtn.disabled = true;
+            startBtn.textContent = '로딩 중...';
+
+            try {
+                // Load the model
+                const modelPath = modelURL.endsWith('/') ? modelURL : modelURL + '/';
+                const modelJsonURL = modelPath + 'model.json';
+                const metadataURL = modelPath + 'metadata.json';
+
+                model = await tmImage.load(modelJsonURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                // Setup webcam
+                const flip = true;
+                webcam = new tmImage.Webcam(500, 400, flip);
+                await webcam.setup();
+                await webcam.play();
+                window.requestAnimationFrame(loop);
+
+                document.getElementById('webcam').appendChild(webcam.canvas);
+                
+                isModelLoaded = true;
+                showModelStatus('모델 로드 성공! 🎉', 'success');
+                startBtn.textContent = '실행 중';
+                
+                // Initialize predictions display
+                initPredictionsDisplay();
+                
+            } catch (error) {
+                console.error('Error loading model:', error);
+                showModelStatus('모델 로드 실패: ' + error.message, 'error');
+                startBtn.disabled = false;
+                startBtn.textContent = '웹캠 시작 & 모델 로드';
+            }
+        }
+
+        function showModelStatus(message, type) {
+            modelStatus.textContent = message;
+            modelStatus.className = 'model-status ' + type;
+            modelStatus.style.display = 'block';
+        }
+
+        function initPredictionsDisplay() {
+            predictionsDiv.innerHTML = '';
+            for (let i = 0; i < maxPredictions; i++) {
+                const className = model.getClassLabels()[i];
+                const div = document.createElement('div');
+                div.className = 'prediction-item';
+                div.innerHTML = `
+                    <div class="prediction-label">${className}</div>
+                    <div class="prediction-bar-container">
+                        <div class="prediction-bar" id="bar-${i}" style="width: 0%"></div>
+                    </div>
+                    <div class="prediction-value" id="value-${i}">0%</div>
+                `;
+                predictionsDiv.appendChild(div);
+            }
+        }
+
+        async function loop() {
+            webcam.update();
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            if (!isModelLoaded) return;
+
+            const prediction = await model.predict(webcam.canvas);
+            let maxProb = 0;
+            let maxClass = null;
+
+            for (let i = 0; i < maxPredictions; i++) {
+                const className = prediction[i].className;
+                const probability = prediction[i].probability;
+                
+                // Update UI
+                const bar = document.getElementById(`bar-${i}`);
+                const value = document.getElementById(`value-${i}`);
+                const item = bar.closest('.prediction-item');
+                
+                bar.style.width = (probability * 100) + '%';
+                value.textContent = (probability * 100).toFixed(0) + '%';
+                
+                if (probability > maxProb) {
+                    maxProb = probability;
+                    maxClass = className;
+                }
+                
+                // Highlight active prediction
+                if (probability > confidenceThreshold && probability === maxProb) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            }
+
+            // Update current command display
+            if (maxProb > confidenceThreshold) {
+                document.getElementById('currentCommand').textContent = maxClass;
+                document.getElementById('currentCommandInfo').textContent = maxClass;
+                document.getElementById('confidenceInfo').textContent = (maxProb * 100).toFixed(0) + '%';
+                
+                // Auto send if enabled
+                if (isAutoSending && bluetoothDevice && bluetoothDevice.gatt.connected) {
+                    const command = commandMap[maxClass] || maxClass.charAt(0);
+                    if (command !== lastCommand) {
+                        await sendCommand(command);
+                        lastCommand = command;
+                    }
+                }
+            } else {
+                document.getElementById('currentCommand').textContent = '감지 안됨';
+            }
+        }
+
+        // Bluetooth functions
+        async function connectBluetooth() {
+            try {
+                connectBtn.disabled = true;
+                connectBtn.textContent = '연결 중...';
+
+                // Request Bluetooth device
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'BBC micro:bit' }],
+                    optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'] // UART service
+                });
+
+                // Connect to GATT server
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+                txCharacteristic = await service.getCharacteristic('6e400002-b5a3-f393-e0a9-e50e24dcca9e');
+
+                // Update UI
+                connectionStatus.className = 'status-indicator connected';
+                connectionStatus.querySelector('span').textContent = '연결됨: ' + bluetoothDevice.name;
+                document.getElementById('connectionInfo').textContent = '연결됨';
+                
+                connectBtn.style.display = 'none';
+                disconnectBtn.disabled = false;
+                toggleSendBtn.disabled = false;
+                emergencyBtn.disabled = false;
+
+                addCommandToHistory('✅ Bluetooth 연결 성공');
+
+                // Handle disconnection
+                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+            } catch (error) {
+                console.error('Bluetooth connection error:', error);
+                alert('연결 실패: ' + error.message);
+                connectBtn.disabled = false;
+                connectBtn.textContent = '🔗 마이크로비트 연결';
+            }
+        }
+
+        function disconnectBluetooth() {
+            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                bluetoothDevice.gatt.disconnect();
+            }
+        }
+
+        function onDisconnected() {
+            connectionStatus.className = 'status-indicator disconnected';
+            connectionStatus.querySelector('span').textContent = '연결 안됨';
+            document.getElementById('connectionInfo').textContent = '미연결';
+            
+            connectBtn.style.display = 'block';
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            toggleSendBtn.disabled = true;
+            emergencyBtn.disabled = true;
+            
+            if (isAutoSending) {
+                toggleAutoSend();
+            }
+            
+            addCommandToHistory('❌ Bluetooth 연결 해제됨');
+        }
+
+        async function sendCommand(command) {
+            if (!txCharacteristic) return;
+
+            try {
+                const encoder = new TextEncoder();
+                await txCharacteristic.writeValue(encoder.encode(command));
+                
+                totalCommandCount++;
+                document.getElementById('totalCommands').textContent = totalCommandCount;
+                
+                addCommandToHistory(`📤 전송: ${command} (${getCommandName(command)})`);
+                
+            } catch (error) {
+                console.error('Send error:', error);
+                addCommandToHistory(`⚠️ 전송 실패: ${error.message}`);
+            }
+        }
+
+        function getCommandName(command) {
+            const reverseMap = Object.entries(commandMap).find(([k, v]) => v === command);
+            return reverseMap ? reverseMap[0] : command;
+        }
+
+        function toggleAutoSend() {
+            isAutoSending = !isAutoSending;
+            
+            if (isAutoSending) {
+                toggleSendBtn.textContent = '⏸️ 자동 전송 중지';
+                toggleSendBtn.className = 'btn btn-danger';
+                addCommandToHistory('▶️ 자동 전송 시작');
+            } else {
+                toggleSendBtn.textContent = '▶️ 자동 전송 시작';
+                toggleSendBtn.className = 'btn btn-success';
+                lastCommand = null;
+                addCommandToHistory('⏸️ 자동 전송 중지');
+            }
+        }
+
+        async function emergencyStop() {
+            await sendCommand('S');
+            if (isAutoSending) {
+                toggleAutoSend();
+            }
+            addCommandToHistory('🛑 긴급 정지 실행!');
+        }
+
+        function addCommandToHistory(message) {
+            const item = document.createElement('div');
+            item.className = 'command-item';
+            const timestamp = new Date().toLocaleTimeString('ko-KR');
+            item.innerHTML = `${message} <span class="timestamp">${timestamp}</span>`;
+            
+            if (commandHistoryDiv.querySelector('div[style*="text-align: center"]')) {
+                commandHistoryDiv.innerHTML = '';
+            }
+            
+            commandHistoryDiv.insertBefore(item, commandHistoryDiv.firstChild);
+            
+            // Keep only last 20 items
+            while (commandHistoryDiv.children.length > 20) {
+                commandHistoryDiv.removeChild(commandHistoryDiv.lastChild);
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', init);
+        connectBtn.addEventListener('click', connectBluetooth);
+        disconnectBtn.addEventListener('click', disconnectBluetooth);
+        toggleSendBtn.addEventListener('click', toggleAutoSend);
+        emergencyBtn.addEventListener('click', emergencyStop);
+
+        thresholdSlider.addEventListener('input', (e) => {
+            confidenceThreshold = e.target.value / 100;
+            thresholdValue.textContent = e.target.value + '%';
+        });
+
+        intervalSlider.addEventListener('input', (e) => {
+            sendIntervalMs = parseInt(e.target.value);
+            intervalValue.textContent = e.target.value + 'ms';
+        });
+
+        // Check browser support
+        if (!navigator.bluetooth) {
+            alert('이 브라우저는 Web Bluetooth를 지원하지 않습니다. Chrome 브라우저를 사용해주세요.');
+        }
+
+        // Add some helpful instructions on load
+        setTimeout(() => {
+            addCommandToHistory('ℹ️ Teachable Machine 모델 URL을 입력하고 시작하세요');
+        }, 500);
+    </script>
+</body>
+</html>
