@@ -538,9 +538,20 @@
                 webcam = new tmImage.Webcam(500, 400, flip);
                 await webcam.setup();
                 await webcam.play();
+                
+                // Replace canvas element with webcam canvas
+                const container = document.getElementById('webcam-container');
+                const oldCanvas = document.getElementById('webcam');
+                container.replaceChild(webcam.canvas, oldCanvas);
+                webcam.canvas.id = 'webcam';
+                
+                // Add overlay back (it was removed with old canvas)
+                const overlay = document.createElement('div');
+                overlay.className = 'video-overlay';
+                overlay.innerHTML = '<span id="currentCommand">대기 중...</span>';
+                container.appendChild(overlay);
+                
                 window.requestAnimationFrame(loop);
-
-                document.getElementById('webcam').appendChild(webcam.canvas);
                 
                 isModelLoaded = true;
                 showModelStatus('모델 로드 성공! 🎉', 'success');
@@ -740,7 +751,7 @@
         }
 
         async function emergencyStop() {
-            await sendCommand('S');
+            await sendCommand('0');
             if (isAutoSending) {
                 toggleAutoSend();
             }
