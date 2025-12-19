@@ -503,6 +503,89 @@
             flex: 1;
         }
         
+        /* 모달 팝업 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s;
+            border: 3px solid #d1fae5;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-icon {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .modal-message {
+            font-size: 16px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        
+        .modal-button {
+            width: 100%;
+            margin: 0;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .modal-button:hover {
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+        
         .step1-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -704,9 +787,74 @@
         </div>
     </div>
     
+    <!-- 블루투스 미지원 모달 -->
+    <div id="bluetoothModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon">❌</div>
+            <div id="modalTitle" class="modal-title">블루투스를 지원하지 않습니다</div>
+            <div id="modalMessage" class="modal-message">
+                이 브라우저 또는 기기는 Web Bluetooth API를 지원하지 않습니다.<br><br>
+                <strong>해결 방법:</strong><br>
+                • Chrome, Edge, Opera 브라우저를 사용하세요<br>
+                • 스마트폰이나 블루투스 지원 PC를 사용하세요<br>
+                • HTTPS 연결을 사용하세요
+            </div>
+            <button class="modal-button" onclick="closeBluetoothModal()">확인</button>
+        </div>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
     <script>
+        // 블루투스 지원 확인 (API + 하드웨어)
+        async function checkBluetoothSupport() {
+            // 1. Web Bluetooth API 지원 확인
+            if (!navigator.bluetooth) {
+                showBluetoothError('브라우저 미지원', 
+                    '이 브라우저는 Web Bluetooth API를 지원하지 않습니다.<br><br>' +
+                    '<strong>해결 방법:</strong><br>' +
+                    '• Chrome, Edge, Opera 브라우저를 사용하세요<br>' +
+                    '• 안드로이드 모바일에서 접속하세요<br>' +
+                    '• HTTPS 연결을 사용하세요 (필수)');
+                return false;
+            }
+            
+            // 2. 블루투스 하드웨어 가용성 확인
+            try {
+                const available = await navigator.bluetooth.getAvailability();
+                if (!available) {
+                    showBluetoothError('블루투스 하드웨어 없음',
+                        '이 기기에 블루투스 하드웨어가 없거나 비활성화되어 있습니다.<br><br>' +
+                        '<strong>해결 방법:</strong><br>' +
+                        '• PC 설정에서 블루투스를 켜세요<br>' +
+                        '• 블루투스 동글을 연결하세요<br>' +
+                        '• 블루투스가 있는 기기를 사용하세요<br>' +
+                        '• 스마트폰에서 접속해보세요');
+                    return false;
+                }
+            } catch (error) {
+                console.log('블루투스 가용성 확인 실패:', error);
+                // 가용성 확인 실패는 무시하고 진행 (일부 브라우저에서 지원 안 함)
+            }
+            
+            return true;
+        }
+        
+        function showBluetoothError(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').innerHTML = message;
+            document.getElementById('bluetoothModal').classList.add('show');
+        }
+        
+        function closeBluetoothModal() {
+            document.getElementById('bluetoothModal').classList.remove('show');
+        }
+        
+        // 페이지 로드 시 블루투스 지원 확인
+        window.addEventListener('load', async () => {
+            await checkBluetoothSupport();
+        });
+        
         const UART_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
         const UART_TX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
         const UART_RX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
@@ -782,6 +930,11 @@
         
         // 블루투스 연결
         document.getElementById('connectBtn').addEventListener('click', async () => {
+            // 블루투스 지원 확인
+            if (!checkBluetoothSupport()) {
+                return;
+            }
+            
             try {
                 log('블루투스 기기 검색 중...', false, 'log1');
                 
