@@ -509,33 +509,33 @@
             <p>단어 빈도 분석부터 코사인 유사도까지 체험하기</p>
         </header>
 
-        <!-- 초기 화면 -->
-        <div id="welcome-screen" class="tab-content active">
-            <div class="welcome-screen">
-                <h2>수업에 오신 것을 환영합니다!</h2>
-                <p>역할을 선택해주세요</p>
-                <div class="role-selection">
-                    <div class="role-card" onclick="selectRole('teacher')">
-                        <h3>👨‍🏫 선생님</h3>
-                        <p>새로운 수업 방을 만들고<br>학생들을 관리합니다</p>
-                    </div>
-                    <div class="role-card" onclick="selectRole('student')">
-                        <h3>👨‍🎓 학생</h3>
-                        <p>방 코드를 입력하고<br>수업에 참여합니다</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- 탭 네비게이션 -->
-        <div class="tabs hidden" id="tab-navigation">
+        <div class="tabs" id="tab-navigation">
             <button class="tab active" onclick="switchTab('collection')">📝 문장 수집</button>
             <button class="tab" id="tab-analysis" onclick="switchTab('analysis')" disabled>📊 텍스트 분석</button>
             <button class="tab" id="tab-vector" onclick="switchTab('vector')" disabled>🔢 벡터 계산</button>
         </div>
 
         <!-- 문장 수집 탭 -->
-        <div id="tab-collection" class="tab-content">
+        <div id="tab-collection" class="tab-content active">
+            <!-- 역할 선택 화면 -->
+            <div id="role-selection-screen">
+                <div class="welcome-screen">
+                    <h2>텍스트 마이닝 수업에 오신 것을 환영합니다!</h2>
+                    <p>역할을 선택해주세요</p>
+                    <div class="role-selection">
+                        <div class="role-card" onclick="selectRole('teacher')">
+                            <h3>👨‍🏫 선생님</h3>
+                            <p>새로운 수업 방을 만들고<br>학생들을 관리합니다</p>
+                        </div>
+                        <div class="role-card" onclick="selectRole('student')">
+                            <h3>👨‍🎓 학생</h3>
+                            <p>방 코드를 입력하고<br>수업에 참여합니다</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 선생님 화면 -->
             <div id="teacher-view" class="hidden">
                 <div class="tutorial">
@@ -612,6 +612,9 @@
                         <div id="submission-status" class="hidden" style="margin-top: 20px; padding: 20px; background: #d4edda; border-radius: 10px; text-align: center;">
                             <h3 style="color: #155724;">✅ 제출 완료!</h3>
                             <p>선생님이 분석을 시작하면 결과를 볼 수 있습니다.</p>
+                            <button class="btn-primary" onclick="viewAnalysisAsStudent()" style="margin-top: 15px;">
+                                📊 분석 결과 보기
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -787,8 +790,7 @@
         // 역할 선택
         function selectRole(role) {
             currentRole = role;
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('tab-navigation').classList.remove('hidden');
+            document.getElementById('role-selection-screen').classList.add('hidden');
             
             if (role === 'teacher') {
                 createRoom();
@@ -940,33 +942,53 @@
 
         // 분석 시작
         function startAnalysis() {
-            // 모든 문장 수집
-            collectAllSentences();
-            
-            // 분석 탭 활성화
-            document.getElementById('tab-analysis').disabled = false;
-            switchTab('analysis');
-            
-            // 텍스트 분석 실행
-            analyzeText();
+            // 모든 문장 수집 (비동기)
+            collectAllSentences(() => {
+                if (allSentences.length === 0) {
+                    alert('분석할 문장이 없습니다. 학생들이 문장을 입력했는지 확인해주세요.');
+                    return;
+                }
+                
+                // 분석 탭 활성화
+                document.getElementById('tab-analysis').disabled = false;
+                switchTab('analysis');
+                
+                // 텍스트 분석 실행
+                analyzeText();
+            });
         }
 
         // 모든 문장 수집
-        function collectAllSentences() {
+        function collectAllSentences(callback) {
             allSentences = [];
-            const cards = document.querySelectorAll('.student-card');
             
-            cards.forEach(card => {
-                const sentences = card.querySelectorAll('div');
-                sentences.forEach(div => {
-                    const text = div.textContent.replace(/^문장 \d+:/, '').trim();
-                    if (text && text !== '(작성 중...)') {
-                        allSentences.push(text);
-                    }
-                });
-            });
+            if (!currentRoom) {
+                console.error('방 코드가 없습니다.');
+                if (callback) callback();
+                return;
+            }
 
-            console.log('수집된 문장:', allSentences);
+            const studentsRef = window.firebaseRef(window.firebaseDB, `rooms/${currentRoom}/students`);
+            window.firebaseOnValue(studentsRef, (snapshot) => {
+                allSentences = [];
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        const studentData = child.val();
+                        if (studentData.sentences && Array.isArray(studentData.sentences)) {
+                            studentData.sentences.forEach(sentence => {
+                                if (sentence && sentence.trim()) {
+                                    allSentences.push(sentence.trim());
+                                }
+                            });
+                        }
+                    });
+                }
+
+                console.log('수집된 문장:', allSentences.length, '개');
+                
+                if (callback) callback();
+            }, { onlyOnce: true });
         }
 
         // 방 입장 (학생)
@@ -1059,10 +1081,39 @@
             document.getElementById('submission-status').classList.remove('hidden');
         }
 
+        // 학생이 분석 결과 보기
+        function viewAnalysisAsStudent() {
+            collectAllSentences(() => {
+                if (allSentences.length < 5) {
+                    alert('아직 충분한 문장이 수집되지 않았습니다. 잠시 후 다시 시도해주세요.');
+                    return;
+                }
+                
+                // 분석 탭 활성화
+                document.getElementById('tab-analysis').disabled = false;
+                document.getElementById('tab-vector').disabled = false;
+                switchTab('analysis');
+                
+                // 텍스트 분석 실행
+                analyzeText();
+            });
+        }
+
         // 텍스트 분석
         function analyzeText() {
             if (allSentences.length === 0) {
-                collectAllSentences();
+                collectAllSentences(() => {
+                    performAnalysis();
+                });
+            } else {
+                performAnalysis();
+            }
+        }
+
+        function performAnalysis() {
+            if (allSentences.length === 0) {
+                alert('분석할 문장이 없습니다.');
+                return;
             }
 
             // 전체 텍스트 합치기
@@ -1072,7 +1123,7 @@
             const words = tokenizeKorean(fullText);
             
             // 불용어 제거 옵션
-            const removeStopwords = document.getElementById('stopwords-toggle').checked;
+            const removeStopwords = document.getElementById('stopwords-toggle')?.checked ?? true;
             const filteredWords = removeStopwords ? 
                 words.filter(word => !koreanStopwords.has(word) && word.length > 1) : 
                 words.filter(word => word.length > 1);
