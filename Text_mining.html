@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>텍스트 마이닝 수업 - AI Mathematics</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
@@ -12,10 +18,21 @@
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Noto Sans KR', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+        }
+
+        /* 메인 타이틀만 Do Hyeon */
+        header h1 {
+            font-family: 'Do Hyeon', sans-serif;
+            font-weight: 500;
+        }
+
+        /* 나머지 모든 제목은 Noto Sans KR */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Noto Sans KR', sans-serif;
         }
 
         .container {
@@ -57,7 +74,7 @@
             cursor: pointer;
             background: #f5f5f5;
             border: none;
-            font-size: 1.1em;
+            font-size: 1.3em;
             font-weight: 600;
             color: #666;
             transition: all 0.3s;
@@ -88,10 +105,14 @@
             display: none;
             padding: 30px;
             animation: fadeIn 0.3s;
+            position: relative;
+            z-index: 1;
+            background: white;
+            min-height: 400px;
         }
 
         .tab-content.active {
-            display: block;
+            display: block !important;
         }
 
         @keyframes fadeIn {
@@ -511,9 +532,9 @@
 
         <!-- 탭 네비게이션 -->
         <div class="tabs" id="tab-navigation">
-            <button class="tab active" onclick="switchTab('collection')">📝 문장 수집</button>
-            <button class="tab" id="tab-analysis" onclick="switchTab('analysis')" disabled>📊 텍스트 분석</button>
-            <button class="tab" id="tab-vector" onclick="switchTab('vector')" disabled>🔢 벡터 계산</button>
+            <button class="tab active" id="tab-btn-collection" onclick="switchTab('collection')">📝 문장 수집</button>
+            <button class="tab" id="tab-btn-analysis" onclick="switchTab('analysis')" disabled>📊 텍스트 분석</button>
+            <button class="tab" id="tab-btn-vector" onclick="switchTab('vector')" disabled>🔢 벡터 계산</button>
         </div>
 
         <!-- 문장 수집 탭 -->
@@ -531,6 +552,10 @@
                         <div class="role-card" onclick="selectRole('student')">
                             <h3>👨‍🎓 학생</h3>
                             <p>방 코드를 입력하고<br>수업에 참여합니다</p>
+                        </div>
+                        <div class="role-card" onclick="selectRole('demo')" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <h3>🧪 체험하기</h3>
+                            <p>방 코드 없이 혼자서<br>빠르게 테스트합니다</p>
                         </div>
                     </div>
                 </div>
@@ -619,10 +644,44 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 체험 모드 화면 -->
+            <div id="demo-view" class="hidden">
+                <div class="tutorial" style="background: linear-gradient(135deg, #e0f7fa 0%, #e1f5fe 100%); border-color: #00bcd4;">
+                    <h4 style="color: #006064;">🧪 체험 모드 가이드</h4>
+                    <div class="tutorial-step">1. 아래에서 문장을 직접 입력하세요 (최소 3개 이상 권장)</div>
+                    <div class="tutorial-step">2. 각 줄마다 하나의 문장을 입력하세요</div>
+                    <div class="tutorial-step">3. "분석 시작" 버튼을 누르면 결과를 바로 확인할 수 있습니다</div>
+                </div>
+
+                <div style="background: white; padding: 30px; border-radius: 15px; margin-top: 20px;">
+                    <h3 style="color: #00bcd4; margin-bottom: 20px;">📝 분석할 문장 입력</h3>
+                    <textarea id="demo-sentences" rows="15" style="width: 100%; padding: 15px; font-size: 1.1em; border: 2px solid #00bcd4; border-radius: 10px; font-family: 'Noto Sans KR', sans-serif; line-height: 1.8;" placeholder="예시:
+급식이 정말 맛있었어요
+오늘 짜장면이 최고였어요
+체육시간이 재미있었어요
+친구들과 놀았어요
+수학 시험이 어려웠어요
+선생님이 친절하셨어요
+
+(한 줄에 하나의 문장을 입력하세요)"></textarea>
+
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn-success" onclick="startDemoAnalysis()" style="font-size: 1.2em; padding: 15px 40px;">
+                            🚀 분석 시작하기
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 텍스트 분석 탭 -->
         <div id="tab-analysis" class="tab-content">
+            <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #ffc107;">
+                <h3 style="color: #856404; margin-bottom: 10px;">🎉 텍스트 분석 탭이 보이나요?</h3>
+                <p style="color: #856404;">이 메시지가 보인다면 탭 전환은 성공한 것입니다!</p>
+            </div>
+            
             <div class="tutorial">
                 <h4>📊 텍스트 분석 단계</h4>
                 <div class="tutorial-step">1. 워드클라우드에서 자주 등장하는 단어를 확인하세요</div>
@@ -762,11 +821,8 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- WordCloud2.js -->
-    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
-
-    <!-- Kuromoji.js (일본어용이지만 한글도 부분 지원) -->
-    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
+    <!-- html2canvas (스크린샷용) -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <!-- 메인 스크립트 -->
     <script>
@@ -779,12 +835,28 @@
         let selectedWords = [];
         let is3D = false;
 
-        // 한글 불용어 리스트
+        // 한글 불용어 리스트 (확장 버전)
         const koreanStopwords = new Set([
+            // 조사
             '은', '는', '이', '가', '을', '를', '의', '에', '에서', '로', '으로', '와', '과',
-            '도', '만', '까지', '부터', '한테', '께', '더', '다', '고', '요', '네', '죠',
-            '어', '아', '지', 'ㄴ', 'ㄹ', 'ㅂ니다', '습니다', '입니다', '합니다',
-            '하다', '있다', '없다', '되다', '이다', '아니다', '그', '저', '이', '그것', '저것'
+            '도', '만', '까지', '부터', '한테', '께', '에게', '보다', '처럼', '같이',
+            // 어미
+            '다', '고', '요', '네', '죠', '어', '아', '지', 'ㄴ', 'ㄹ', 
+            'ㅂ니다', '습니다', '입니다', '합니다', '었습니다', '였습니다',
+            // 용언
+            '하다', '있다', '없다', '되다', '이다', '아니다', '계시다', '주다', '드리다',
+            // 대명사/지시어
+            '그', '저', '이', '그것', '저것', '이것', '그거', '저거', '이거',
+            '여기', '거기', '저기', '이곳', '그곳', '저곳',
+            // 관형사
+            '모든', '각', '매', '어떤', '어느', '무슨', '온갖',
+            // 부사
+            '너무', '정말', '참', '아주', '매우', '조금', '좀', '많이', '잘', '못',
+            '또', '또한', '역시', '과연', '그리고', '하지만', '그러나', '그런데',
+            // 감탄사
+            '아', '어', '오', '예', '네', '응', '음', '글쎄',
+            // 기타
+            '것', '수', '등', '때', '중', '내', '간', '분', '명'
         ]);
 
         // 역할 선택
@@ -795,8 +867,10 @@
             if (role === 'teacher') {
                 createRoom();
                 document.getElementById('teacher-view').classList.remove('hidden');
-            } else {
+            } else if (role === 'student') {
                 document.getElementById('student-view').classList.remove('hidden');
+            } else if (role === 'demo') {
+                document.getElementById('demo-view').classList.remove('hidden');
             }
         }
 
@@ -942,6 +1016,8 @@
 
         // 분석 시작
         function startAnalysis() {
+            console.log('분석 시작 버튼 클릭됨!');
+            
             // 모든 문장 수집 (비동기)
             collectAllSentences(() => {
                 if (allSentences.length === 0) {
@@ -949,12 +1025,19 @@
                     return;
                 }
                 
+                console.log('데이터 수집 완료, 탭 전환 중...');
+                
                 // 분석 탭 활성화
-                document.getElementById('tab-analysis').disabled = false;
+                document.getElementById('tab-btn-analysis').disabled = false;
+                
+                // 탭 전환
                 switchTab('analysis');
                 
-                // 텍스트 분석 실행
-                analyzeText();
+                // 약간의 딜레이 후 분석 실행 (DOM 렌더링 대기)
+                setTimeout(() => {
+                    console.log('텍스트 분석 실행 중...');
+                    analyzeText();
+                }, 100);
             });
         }
 
@@ -1090,13 +1173,51 @@
                 }
                 
                 // 분석 탭 활성화
-                document.getElementById('tab-analysis').disabled = false;
-                document.getElementById('tab-vector').disabled = false;
+                document.getElementById('tab-btn-analysis').disabled = false;
+                document.getElementById('tab-btn-vector').disabled = false;
                 switchTab('analysis');
                 
                 // 텍스트 분석 실행
                 analyzeText();
             });
+        }
+
+        // 체험 모드 분석 시작
+        function startDemoAnalysis() {
+            const textarea = document.getElementById('demo-sentences');
+            const text = textarea.value.trim();
+            
+            if (!text) {
+                alert('분석할 문장을 입력해주세요.');
+                return;
+            }
+
+            // 줄바꿈으로 문장 분리
+            const sentences = text.split('\n')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+
+            if (sentences.length < 2) {
+                alert('최소 2개 이상의 문장을 입력해주세요.');
+                return;
+            }
+
+            // 전역 변수에 문장 저장
+            allSentences = sentences;
+            
+            console.log('체험 모드: 수집된 문장', allSentences);
+
+            // 분석 탭 활성화
+            document.getElementById('tab-btn-analysis').disabled = false;
+            document.getElementById('tab-btn-vector').disabled = false;
+            
+            // 분석 탭으로 이동
+            switchTab('analysis');
+            
+            // 약간의 딜레이 후 분석 실행
+            setTimeout(() => {
+                analyzeText();
+            }, 100);
         }
 
         // 텍스트 분석
@@ -1111,45 +1232,73 @@
         }
 
         function performAnalysis() {
+            console.log('=== 분석 시작 ===');
+            console.log('수집된 문장 수:', allSentences.length);
+            console.log('문장 내용:', allSentences);
+            
             if (allSentences.length === 0) {
                 alert('분석할 문장이 없습니다.');
                 return;
             }
 
-            // 전체 텍스트 합치기
-            const fullText = allSentences.join(' ');
-            
-            // 단어 분리 (간단한 토큰화)
-            const words = tokenizeKorean(fullText);
-            
-            // 불용어 제거 옵션
-            const removeStopwords = document.getElementById('stopwords-toggle')?.checked ?? true;
-            const filteredWords = removeStopwords ? 
-                words.filter(word => !koreanStopwords.has(word) && word.length > 1) : 
-                words.filter(word => word.length > 1);
+            try {
+                // 전체 텍스트 합치기
+                const fullText = allSentences.join(' ');
+                console.log('전체 텍스트:', fullText);
+                
+                // 단어 분리 (간단한 토큰화)
+                const words = tokenizeKorean(fullText);
+                console.log('토큰화된 단어:', words);
+                
+                // 불용어 제거 옵션
+                const removeStopwords = document.getElementById('stopwords-toggle')?.checked ?? true;
+                const filteredWords = removeStopwords ? 
+                    words.filter(word => !koreanStopwords.has(word) && word.length > 1) : 
+                    words.filter(word => word.length > 1);
+                console.log('필터링된 단어:', filteredWords);
 
-            // 빈도 계산
-            wordFrequency = {};
-            filteredWords.forEach(word => {
-                wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-            });
+                if (filteredWords.length === 0) {
+                    alert('분석할 수 있는 단어가 없습니다. 문장을 더 추가해주세요.');
+                    return;
+                }
 
-            // 정렬
-            const sortedWords = Object.entries(wordFrequency)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 50); // 상위 50개
+                // 빈도 계산
+                wordFrequency = {};
+                filteredWords.forEach(word => {
+                    wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+                });
+                console.log('단어 빈도:', wordFrequency);
 
-            // 워드클라우드 생성
-            createWordCloud(sortedWords);
+                // 정렬
+                const sortedWords = Object.entries(wordFrequency)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 50); // 상위 50개
+                console.log('정렬된 단어 (상위 50개):', sortedWords);
 
-            // 빈도 테이블 생성
-            createFrequencyTable(sortedWords);
+                // 워드클라우드 생성
+                console.log('워드클라우드 생성 시작...');
+                createWordCloud(sortedWords);
+                console.log('워드클라우드 생성 완료!');
 
-            // 차트 생성
-            createFrequencyChart(sortedWords.slice(0, 20));
+                // 빈도 테이블 생성
+                console.log('빈도 테이블 생성 시작...');
+                createFrequencyTable(sortedWords);
+                console.log('빈도 테이블 생성 완료!');
+
+                // 차트 생성
+                console.log('차트 생성 시작...');
+                const chartData = sortedWords.slice(0, Math.min(20, sortedWords.length));
+                createFrequencyChart(chartData);
+                console.log('차트 생성 완료!');
+                
+                console.log('=== 분석 완료 ===');
+            } catch (error) {
+                console.error('분석 중 에러 발생:', error);
+                alert('분석 중 오류가 발생했습니다. 콘솔을 확인해주세요.');
+            }
         }
 
-        // 한글 토큰화 (간단 버전)
+        // 한글 토큰화 (기본형 복원 버전)
         function tokenizeKorean(text) {
             // 특수문자 제거
             text = text.replace(/[^\wㄱ-ㅎㅏ-ㅣ가-힣\s]/g, ' ');
@@ -1157,16 +1306,67 @@
             // 띄어쓰기로 분리
             let words = text.split(/\s+/).filter(w => w.length > 0);
             
-            // 조사 제거 (간단 버전)
+            console.log('토큰화 전:', words);
+            
+            // 기본형으로 변환
             words = words.map(word => {
-                // 끝의 조사 제거
-                return word.replace(/(은|는|이|가|을|를|의|에|에서|로|으로|와|과|도|만)$/, '');
+                let original = word;
+                let processed = word;
+                
+                // 1. 조사 제거 (명사는 그대로)
+                processed = processed.replace(/(은|는|이|가|을|를|와|과|의|도|만|에|에서|에게|께서|한테|으로|로|부터|까지|마저|조차|밖에|뿐|처럼|같이|보다|만큼)$/, '');
+                
+                // 2. 용언(동사/형용사) 어미 제거 후 "다" 붙이기
+                // 과거형
+                if (/((었|았|였)(어요|습니다|어|다|네요|어서|으니까|지만))$/.test(processed)) {
+                    processed = processed.replace(/((었|았|였)(어요|습니다|어|다|네요|어서|으니까|지만))$/, '다');
+                }
+                // 현재형 종결어미
+                else if (/(어요|아요|여요|해요|습니다|ㅂ니다)$/.test(processed)) {
+                    processed = processed.replace(/(어요|아요|여요|해요|습니다|ㅂ니다)$/, '다');
+                }
+                // 기타 어미
+                else if (/(네요|군요|구나|지요|죠|세요|으세요)$/.test(processed)) {
+                    processed = processed.replace(/(네요|군요|구나|지요|죠|세요|으세요)$/, '다');
+                }
+                // 연결어미
+                else if (/(고|지만|는데|ㄴ데|어서|아서|으면|면|으니까|니까)$/.test(processed)) {
+                    processed = processed.replace(/(고|지만|는데|ㄴ데|어서|아서|으면|면|으니까|니까)$/, '다');
+                }
+                // 명령형/청유형
+                else if (/(어라|아라|자|세)$/.test(processed)) {
+                    processed = processed.replace(/(어라|아라|자|세)$/, '다');
+                }
+                // 관형사형
+                else if (/(ㄴ|은|는|ㄹ|을)$/.test(processed) && processed.length > 2) {
+                    processed = processed.replace(/(ㄴ|은|는|ㄹ|을)$/, '다');
+                }
+                // 단순 종결어미 "다"가 이미 있으면 유지
+                else if (/다$/.test(processed)) {
+                    // 그대로
+                }
+                
+                // 3. 너무 짧아진 경우 원본 유지
+                if (processed.length < 2) {
+                    processed = original;
+                }
+                
+                if (original !== processed) {
+                    console.log(`  "${original}" → "${processed}"`);
+                }
+                
+                return processed;
             });
+            
+            // 빈 문자열 제거
+            words = words.filter(w => w.length > 0);
+            
+            console.log('토큰화 후:', words);
 
             return words;
         }
 
-        // 워드클라우드 생성
+        // 워드클라우드 생성 (Canvas 기반)
         function createWordCloud(wordList) {
             const container = document.getElementById('wordcloud-container');
             container.innerHTML = '';
@@ -1176,20 +1376,41 @@
                 return;
             }
 
-            const cloudData = wordList.map(([word, freq]) => [word, freq * 10]);
-
-            WordCloud(container, {
-                list: cloudData,
-                gridSize: 8,
-                weightFactor: 3,
-                fontFamily: 'Malgun Gothic, sans-serif',
-                color: () => {
-                    const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe'];
-                    return colors[Math.floor(Math.random() * colors.length)];
-                },
-                rotateRatio: 0.3,
-                backgroundColor: 'white'
+            // Canvas 방식 대신 HTML/CSS 기반 워드클라우드
+            const maxFreq = wordList[0][1];
+            
+            wordList.slice(0, 30).forEach(([word, freq]) => {
+                const span = document.createElement('span');
+                const size = Math.max(12, Math.min(60, (freq / maxFreq) * 50 + 12));
+                const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                span.style.cssText = `
+                    font-size: ${size}px;
+                    color: ${randomColor};
+                    font-weight: bold;
+                    font-family: 'Noto Sans KR', sans-serif;
+                    margin: 10px;
+                    display: inline-block;
+                    padding: 5px 10px;
+                    transition: transform 0.2s;
+                    cursor: default;
+                `;
+                span.textContent = word;
+                span.title = `${word}: ${freq}회`;
+                
+                span.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.2)';
+                });
+                span.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
+                
+                container.appendChild(span);
             });
+            
+            container.style.textAlign = 'center';
+            container.style.lineHeight = '2';
         }
 
         // 빈도 테이블 생성
@@ -1215,41 +1436,61 @@
 
         // 빈도 차트 생성
         function createFrequencyChart(wordList) {
-            const ctx = document.getElementById('frequency-chart');
-            
-            if (window.frequencyChart) {
-                window.frequencyChart.destroy();
-            }
+            try {
+                const canvas = document.getElementById('frequency-chart');
+                if (!canvas) {
+                    console.error('frequency-chart 캔버스를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                
+                if (window.frequencyChart) {
+                    window.frequencyChart.destroy();
+                }
 
-            window.frequencyChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: wordList.map(([word]) => word),
-                    datasets: [{
-                        label: '빈도',
-                        data: wordList.map(([_, freq]) => freq),
-                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: '상위 20개 단어 빈도',
-                            font: { size: 18 }
-                        }
+                if (wordList.length === 0) {
+                    console.warn('차트를 그릴 데이터가 없습니다.');
+                    return;
+                }
+
+                window.frequencyChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: wordList.map(([word]) => word),
+                        datasets: [{
+                            label: '빈도',
+                            data: wordList.map(([_, freq]) => freq),
+                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 2
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `상위 ${wordList.length}개 단어 빈도`,
+                                font: { size: 18 }
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            }
                         }
                     }
-                }
-            });
+                });
+                
+                console.log('차트 생성 성공!');
+            } catch (error) {
+                console.error('차트 생성 중 에러:', error);
+            }
         }
 
         // 벡터 계산으로 이동
@@ -1258,7 +1499,7 @@
             createWordSelection();
             
             // 벡터 탭 활성화
-            document.getElementById('tab-vector').disabled = false;
+            document.getElementById('tab-btn-vector').disabled = false;
             switchTab('vector');
         }
 
@@ -1440,19 +1681,36 @@
             
             const n = similarities.length;
             const cellSize = Math.min(600 / n, 50);
-            canvas.width = cellSize * n;
-            canvas.height = cellSize * n;
+            const labelSize = 60; // 레이블 공간
+            
+            canvas.width = cellSize * n + labelSize;
+            canvas.height = cellSize * n + labelSize;
+            
+            // 배경 흰색
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // 히트맵 그리기 (labelSize 오프셋 적용)
             for (let i = 0; i < n; i++) {
                 for (let j = 0; j < n; j++) {
                     const value = similarities[i][j];
                     const intensity = Math.floor(value * 255);
                     ctx.fillStyle = `rgb(${255 - intensity}, ${255 - intensity}, 255)`;
-                    ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                    ctx.fillRect(
+                        j * cellSize + labelSize, 
+                        i * cellSize + labelSize, 
+                        cellSize, 
+                        cellSize
+                    );
                     
                     // 경계선
                     ctx.strokeStyle = '#ddd';
-                    ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                    ctx.strokeRect(
+                        j * cellSize + labelSize, 
+                        i * cellSize + labelSize, 
+                        cellSize, 
+                        cellSize
+                    );
 
                     // 값 표시
                     if (cellSize > 30) {
@@ -1462,12 +1720,54 @@
                         ctx.textBaseline = 'middle';
                         ctx.fillText(
                             value.toFixed(2), 
-                            j * cellSize + cellSize / 2, 
-                            i * cellSize + cellSize / 2
+                            j * cellSize + labelSize + cellSize / 2, 
+                            i * cellSize + labelSize + cellSize / 2
                         );
                     }
                 }
             }
+
+            // 행 레이블 (왼쪽)
+            ctx.fillStyle = '#667eea';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            
+            for (let i = 0; i < n; i++) {
+                ctx.fillText(
+                    `문장 ${i + 1}`, 
+                    labelSize - 10, 
+                    i * cellSize + labelSize + cellSize / 2
+                );
+            }
+
+            // 열 레이블 (위쪽)
+            ctx.save();
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            
+            for (let j = 0; j < n; j++) {
+                ctx.save();
+                ctx.translate(
+                    j * cellSize + labelSize + cellSize / 2, 
+                    labelSize - 10
+                );
+                ctx.rotate(-Math.PI / 4); // 45도 회전
+                ctx.fillText(`문장 ${j + 1}`, 0, 0);
+                ctx.restore();
+            }
+            
+            ctx.restore();
+
+            // 제목
+            ctx.fillStyle = '#667eea';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(
+                '코사인 유사도 히트맵', 
+                canvas.width / 2, 
+                20
+            );
         }
 
         // 벡터 시각화
@@ -1554,11 +1854,43 @@
 
         // 탭 전환
         function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            console.log('=== 탭 전환 시작:', tabName, '===');
+            
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            
+            // 모든 탭 콘텐츠 숨기기
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.remove('active');
+                c.style.display = 'none';
+            });
 
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+            // 선택된 탭 버튼 활성화
+            const selectedTabBtn = document.getElementById(`tab-btn-${tabName}`);
+            if (selectedTabBtn) {
+                selectedTabBtn.classList.add('active');
+                console.log('탭 버튼 활성화:', `tab-btn-${tabName}`);
+            } else {
+                console.error('탭 버튼을 찾을 수 없음:', `tab-btn-${tabName}`);
+            }
+            
+            // 선택된 콘텐츠 표시
+            const selectedContent = document.getElementById(`tab-${tabName}`);
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+                selectedContent.style.display = 'block';
+                console.log('탭 콘텐츠 표시:', `tab-${tabName}`);
+                console.log('콘텐츠 display 스타일:', selectedContent.style.display);
+            } else {
+                console.error('탭 콘텐츠를 찾을 수 없음:', `tab-${tabName}`);
+            }
+            
+            // 페이지 최상단으로 스크롤
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            console.log('=== 탭 전환 완료 ===');
         }
 
         // URL에서 방 코드 확인
