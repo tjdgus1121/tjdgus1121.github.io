@@ -1221,17 +1221,17 @@
         }
 
         // 텍스트 분석
-        function analyzeText() {
+        async function analyzeText() {
             if (allSentences.length === 0) {
-                collectAllSentences(() => {
-                    performAnalysis();
+                collectAllSentences(async () => {
+                    await performAnalysis();
                 });
             } else {
-                performAnalysis();
+                await performAnalysis();
             }
         }
 
-        function performAnalysis() {
+        async function performAnalysis() {
             console.log('=== 분석 시작 ===');
             console.log('수집된 문장 수:', allSentences.length);
             console.log('문장 내용:', allSentences);
@@ -1246,8 +1246,8 @@
                 const fullText = allSentences.join(' ');
                 console.log('전체 텍스트:', fullText);
                 
-                // 단어 분리 (간단한 토큰화)
-                const words = tokenizeKorean(fullText);
+                // 단어 분리 (카카오 API 사용 - async)
+                const words = await tokenizeKorean(fullText);
                 console.log('토큰화된 단어:', words);
                 
                 // 불용어 제거 옵션
@@ -1298,72 +1298,93 @@
             }
         }
 
-        // 한글 토큰화 (기본형 복원 버전)
-        function tokenizeKorean(text) {
+        // 카카오 API 설정
+        const KAKAO_API_KEY = '0a3d164c6efb00b73f65660460784ec7';
+        
+        // 한글 토큰화 (카카오 형태소 분석 API 사용)
+        async function tokenizeKorean(text) {
+            try {
+                // 카카오 형태소 분석 API 호출
+                const response = await fetch('https://dapi.kakao.com/v2/nlp/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `KakaoAK ${KAKAO_API_KEY}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `query=${encodeURIComponent(text)}`
+                });
+
+                if (!response.ok) {
+                    console.error('카카오 API 오류:', response.status);
+                    // API 실패 시 기본 규칙 기반으로 폴백
+                    return tokenizeKoreanFallback(text);
+                }
+
+                const data = await response.json();
+                console.log('카카오 API 응답:', data);
+
+                // 형태소 분석 결과에서 명사, 동사, 형용사만 추출하고 기본형으로 변환
+                const words = [];
+                
+                if (data.sentences && data.sentences.length > 0) {
+                    data.sentences.forEach(sentence => {
+                        sentence.tokens.forEach(token => {
+                            token.morphemes.forEach(morpheme => {
+                                const word = morpheme.lex;  // 기본형
+                                const pos = morpheme.pos;   // 품사
+                                
+                                // 명사(NNG, NNP), 동사(VV), 형용사(VA) 추출
+                                if (['NNG', 'NNP', 'VV', 'VA', 'XR'].includes(pos)) {
+                                    // 용언은 기본형에 '다' 붙이기
+                                    if (['VV', 'VA'].includes(pos) && !word.endsWith('다')) {
+                                        words.push(word + '다');
+                                    } else {
+                                        words.push(word);
+                                    }
+                                }
+                            });
+                        });
+                    });
+                }
+
+                console.log('추출된 단어:', words);
+                return words;
+
+            } catch (error) {
+                console.error('토큰화 중 오류:', error);
+                // 오류 시 기본 규칙 기반으로 폴백
+                return tokenizeKoreanFallback(text);
+            }
+        }
+
+        // 폴백용 규칙 기반 토큰화
+        function tokenizeKoreanFallback(text) {
+            console.log('규칙 기반 토큰화로 전환');
+            
             // 특수문자 제거
             text = text.replace(/[^\wㄱ-ㅎㅏ-ㅣ가-힣\s]/g, ' ');
             
             // 띄어쓰기로 분리
             let words = text.split(/\s+/).filter(w => w.length > 0);
             
-            console.log('토큰화 전:', words);
-            
             // 기본형으로 변환
             words = words.map(word => {
-                let original = word;
                 let processed = word;
                 
-                // 1. 조사 제거 (명사는 그대로)
-                processed = processed.replace(/(은|는|이|가|을|를|와|과|의|도|만|에|에서|에게|께서|한테|으로|로|부터|까지|마저|조차|밖에|뿐|처럼|같이|보다|만큼)$/, '');
+                // 조사 제거
+                processed = processed.replace(/(은|는|이|가|을|를|와|과|의|도|만|에|에서|에게|께서|한테|으로|로|부터|까지)$/, '');
                 
-                // 2. 용언(동사/형용사) 어미 제거 후 "다" 붙이기
-                // 과거형
-                if (/((었|았|였)(어요|습니다|어|다|네요|어서|으니까|지만))$/.test(processed)) {
-                    processed = processed.replace(/((었|았|였)(어요|습니다|어|다|네요|어서|으니까|지만))$/, '다');
-                }
-                // 현재형 종결어미
-                else if (/(어요|아요|여요|해요|습니다|ㅂ니다)$/.test(processed)) {
-                    processed = processed.replace(/(어요|아요|여요|해요|습니다|ㅂ니다)$/, '다');
-                }
-                // 기타 어미
-                else if (/(네요|군요|구나|지요|죠|세요|으세요)$/.test(processed)) {
-                    processed = processed.replace(/(네요|군요|구나|지요|죠|세요|으세요)$/, '다');
-                }
-                // 연결어미
-                else if (/(고|지만|는데|ㄴ데|어서|아서|으면|면|으니까|니까)$/.test(processed)) {
-                    processed = processed.replace(/(고|지만|는데|ㄴ데|어서|아서|으면|면|으니까|니까)$/, '다');
-                }
-                // 명령형/청유형
-                else if (/(어라|아라|자|세)$/.test(processed)) {
-                    processed = processed.replace(/(어라|아라|자|세)$/, '다');
-                }
-                // 관형사형
-                else if (/(ㄴ|은|는|ㄹ|을)$/.test(processed) && processed.length > 2) {
-                    processed = processed.replace(/(ㄴ|은|는|ㄹ|을)$/, '다');
-                }
-                // 단순 종결어미 "다"가 이미 있으면 유지
-                else if (/다$/.test(processed)) {
-                    // 그대로
+                // 용언 어미 제거 후 "다" 붙이기
+                if (/((었|았|였)(어요|습니다|어|다|네요))$/.test(processed)) {
+                    processed = processed.replace(/((었|았|였)(어요|습니다|어|다|네요))$/, '다');
+                } else if (/(어요|아요|여요|해요|습니다|ㅂ니다|네요|군요|지요|죠)$/.test(processed)) {
+                    processed = processed.replace(/(어요|아요|여요|해요|습니다|ㅂ니다|네요|군요|지요|죠)$/, '다');
                 }
                 
-                // 3. 너무 짧아진 경우 원본 유지
-                if (processed.length < 2) {
-                    processed = original;
-                }
-                
-                if (original !== processed) {
-                    console.log(`  "${original}" → "${processed}"`);
-                }
-                
-                return processed;
+                return processed.length >= 2 ? processed : word;
             });
             
-            // 빈 문자열 제거
-            words = words.filter(w => w.length > 0);
-            
-            console.log('토큰화 후:', words);
-
-            return words;
+            return words.filter(w => w.length > 0);
         }
 
         // 워드클라우드 생성 (Canvas 기반)
