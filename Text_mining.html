@@ -767,18 +767,26 @@
             </div>
 
             <div class="analysis-section">
-                <h3>🌡️ 유사도 히트맵</h3>
+                <h3>📊 유사도 분석표</h3>
+                <p style="color: #666; margin-bottom: 15px;">
+                    각 문장끼리 얼마나 비슷한지 표로 나타냅니다. 파란색이 진할수록 유사도가 높습니다.
+                </p>
                 <div class="heatmap-container">
                     <canvas id="heatmap-canvas"></canvas>
                 </div>
             </div>
 
             <div class="analysis-section">
-                <h3>📐 벡터 공간 시각화</h3>
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <button class="btn-secondary" onclick="toggle3D()">2D ⇄ 3D 전환</button>
+                <h3>📐 문장 비교 그래프</h3>
+                <p style="color: #666; margin-bottom: 15px;">
+                    선택한 단어를 기준으로 각 문장이 얼마나 그 단어를 포함하는지 막대그래프로 보여줍니다.
+                </p>
+                <div id="vector-chart-container">
+                    <canvas id="vector-chart" width="800" height="400"></canvas>
                 </div>
-                <canvas id="vector-visualization" width="800" height="600"></canvas>
+                <p style="color: #999; margin-top: 10px; font-size: 0.9em;">
+                    💡 팁: 단어 선택 섹션에서 다른 단어를 선택하면 그래프가 업데이트됩니다.
+                </p>
             </div>
 
             <div style="text-align: center; margin-top: 30px;">
@@ -1782,10 +1790,10 @@
 
             // 제목
             ctx.fillStyle = '#667eea';
-            ctx.font = 'bold 16px Arial';
+            ctx.font = 'bold 16px Noto Sans KR';
             ctx.textAlign = 'center';
             ctx.fillText(
-                '코사인 유사도 히트맵', 
+                '유사도 분석표', 
                 canvas.width / 2, 
                 20
             );
@@ -1793,74 +1801,135 @@
 
         // 벡터 시각화
         function visualizeVectors(matrix) {
-            const canvas = document.getElementById('vector-visualization');
+            const canvas = document.getElementById('vector-chart');
+            if (!canvas) {
+                console.error('vector-chart 캔버스를 찾을 수 없습니다.');
+                return;
+            }
+            
             const ctx = canvas.getContext('2d');
             
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 기존 차트 제거
+            if (window.vectorChart) {
+                window.vectorChart.destroy();
+            }
 
-            if (matrix[0].length < 2) {
-                ctx.font = '20px Arial';
+            // 선택된 단어들 (최대 5개)
+            const words = selectedWords.slice(0, 5);
+            
+            if (words.length === 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = '16px Noto Sans KR';
                 ctx.fillStyle = '#666';
                 ctx.textAlign = 'center';
-                ctx.fillText('최소 2개 차원이 필요합니다', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('단어를 선택하면 문장별 단어 빈도를 확인할 수 있습니다.', canvas.width / 2, canvas.height / 2);
                 return;
             }
 
-            // PCA 또는 첫 2개 차원 사용
-            const points = matrix.map(row => {
-                if (is3D && row.length >= 3) {
-                    return { x: row[0], y: row[1], z: row[2] };
-                } else {
-                    return { x: row[0], y: row[1], z: 0 };
+            // 각 문장별로 선택된 단어의 빈도 계산
+            const datasets = words.map((word, idx) => {
+                const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
+                const wordIdx = selectedWords.indexOf(word);
+                const frequencies = matrix.map(row => row[wordIdx] || 0);
+                
+                return {
+                    label: word,
+                    data: frequencies,
+                    backgroundColor: colors[idx % colors.length] + '80', // 80% 투명도
+                    borderColor: colors[idx % colors.length],
+                    borderWidth: 2
+                };
+            });
+
+            const labels = allSentences.map((_, idx) => `문장 ${idx + 1}`);
+
+            window.vectorChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '선택한 단어가 각 문장에서 나타난 횟수',
+                            font: { 
+                                size: 18,
+                                family: 'Noto Sans KR',
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Noto Sans KR',
+                                    size: 14
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y}회`;
+                                },
+                                title: function(context) {
+                                    return context[0].label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '문장 번호',
+                                font: {
+                                    family: 'Noto Sans KR',
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Noto Sans KR',
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '출현 횟수',
+                                font: {
+                                    family: 'Noto Sans KR',
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                font: {
+                                    family: 'Noto Sans KR',
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
                 }
             });
-
-            // 정규화
-            const maxX = Math.max(...points.map(p => Math.abs(p.x)), 1);
-            const maxY = Math.max(...points.map(p => Math.abs(p.y)), 1);
-            const maxZ = is3D ? Math.max(...points.map(p => Math.abs(p.z)), 1) : 1;
-
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const scale = Math.min(canvas.width, canvas.height) * 0.3;
-
-            // 축 그리기
-            ctx.strokeStyle = '#ddd';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(50, centerY);
-            ctx.lineTo(canvas.width - 50, centerY);
-            ctx.moveTo(centerX, 50);
-            ctx.lineTo(centerX, canvas.height - 50);
-            ctx.stroke();
-
-            // 점 그리기
-            points.forEach((point, i) => {
-                const x = centerX + (point.x / maxX) * scale;
-                const y = centerY - (point.y / maxY) * scale;
-
-                ctx.fillStyle = '#667eea';
-                ctx.beginPath();
-                ctx.arc(x, y, 8, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = 'black';
-                ctx.font = '12px Arial';
-                ctx.fillText(`S${i + 1}`, x + 12, y - 12);
-            });
-
-            // 라벨
-            ctx.fillStyle = '#666';
-            ctx.font = '14px Arial';
-            ctx.fillText(selectedWords[0] || 'Dim 1', canvas.width - 100, centerY - 10);
-            ctx.fillText(selectedWords[1] || 'Dim 2', centerX + 10, 70);
         }
 
-        // 2D/3D 전환
+        // 2D/3D 전환 제거 (더 이상 필요 없음)
         function toggle3D() {
-            is3D = !is3D;
-            const matrix = createTermMatrix();
-            visualizeVectors(matrix);
+            // 함수 유지 (호출되는 곳이 있을 수 있음)
+            console.log('2D/3D 전환 기능이 제거되었습니다.');
         }
 
         // 결과 다운로드
