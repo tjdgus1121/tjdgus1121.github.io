@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>8x8 LED 16진수 퀴즈</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 1000px;
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 28px;
+      }
+
+      .content {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+      }
+
+      .led-container {
+        background: #2c3e50;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .led-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .led {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #34495e;
+        border: 2px solid #1a252f;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .led:hover {
+        transform: scale(1.05);
+      }
+
+      .led.on {
+        background: #ff4757;
+        box-shadow: 0 0 10px #ff4757, 0 0 20px #ff4757, 0 0 30px #ff4757,
+          inset 0 0 10px rgba(255, 255, 255, 0.5);
+        border-color: #ff6b81;
+      }
+
+      .answer-panel {
+        flex: 1;
+        display: grid;
+        grid-template-rows: repeat(8, 56px);
+        gap: 12px;
+      }
+
+      .row-answer {
+    
+        background: #f8f9fa;
+        padding: 0 20px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 2px solid #e9ecef;
+        height: 58px;
+        margin-bottom: 10px;
+        margin-top:15px;
+      }
+
+      .row-label {
+        font-weight: bold;
+        color: #495057;
+        min-width: 60px;
+        font-size: 17px;
+      }
+
+      .answer-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: bold;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+      }
+
+      .answer-btn:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .answer-btn:active {
+        transform: translateY(0);
+      }
+
+      .hex-value {
+        font-size: 23px;
+        font-weight: bold;
+        color: #e74c3c;
+        font-family: "Courier New", monospace;
+        min-width: 85px;
+        text-align: center;
+      }
+
+      .hidden {
+        visibility: hidden;
+      }
+
+      .reset-btn {
+        background: #95a5a6;
+        color: white;
+        border: none;
+        padding: 14px 30px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        width: 100%;
+        margin-top: 20px;
+        transition: all 0.3s;
+      }
+
+      .reset-btn:hover {
+        background: #7f8c8d;
+        transform: translateY(-2px);
+      }
+
+      .instruction {
+        background: #e8f4f8;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .instruction p {
+        color: #555;
+        line-height: 1.6;
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>💡 8x8 LED 16진수 퀴즈</h1>
+
+      <div class="instruction">
+        <p>✨ LED를 클릭하여 켜고 끄세요</p>
+        <p>🔍 각 행의 "답 확인" 버튼을 눌러 16진수 값을 확인하세요</p>
+      </div>
+
+      <div class="content">
+        <div class="led-container">
+          <div id="ledGrid" class="led-grid"></div>
+          <button class="reset-btn" onclick="resetAll()">전체 리셋</button>
+        </div>
+
+        <div class="answer-panel" id="answerPanel"></div>
+      </div>
+    </div>
+
+    <script>
+      // 8x8 LED 상태 배열 (false = OFF, true = ON)
+      let ledState = Array(8)
+        .fill(null)
+        .map(() => Array(8).fill(false));
+
+      // LED 그리드 생성
+      function createLEDGrid() {
+        const grid = document.getElementById("ledGrid");
+        grid.innerHTML = "";
+
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            const led = document.createElement("div");
+            led.className = "led";
+            led.dataset.row = row;
+            led.dataset.col = col;
+            led.onclick = toggleLED;
+            grid.appendChild(led);
+          }
+        }
+      }
+
+      // 답변 패널 생성
+      function createAnswerPanel() {
+        const panel = document.getElementById("answerPanel");
+        panel.innerHTML = "";
+
+        for (let row = 0; row < 8; row++) {
+          const rowDiv = document.createElement("div");
+          rowDiv.className = "row-answer";
+
+          const label = document.createElement("span");
+          label.className = "row-label";
+          label.textContent = `${row + 1}행:`;
+
+          const hexValue = document.createElement("span");
+          hexValue.className = "hex-value hidden";
+          hexValue.id = `hex-${row}`;
+          hexValue.textContent = "0x00";
+
+          const btn = document.createElement("button");
+          btn.className = "answer-btn";
+          btn.textContent = "답 확인";
+          btn.onclick = () => showAnswer(row);
+
+          rowDiv.appendChild(label);
+          rowDiv.appendChild(hexValue);
+          rowDiv.appendChild(btn);
+          panel.appendChild(rowDiv);
+        }
+      }
+
+      // LED 토글
+      function toggleLED(e) {
+        const row = parseInt(e.target.dataset.row);
+        const col = parseInt(e.target.dataset.col);
+
+        ledState[row][col] = !ledState[row][col];
+        e.target.classList.toggle("on");
+
+        // 해당 행의 답을 다시 숨김
+        const hexElement = document.getElementById(`hex-${row}`);
+        hexElement.classList.add("hidden");
+      }
+
+      // 행의 16진수 값 계산
+      function calculateHex(row) {
+        let value = 0;
+        for (let col = 0; col < 8; col++) {
+          if (ledState[row][col]) {
+            value += Math.pow(2, 7 - col); // 왼쪽부터 MSB
+          }
+        }
+        return "0x" + value.toString(16).toUpperCase().padStart(2, "0");
+      }
+
+      // 답 보여주기
+      function showAnswer(row) {
+        const hexElement = document.getElementById(`hex-${row}`);
+        hexElement.textContent = calculateHex(row);
+        hexElement.classList.remove("hidden");
+      }
+
+      // 전체 리셋
+      function resetAll() {
+        ledState = Array(8)
+          .fill(null)
+          .map(() => Array(8).fill(false));
+
+        // 모든 LED 끄기
+        document.querySelectorAll(".led").forEach((led) => {
+          led.classList.remove("on");
+        });
+
+        // 모든 답 숨기기
+        document.querySelectorAll(".hex-value").forEach((hex) => {
+          hex.classList.add("hidden");
+          hex.textContent = "0x00";
+        });
+      }
+
+      // 초기화
+      createLEDGrid();
+      createAnswerPanel();
+    </script>
+  </body>
+</html>
