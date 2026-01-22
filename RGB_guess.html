@@ -39,6 +39,26 @@
             font-size: 1.1em;
         }
 
+        .competition-mode-btn {
+            margin-top: 15px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .competition-mode-btn:hover {
+            background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+
         .container {
             flex: 1;
             display: flex;
@@ -394,18 +414,15 @@
     <div class="header">
         <div class="title">🎨 RGB 색상 맞추기</div>
         <div class="instruction">슬라이더를 움직여서 배경색을 맞춰보세요!</div>
+        <button class="competition-mode-btn" onclick="openCompetitionMenu()">🏆 경쟁모드</button>
     </div>
 
     <div class="container">
         <div class="controls">
             <div class="stats-bar">
-                <div class="stat-item">
-                    <div class="stat-label">목표 색상</div>
-                    <div class="stat-value" id="targetColorCode">#000</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">시도 횟수</div>
-                    <div class="stat-value" id="attemptCount">0</div>
+                <div class="stat-item" style="width: 100%;">
+                    <div class="stat-label" style="font-size: 1.1em;">시도 횟수</div>
+                    <div class="stat-value" id="attemptCount" style="font-size: 2.5em; color: #e53e3e;">0</div>
                 </div>
             </div>
 
@@ -483,12 +500,162 @@
         </div>
     </div>
 
-    <script>
+    <!-- 경쟁모드 메뉴 모달 -->
+    <div class="success-modal" id="competitionMenuModal">
+        <div class="success-content" style="padding: 50px 40px; min-width: 500px; max-width: 550px;">
+            <h2 class="success-title" style="font-size: 2em; margin-bottom: 15px;">🏆 경쟁모드</h2>
+            <div style="margin: 30px 0; font-size: 1.05em; color: #2d3748; line-height: 1.8; text-align: center;">
+                20번의 기회 동안 최대한 많은 정답을 맞춰보세요!<br>
+                친구들과 함께 경쟁할 수 있습니다.
+            </div>
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <button class="success-btn" style="flex: 1; padding: 18px; font-size: 1.1em;" onclick="openCreateRoom()">🎮 방 만들기</button>
+                <button class="success-btn" style="flex: 1; padding: 18px; font-size: 1.1em; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="openJoinRoom()">🚪 방 참여하기</button>
+            </div>
+            <button class="success-btn" style="width: 100%; background: #cbd5e0; color: #2d3748; padding: 15px; font-size: 1.05em;" onclick="closeCompetitionMenu()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 방 만들기 모달 -->
+    <div class="success-modal" id="createRoomModal">
+        <div class="success-content" style="padding: 40px; min-width: 400px;">
+            <h2 class="success-title">🎮 방 만들기</h2>
+            <div style="margin: 20px 0;">
+                <input type="text" id="hostNameInput" placeholder="닉네임 입력" 
+                    style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; margin-bottom: 15px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2d3748;">시도 횟수 설정</label>
+                    <input type="number" id="maxAttemptsInput" min="5" max="30" value="20" 
+                        style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;">
+                    <div style="font-size: 0.9em; color: #718096; margin-top: 5px;">최소 5회 ~ 최대 30회</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="success-btn" onclick="createRoom()">방 만들기</button>
+                <button class="success-btn" style="background: #cbd5e0; color: #2d3748;" onclick="backToCompetitionMenu()">뒤로</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 방 참여하기 모달 -->
+    <div class="success-modal" id="joinRoomModal">
+        <div class="success-content" style="padding: 40px; min-width: 450px;">
+            <h2 class="success-title">🚪 방 참여하기</h2>
+            <div style="margin: 20px 0;">
+                <input type="text" id="joinNameInput" placeholder="닉네임 입력" 
+                    style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; margin-bottom: 12px;">
+                <input type="text" id="roomCodeInput" placeholder="방 코드 입력" 
+                    style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-weight: bold;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="success-btn" style="flex: 1; padding: 14px;" onclick="joinRoom()">참여하기</button>
+                <button class="success-btn" style="flex: 1; padding: 14px; background: #cbd5e0; color: #2d3748;" onclick="backToCompetitionMenu()">뒤로</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 대기실 모달 -->
+    <div class="success-modal" id="waitingRoomModal">
+        <div class="success-content" style="padding: 40px; min-width: 480px; max-width: 500px;">
+            <h2 class="success-title">⏳ 대기실</h2>
+            <div style="margin: 25px 0; padding: 20px; background: #f7fafc; border-radius: 12px;">
+                <div style="font-weight: bold; margin-bottom: 10px; color: #2d3748; font-size: 1.05em;">방 코드</div>
+                <div style="font-size: 2.2em; font-weight: bold; color: #e53e3e; font-family: monospace; letter-spacing: 3px;" id="displayRoomCode">----</div>
+            </div>
+            <div style="margin: 25px 0;">
+                <div style="font-weight: bold; margin-bottom: 12px; color: #2d3748; font-size: 1.05em;">참가자 목록</div>
+                <div id="playersList" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="success-btn" id="startGameBtn" style="display: none; flex: 1; padding: 14px;" onclick="startGame()">🎮 게임 시작</button>
+                <button class="success-btn" style="background: #e53e3e; flex: 1; padding: 14px;" onclick="leaveRoom()">나가기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 경쟁모드 게임 진행 중 정보 패널 -->
+    <div id="competitionPanel" style="display: none; position: fixed; top: 80px; right: 20px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 100; min-width: 250px;">
+        <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 15px; color: #2d3748;">🏆 경쟁 현황</div>
+        <div style="margin-bottom: 10px;">
+            <span style="color: #718096;">남은 기회:</span>
+            <span style="font-weight: bold; font-size: 1.3em; color: #e53e3e;" id="remainingAttempts">20</span>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <span style="color: #718096;">정답 개수:</span>
+            <span style="font-weight: bold; font-size: 1.3em; color: #38a169;" id="correctAnswers">0</span>
+        </div>
+        <div style="border-top: 2px solid #e2e8f0; padding-top: 15px;">
+            <div style="font-weight: bold; margin-bottom: 10px; color: #2d3748;">실시간 랭킹</div>
+            <div id="realtimeRanking" style="font-size: 0.9em;"></div>
+        </div>
+    </div>
+
+    <!-- 게임 완료 대기 팝업 -->
+    <div class="success-modal" id="waitingFinishModal">
+        <div class="success-content" style="padding: 50px 40px; min-width: 450px;">
+            <div style="font-size: 3em; margin-bottom: 20px;">⏳</div>
+            <h2 class="success-title">게임 완료!</h2>
+            <div style="margin: 20px 0; font-size: 1.1em; color: #2d3748; line-height: 1.6;">
+                <div style="margin-bottom: 15px;">
+                    당신의 점수: <span style="font-weight: bold; font-size: 1.3em; color: #38a169;" id="myFinalScore">0</span>개 정답
+                </div>
+                <div style="color: #718096;">
+                    친구들이 끝날 때까지<br>잠시만 기다려주세요!
+                </div>
+            </div>
+            <div style="margin-top: 25px; padding: 15px; background: #f7fafc; border-radius: 10px;">
+                <div style="font-weight: bold; margin-bottom: 10px; color: #2d3748;">완료 현황</div>
+                <div id="finishStatus" style="font-size: 0.95em;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 최종 랭킹 발표 팝업 -->
+    <div class="success-modal" id="finalRankingModal">
+        <div class="success-content" style="padding: 50px 40px; min-width: 500px; max-width: 600px;">
+            <div style="font-size: 3em; margin-bottom: 20px;">🏆</div>
+            <h2 class="success-title" style="font-size: 2em; margin-bottom: 30px;">최종 랭킹</h2>
+            <div id="finalRankingList" style="max-height: 400px; overflow-y: auto; margin-bottom: 25px;"></div>
+            <button class="success-btn" onclick="closeFinalRanking()">확인</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, update, push, remove } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWaRFzjBK6a6mEHocpB2DBPIa_L_0Eol0",
+            authDomain: "rgbguess.firebaseapp.com",
+            databaseURL: "https://rgbguess-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "rgbguess",
+            storageBucket: "rgbguess.firebasestorage.app",
+            messagingSenderId: "1089643840437",
+            appId: "1:1089643840437:web:0327d34c772153359f4ffc"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
         let targetR, targetG, targetB;
         let attemptCount = 0;
         let currentHistory = [];
+        
+        // 경쟁모드 변수
+        let isCompetitionMode = false;
+        let currentRoom = null;
+        let playerId = null;
+        let playerName = null;
+        let maxAttempts = 20;
+        let correctCount = 0;
 
         document.getElementById('attemptCount').textContent = attemptCount;
+        
+        // 플레이어 ID 생성 (브라우저 세션마다 고유)
+        if (!sessionStorage.getItem('playerId')) {
+            sessionStorage.setItem('playerId', 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
+        }
+        playerId = sessionStorage.getItem('playerId');
 
         function hexToRgb(hex) {
             return hex * 17; // 0-15를 0-255로 변환
@@ -501,10 +668,6 @@
             
             // 배경색을 목표 색상으로 설정 (고정)
             updateBackgroundColor();
-            
-            // 목표 색상 코드 표시
-            const targetHex = `#${targetR.toString(16).toUpperCase()}${targetG.toString(16).toUpperCase()}${targetB.toString(16).toUpperCase()}`;
-            document.getElementById('targetColorCode').textContent = targetHex;
             
             // 새 문제 시작 - 히스토리와 시도 횟수 초기화
             attemptCount = 0;
@@ -579,6 +742,11 @@
         }
 
         function submitGuess() {
+            if (isCompetitionMode) {
+                submitCompetitionGuess();
+                return;
+            }
+
             const userR = parseInt(document.getElementById('rSlider').value);
             const userG = parseInt(document.getElementById('gSlider').value);
             const userB = parseInt(document.getElementById('bSlider').value);
@@ -606,12 +774,437 @@
             document.getElementById('successModal').classList.remove('show');
         }
 
+        // ===== 경쟁모드 함수들 =====
+        
+        function openCompetitionMenu() {
+            document.getElementById('competitionMenuModal').classList.add('show');
+        }
+
+        function closeCompetitionMenu() {
+            document.getElementById('competitionMenuModal').classList.remove('show');
+        }
+
+        function openCreateRoom() {
+            document.getElementById('competitionMenuModal').classList.remove('show');
+            document.getElementById('createRoomModal').classList.add('show');
+        }
+
+        function openJoinRoom() {
+            document.getElementById('competitionMenuModal').classList.remove('show');
+            document.getElementById('joinRoomModal').classList.add('show');
+        }
+
+        function backToCompetitionMenu() {
+            document.getElementById('createRoomModal').classList.remove('show');
+            document.getElementById('joinRoomModal').classList.remove('show');
+            document.getElementById('competitionMenuModal').classList.add('show');
+        }
+
+        async function createRoom() {
+            const name = document.getElementById('hostNameInput').value.trim();
+            const attempts = parseInt(document.getElementById('maxAttemptsInput').value);
+            
+            if (!name) {
+                alert('닉네임을 입력해주세요!');
+                return;
+            }
+
+            if (attempts < 5 || attempts > 30) {
+                alert('시도 횟수는 5회에서 30회 사이로 설정해주세요!');
+                return;
+            }
+
+            playerName = name;
+            maxAttempts = attempts;
+            
+            // 6자리 랜덤 방 코드 생성
+            const roomCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+            currentRoom = roomCode;
+
+            // 문제 개수만큼 문제 미리 생성
+            const problems = [];
+            for (let i = 0; i < attempts; i++) {
+                problems.push({
+                    r: Math.floor(Math.random() * 16),
+                    g: Math.floor(Math.random() * 16),
+                    b: Math.floor(Math.random() * 16)
+                });
+            }
+
+            // Firebase에 방 생성
+            const roomRef = ref(database, 'rooms/' + roomCode);
+            await set(roomRef, {
+                host: playerId,
+                status: 'waiting',
+                maxAttempts: attempts,
+                problems: problems,
+                currentProblemIndex: 0,
+                players: {
+                    [playerId]: {
+                        name: playerName,
+                        score: 0,
+                        attempts: 0,
+                        isHost: true,
+                        status: 'waiting'
+                    }
+                }
+            });
+
+            document.getElementById('createRoomModal').classList.remove('show');
+            enterWaitingRoom(roomCode, true);
+        }
+
+        async function joinRoom() {
+            const name = document.getElementById('joinNameInput').value.trim();
+            const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            
+            if (!name || !roomCode) {
+                alert('닉네임과 방 코드를 모두 입력해주세요!');
+                return;
+            }
+
+            playerName = name;
+            currentRoom = roomCode;
+
+            // 방이 존재하는지 확인
+            const roomRef = ref(database, 'rooms/' + roomCode);
+            const snapshot = await get(roomRef);
+            
+            if (!snapshot.exists()) {
+                alert('존재하지 않는 방 코드입니다!');
+                return;
+            }
+
+            const roomData = snapshot.val();
+            if (roomData.status !== 'waiting') {
+                alert('이미 시작된 게임입니다!');
+                return;
+            }
+
+            // 시도 횟수 가져오기
+            maxAttempts = roomData.maxAttempts || 20;
+
+            // 플레이어 추가
+            const playerRef = ref(database, `rooms/${roomCode}/players/${playerId}`);
+            await set(playerRef, {
+                name: playerName,
+                score: 0,
+                attempts: 0,
+                isHost: false,
+                status: 'waiting'
+            });
+
+            document.getElementById('joinRoomModal').classList.remove('show');
+            enterWaitingRoom(roomCode, false);
+        }
+
+        function enterWaitingRoom(roomCode, isHost) {
+            document.getElementById('displayRoomCode').textContent = roomCode;
+            document.getElementById('waitingRoomModal').classList.add('show');
+            
+            if (isHost) {
+                document.getElementById('startGameBtn').style.display = 'block';
+            }
+
+            // 실시간 플레이어 목록 업데이트
+            const playersRef = ref(database, `rooms/${roomCode}/players`);
+            onValue(playersRef, (snapshot) => {
+                const players = snapshot.val() || {};
+                updatePlayersList(players);
+            });
+
+            // 게임 시작 감지
+            const statusRef = ref(database, `rooms/${roomCode}/status`);
+            onValue(statusRef, (snapshot) => {
+                if (snapshot.val() === 'playing') {
+                    document.getElementById('waitingRoomModal').classList.remove('show');
+                    startCompetitionGame();
+                }
+            });
+        }
+
+        function updatePlayersList(players) {
+            const list = document.getElementById('playersList');
+            list.innerHTML = Object.entries(players).map(([id, player]) => `
+                <div style="padding: 10px; margin: 5px 0; background: ${player.isHost ? '#fff5f5' : '#f7fafc'}; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: ${player.isHost ? 'bold' : 'normal'};">
+                        ${player.isHost ? '👑 ' : ''}${player.name}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        async function startGame() {
+            const statusRef = ref(database, `rooms/${currentRoom}/status`);
+            await set(statusRef, 'playing');
+        }
+
+        async function leaveRoom() {
+            if (currentRoom && playerId) {
+                // 플레이어 제거
+                const playerRef = ref(database, `rooms/${currentRoom}/players/${playerId}`);
+                await remove(playerRef);
+                
+                // 남은 플레이어 확인
+                const playersRef = ref(database, `rooms/${currentRoom}/players`);
+                const snapshot = await get(playersRef);
+                
+                if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
+                    // 마지막 플레이어면 방 삭제
+                    const roomRef = ref(database, `rooms/${currentRoom}`);
+                    await remove(roomRef);
+                }
+            }
+            
+            currentRoom = null;
+            isCompetitionMode = false;
+            document.getElementById('waitingRoomModal').classList.remove('show');
+            document.getElementById('competitionPanel').style.display = 'none';
+            resetGame();
+        }
+
         function nextProblem() {
-            generateTargetColor();
+            if (isCompetitionMode) {
+                loadNextCompetitionProblem();
+            } else {
+                generateTargetColor();
+                document.getElementById('rSlider').value = 0;
+                document.getElementById('gSlider').value = 0;
+                document.getElementById('bSlider').value = 0;
+                updateSliderDisplay();
+            }
+        }
+
+        async function startCompetitionGame() {
+            isCompetitionMode = true;
+            correctCount = 0;
+            attemptCount = 0;
+            
+            // 방 데이터에서 maxAttempts 가져오기
+            const roomRef = ref(database, `rooms/${currentRoom}`);
+            const snapshot = await get(roomRef);
+            const roomData = snapshot.val();
+            maxAttempts = roomData.maxAttempts || 20;
+            
+            document.getElementById('competitionPanel').style.display = 'block';
+            document.getElementById('remainingAttempts').textContent = maxAttempts;
+            document.getElementById('correctAnswers').textContent = correctCount;
+            
+            // 실시간 랭킹 업데이트 리스너
+            const playersRef = ref(database, `rooms/${currentRoom}/players`);
+            onValue(playersRef, (snapshot) => {
+                const players = snapshot.val() || {};
+                updateRealtimeRanking(players);
+                
+                // 모든 플레이어가 완료했는지 확인
+                checkAllPlayersFinished(players);
+            });
+            
+            loadNextCompetitionProblem();
+        }
+
+        async function loadNextCompetitionProblem() {
+            const roomRef = ref(database, `rooms/${currentRoom}`);
+            const snapshot = await get(roomRef);
+            const roomData = snapshot.val();
+            
+            const problemIndex = roomData.currentProblemIndex;
+            const problem = roomData.problems[problemIndex];
+            
+            targetR = problem.r;
+            targetG = problem.g;
+            targetB = problem.b;
+            
+            updateBackgroundColor();
+            
+            // 슬라이더 리셋
             document.getElementById('rSlider').value = 0;
             document.getElementById('gSlider').value = 0;
             document.getElementById('bSlider').value = 0;
             updateSliderDisplay();
+            
+            // 히스토리 초기화
+            currentHistory = [];
+            updateHistoryDisplay();
+        }
+
+        function updateRealtimeRanking(players) {
+            const sortedPlayers = Object.entries(players)
+                .sort(([, a], [, b]) => {
+                    if (b.score !== a.score) return b.score - a.score;
+                    return a.attempts - b.attempts;
+                });
+            
+            const rankingHTML = sortedPlayers.map(([id, player], index) => {
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                const isMe = id === playerId;
+                return `
+                    <div style="padding: 8px; margin: 3px 0; background: ${isMe ? '#fff5f5' : '#f7fafc'}; border-radius: 6px; display: flex; justify-content: space-between; ${isMe ? 'border: 2px solid #e53e3e;' : ''}">
+                        <span style="font-weight: ${isMe ? 'bold' : 'normal'};">
+                            ${medal} ${player.name}
+                        </span>
+                        <span style="font-weight: bold; color: #38a169;">
+                            ${player.score}개 (${player.attempts}회)
+                        </span>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('realtimeRanking').innerHTML = rankingHTML;
+        }
+
+        async function submitCompetitionGuess() {
+            const userR = parseInt(document.getElementById('rSlider').value);
+            const userG = parseInt(document.getElementById('gSlider').value);
+            const userB = parseInt(document.getElementById('bSlider').value);
+
+            attemptCount++;
+            document.getElementById('remainingAttempts').textContent = maxAttempts - attemptCount;
+
+            const isCorrect = (userR === targetR && userG === targetG && userB === targetB);
+            
+            if (isCorrect) {
+                correctCount++;
+                document.getElementById('correctAnswers').textContent = correctCount;
+                
+                // Firebase 업데이트
+                const playerRef = ref(database, `rooms/${currentRoom}/players/${playerId}`);
+                await update(playerRef, {
+                    score: correctCount,
+                    attempts: attemptCount
+                });
+                
+                // 다음 문제로
+                const roomRef = ref(database, `rooms/${currentRoom}/currentProblemIndex`);
+                const snapshot = await get(ref(database, `rooms/${currentRoom}`));
+                const currentIndex = snapshot.val().currentProblemIndex;
+                await set(roomRef, currentIndex + 1);
+                
+                // 성공 알림
+                setTimeout(() => {
+                    if (attemptCount >= maxAttempts) {
+                        endCompetitionGame();
+                    } else {
+                        loadNextCompetitionProblem();
+                    }
+                }, 500);
+            } else {
+                // 점수 계산해서 히스토리에 추가
+                const score = calculateScore(userR, userG, userB);
+                addToHistory(score, userR, userG, userB);
+                
+                // 기회 소진 체크
+                if (attemptCount >= maxAttempts) {
+                    // 최종 점수 업데이트
+                    const playerRef = ref(database, `rooms/${currentRoom}/players/${playerId}`);
+                    await update(playerRef, {
+                        score: correctCount,
+                        attempts: attemptCount
+                    });
+                    endCompetitionGame();
+                }
+            }
+        }
+
+        async function endCompetitionGame() {
+            // 내 최종 점수를 Firebase에 저장 (finished 상태로)
+            const playerRef = ref(database, `rooms/${currentRoom}/players/${playerId}`);
+            await update(playerRef, {
+                score: correctCount,
+                attempts: attemptCount,
+                status: 'finished'
+            });
+            
+            // 대기 팝업 표시
+            document.getElementById('myFinalScore').textContent = correctCount;
+            document.getElementById('waitingFinishModal').classList.add('show');
+            
+            // 완료 현황 업데이트
+            updateFinishStatus();
+        }
+
+        function updateFinishStatus() {
+            const playersRef = ref(database, `rooms/${currentRoom}/players`);
+            onValue(playersRef, (snapshot) => {
+                const players = snapshot.val() || {};
+                const totalPlayers = Object.keys(players).length;
+                const finishedPlayers = Object.values(players).filter(p => p.status === 'finished').length;
+                
+                const statusHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>${finishedPlayers} / ${totalPlayers} 명 완료</span>
+                        <div style="flex: 1; margin-left: 15px; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${(finishedPlayers/totalPlayers*100)}%; height: 100%; background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('finishStatus').innerHTML = statusHTML;
+            });
+        }
+
+        function checkAllPlayersFinished(players) {
+            const allFinished = Object.values(players).every(p => p.status === 'finished');
+            
+            if (allFinished && Object.keys(players).length > 0) {
+                // 모든 플레이어 완료 - 최종 랭킹 표시
+                showFinalRanking(players);
+            }
+        }
+
+        function showFinalRanking(players) {
+            // 대기 팝업 닫기
+            document.getElementById('waitingFinishModal').classList.remove('show');
+            
+            // 랭킹 정렬
+            const sortedPlayers = Object.entries(players)
+                .sort(([, a], [, b]) => {
+                    if (b.score !== a.score) return b.score - a.score;
+                    return a.attempts - b.attempts;
+                });
+            
+            // 랭킹 HTML 생성
+            const rankingHTML = sortedPlayers.map(([id, player], index) => {
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}위`;
+                const isMe = id === playerId;
+                const bgColor = index === 0 ? '#fff5f5' : index === 1 ? '#fffaf0' : index === 2 ? '#f0fff4' : '#f7fafc';
+                
+                return `
+                    <div style="padding: 15px 20px; margin: 10px 0; background: ${bgColor}; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; ${isMe ? 'border: 3px solid #e53e3e;' : 'border: 2px solid #e2e8f0;'}">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="font-size: 1.5em; min-width: 50px;">${medal}</span>
+                            <div>
+                                <div style="font-weight: bold; font-size: 1.1em; color: #2d3748;">
+                                    ${player.name}${isMe ? ' (나)' : ''}
+                                </div>
+                                <div style="font-size: 0.9em; color: #718096;">
+                                    ${player.attempts}회 시도
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-weight: bold; font-size: 1.4em; color: #38a169;">
+                            ${player.score}개
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('finalRankingList').innerHTML = rankingHTML;
+            document.getElementById('finalRankingModal').classList.add('show');
+        }
+
+        function closeFinalRanking() {
+            document.getElementById('finalRankingModal').classList.remove('show');
+            leaveRoom();
+        }
+
+        function resetGame() {
+            isCompetitionMode = false;
+            attemptCount = 0;
+            correctCount = 0;
+            currentHistory = [];
+            document.getElementById('attemptCount').textContent = attemptCount;
+            updateHistoryDisplay();
+            generateTargetColor();
         }
 
         document.getElementById('rSlider').addEventListener('input', updateSliderDisplay);
@@ -621,6 +1214,40 @@
         // 초기화
         generateTargetColor();
         updateSliderDisplay();
+
+        // 모든 함수를 window 객체에 할당 (모듈 스코프 문제 해결)
+        window.hexToRgb = hexToRgb;
+        window.generateTargetColor = generateTargetColor;
+        window.updateBackgroundColor = updateBackgroundColor;
+        window.updateSliderDisplay = updateSliderDisplay;
+        window.calculateScore = calculateScore;
+        window.addToHistory = addToHistory;
+        window.updateHistoryDisplay = updateHistoryDisplay;
+        window.submitGuess = submitGuess;
+        window.showSuccessModal = showSuccessModal;
+        window.closeSuccessModal = closeSuccessModal;
+        window.nextProblem = nextProblem;
+        window.openCompetitionMenu = openCompetitionMenu;
+        window.closeCompetitionMenu = closeCompetitionMenu;
+        window.openCreateRoom = openCreateRoom;
+        window.openJoinRoom = openJoinRoom;
+        window.backToCompetitionMenu = backToCompetitionMenu;
+        window.createRoom = createRoom;
+        window.joinRoom = joinRoom;
+        window.enterWaitingRoom = enterWaitingRoom;
+        window.updatePlayersList = updatePlayersList;
+        window.startGame = startGame;
+        window.leaveRoom = leaveRoom;
+        window.startCompetitionGame = startCompetitionGame;
+        window.loadNextCompetitionProblem = loadNextCompetitionProblem;
+        window.updateRealtimeRanking = updateRealtimeRanking;
+        window.submitCompetitionGuess = submitCompetitionGuess;
+        window.endCompetitionGame = endCompetitionGame;
+        window.resetGame = resetGame;
+        window.checkAllPlayersFinished = checkAllPlayersFinished;
+        window.showFinalRanking = showFinalRanking;
+        window.closeFinalRanking = closeFinalRanking;
+        window.updateFinishStatus = updateFinishStatus;
     </script>
 </body>
 </html>
