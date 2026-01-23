@@ -9,7 +9,7 @@
     <meta name="title" content="인공지능 수학 | AI Mathematics">
     <meta name="description" content="인공지능 속 숨은 수학적 원리를 알아봅시다. 텍스트 분석과 이미지 분석을 통해 AI 수학을 탐구하는 교육 플랫폼입니다.">
     <meta name="keywords" content="인공지능, 수학, AI, 머신러닝, 텍스트 분석, 이미지 분석, 수학 교육, AI Mathematics">
-    <meta name="author" content="갈루아">
+    <meta name="author" content="황성현">
     <meta name="robots" content="index, follow">
     
     <!-- Open Graph / Facebook -->
@@ -559,6 +559,115 @@
                 gap: 30px;
             }
         }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .footer-content {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .visitor-count {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .visitor-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .visitor-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+
+        .visitor-number {
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* 오늘 방문자는 초록 형광색 */
+        #todayCount {
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .visitor-divider {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1.2rem;
+        }
+
+        .copyright {
+            opacity: 0.6;
+        }
+
+        .email-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .email-link:hover {
+            color: #00ff88;
+            opacity: 1;
+        }
+
+        .naver-logo {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 10px;
+                font-size: 0.85rem;
+            }
+
+            .visitor-count {
+                gap: 10px;
+            }
+
+            .visitor-item {
+                padding: 6px 12px;
+            }
+
+            .email-link {
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -598,8 +707,115 @@
                     <button class="access-button">접속하기</button>
                 </div>
             </div>
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-content">
+            <div class="visitor-count">
+                <div class="visitor-item">
+                    <span class="visitor-label">오늘</span>
+                    <span class="visitor-number" id="todayCount">-</span>
+                </div>
+                <span class="visitor-divider">|</span>
+                <div class="visitor-item">
+                    <span class="visitor-label">총 방문자</span>
+                    <span class="visitor-number" id="totalCount">-</span>
+                </div>
+            </div>
+            <div class="copyright">© 2025 인공지능 수학 | 황성현</div>
+            <a href="mailto:tjdgus1121@naver.com" class="email-link">
+                <svg class="naver-logo" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16.273 12.845L7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845z"/>
+                </svg>
+                tjdgus1121@naver.com
+            </a>
         </div>
     </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1GG5zh4s0loWOkgOvEaohlai6ReW5U5U",
+            authDomain: "aimath-visitor.firebaseapp.com",
+            databaseURL: "https://aimath-visitor-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "aimath-visitor",
+            storageBucket: "aimath-visitor.firebasestorage.app",
+            messagingSenderId: "538785315085",
+            appId: "1:538785315085:web:bffab1a7aba5ef342c9844"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        // 오늘 날짜 가져오기 (YYYY-MM-DD)
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        const todayDate = getTodayDate();
+        const totalRef = ref(database, 'visitors/total');
+        const todayRef = ref(database, `visitors/daily/${todayDate}`);
+        
+        // 방문자 수 증가
+        const sessionKey = 'ai_math_visited';
+        const todayKey = 'ai_math_visited_date';
+        const hasVisited = sessionStorage.getItem(sessionKey);
+        const lastVisitDate = localStorage.getItem(todayKey);
+        
+        // 오늘 처음 방문인지 확인
+        const isFirstVisitToday = lastVisitDate !== todayDate;
+        
+        if (!hasVisited) {
+            // 세션 첫 방문이면 총 방문자 증가
+            get(totalRef).then((snapshot) => {
+                const currentTotal = snapshot.val() || 0;
+                set(totalRef, currentTotal + 1);
+            }).catch((error) => {
+                console.error('총 방문자 증가 오류:', error);
+            });
+            
+            sessionStorage.setItem(sessionKey, 'true');
+        }
+        
+        if (isFirstVisitToday) {
+            // 오늘 첫 방문이면 오늘 방문자 증가
+            get(todayRef).then((snapshot) => {
+                const currentToday = snapshot.val() || 0;
+                set(todayRef, currentToday + 1);
+            }).catch((error) => {
+                console.error('오늘 방문자 증가 오류:', error);
+            });
+            
+            localStorage.setItem(todayKey, todayDate);
+        }
+        
+        // 실시간 총 방문자 수 표시
+        onValue(totalRef, (snapshot) => {
+            const count = snapshot.val() || 0;
+            document.getElementById('totalCount').textContent = count.toLocaleString();
+        }, (error) => {
+            console.error('총 방문자 읽기 오류:', error);
+            document.getElementById('totalCount').textContent = '-';
+        });
+        
+        // 실시간 오늘 방문자 수 표시
+        onValue(todayRef, (snapshot) => {
+            const count = snapshot.val() || 0;
+            document.getElementById('todayCount').textContent = count.toLocaleString();
+        }, (error) => {
+            console.error('오늘 방문자 읽기 오류:', error);
+            document.getElementById('todayCount').textContent = '-';
+        });
+    </script>
 
     <script>
         // 별 생성
