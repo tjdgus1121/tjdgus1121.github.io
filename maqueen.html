@@ -273,15 +273,6 @@
         
         .log-box div {
             padding: 4px 0;
-            border-bottom: 1px solid #334155;
-        }
-        
-        .log-box div:last-child {
-            border-bottom: none;
-        }
-        
-        .log-box .error {
-            color: #fca5a5;
         }
         
         #webcam-container {
@@ -488,6 +479,14 @@
             font-size: 14px;
             margin-left: 8px;
         }
+
+        #textSection {
+            display: none;
+        }
+
+        #nextToAI {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -510,25 +509,24 @@
                 ⚠️ <strong>중요!</strong> 마이크로비트에 블루투스 UART 코드가 업로드되어 있어야 합니다.
             </div>
             
-            <div id="connectStatus" class="status disconnected">
-                <span>🔌</span>
-                <span>블루투스 연결 대기 중...</span>
-            </div>
+            <div id="btStatus" class="status disconnected">❌ 블루투스 연결 안됨</div>
             
             <button id="connectBtn">🔗 마이크로비트 연결</button>
             
-            <h2>📤 텍스트 명령 전송 테스트</h2>
-            <div class="info">
-                블루투스가 정상적으로 작동하는지 먼저 확인하세요.
+            <div id="textSection">
+                <h2>📤 텍스트 명령 전송 테스트</h2>
+                <div class="info">
+                    블루투스가 정상적으로 작동하는지 먼저 확인하세요.
+                </div>
+                
+                <input type="text" id="textInput" placeholder="전송할 텍스트 입력 (예: F, B, L, R, S)">
+                <button id="sendTextBtn">📤 텍스트 전송</button>
+                <div id="sentText" style="text-align: center; color: #10b981; font-weight: 600; margin-top: 12px;"></div>
             </div>
-            
-            <input type="text" id="textInput" placeholder="전송할 텍스트 입력 (예: F, B, L, R, S)">
-            <button id="sendTextBtn" disabled>📤 텍스트 전송</button>
-            <div id="sentText" style="text-align: center; color: #10b981; font-weight: 600; margin-top: 12px;"></div>
             
             <div class="log-box" id="log1"></div>
             
-            <button id="nextToAI" disabled>다음 단계 →</button>
+            <button id="nextToAI">다음 단계 →</button>
         </div>
         
         <!-- STEP 2: AI 제어 -->
@@ -636,23 +634,88 @@
     
     <!-- Teachable Machine 라이브러리 -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/tm-image.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/tm-pose.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
     
     <script>
+        // UART 서비스 UUID
+        const UART_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+        const UART_TX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+        const UART_RX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+        
         // 전역 변수
         let device;
-        let characteristic;
+        let txCharacteristic;
         let model, webcam, maxPredictions;
         let isWebcamRunning = false;
         let classCommands = {};
         let savedModelURL = '';
         let lastCommand = '';
         let lastSendTime = 0;
+        let currentStep = 1;
         let modelType = 'image'; // 기본값: image
         
         // Pose 전용 변수
         let ctx, labelContainer;
+        
+        function log(msg, isError = false, logId = 'log1') {
+            const logDiv = document.getElementById(logId);
+            if (!logDiv) return;
+            
+            const time = new Date().toLocaleTimeString();
+            const icon = isError ? '❌' : '✓';
+            const color = isError ? '#ef4444' : '#10b981';
+            logDiv.innerHTML += `<div style="color: ${color}">[${time}] ${icon} ${msg}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function showStep(stepNum) {
+            const currentStepEl = document.getElementById(`step${currentStep}`);
+            const nextStepEl = document.getElementById(`step${stepNum}`);
+            
+            if (currentStepEl) {
+                currentStepEl.classList.add('hidden');
+                setTimeout(() => {
+                    currentStepEl.classList.remove('active', 'hidden');
+                }, 500);
+            }
+            
+            setTimeout(() => {
+                nextStepEl.classList.add('active');
+                currentStep = stepNum;
+                
+                document.querySelectorAll('.step-dot').forEach((dot, i) => {
+                    dot.classList.toggle('active', i + 1 === stepNum);
+                });
+            }, 500);
+        }
+        
+        async function sendToMicrobit(text, logId = 'log1') {
+            if (!txCharacteristic) {
+                log('블루투스가 연결되지 않았습니다', true, logId);
+                return false;
+            }
+            
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(text + '\n');
+                
+                if (txCharacteristic.properties.writeWithoutResponse) {
+                    await txCharacteristic.writeValueWithoutResponse(data);
+                } else if (txCharacteristic.properties.write) {
+                    await txCharacteristic.writeValue(data);
+                } else {
+                    log('쓰기 권한이 없습니다', true, logId);
+                    return false;
+                }
+                
+                log(`전송: ${text}`, false, logId);
+                return true;
+            } catch (error) {
+                log('전송 실패: ' + error.message, true, logId);
+                return false;
+            }
+        }
         
         // 모델 타입 변경 감지
         document.querySelectorAll('input[name="modelType"]').forEach(radio => {
@@ -675,94 +738,67 @@
             document.getElementById('modelTypeDisplay').textContent = displayText;
         }
         
-        // Bluetooth 연결
-        async function connectBluetooth() {
+        // 블루투스 연결
+        document.getElementById('connectBtn').addEventListener('click', async () => {
             try {
-                log('블루투스 검색 중...', false, 'log1');
+                log('블루투스 기기 검색 중...', false, 'log1');
                 
                 device = await navigator.bluetooth.requestDevice({
                     filters: [{ namePrefix: 'BBC micro:bit' }],
-                    optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']
+                    optionalServices: [UART_SERVICE]
                 });
                 
                 log('연결 중: ' + device.name, false, 'log1');
+                
+                device.addEventListener('gattserverdisconnected', () => {
+                    log('연결이 끊어졌습니다', true, 'log1');
+                    document.getElementById('btStatus').className = 'status disconnected';
+                    document.getElementById('btStatus').textContent = '❌ 블루투스 연결 안됨';
+                    document.getElementById('textSection').style.display = 'none';
+                    document.getElementById('nextToAI').style.display = 'none';
+                    txCharacteristic = null;
+                });
+                
                 const server = await device.gatt.connect();
+                const uartService = await server.getPrimaryService(UART_SERVICE);
+                const characteristics = await uartService.getCharacteristics();
                 
-                const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
-                characteristic = await service.getCharacteristic('6e400002-b5a3-f393-e0a9-e50e24dcca9e');
-                
-                log('✅ 연결 성공!', false, 'log1');
-                
-                document.getElementById('connectStatus').className = 'status connected';
-                document.getElementById('connectStatus').innerHTML = '<span>✅</span><span>연결됨: ' + device.name + '</span>';
-                document.getElementById('connectBtn').disabled = true;
-                document.getElementById('sendTextBtn').disabled = false;
-                document.getElementById('nextToAI').disabled = false;
-                
-                return true;
-            } catch (error) {
-                log('연결 실패: ' + error.message, true, 'log1');
-                return false;
-            }
-        }
-        
-        async function sendToMicrobit(text, logId) {
-            if (!characteristic) {
-                log('❌ 마이크로비트가 연결되지 않았습니다', true, logId);
-                return false;
-            }
-            
-            try {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(text);
-                await characteristic.writeValue(data);
-                log(`✅ 전송 성공: ${text}`, false, logId);
-                return true;
-            } catch (error) {
-                log(`❌ 전송 실패: ${error.message}`, true, logId);
-                return false;
-            }
-        }
-        
-        function log(message, isError = false, logId = 'log1') {
-            const logBox = document.getElementById(logId);
-            const div = document.createElement('div');
-            if (isError) div.className = 'error';
-            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logBox.appendChild(div);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-        
-        function showStep(stepNum) {
-            document.querySelectorAll('.step').forEach((step, index) => {
-                if (index + 1 === stepNum) {
-                    step.classList.add('active');
-                    step.classList.remove('hidden');
-                } else {
-                    step.classList.remove('active');
-                    step.classList.add('hidden');
+                for (const char of characteristics) {
+                    const props = char.properties;
+                    if (props.write || props.writeWithoutResponse) {
+                        txCharacteristic = char;
+                        log('✅ 쓰기 가능 특성 찾음!', false, 'log1');
+                        break;
+                    }
                 }
-            });
-            
-            document.querySelectorAll('.step-dot').forEach((dot, index) => {
-                if (index + 1 === stepNum) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
+                
+                if (!txCharacteristic) {
+                    throw new Error('쓰기 가능한 특성을 찾을 수 없습니다.');
                 }
-            });
-        }
+                
+                log('✨ 블루투스 연결 성공!', false, 'log1');
+                
+                document.getElementById('btStatus').className = 'status connected';
+                document.getElementById('btStatus').textContent = '✅ 블루투스 연결됨: ' + device.name;
+                document.getElementById('textSection').style.display = 'block';
+                document.getElementById('nextToAI').style.display = 'block';
+                
+            } catch (error) {
+                log('연결 오류: ' + error.message, true, 'log1');
+            }
+        });
         
-        // 이벤트 리스너
-        document.getElementById('connectBtn').addEventListener('click', connectBluetooth);
-        
+        // 텍스트 전송
         document.getElementById('sendTextBtn').addEventListener('click', async () => {
             const text = document.getElementById('textInput').value.trim();
-            if (text) {
-                const success = await sendToMicrobit(text, 'log1');
-                if (success) {
-                    document.getElementById('sentText').textContent = `📤 전송: ${text}`;
-                }
+            if (!text) {
+                alert('텍스트를 입력하세요!');
+                return;
+            }
+            
+            const success = await sendToMicrobit(text, 'log1');
+            if (success) {
+                document.getElementById('sentText').textContent = `📤 전송: ${text}`;
             }
         });
         
