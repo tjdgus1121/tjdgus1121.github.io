@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 확대/축소 - 행렬 변환 시각화</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8;
+        }
+        
+        h1, h2, .dohyeon-text {
+            font-family: 'Do Hyeon', sans-serif;
+            font-weight: 400;
+        }
+        
+        h1 {
+            font-size: 3rem; /* Increased from default */
+        }
+        
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 3.25rem; /* Increased from default */
+            }
+        }
+        
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .rgb-tooltip {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .rgb-tooltip.show {
+            display: block;
+        }
+        
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .animate-slide-left {
+            animation: slideInFromLeft 0.5s ease-out;
+        }
+        
+        .animate-slide-right {
+            animation: slideInFromRight 0.5s ease-out;
+        }
+        
+        .gradient-bg {
+            background: #f0f4f8;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Completion Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 95vw;
+            max-height: 95vh;
+            overflow: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.4s ease-out;
+            position: relative;
+            cursor: move;
+        }
+        
+        .modal-header {
+            cursor: move;
+            user-select: none;
+        }
+        
+        .modal-content.dragging {
+            cursor: move;
+        }
+        
+        #completionCanvas {
+            cursor: default;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ====== 비교 뷰 모드 토글 버튼 ====== */
+        .view-mode-btn {
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 2px solid #e5e7eb;
+            background: white;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            font-family: 'Do Hyeon', sans-serif;
+        }
+        .view-mode-btn:hover {
+            border-color: #818cf8;
+            color: #4f46e5;
+            transform: translateY(-1px);
+        }
+        .view-mode-btn.active {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(79,70,229,0.35);
+        }
+
+        /* ====== 1개씩 보기 네비게이션 ====== */
+        .method-nav-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            border: 2px solid #e5e7eb;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: #374151;
+            line-height: 1;
+        }
+        .method-nav-btn:hover {
+            background: #e0e7ff;
+            border-color: #818cf8;
+            color: #4f46e5;
+        }
+        .method-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #d1d5db;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .method-dot.active { background: #4f46e5; }
+
+        /* ====== BA 보간법 선택 버튼 ====== */
+        .ba-method-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            border: 2px solid #e5e7eb;
+            background: white;
+            color: #6b7280;
+            transition: all 0.2s;
+            font-family: 'Do Hyeon', sans-serif;
+        }
+        .ba-method-btn:hover { border-color: #818cf8; color: #4f46e5; }
+        .ba-method-btn.active {
+            background: linear-gradient(45deg, #059669, #10b981);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 3px 10px rgba(16,185,129,0.3);
+        }
+
+        /* ====== Before/After 슬라이더 ====== */
+        .compare-ba-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+            cursor: ew-resize;
+            display: block;
+            margin: 0 auto;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .compare-ba-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            display: block;
+        }
+        .compare-ba-divider {
+            position: absolute;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: white;
+            box-shadow: 0 0 12px rgba(0,0,0,0.5);
+            z-index: 10;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+        .compare-ba-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 46px;
+            height: 46px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #4f46e5;
+        }
+        .compare-ba-label {
+            position: absolute;
+            top: 14px;
+            padding: 5px 12px;
+            background: rgba(0,0,0,0.65);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: bold;
+            z-index: 5;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .compare-ba-label.left { left: 12px; }
+        .compare-ba-label.right { right: 12px; }
+
+        /* ====== 윈도우 창 스타일 (보간 완료 모달) ====== */
+        .win-window {
+            padding: 0 !important;
+            border-radius: 8px !important;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.3);
+            box-shadow: 0 28px 72px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+            display: flex;
+            flex-direction: column;
+            min-width: 400px;
+            max-width: 92vw;
+            max-height: 92vh;
+            cursor: default;
+        }
+        .win-titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, #4338ca 0%, #6d28d9 100%);
+            height: 36px;
+            padding: 0 0 0 10px;
+            cursor: move;
+            -webkit-user-select: none;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .win-titlebar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow: hidden;
+            flex: 1;
+            min-width: 0;
+        }
+        .win-app-icon { font-size: 15px; flex-shrink: 0; }
+        .win-title {
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: 'Inter', sans-serif;
+            opacity: 0.95;
+        }
+        .win-controls-area {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            flex-shrink: 0;
+            padding-left: 8px;
+        }
+        .win-zoom-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            border: none;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+            line-height: 1;
+        }
+        .win-zoom-btn:hover { background: rgba(255,255,255,0.32); }
+        .win-zoom-label {
+            color: rgba(255,255,255,0.9);
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .win-sep {
+            width: 1px;
+            height: 18px;
+            background: rgba(255,255,255,0.28);
+            margin: 0 4px;
+        }
+        .win-ctrl-btn {
+            width: 46px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.88);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.12s;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .win-ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+        .win-close:hover    { background: #c42b1c !important; color: white !important; }
+        .win-body {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            background: #111827;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .win-canvas-el {
+            display: block;
+            border: 1px solid rgba(99,102,241,0.45);
+            border-radius: 4px;
+            box-shadow: 0 4px 28px rgba(0,0,0,0.55);
+        }
+        .win-size-info {
+            color: rgba(255,255,255,0.38);
+            font-size: 0.74rem;
+            text-align: center;
+            margin-top: 10px;
+            font-family: 'Inter', monospace;
+        }
+        .win-statusbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1f2937;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding: 5px 14px;
+            flex-shrink: 0;
+        }
+        .win-status-text  { color: rgba(255,255,255,0.48); font-size: 0.75rem; font-family: 'Inter', sans-serif; }
+        .win-status-right { color: rgba(255,255,255,0.26); font-size: 0.73rem; font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <!-- Header -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-3">
+                🎨 이미지 확대와 축소
+            </h1>
+            <p class="text-lg text-gray-600">행렬 변환을 이용한 이미지 변환 시각화</p>
+        </div>
+
+        <!-- Math Formula Card -->
+        <div class="glass-effect rounded-2xl shadow-2xl p-6 mb-8 max-w-5xl mx-auto">
+            <div class="grid md:grid-cols-3 gap-6 items-center">
+                <!-- Matrix Formula (Left & Center) -->
+                <div class="md:col-span-2">
+                    <div class="text-xl font-semibold text-gray-800 mb-4 text-center">변환 행렬</div>
+                    <div class="flex items-center justify-center gap-4 text-indigo-600">
+                        <!-- Result Vector -->
+                        <div class="inline-flex items-center">
+                            <div class="w-1 h-20 bg-indigo-600 rounded-l-md"></div>
+                            <div class="flex flex-col gap-2 px-3">
+                                <span class="text-2xl italic">x′</span>
+                                <span class="text-2xl italic">y′</span>
+                            </div>
+                            <div class="w-1 h-20 bg-indigo-600 rounded-r-md"></div>
+                        </div>
+                        
+                        <span class="text-3xl font-bold">=</span>
+                        
+                        <!-- Transformation Matrix -->
+                        <div class="inline-flex items-center">
+                            <div class="w-1 h-24 bg-indigo-600 rounded-l-md"></div>
+                            <div class="grid grid-cols-2 gap-x-6 gap-y-2 px-4">
+                                <span class="text-2xl font-semibold">W</span>
+                                <span class="text-2xl font-semibold">0</span>
+                                <span class="text-2xl font-semibold">0</span>
+                                <span class="text-2xl font-semibold">H</span>
+                            </div>
+                            <div class="w-1 h-24 bg-indigo-600 rounded-r-md"></div>
+                        </div>
+                        
+                        <!-- Input Vector -->
+                        <div class="inline-flex items-center">
+                            <div class="w-1 h-20 bg-indigo-600 rounded-l-md"></div>
+                            <div class="flex flex-col gap-2 px-3">
+                                <span class="text-2xl italic">x</span>
+                                <span class="text-2xl italic">y</span>
+                            </div>
+                            <div class="w-1 h-20 bg-indigo-600 rounded-r-md"></div>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600 mt-4 text-center">
+                        <span class="font-mono">W</span>: 가로 배율 (확대 계수), 
+                        <span class="font-mono">H</span>: 세로 배율 (확대 계수)
+                    </div>
+                </div>
+                
+                <!-- Explanation (Right) -->
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
+                    <div class="flex items-start gap-2">
+                        <span class="text-2xl">💡</span>
+                        <div>
+                            <h3 class="font-bold text-amber-900 mb-2">좌표 체계 안내</h3>
+                            <div class="text-sm text-amber-800 space-y-1">
+                                <p><strong>수학:</strong> 행렬은 (1,1)부터 시작</p>
+                                <p><strong>컴퓨터:</strong> 배열은 (0,0)부터 시작</p>
+                                <p class="text-xs mt-2 text-amber-700">
+                                    이 도구는 프로그래밍 방식인 <strong>0-based</strong>를 사용합니다.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="glass-effect rounded-2xl shadow-2xl p-8 mb-8">
+            <!-- Step 1: Upload -->
+            <div class="step-card bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+                        1
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">이미지 업로드 및 해상도 설정</h2>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Upload Area -->
+                    <div id="uploadArea" class="border-3 border-dashed border-indigo-400 rounded-xl p-8 cursor-pointer hover:border-indigo-600 hover:bg-indigo-50 transition-all text-center">
+                        <div class="text-4xl mb-3">📁</div>
+                        <p class="text-lg font-semibold text-indigo-600 mb-1">이미지를 선택하거나 드래그하세요</p>
+                        <p class="text-sm text-gray-500">JPG, PNG 형식 지원</p>
+                        <input type="file" id="fileInput" accept="image/*" class="hidden">
+                    </div>
+                    
+                    <!-- Resolution Control -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <label class="block text-lg font-semibold text-gray-800 mb-3">
+                            분석 해상도: 
+                            <span class="text-indigo-600" id="resolutionValue">16×16</span>
+                        </label>
+                        <input type="range" id="resolutionSlider" min="8" max="100" value="16" 
+                            class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                        <p class="text-sm text-gray-600 mt-3">
+                            해상도가 높을수록 더 세밀한 분석이 가능하지만, 처리 시간이 길어집니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 & 3: Side by Side with 4:6 ratio -->
+            <div class="grid lg:grid-cols-10 gap-8" id="mainWorkspace" style="display: none;">
+                <!-- Left: Original Image (4/10) -->
+                <div class="lg:col-span-4 step-card bg-white rounded-xl shadow-lg p-6 animate-slide-left">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
+                                2
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800">원본 이미지</h2>
+                        </div>
+                        <!-- Zoom Controls for Original -->
+                        <div class="flex items-center gap-2">
+                            <button id="zoomOutOriginal" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center font-bold text-gray-700 transition-all">
+                                −
+                            </button>
+                            <span class="text-sm font-semibold text-gray-600 min-w-[60px] text-center" id="zoomLevelOriginal">100%</span>
+                            <button id="zoomInOriginal" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center font-bold text-gray-700 transition-all">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 min-h-[500px] max-h-[500px] overflow-auto flex items-center justify-center">
+                        <canvas id="originalCanvas" class="border-2 border-gray-200 rounded-lg shadow-sm"></canvas>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600 mt-4">
+                        설정한 해상도로 변환된 원본 이미지입니다. 각 픽셀에 마우스를 올려 RGB 값을 확인하세요.
+                    </p>
+                </div>
+
+                <!-- Right: Transformed & Interpolated (6/10) -->
+                <div class="lg:col-span-6 step-card bg-white rounded-xl shadow-lg p-6 animate-slide-right">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-lg">
+                                3
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800">변환 및 보간</h2>
+                        </div>
+                        <!-- Zoom Controls for Transform -->
+                        <div class="flex items-center gap-2">
+                            <button id="zoomOutTransform" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center font-bold text-gray-700 transition-all">
+                                −
+                            </button>
+                            <span class="text-sm font-semibold text-gray-600 min-w-[60px] text-center" id="zoomLevelTransform">100%</span>
+                            <button id="zoomInTransform" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center font-bold text-gray-700 transition-all">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Canvas -->
+                    <div class="bg-gray-50 rounded-lg p-4 min-h-[500px] max-h-[500px] overflow-auto">
+                        <canvas id="transformCanvas" class="border-2 border-gray-200 rounded-lg shadow-sm"></canvas>
+                    </div>
+                    
+                    <!-- All Control Buttons in Grid Layout -->
+                    <div class="mt-4">
+                        <div class="grid grid-cols-8 gap-1.5">
+                            <button id="scale2x" disabled class="dohyeon-text bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                2× 확대
+                            </button>
+                            <button id="scale4x" disabled class="dohyeon-text bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                4× 확대
+                            </button>
+                            <button id="selectNearestBtn" disabled class="dohyeon-text bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                최근접 이웃
+                            </button>
+                            <button id="selectBilinearBtn" disabled class="dohyeon-text bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                양선형 보간
+                            </button>
+                            <button id="selectBicubicBtn" disabled class="dohyeon-text bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                3차(비큐빅)
+                            </button>
+                            <button id="autoFillBtn" disabled class="dohyeon-text bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                🚀 자동 채우기
+                            </button>
+                            <button id="resetBtn" disabled class="dohyeon-text bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                ↺ 초기화
+                            </button>
+                            <button id="compareBtn" disabled class="dohyeon-text bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white font-semibold py-2.5 px-2 rounded-lg transition-all disabled:cursor-not-allowed text-xs text-center">
+                                🔍 비교하기
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Display - Moved Below Canvas -->
+                    <div id="statusInfo" class="mt-3 p-2.5 bg-indigo-50 rounded-lg text-xs text-indigo-800 font-medium text-center hidden">
+                    </div>
+                    
+                    <div id="selectedMethod" class="mt-2 p-2.5 bg-emerald-50 rounded-lg text-xs text-emerald-800 font-medium text-center hidden">
+                    </div>
+                    
+                    <!-- Usage Instructions - Moved to Bottom -->
+                    <p class="text-xs text-gray-600 mt-3 p-2 bg-gray-50 rounded-lg">
+                        💡 <strong>사용 방법:</strong> 확대 버튼을 누른 후, 보간법을 선택하세요. 빈 칸을 클릭하여 채워지는 과정을 관찰하거나, 자동 채우기로 한 번에 완성할 수 있습니다.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Coordinate Info Card -->
+            <div id="coordinateInfo" class="mt-8 bg-white rounded-xl shadow-lg p-6 hidden">
+                <h3 class="text-xl font-bold text-indigo-600 mb-4 flex items-center gap-2">
+                    📍 좌표 변환 정보
+                </h3>
+                <div id="coordinateDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RGB Tooltip -->
+    <div class="rgb-tooltip bg-gray-900 text-white px-4 py-2 rounded-lg shadow-xl" id="rgbTooltip">
+        <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded border-2 border-white/30" id="rgbColorSample"></div>
+            <span class="font-mono text-sm font-semibold" id="rgbText"></span>
+        </div>
+    </div>
+
+    <!-- Completion Modal (Windows 창 스타일) -->
+    <div class="modal-overlay" id="completionModal">
+        <div class="modal-content win-window" id="modalContent">
+
+            <!-- ── 제목 표시줄 ── -->
+            <div class="win-titlebar" id="winTitlebar">
+                <div class="win-titlebar-left">
+                    <span class="win-app-icon">🎨</span>
+                    <span class="win-title" id="winTitleText">보간 완료.png — 이미지 뷰어</span>
+                </div>
+                <div class="win-controls-area">
+                    <!-- 줌 컨트롤 -->
+                    <button id="zoomOutModal" class="win-zoom-btn" title="축소">−</button>
+                    <span id="zoomLevelModal" class="win-zoom-label">100%</span>
+                    <button id="zoomInModal" class="win-zoom-btn" title="확대">+</button>
+                    <div class="win-sep"></div>
+                    <!-- 창 제어 버튼 -->
+                    <button class="win-ctrl-btn win-minimize" id="winMinimizeBtn" title="최소화">&#8212;</button>
+                    <button class="win-ctrl-btn win-maximize" id="winMaximizeBtn" title="최대화">&#9634;</button>
+                    <button class="win-ctrl-btn win-close"    id="closeModal"     title="닫기">&#10005;</button>
+                </div>
+            </div>
+
+            <!-- ── 캔버스 영역 ── -->
+            <div class="win-body">
+                <canvas id="completionCanvas" class="win-canvas-el"></canvas>
+                <p class="win-size-info" id="imageSizeInfo"></p>
+            </div>
+
+            <!-- ── 상태 표시줄 ── -->
+            <div class="win-statusbar">
+                <span class="win-status-text">✅ 모든 픽셀이 채워졌습니다</span>
+                <span class="win-status-right">🖱️ 제목 표시줄을 드래그하여 이동</span>
+            </div>
+        </div>
+        </div>
+    </div>
+    
+    <!-- Reopen Completion Button -->
+    <button id="reopenCompletion" class="fixed bottom-8 right-8 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-full shadow-2xl transition-all hidden z-50 dohyeon-text" style="display: none;">
+        🎨 완성 이미지 보기
+    </button>
+
+    <!-- Comparison Modal -->
+    <div class="modal-overlay" id="comparisonModal">
+        <div class="modal-content" id="comparisonModalContent" style="max-width: 95vw; width: auto;">
+            <div class="modal-header">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex-1"></div>
+                    <div class="text-5xl text-center">🔍</div>
+                    <div class="flex-1 flex justify-end items-center gap-2">
+                        <button id="zoomOutCompare" class="w-9 h-9 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center font-bold text-gray-700 transition-all">
+                            −
+                        </button>
+                        <span class="text-sm font-semibold text-gray-600 min-w-[60px] text-center" id="zoomLevelCompare">100%</span>
+                        <button id="zoomInCompare" class="w-9 h-9 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center font-bold text-gray-700 transition-all">
+                            +
+                        </button>
+                    </div>
+                </div>
+                <h2 class="dohyeon-text text-3xl font-bold text-gray-800 mb-2 text-center">보간법 비교</h2>
+                <p class="text-gray-600 mb-3 text-center" id="compareSubtitle">세 가지 보간법의 결과를 한눈에 비교해보세요</p>
+                <!-- 뷰 모드 토글 -->
+                <div class="flex justify-center gap-2 mb-4 flex-wrap">
+                    <button class="view-mode-btn active" id="viewAllBtn">📊 3개 한번에 보기</button>
+                    <button class="view-mode-btn" id="viewSingleBtn">🔍 1개씩 보기</button>
+                    <button class="view-mode-btn" id="viewBABtn">⟷ 원본 / 보간 비교</button>
+                </div>
+            </div>
+
+            <div class="mb-6 overflow-auto" style="max-height: 62vh;">
+
+                <!-- ① 3개 동시 비교 (기본) -->
+                <div id="allMethodsView">
+                    <div class="flex flex-wrap justify-center gap-6" id="comparisonContainer">
+                        <div class="text-center">
+                            <h3 class="dohyeon-text text-xl font-bold text-emerald-600 mb-3">최근접 이웃</h3>
+                            <p class="text-xs text-gray-500 mb-2">가장 가까운 픽셀 복사</p>
+                            <canvas id="compareNearestCanvas" class="border-4 border-emerald-500 rounded-xl shadow-lg"></canvas>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="dohyeon-text text-xl font-bold text-blue-600 mb-3">양선형 보간</h3>
+                            <p class="text-xs text-gray-500 mb-2">4개 픽셀 가중 평균</p>
+                            <canvas id="compareBilinearCanvas" class="border-4 border-blue-500 rounded-xl shadow-lg"></canvas>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="dohyeon-text text-xl font-bold text-purple-600 mb-3">3차(비큐빅) 보간</h3>
+                            <p class="text-xs text-gray-500 mb-2">16개 픽셀 3차 보간</p>
+                            <canvas id="compareBicubicCanvas" class="border-4 border-purple-500 rounded-xl shadow-lg"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ② 1개씩 보기 -->
+                <div id="singleMethodView" style="display:none">
+                    <div class="flex items-center justify-center gap-8 mb-5">
+                        <button class="method-nav-btn" id="prevMethodBtn">&#8249;</button>
+                        <div class="text-center">
+                            <div class="dohyeon-text text-2xl font-bold text-indigo-600 mb-1" id="singleMethodName">최근접 이웃</div>
+                            <div class="text-sm text-gray-500 mb-3" id="singleMethodDesc">가장 가까운 픽셀 복사</div>
+                            <div class="flex gap-2 justify-center">
+                                <span class="method-dot active" id="dot0"></span>
+                                <span class="method-dot" id="dot1"></span>
+                                <span class="method-dot" id="dot2"></span>
+                            </div>
+                        </div>
+                        <button class="method-nav-btn" id="nextMethodBtn">&#8250;</button>
+                    </div>
+                    <div class="flex justify-center">
+                        <canvas id="singleViewCanvas" class="border-4 border-emerald-500 rounded-xl shadow-lg"></canvas>
+                    </div>
+                </div>
+
+                <!-- ③ 원본 / 보간 Before-After 슬라이더 -->
+                <div id="beforeAfterView" style="display:none">
+                    <div class="flex items-center justify-center gap-3 mb-5 flex-wrap">
+                        <span class="text-sm text-gray-600 font-semibold">비교할 보간법:</span>
+                        <button class="ba-method-btn active" data-method="nearest">최근접 이웃</button>
+                        <button class="ba-method-btn" data-method="bilinear">양선형 보간</button>
+                        <button class="ba-method-btn" data-method="bicubic">3차(비큐빅)</button>
+                    </div>
+                    <div class="flex justify-center">
+                        <div class="compare-ba-wrapper" id="baWrapper">
+                            <canvas id="baBeforeCanvas"></canvas>
+                            <canvas id="baAfterCanvas"></canvas>
+                            <div class="compare-ba-divider" id="baDivider">
+                                <div class="compare-ba-handle">⟷</div>
+                            </div>
+                            <div class="compare-ba-label left">원본 (최근접)</div>
+                            <div class="compare-ba-label right" id="baRightLabel">보간 후</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-500 mt-4 text-center" id="compareSizeInfo"></p>
+            </div>
+
+            <div class="flex gap-3 justify-center">
+                <button id="closeComparisonModal" class="dohyeon-text bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-8 rounded-lg transition-all text-lg">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let originalImageData = null;
+        let currentResolution = 16;
+        let currentScale = 1;
+        let uploadedImage = null;
+        let highlightedOriginalPixel = null;
+        let highlightedTransformPixel = null;
+        let selectedMethod = null;
+        let filledPixels = new Set();
+        let transformedPixels = [];
+        let originalPixelSize = 0;
+        let zoomFactorOriginal = 1;
+        let zoomFactorTransform = 1;
+
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const resolutionSlider = document.getElementById('resolutionSlider');
+        const resolutionValue = document.getElementById('resolutionValue');
+        const mainWorkspace = document.getElementById('mainWorkspace');
+        
+        const originalCanvas = document.getElementById('originalCanvas');
+        const transformCanvas = document.getElementById('transformCanvas');
+        
+        const scale2xBtn = document.getElementById('scale2x');
+        const scale4xBtn = document.getElementById('scale4x');
+        const selectNearestBtn = document.getElementById('selectNearestBtn');
+        const selectBilinearBtn = document.getElementById('selectBilinearBtn');
+        const selectBicubicBtn = document.getElementById('selectBicubicBtn');
+        const autoFillBtn = document.getElementById('autoFillBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        const zoomInOriginal = document.getElementById('zoomInOriginal');
+        const zoomOutOriginal = document.getElementById('zoomOutOriginal');
+        const zoomLevelOriginal = document.getElementById('zoomLevelOriginal');
+        const zoomInTransform = document.getElementById('zoomInTransform');
+        const zoomOutTransform = document.getElementById('zoomOutTransform');
+        const zoomLevelTransform = document.getElementById('zoomLevelTransform');
+        
+        const statusInfo = document.getElementById('statusInfo');
+        const selectedMethodDiv = document.getElementById('selectedMethod');
+        
+        const rgbTooltip = document.getElementById('rgbTooltip');
+        const rgbColorSample = document.getElementById('rgbColorSample');
+        const rgbText = document.getElementById('rgbText');
+        
+        const completionModal = document.getElementById('completionModal');
+        const completionCanvas = document.getElementById('completionCanvas');
+        const closeModal = document.getElementById('closeModal');
+        const modalContent = document.getElementById('modalContent');
+        const reopenCompletion = document.getElementById('reopenCompletion');
+        const imageSizeInfo = document.getElementById('imageSizeInfo');
+        const zoomInModal = document.getElementById('zoomInModal');
+        const zoomOutModal = document.getElementById('zoomOutModal');
+        const zoomLevelModal = document.getElementById('zoomLevelModal');
+
+        // Comparison modal elements
+        const compareBtn = document.getElementById('compareBtn');
+        const comparisonModal = document.getElementById('comparisonModal');
+        const comparisonModalContent = document.getElementById('comparisonModalContent');
+        const closeComparisonModal = document.getElementById('closeComparisonModal');
+        const compareNearestCanvas = document.getElementById('compareNearestCanvas');
+        const compareBilinearCanvas = document.getElementById('compareBilinearCanvas');
+        const compareBicubicCanvas = document.getElementById('compareBicubicCanvas');
+        const zoomInCompare = document.getElementById('zoomInCompare');
+        const zoomOutCompare = document.getElementById('zoomOutCompare');
+        const zoomLevelCompare = document.getElementById('zoomLevelCompare');
+        const compareSizeInfo = document.getElementById('compareSizeInfo');
+        
+        let hasCompletedOnce = false;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let modalX = 0;
+        let modalY = 0;
+        let modalZoomFactor = 1;
+        let compareZoomFactor = 1;
+
+        // 비교 모달 뷰 모드 상태
+        let compareViewMode = 'all'; // 'all' | 'single' | 'beforeafter'
+        let singleViewMethodIndex = 0;
+        let baMethod = 'nearest';
+        let baSliderPct = 50;
+        let baIsDragging = false;
+
+        const compareMethodsList = ['nearest', 'bilinear', 'bicubic'];
+        const compareMethodInfo = {
+            nearest: { name: '최근접 이웃',    desc: '가장 가까운 픽셀 복사',   borderClass: 'border-emerald-500' },
+            bilinear: { name: '양선형 보간',   desc: '4개 픽셀 가중 평균',       borderClass: 'border-blue-500'    },
+            bicubic:  { name: '3차(비큐빅) 보간', desc: '16개 픽셀 3차 보간',    borderClass: 'border-purple-500'  }
+        };
+
+        // Upload area events
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('bg-indigo-100', 'border-indigo-600');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('bg-indigo-100', 'border-indigo-600');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('bg-indigo-100', 'border-indigo-600');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageUpload(file);
+            }
+        });
+
+        resolutionSlider.addEventListener('input', (e) => {
+            currentResolution = parseInt(e.target.value);
+            resolutionValue.textContent = `${currentResolution}×${currentResolution}`;
+            
+            if (uploadedImage) {
+                processImage(uploadedImage);
+            }
+        });
+
+        function handleImageUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    processImage(img);
+                    mainWorkspace.style.display = 'grid';
+                    mainWorkspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function processImage(img) {
+            const canvas = document.createElement('canvas');
+            canvas.width = currentResolution;
+            canvas.height = currentResolution;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.drawImage(img, 0, 0, currentResolution, currentResolution);
+            originalImageData = ctx.getImageData(0, 0, currentResolution, currentResolution);
+            
+            drawOriginalImage();
+            
+            scale2xBtn.disabled = false;
+            scale4xBtn.disabled = false;
+            
+            // Reset transform canvas
+            transformCanvas.width = 0;
+            transformCanvas.height = 0;
+            statusInfo.classList.add('hidden');
+            selectedMethodDiv.classList.add('hidden');
+        }
+
+        function drawOriginalImage() {
+            const scale = Math.max(300 / currentResolution, 2) * zoomFactorOriginal;
+            originalCanvas.width = currentResolution * scale;
+            originalCanvas.height = currentResolution * scale;
+            
+            const ctx = originalCanvas.getContext('2d');
+            
+            for (let y = 0; y < currentResolution; y++) {
+                for (let x = 0; x < currentResolution; x++) {
+                    const idx = (y * currentResolution + x) * 4;
+                    const r = originalImageData.data[idx];
+                    const g = originalImageData.data[idx + 1];
+                    const b = originalImageData.data[idx + 2];
+                    
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(x * scale, y * scale, scale, scale);
+                    
+                    if (highlightedOriginalPixel && 
+                        highlightedOriginalPixel.x === x && 
+                        highlightedOriginalPixel.y === y) {
+                        ctx.strokeStyle = '#7c3aed';
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(x * scale + 2, y * scale + 2, scale - 4, scale - 4);
+                    }
+                }
+            }
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= currentResolution; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * scale, 0);
+                ctx.lineTo(i * scale, currentResolution * scale);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * scale);
+                ctx.lineTo(currentResolution * scale, i * scale);
+                ctx.stroke();
+            }
+        }
+
+        scale2xBtn.addEventListener('click', () => applyTransform(2));
+        scale4xBtn.addEventListener('click', () => applyTransform(4));
+
+        // Zoom controls for original canvas
+        zoomInOriginal.addEventListener('click', () => {
+            if (zoomFactorOriginal < 3) {
+                zoomFactorOriginal += 0.25;
+                zoomLevelOriginal.textContent = Math.round(zoomFactorOriginal * 100) + '%';
+                drawOriginalImage();
+            }
+        });
+
+        zoomOutOriginal.addEventListener('click', () => {
+            if (zoomFactorOriginal > 0.5) {
+                zoomFactorOriginal -= 0.25;
+                zoomLevelOriginal.textContent = Math.round(zoomFactorOriginal * 100) + '%';
+                drawOriginalImage();
+            }
+        });
+
+        // Zoom controls for transform canvas
+        zoomInTransform.addEventListener('click', () => {
+            if (zoomFactorTransform < 3) {
+                zoomFactorTransform += 0.25;
+                zoomLevelTransform.textContent = Math.round(zoomFactorTransform * 100) + '%';
+                if (transformedPixels.length > 0) {
+                    redrawTransformCanvas();
+                }
+            }
+        });
+
+        zoomOutTransform.addEventListener('click', () => {
+            if (zoomFactorTransform > 0.5) {
+                zoomFactorTransform -= 0.25;
+                zoomLevelTransform.textContent = Math.round(zoomFactorTransform * 100) + '%';
+                if (transformedPixels.length > 0) {
+                    redrawTransformCanvas();
+                }
+            }
+        });
+
+        function applyTransform(scale) {
+            currentScale = scale;
+            const newSize = currentResolution * scale;
+            
+            originalPixelSize = Math.max(300 / currentResolution, 2);
+            const pixelSize = originalPixelSize * zoomFactorTransform;
+            
+            transformCanvas.width = newSize * pixelSize;
+            transformCanvas.height = newSize * pixelSize;
+            
+            const ctx = transformCanvas.getContext('2d');
+            ctx.fillStyle = '#f9fafb';
+            ctx.fillRect(0, 0, transformCanvas.width, transformCanvas.height);
+            
+            statusInfo.textContent = `변환 완료: ${currentResolution}×${currentResolution} → ${newSize}×${newSize} (W=${scale}, H=${scale})`;
+            statusInfo.classList.remove('hidden');
+            
+            transformedPixels = [];
+            
+            for (let y = 0; y < currentResolution; y++) {
+                for (let x = 0; x < currentResolution; x++) {
+                    const newX = x * scale;
+                    const newY = y * scale;
+                    
+                    const idx = (y * currentResolution + x) * 4;
+                    const r = originalImageData.data[idx];
+                    const g = originalImageData.data[idx + 1];
+                    const b = originalImageData.data[idx + 2];
+                    
+                    transformedPixels.push({
+                        origX: x, origY: y,
+                        newX: newX, newY: newY,
+                        r: r, g: g, b: b
+                    });
+                    
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(newX * pixelSize, newY * pixelSize, pixelSize, pixelSize);
+                }
+            }
+            
+            drawGrid(ctx, newSize, pixelSize);
+            
+            selectNearestBtn.disabled = false;
+            selectBilinearBtn.disabled = false;
+            selectBicubicBtn.disabled = false;
+            compareBtn.disabled = false;
+
+            // Reset selection
+            selectedMethod = null;
+            selectNearestBtn.classList.remove('ring-4', 'ring-emerald-300');
+            selectBilinearBtn.classList.remove('ring-4', 'ring-emerald-300');
+            selectBicubicBtn.classList.remove('ring-4', 'ring-emerald-300');
+            autoFillBtn.disabled = true;
+            resetBtn.disabled = true;
+            selectedMethodDiv.classList.add('hidden');
+            
+            filledPixels.clear();
+            transformedPixels.forEach(pixel => {
+                filledPixels.add(`${pixel.newX},${pixel.newY}`);
+            });
+        }
+
+        function drawGrid(ctx, size, pixelSize) {
+            ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= size; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * pixelSize, 0);
+                ctx.lineTo(i * pixelSize, size * pixelSize);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * pixelSize);
+                ctx.lineTo(size * pixelSize, i * pixelSize);
+                ctx.stroke();
+            }
+        }
+
+        selectNearestBtn.addEventListener('click', () => {
+            selectedMethod = 'nearest';
+            selectNearestBtn.classList.add('ring-4', 'ring-emerald-300');
+            selectBilinearBtn.classList.remove('ring-4', 'ring-emerald-300');
+            selectBicubicBtn.classList.remove('ring-4', 'ring-emerald-300');
+            autoFillBtn.disabled = false;
+            resetBtn.disabled = false;
+            selectedMethodDiv.textContent = '✓ 최근접 이웃 보간 선택: 가장 가까운 원본 픽셀의 색상을 복사합니다';
+            selectedMethodDiv.classList.remove('hidden');
+        });
+
+        selectBilinearBtn.addEventListener('click', () => {
+            selectedMethod = 'bilinear';
+            selectBilinearBtn.classList.add('ring-4', 'ring-emerald-300');
+            selectNearestBtn.classList.remove('ring-4', 'ring-emerald-300');
+            selectBicubicBtn.classList.remove('ring-4', 'ring-emerald-300');
+            autoFillBtn.disabled = false;
+            resetBtn.disabled = false;
+            selectedMethodDiv.textContent = '✓ 양선형 보간 선택: 주변 4개 픽셀의 가중 평균으로 부드러운 그라데이션을 만듭니다';
+            selectedMethodDiv.classList.remove('hidden');
+        });
+
+        selectBicubicBtn.addEventListener('click', () => {
+            selectedMethod = 'bicubic';
+            selectBicubicBtn.classList.add('ring-4', 'ring-emerald-300');
+            selectNearestBtn.classList.remove('ring-4', 'ring-emerald-300');
+            selectBilinearBtn.classList.remove('ring-4', 'ring-emerald-300');
+            autoFillBtn.disabled = false;
+            resetBtn.disabled = false;
+            selectedMethodDiv.textContent = '✓ 3차(비큐빅) 보간 선택: 주변 16개 픽셀을 이용한 3차 보간으로 가장 부드러운 결과를 생성합니다';
+            selectedMethodDiv.classList.remove('hidden');
+        });
+
+        autoFillBtn.addEventListener('click', () => {
+            if (!selectedMethod) return;
+            autoFillAllPixels();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            applyTransform(currentScale);
+        });
+
+        function redrawTransformCanvas() {
+            if (transformedPixels.length === 0) return;
+            
+            const newSize = currentResolution * currentScale;
+            const pixelSize = originalPixelSize * zoomFactorTransform;
+            
+            transformCanvas.width = newSize * pixelSize;
+            transformCanvas.height = newSize * pixelSize;
+            
+            const ctx = transformCanvas.getContext('2d');
+            ctx.fillStyle = '#f9fafb';
+            ctx.fillRect(0, 0, transformCanvas.width, transformCanvas.height);
+            
+            for (let y = 0; y < newSize; y++) {
+                for (let x = 0; x < newSize; x++) {
+                    const key = `${x},${y}`;
+                    if (filledPixels.has(key)) {
+                        const isTransformed = transformedPixels.some(p => p.newX === x && p.newY === y);
+                        
+                        let color;
+                        if (isTransformed) {
+                            const pixel = transformedPixels.find(p => p.newX === x && p.newY === y);
+                            color = {r: pixel.r, g: pixel.g, b: pixel.b};
+                        } else {
+                            if (selectedMethod === 'nearest') {
+                                color = nearestNeighbor(x, y);
+                            } else if (selectedMethod === 'bilinear') {
+                                color = bilinearInterpolate(x, y);
+                            } else if (selectedMethod === 'bicubic') {
+                                color = bicubicInterpolate(x, y);
+                            }
+                        }
+                        
+                        ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
+                        ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                    }
+                }
+            }
+            
+            // Highlight
+            transformedPixels.forEach(pixel => {
+                if (highlightedTransformPixel && 
+                    highlightedTransformPixel.x === pixel.newX && 
+                    highlightedTransformPixel.y === pixel.newY) {
+                    ctx.strokeStyle = '#7c3aed';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(pixel.newX * pixelSize + 2, pixel.newY * pixelSize + 2, 
+                        pixelSize - 4, pixelSize - 4);
+                }
+            });
+            
+            drawGrid(ctx, newSize, pixelSize);
+        }
+
+        function fillPixel(x, y, animate = true) {
+            const key = `${x},${y}`;
+            if (filledPixels.has(key)) return;
+            
+            const newSize = currentResolution * currentScale;
+            const pixelSize = originalPixelSize * zoomFactorTransform;
+            
+            const ctx = transformCanvas.getContext('2d');
+            
+            let color;
+            if (selectedMethod === 'nearest') {
+                color = nearestNeighbor(x, y);
+            } else if (selectedMethod === 'bilinear') {
+                color = bilinearInterpolate(x, y);
+            } else if (selectedMethod === 'bicubic') {
+                color = bicubicInterpolate(x, y);
+            }
+            
+            if (animate) {
+                ctx.fillStyle = '#8b5cf6';
+                ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                
+                setTimeout(() => {
+                    ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
+                    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                    drawGrid(ctx, newSize, pixelSize);
+                }, 100);
+            } else {
+                ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
+                ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+            }
+            
+            filledPixels.add(key);
+        }
+
+        function autoFillAllPixels() {
+            const newSize = currentResolution * currentScale;
+            const pixelsToFill = [];
+            
+            for (let y = 0; y < newSize; y++) {
+                for (let x = 0; x < newSize; x++) {
+                    const key = `${x},${y}`;
+                    if (!filledPixels.has(key)) {
+                        pixelsToFill.push({x, y});
+                    }
+                }
+            }
+            
+            const totalPixels = pixelsToFill.length;
+            
+            // Adaptive speed based on pixel count
+            // More pixels = faster batch processing
+            let batchSize = 1;
+            let delay = 5;
+            
+            if (totalPixels > 1000) {
+                batchSize = Math.floor(totalPixels / 100); // Process in ~100 batches
+                delay = 2;
+            } else if (totalPixels > 500) {
+                batchSize = 5;
+                delay = 3;
+            } else if (totalPixels > 200) {
+                batchSize = 3;
+                delay = 4;
+            }
+            
+            let index = 0;
+            function fillNext() {
+                if (index >= pixelsToFill.length) {
+                    const pixelSize = originalPixelSize * zoomFactorTransform;
+                    const ctx = transformCanvas.getContext('2d');
+                    drawGrid(ctx, newSize, pixelSize);
+                    
+                    // Show completion modal
+                    showCompletionModal();
+                    return;
+                }
+                
+                // Fill batch of pixels
+                const endIndex = Math.min(index + batchSize, pixelsToFill.length);
+                for (let i = index; i < endIndex; i++) {
+                    const pixel = pixelsToFill[i];
+                    fillPixel(pixel.x, pixel.y, false);
+                }
+                index = endIndex;
+                
+                setTimeout(fillNext, delay);
+            }
+            
+            fillNext();
+        }
+        
+        let isModalMaximized = false;
+
+        function showCompletionModal() {
+            modalZoomFactor = 1;
+            zoomLevelModal.textContent = '100%';
+            redrawCompletionCanvas();
+
+            completionModal.classList.add('show');
+            hasCompletedOnce = true;
+            reopenCompletion.style.display = 'none';
+
+            // 창 위치 초기화
+            modalContent.style.transform = 'translate(0, 0)';
+            modalX = 0;
+            modalY = 0;
+
+            // 최대화 상태 초기화
+            isModalMaximized = false;
+            document.getElementById('winMaximizeBtn').textContent = '▢';
+            modalContent.style.width  = '';
+            modalContent.style.height = '';
+
+            // 제목 표시줄에 보간법 이름 반영
+            const methodLabels = { nearest: '최근접 이웃', bilinear: '양선형 보간', bicubic: '3차 비큐빅' };
+            const label = methodLabels[selectedMethod] || '보간';
+            document.getElementById('winTitleText').textContent = `result_${label}.png — 이미지 뷰어`;
+        }
+        
+        function redrawCompletionCanvas() {
+            const newSize = currentResolution * currentScale;
+            
+            // Base size calculation
+            const maxBaseSize = Math.min(
+                window.innerWidth * 0.85,
+                window.innerHeight * 0.7,
+                newSize * 8
+            );
+            
+            const basePixelSize = Math.min(maxBaseSize / newSize, 8);
+            
+            // Apply zoom factor
+            const pixelSize = basePixelSize * modalZoomFactor;
+            const displaySize = newSize * pixelSize;
+            
+            completionCanvas.width = displaySize;
+            completionCanvas.height = displaySize;
+            
+            const ctx = completionCanvas.getContext('2d');
+            
+            // Draw the completed image
+            for (let y = 0; y < newSize; y++) {
+                for (let x = 0; x < newSize; x++) {
+                    const key = `${x},${y}`;
+                    if (filledPixels.has(key)) {
+                        const isTransformed = transformedPixels.some(p => p.newX === x && p.newY === y);
+                        
+                        let color;
+                        if (isTransformed) {
+                            const pixel = transformedPixels.find(p => p.newX === x && p.newY === y);
+                            color = {r: pixel.r, g: pixel.g, b: pixel.b};
+                        } else {
+                            if (selectedMethod === 'nearest') {
+                                color = nearestNeighbor(x, y);
+                            } else if (selectedMethod === 'bilinear') {
+                                color = bilinearInterpolate(x, y);
+                            } else if (selectedMethod === 'bicubic') {
+                                color = bicubicInterpolate(x, y);
+                            }
+                        }
+                        
+                        ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
+                        ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                    }
+                }
+            }
+            
+            // Show size info
+            imageSizeInfo.textContent = `이미지 크기: ${newSize}×${newSize} 픽셀 | 표시 크기: ${Math.round(displaySize)}×${Math.round(displaySize)}px (픽셀당 ${pixelSize.toFixed(1)}px)`;
+        }
+        
+        // Modal zoom controls
+        zoomInModal.addEventListener('click', () => {
+            if (modalZoomFactor < 4) {
+                modalZoomFactor += 0.25;
+                zoomLevelModal.textContent = Math.round(modalZoomFactor * 100) + '%';
+                redrawCompletionCanvas();
+            }
+        });
+        
+        zoomOutModal.addEventListener('click', () => {
+            if (modalZoomFactor > 0.5) {
+                modalZoomFactor -= 0.25;
+                zoomLevelModal.textContent = Math.round(modalZoomFactor * 100) + '%';
+                redrawCompletionCanvas();
+            }
+        });
+        
+        // 드래그: 제목 표시줄에서만 (Windows 창 동작)
+        document.getElementById('winTitlebar').addEventListener('mousedown', (e) => {
+            if (e.target.closest('button')) return;
+            isDragging = true;
+            dragStartX = e.clientX - modalX;
+            dragStartY = e.clientY - modalY;
+            modalContent.classList.add('dragging');
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            modalX = e.clientX - dragStartX;
+            modalY = e.clientY - dragStartY;
+            
+            modalContent.style.transform = `translate(${modalX}px, ${modalY}px)`;
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                modalContent.classList.remove('dragging');
+            }
+        });
+        
+        closeModal.addEventListener('click', () => {
+            completionModal.classList.remove('show');
+            if (hasCompletedOnce) {
+                reopenCompletion.style.display = 'block';
+            }
+        });
+        
+        reopenCompletion.addEventListener('click', () => {
+            completionModal.classList.add('show');
+            reopenCompletion.style.display = 'none';
+        });
+
+        // 최소화 버튼: 창 숨기고 재열기 버튼 표시
+        document.getElementById('winMinimizeBtn').addEventListener('click', () => {
+            completionModal.classList.remove('show');
+            if (hasCompletedOnce) reopenCompletion.style.display = 'block';
+        });
+
+        // 최대화/복원 버튼
+        document.getElementById('winMaximizeBtn').addEventListener('click', () => {
+            isModalMaximized = !isModalMaximized;
+            document.getElementById('winMaximizeBtn').textContent = isModalMaximized ? '❐' : '▢';
+            if (isModalMaximized) {
+                modalContent.style.width  = 'min(92vw, 1400px)';
+                modalContent.style.height = '88vh';
+                modalX = 0;
+                modalY = 0;
+                modalContent.style.transform = 'translate(0, 0)';
+            } else {
+                modalContent.style.width  = '';
+                modalContent.style.height = '';
+            }
+            redrawCompletionCanvas();
+        });
+        
+        // Close modal on overlay click (not on content)
+        completionModal.addEventListener('click', (e) => {
+            if (e.target === completionModal) {
+                completionModal.classList.remove('show');
+                if (hasCompletedOnce) {
+                    reopenCompletion.style.display = 'block';
+                }
+            }
+        });
+
+        // Comparison Modal Functions
+        compareBtn.addEventListener('click', () => {
+            if (!originalImageData || currentScale === 1) {
+                alert('먼저 이미지를 업로드하고 확대 변환을 적용해주세요!');
+                return;
+            }
+            showComparisonModal();
+        });
+
+        function showComparisonModal() {
+            compareZoomFactor = 1;
+            zoomLevelCompare.textContent = '100%';
+            baSliderPct = 50;
+            singleViewMethodIndex = 0;
+            // 항상 '3개 동시' 모드로 초기화
+            compareViewMode = 'all';
+            document.getElementById('viewAllBtn').classList.add('active');
+            document.getElementById('viewSingleBtn').classList.remove('active');
+            document.getElementById('viewBABtn').classList.remove('active');
+            document.getElementById('allMethodsView').style.display = '';
+            document.getElementById('singleMethodView').style.display = 'none';
+            document.getElementById('beforeAfterView').style.display = 'none';
+            document.getElementById('compareSubtitle').textContent = '세 가지 보간법의 결과를 한눈에 비교해보세요';
+            renderComparisonCanvases();
+            comparisonModal.classList.add('show');
+        }
+
+        function renderComparisonCanvases() {
+            const newSize = currentResolution * currentScale;
+
+            // Calculate appropriate pixel size for comparison view
+            const maxCanvasWidth = Math.min(
+                (window.innerWidth * 0.85 - 100) / 3,
+                400
+            );
+            const basePixelSize = Math.min(maxCanvasWidth / newSize, 6);
+            const pixelSize = basePixelSize * compareZoomFactor;
+            const displaySize = newSize * pixelSize;
+
+            // Render each interpolation method
+            renderComparisonCanvas(compareNearestCanvas, 'nearest', newSize, pixelSize, displaySize);
+            renderComparisonCanvas(compareBilinearCanvas, 'bilinear', newSize, pixelSize, displaySize);
+            renderComparisonCanvas(compareBicubicCanvas, 'bicubic', newSize, pixelSize, displaySize);
+
+            compareSizeInfo.textContent = `이미지 크기: ${newSize}×${newSize} 픽셀 | 표시 크기: ${Math.round(displaySize)}×${Math.round(displaySize)}px`;
+        }
+
+        function renderComparisonCanvas(canvas, method, newSize, pixelSize, displaySize) {
+            canvas.width = displaySize;
+            canvas.height = displaySize;
+            const ctx = canvas.getContext('2d');
+
+            for (let y = 0; y < newSize; y++) {
+                for (let x = 0; x < newSize; x++) {
+                    let color;
+
+                    // Check if this is an original transformed pixel
+                    const isTransformed = (x % currentScale === 0) && (y % currentScale === 0);
+
+                    if (isTransformed) {
+                        const origX = x / currentScale;
+                        const origY = y / currentScale;
+                        const idx = (origY * currentResolution + origX) * 4;
+                        color = {
+                            r: originalImageData.data[idx],
+                            g: originalImageData.data[idx + 1],
+                            b: originalImageData.data[idx + 2]
+                        };
+                    } else {
+                        if (method === 'nearest') {
+                            color = nearestNeighbor(x, y);
+                        } else if (method === 'bilinear') {
+                            color = bilinearInterpolate(x, y);
+                        } else if (method === 'bicubic') {
+                            color = bicubicInterpolate(x, y);
+                        }
+                    }
+
+                    ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
+                    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                }
+            }
+        }
+
+        // Comparison modal zoom controls
+        zoomInCompare.addEventListener('click', () => {
+            if (compareZoomFactor < 3) {
+                compareZoomFactor += 0.25;
+                zoomLevelCompare.textContent = Math.round(compareZoomFactor * 100) + '%';
+                if (compareViewMode === 'all') renderComparisonCanvases();
+                else if (compareViewMode === 'single') renderSingleView();
+                else if (compareViewMode === 'beforeafter') renderBeforeAfterSlider();
+            }
+        });
+
+        zoomOutCompare.addEventListener('click', () => {
+            if (compareZoomFactor > 0.5) {
+                compareZoomFactor -= 0.25;
+                zoomLevelCompare.textContent = Math.round(compareZoomFactor * 100) + '%';
+                if (compareViewMode === 'all') renderComparisonCanvases();
+                else if (compareViewMode === 'single') renderSingleView();
+                else if (compareViewMode === 'beforeafter') renderBeforeAfterSlider();
+            }
+        });
+
+        closeComparisonModal.addEventListener('click', () => {
+            comparisonModal.classList.remove('show');
+        });
+
+        comparisonModal.addEventListener('click', (e) => {
+            if (e.target === comparisonModal) {
+                comparisonModal.classList.remove('show');
+            }
+        });
+
+        function nearestNeighbor(x, y) {
+            const srcX = Math.floor(x / currentScale);
+            const srcY = Math.floor(y / currentScale);
+            
+            const clampedX = Math.min(srcX, currentResolution - 1);
+            const clampedY = Math.min(srcY, currentResolution - 1);
+            
+            const idx = (clampedY * currentResolution + clampedX) * 4;
+            
+            return {
+                r: originalImageData.data[idx],
+                g: originalImageData.data[idx + 1],
+                b: originalImageData.data[idx + 2]
+            };
+        }
+
+        function bilinearInterpolate(x, y) {
+            const srcX = x / currentScale;
+            const srcY = y / currentScale;
+            
+            const x1 = Math.floor(srcX);
+            const y1 = Math.floor(srcY);
+            const x2 = Math.min(x1 + 1, currentResolution - 1);
+            const y2 = Math.min(y1 + 1, currentResolution - 1);
+            
+            const fx = srcX - x1;
+            const fy = srcY - y1;
+            
+            const getPixel = (px, py) => {
+                const idx = (py * currentResolution + px) * 4;
+                return {
+                    r: originalImageData.data[idx],
+                    g: originalImageData.data[idx + 1],
+                    b: originalImageData.data[idx + 2]
+                };
+            };
+            
+            const c11 = getPixel(x1, y1);
+            const c21 = getPixel(x2, y1);
+            const c12 = getPixel(x1, y2);
+            const c22 = getPixel(x2, y2);
+            
+            const interpolate = (c1, c2, c3, c4) => {
+                return Math.round(
+                    c1 * (1 - fx) * (1 - fy) +
+                    c2 * fx * (1 - fy) +
+                    c3 * (1 - fx) * fy +
+                    c4 * fx * fy
+                );
+            };
+            
+            return {
+                r: interpolate(c11.r, c21.r, c12.r, c22.r),
+                g: interpolate(c11.g, c21.g, c12.g, c22.g),
+                b: interpolate(c11.b, c21.b, c12.b, c22.b)
+            };
+        }
+
+        function bicubicInterpolate(x, y) {
+            const srcX = x / currentScale;
+            const srcY = y / currentScale;
+            
+            const x0 = Math.floor(srcX);
+            const y0 = Math.floor(srcY);
+            
+            const fx = srcX - x0;
+            const fy = srcY - y0;
+            
+            // Cubic interpolation helper
+            const cubic = (t) => {
+                const a = -0.5;
+                const absT = Math.abs(t);
+                if (absT <= 1) {
+                    return (a + 2) * absT * absT * absT - (a + 3) * absT * absT + 1;
+                } else if (absT < 2) {
+                    return a * absT * absT * absT - 5 * a * absT * absT + 8 * a * absT - 4 * a;
+                }
+                return 0;
+            };
+            
+            const getPixel = (px, py) => {
+                const clampedX = Math.max(0, Math.min(px, currentResolution - 1));
+                const clampedY = Math.max(0, Math.min(py, currentResolution - 1));
+                const idx = (clampedY * currentResolution + clampedX) * 4;
+                return {
+                    r: originalImageData.data[idx],
+                    g: originalImageData.data[idx + 1],
+                    b: originalImageData.data[idx + 2]
+                };
+            };
+            
+            let r = 0, g = 0, b = 0;
+            
+            // Use 4x4 pixel neighborhood
+            for (let j = -1; j <= 2; j++) {
+                for (let i = -1; i <= 2; i++) {
+                    const pixel = getPixel(x0 + i, y0 + j);
+                    const weight = cubic(i - fx) * cubic(j - fy);
+                    r += pixel.r * weight;
+                    g += pixel.g * weight;
+                    b += pixel.b * weight;
+                }
+            }
+            
+            return {
+                r: Math.max(0, Math.min(255, Math.round(r))),
+                g: Math.max(0, Math.min(255, Math.round(g))),
+                b: Math.max(0, Math.min(255, Math.round(b)))
+            };
+        }
+
+        // RGB Tooltip
+        function showRgbTooltip(e, r, g, b, x, y) {
+            rgbColorSample.style.backgroundColor = `rgb(${r},${g},${b})`;
+            rgbText.textContent = `(${x}, ${y}) RGB(${r}, ${g}, ${b})`;
+            rgbTooltip.style.left = (e.clientX + 15) + 'px';
+            rgbTooltip.style.top = (e.clientY - 40) + 'px';
+            rgbTooltip.classList.add('show');
+        }
+
+        function hideRgbTooltip() {
+            rgbTooltip.classList.remove('show');
+        }
+
+        // Original canvas hover
+        originalCanvas.addEventListener('mousemove', (e) => {
+            const rect = originalCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const scale = Math.max(300 / currentResolution, 2) * zoomFactorOriginal;
+            const gridX = Math.floor(x / scale);
+            const gridY = Math.floor(y / scale);
+            
+            if (gridX >= 0 && gridX < currentResolution && gridY >= 0 && gridY < currentResolution) {
+                const idx = (gridY * currentResolution + gridX) * 4;
+                const r = originalImageData.data[idx];
+                const g = originalImageData.data[idx + 1];
+                const b = originalImageData.data[idx + 2];
+                showRgbTooltip(e, r, g, b, gridX, gridY);
+            }
+        });
+
+        originalCanvas.addEventListener('mouseleave', hideRgbTooltip);
+
+        // Transform canvas hover and click
+        transformCanvas.addEventListener('mousemove', (e) => {
+            const rect = transformCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const newSize = currentResolution * currentScale;
+            const pixelSize = originalPixelSize * zoomFactorTransform;
+            
+            const gridX = Math.floor(x / pixelSize);
+            const gridY = Math.floor(y / pixelSize);
+            
+            if (gridX >= 0 && gridX < newSize && gridY >= 0 && gridY < newSize) {
+                const key = `${gridX},${gridY}`;
+                
+                if (filledPixels.has(key)) {
+                    const isTransformed = transformedPixels.some(p => p.newX === gridX && p.newY === gridY);
+                    
+                    let color;
+                    if (isTransformed) {
+                        const pixel = transformedPixels.find(p => p.newX === gridX && p.newY === gridY);
+                        color = {r: pixel.r, g: pixel.g, b: pixel.b};
+                    } else if (selectedMethod) {
+                        if (selectedMethod === 'nearest') {
+                            color = nearestNeighbor(gridX, gridY);
+                        } else if (selectedMethod === 'bilinear') {
+                            color = bilinearInterpolate(gridX, gridY);
+                        } else if (selectedMethod === 'bicubic') {
+                            color = bicubicInterpolate(gridX, gridY);
+                        }
+                    }
+                    
+                    if (color) {
+                        showRgbTooltip(e, color.r, color.g, color.b, gridX, gridY);
+                    }
+                }
+                
+                const origX = Math.floor(gridX / currentScale);
+                const origY = Math.floor(gridY / currentScale);
+                
+                highlightedTransformPixel = { x: gridX, y: gridY };
+                highlightedOriginalPixel = { x: origX, y: origY };
+                
+                drawOriginalImage();
+                redrawTransformCanvas();
+            }
+        });
+
+        transformCanvas.addEventListener('mouseleave', () => {
+            hideRgbTooltip();
+            highlightedTransformPixel = null;
+            highlightedOriginalPixel = null;
+            drawOriginalImage();
+            redrawTransformCanvas();
+        });
+
+        transformCanvas.addEventListener('click', (e) => {
+            if (!selectedMethod) {
+                alert('먼저 보간법을 선택해주세요!');
+                return;
+            }
+
+            const rect = transformCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const newSize = currentResolution * currentScale;
+            const pixelSize = originalPixelSize * zoomFactorTransform;
+
+            const gridX = Math.floor(x / pixelSize);
+            const gridY = Math.floor(y / pixelSize);
+
+            if (gridX >= 0 && gridX < newSize && gridY >= 0 && gridY < newSize) {
+                fillPixel(gridX, gridY, true);
+            }
+        });
+
+        // ====================================================
+        //  비교 모달 뷰 모드 전환
+        // ====================================================
+        function switchCompareMode(mode) {
+            compareViewMode = mode;
+
+            document.getElementById('viewAllBtn').classList.toggle('active', mode === 'all');
+            document.getElementById('viewSingleBtn').classList.toggle('active', mode === 'single');
+            document.getElementById('viewBABtn').classList.toggle('active', mode === 'beforeafter');
+
+            document.getElementById('allMethodsView').style.display   = mode === 'all'         ? '' : 'none';
+            document.getElementById('singleMethodView').style.display = mode === 'single'      ? '' : 'none';
+            document.getElementById('beforeAfterView').style.display  = mode === 'beforeafter' ? '' : 'none';
+
+            const subtitles = {
+                all:         '세 가지 보간법의 결과를 한눈에 비교해보세요',
+                single:      '← → 버튼으로 보간법을 전환하세요',
+                beforeafter: '슬라이더를 드래그하여 원본과 보간 결과를 비교하세요'
+            };
+            document.getElementById('compareSubtitle').textContent = subtitles[mode];
+
+            if (mode === 'single')      renderSingleView();
+            else if (mode === 'beforeafter') renderBeforeAfterSlider();
+        }
+
+        document.getElementById('viewAllBtn').addEventListener('click',    () => switchCompareMode('all'));
+        document.getElementById('viewSingleBtn').addEventListener('click', () => switchCompareMode('single'));
+        document.getElementById('viewBABtn').addEventListener('click',     () => switchCompareMode('beforeafter'));
+
+        // ====================================================
+        //  1개씩 보기
+        // ====================================================
+        function renderSingleView() {
+            if (!originalImageData || currentScale === 1) return;
+
+            const method = compareMethodsList[singleViewMethodIndex];
+            const info   = compareMethodInfo[method];
+
+            document.getElementById('singleMethodName').textContent = info.name;
+            document.getElementById('singleMethodDesc').textContent = info.desc;
+
+            compareMethodsList.forEach((_, i) => {
+                document.getElementById(`dot${i}`).classList.toggle('active', i === singleViewMethodIndex);
+            });
+
+            const canvas = document.getElementById('singleViewCanvas');
+            canvas.className = `border-4 ${info.borderClass} rounded-xl shadow-lg`;
+
+            const newSize = currentResolution * currentScale;
+            const maxSize = Math.min(window.innerWidth * 0.75, window.innerHeight * 0.55, 560);
+            const basePixelSize = Math.min(maxSize / newSize, 8);
+            const pixelSize  = basePixelSize * compareZoomFactor;
+            const displaySize = newSize * pixelSize;
+
+            canvas.width  = displaySize;
+            canvas.height = displaySize;
+            renderComparisonCanvas(canvas, method, newSize, pixelSize, displaySize);
+
+            compareSizeInfo.textContent =
+                `${info.name} | ${newSize}×${newSize} 픽셀 | 표시 크기: ${Math.round(displaySize)}×${Math.round(displaySize)}px`;
+        }
+
+        document.getElementById('prevMethodBtn').addEventListener('click', () => {
+            singleViewMethodIndex = (singleViewMethodIndex - 1 + 3) % 3;
+            renderSingleView();
+        });
+        document.getElementById('nextMethodBtn').addEventListener('click', () => {
+            singleViewMethodIndex = (singleViewMethodIndex + 1) % 3;
+            renderSingleView();
+        });
+
+        // ====================================================
+        //  원본 / 보간 Before-After 슬라이더
+        // ====================================================
+        function renderBeforeAfterSlider() {
+            if (!originalImageData || currentScale === 1) return;
+
+            const newSize = currentResolution * currentScale;
+            const maxSize = Math.min(window.innerWidth * 0.75, window.innerHeight * 0.55, 560);
+            const basePixelSize = Math.min(maxSize / newSize, 8);
+            const pixelSize   = basePixelSize * compareZoomFactor;
+            const displaySize = newSize * pixelSize;
+
+            // 원본 측: 항상 최근접 이웃
+            const beforeCanvas = document.getElementById('baBeforeCanvas');
+            beforeCanvas.width  = displaySize;
+            beforeCanvas.height = displaySize;
+            renderComparisonCanvas(beforeCanvas, 'nearest', newSize, pixelSize, displaySize);
+
+            // 보간 후 측: 선택된 보간법
+            const afterCanvas = document.getElementById('baAfterCanvas');
+            afterCanvas.width  = displaySize;
+            afterCanvas.height = displaySize;
+            renderComparisonCanvas(afterCanvas, baMethod, newSize, pixelSize, displaySize);
+            afterCanvas.style.clipPath = `inset(0 0 0 ${baSliderPct}%)`;
+
+            // 래퍼 크기 지정 (절대 위치 자식들이 공간 차지하도록)
+            const wrapper = document.getElementById('baWrapper');
+            wrapper.style.width  = displaySize + 'px';
+            wrapper.style.height = displaySize + 'px';
+
+            const info = compareMethodInfo[baMethod];
+            document.getElementById('baRightLabel').textContent =
+                baMethod === 'nearest' ? '최근접 이웃' : `보간 후 (${info.name})`;
+            document.getElementById('baDivider').style.left = baSliderPct + '%';
+
+            compareSizeInfo.textContent =
+                `원본(최근접 이웃) vs ${info.name} | ${newSize}×${newSize} 픽셀`;
+        }
+
+        function updateBASlider(pct) {
+            baSliderPct = Math.max(0, Math.min(100, pct));
+            document.getElementById('baDivider').style.left = baSliderPct + '%';
+            document.getElementById('baAfterCanvas').style.clipPath = `inset(0 0 0 ${baSliderPct}%)`;
+        }
+
+        // BA 슬라이더 이벤트
+        const baWrapper = document.getElementById('baWrapper');
+
+        baWrapper.addEventListener('mousedown', (e) => {
+            baIsDragging = true;
+            updateBAFromMouseEvent(e);
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!baIsDragging) return;
+            updateBAFromMouseEvent(e);
+        });
+        document.addEventListener('mouseup', () => { baIsDragging = false; });
+
+        baWrapper.addEventListener('touchstart', (e) => {
+            baIsDragging = true;
+            updateBAFromTouchEvent(e);
+            e.preventDefault();
+        }, { passive: false });
+        document.addEventListener('touchmove', (e) => {
+            if (!baIsDragging) return;
+            updateBAFromTouchEvent(e);
+        }, { passive: false });
+        document.addEventListener('touchend', () => { baIsDragging = false; });
+
+        function updateBAFromMouseEvent(e) {
+            const rect = document.getElementById('baWrapper').getBoundingClientRect();
+            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+            updateBASlider((x / rect.width) * 100);
+        }
+        function updateBAFromTouchEvent(e) {
+            const touch = e.touches[0];
+            const rect  = document.getElementById('baWrapper').getBoundingClientRect();
+            const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
+            updateBASlider((x / rect.width) * 100);
+        }
+
+        // BA 보간법 선택 버튼
+        document.querySelectorAll('.ba-method-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.ba-method-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                baMethod = btn.dataset.method;
+                if (compareViewMode === 'beforeafter') renderBeforeAfterSlider();
+            });
+        });
+    </script>
+</body>
+</html>

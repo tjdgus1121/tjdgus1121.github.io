@@ -82,19 +82,54 @@
         h1 {
             text-align: center;
             color: #333;
-            margin-bottom: 30px;
+            margin-bottom: 0;
             font-size: 3rem;
             font-weight: 300;
             letter-spacing: 1px;
             font-family: "Do Hyeon"
         }
 
+        .title-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .title-link-btn {
+            position: absolute;
+            right: 0;
+            padding: 10px 18px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-family: 'Do Hyeon', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+            letter-spacing: 0.5px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .title-link-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.55);
+            background: linear-gradient(45deg, #764ba2, #667eea);
+        }
+
+        .title-link-btn:active {
+            transform: translateY(-1px);
+        }
+
         .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            display: flex;
+            justify-content: center;
             align-items: start;
             margin: auto;
+            margin-bottom: 30px;
         }
 
         .canvas-section {
@@ -138,18 +173,35 @@
         }
 
         .controls {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
             background-color: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .upload-section {
-            margin-bottom: 25px;
+        .control-left,
+        .control-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(135, 206, 250, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .control-left:hover,
+        .control-right:hover {
+            background: rgba(135, 206, 250, 0.12);
+        }
+
+        .control-right {
+            justify-content: flex-start;
         }
 
         .file-input-wrapper {
@@ -167,24 +219,35 @@
         .file-input-button {
             display: block;
             width: 100%;
-            padding: 12px 20px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
+            padding: 23px 20px;
+            background: linear-gradient(135deg, #89CFF0 0%, #B0E0E6 100%);
+            color: #2c3e50;
             border: none;
-            border-radius: 10px;
+            border-radius: 14px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.3rem;
             text-align: center;
             transition: all 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(135, 206, 250, 0.3);
         }
 
         .file-input-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #A8DAFF 0%, #C9E9F6 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(135, 206, 250, 0.5);
+        }
+
+        .file-input-button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(135, 206, 250, 0.4);
         }
 
         .control-group {
-            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .control-label {
@@ -388,14 +451,258 @@
             gap: 10px;
         }
 
+        /* 비교 모드 스타일 */
+        .compare-button {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .compare-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .compare-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .compare-mode-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .compare-mode-section.active {
+            display: block;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .comparison-item {
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            padding: 15px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .comparison-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .comparison-item h3 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .comparison-canvas-container {
+            position: relative;
+            overflow: auto;
+            max-height: 400px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .comparison-canvas-container canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .comparison-info {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* 확대 모달 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 95%;
+            max-height: 95%;
+            overflow: auto;
+        }
+
+        .modal-content canvas {
+            display: block;
+        }
+
+        .modal-close {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(102, 126, 234, 0.8);
+        }
+
+        .modal-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 400;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            padding: 15px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 10002;
+            font-family: 'Do Hyeon', sans-serif;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-index {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+
+        /* 토스트 알림 */
+        .toast-notification {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 400;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10003;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            font-family: 'Do Hyeon', sans-serif;
+        }
+
+        .toast-notification.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 모달 네비게이션 화살표 */
+        .modal-nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 50px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .modal-nav-arrow:hover {
+            background: rgba(102, 126, 234, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .modal-nav-arrow.left {
+            left: 30px;
+        }
+
+        .modal-nav-arrow.right {
+            right: 30px;
+        }
+
+        /* 모달 안내 텍스트 */
+        .modal-hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-hint kbd {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
         @media (max-width: 1200px) {
-            .main-content {
+            .controls {
                 grid-template-columns: 1fr;
-                gap: 20px;
+                max-width: 600px;
             }
 
-            .controls {
-                order: -1;
+            .comparison-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -527,6 +834,170 @@
             font-weight: bold;
             color: #667eea;
         }
+
+        /* 탭 UI */
+        .view-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 0;
+            justify-content: center;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            font-family: 'Do Hyeon', sans-serif;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-button:hover {
+            color: #667eea;
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.15);
+        }
+
+        .tab-button.active {
+            color: white;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-bottom-color: transparent;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* 뷰 컨테이너 */
+        .view-container {
+            display: none;
+        }
+
+        .view-container.active {
+            display: block;
+        }
+
+        /* 단일 모드 - 분할 뷰 */
+        .split-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .split-view .canvas-section {
+            width: 100%;
+        }
+
+        /* 겹침 모드 - Before/After */
+        .overlap-view {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .before-after-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            min-height: 300px;
+        }
+
+        .before-after-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 75%; /* 4:3 비율 유지 */
+        }
+
+        .before-image,
+        .after-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .before-image canvas,
+        .after-image canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .after-image {
+            clip-path: inset(0 0 0 50%);
+        }
+
+        .slider-control {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: white;
+            cursor: ew-resize;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .slider-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #667eea;
+        }
+
+        .image-label {
+            position: absolute;
+            top: 20px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 5;
+        }
+
+        .image-label.before {
+            left: 20px;
+        }
+
+        .image-label.after {
+            right: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .split-view {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -558,44 +1029,38 @@
         </nav>
     </aside>
     <div class="container">
-        <h1>🎨 이미지 업스케일러</h1>
+        <div class="title-section">
+            <h1>🎨 이미지 업스케일러</h1>
+            <a href="./activity12_interpolation_2.html" class="title-link-btn" title="보간법 수학적 원리 탐구 페이지로 이동">보간법 수학적 원리<br>탐구 페이지로 →</a>
+        </div>
 
         <div class="main-content">
-            <!-- 원본 이미지 -->
-            <div class="canvas-section">
-                <div class="canvas-title">원본 이미지</div>
-                <div class="canvas-container">
-                    <canvas id="originalCanvas"></canvas>
-                    <div id="originalPlaceholder" class="placeholder">
-                        이미지를 업로드해주세요
-                    </div>
-                </div>
-                <div id="originalInfo" class="image-info"></div>
-            </div>
-
             <!-- 컨트롤 패널 -->
             <div class="controls">
-                <div class="upload-section">
-                    <div class="file-input-wrapper">
-                        <input type="file" id="imageInput" class="file-input" accept="image/*">
-                        <label for="imageInput" class="file-input-button">
-                            📁 이미지 선택
-                        </label>
+                <!-- 좌측: 이미지 업로드 + 업스케일 배율 -->
+                <div class="control-left">
+                    <div class="upload-section">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="imageInput" class="file-input" accept="image/*">
+                            <label for="imageInput" class="file-input-button">
+                                📁 이미지 선택
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">업스케일 배율</label>
+                        <div class="slider-container">
+                            <input type="range" id="scaleSlider" class="slider" min="1" max="4" value="2" step="0.5"
+                                title="업스케일 배율 선택">
+                            <div id="scaleValue" class="slider-value">x2.0</div>
+                        </div>
                     </div>
                 </div>
 
-
-                <div class="control-group">
-                    <label class="control-label">업스케일 배율</label>
-                    <div class="slider-container">
-                        <input type="range" id="scaleSlider" class="slider" min="1" max="4" value="2" step="0.5"
-                            title="업스케일 배율 선택">
-                        <div id="scaleValue" class="slider-value">x2.0</div>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">보간법</label>
+                <!-- 우측: 보간법 선택 -->
+                <div class="control-right">
+                    <label class="control-label">보간법 (단일 모드)</label>
                     <div class="radio-group">
                         <label class="radio-item">
                             <input type="radio" name="interpolation" value="nearest" checked>
@@ -626,30 +1091,92 @@
                         </label>
                     </div>
                 </div>
+
             </div>
         </div>
 
-        <!-- 업스케일된 이미지를 아래쪽에 크게 배치 -->
-        <div class="upscaled-section">
-            <div class="canvas-title">업스케일된 이미지</div>
-            <div class="canvas-container">
-                <div class="scaled-canvas-container">
-                    <div class="scaled-canvas-wrapper">
-                        <canvas id="scaledCanvas"></canvas>
-                        <div id="scaledPlaceholder" class="placeholder">
-                            업스케일된 이미지가 <br>여기에 표시됩니다
+        <!-- 탭 UI -->
+        <div class="view-tabs">
+            <button class="tab-button active" data-view="overlap">겹침 모드</button>
+            <button class="tab-button" data-view="compare">전체 비교</button>
+        </div>
+
+        <!-- 겹침 모드 (Before/After) -->
+        <div class="view-container active" id="overlapView">
+            <div class="overlap-view">
+                <div class="before-after-container" id="beforeAfterContainer">
+                    <div class="before-after-wrapper">
+                        <div class="before-image">
+                            <canvas id="overlapOriginalCanvas"></canvas>
                         </div>
+                        <div class="after-image" id="afterImageDiv">
+                            <canvas id="overlapScaledCanvas"></canvas>
+                        </div>
+                        <div class="slider-control" id="sliderControl">
+                            <div class="slider-handle">⟷</div>
+                        </div>
+                        <div class="image-label before">원본</div>
+                        <div class="image-label after">업스케일</div>
                     </div>
                 </div>
+                <div id="overlapInfo" class="image-info"></div>
             </div>
-            <div id="scaledInfo" class="image-info"></div>
-            <div class="action-buttons">
-                <button id="actualSizeBtn" class="action-button" disabled>
-                    🔍 실제 크기로 보기
+        </div>
+
+        <!-- 전체 비교 모드 -->
+        <div class="view-container" id="compareView">
+            <div id="compareModeSection" class="compare-mode-section active">
+            <h2 style="text-align: center; color: #333; margin-bottom: 20px; font-family: 'Do Hyeon';">
+                🔍 모든 보간법 비교
+            </h2>
+            <div class="comparison-grid">
+                <div class="comparison-item">
+                    <h3>최근접 이웃 (Nearest Neighbor)</h3>
+                    <div class="comparison-canvas-container" onclick="openModal('nearest')">
+                        <canvas id="compareCanvas_nearest"></canvas>
+                    </div>
+                    <div class="comparison-info" id="compareInfo_nearest"></div>
+                </div>
+                <div class="comparison-item">
+                    <h3>선형 보간 (Bilinear)</h3>
+                    <div class="comparison-canvas-container" onclick="openModal('bilinear')">
+                        <canvas id="compareCanvas_bilinear"></canvas>
+                    </div>
+                    <div class="comparison-info" id="compareInfo_bilinear"></div>
+                </div>
+                <div class="comparison-item">
+                    <h3>비큐빅 보간 (Bicubic)</h3>
+                    <div class="comparison-canvas-container" onclick="openModal('bicubic')">
+                        <canvas id="compareCanvas_bicubic"></canvas>
+                    </div>
+                    <div class="comparison-info" id="compareInfo_bicubic"></div>
+                </div>
+            </div>
+            <div class="action-buttons" style="margin-top: 20px;">
+                <button class="action-button" id="downloadAllBtn">
+                    💾 모든 결과 다운로드
                 </button>
-                <button id="downloadBtn" class="action-button" disabled>
-                    💾 PNG로 저장
-                </button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- 확대 모달 -->
+        <div id="imageModal" class="modal-overlay" onclick="closeModal(event)">
+            <span class="modal-close">&times;</span>
+            <div class="modal-nav-arrow left" onclick="navigateModal(-1); event.stopPropagation();">
+                &#8249;
+            </div>
+            <div class="modal-nav-arrow right" onclick="navigateModal(1); event.stopPropagation();">
+                &#8250;
+            </div>
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="toast-notification" id="toastNotification"></div>
+            <div class="modal-content">
+                <canvas id="modalCanvas"></canvas>
+            </div>
+            <div class="modal-hint">
+                <span>💡 <kbd>←</kbd> <kbd>→</kbd> 키로 다른 보간법 비교하기 | <kbd>ESC</kbd> 닫기</span>
             </div>
         </div>
 
@@ -695,17 +1222,24 @@
     <script>
         class ImageUpscaler {
             constructor() {
-                this.originalCanvas = document.getElementById('originalCanvas');
-                this.scaledCanvas = document.getElementById('scaledCanvas');
-                this.originalCtx = this.originalCanvas.getContext('2d');
-                this.scaledCtx = this.scaledCanvas.getContext('2d');
+                // 겹침 모드용 캔버스
+                this.overlapOriginalCanvas = document.getElementById('overlapOriginalCanvas');
+                this.overlapOriginalCtx = this.overlapOriginalCanvas.getContext('2d');
+                this.overlapScaledCanvas = document.getElementById('overlapScaledCanvas');
+                this.overlapScaledCtx = this.overlapScaledCanvas.getContext('2d');
+
+                // Tooltip (없어도 오류 방지)
                 this.tooltip = document.getElementById('tooltip');
 
                 this.originalImage = null;
                 this.originalImageData = null;
-                this.isActualSize = false;
-                this.actualSizeBtn = document.getElementById('actualSizeBtn');
-                this.downloadBtn = document.getElementById('downloadBtn');
+
+                // 비교 모드 관련
+                this.comparisonResults = {};
+                this.interpolationMethods = ['nearest', 'bilinear', 'bicubic'];
+
+                // 현재 뷰 모드 (기본값: 겹침 모드)
+                this.currentView = 'overlap';
 
                 // 팝업 진행률 요소 가져오기
                 this.progressPopupOverlay = document.getElementById('progressPopupOverlay');
@@ -713,28 +1247,52 @@
                 this.progressTextPopup = document.getElementById('progressTextPopup');
 
                 // Web Worker 초기화
-                this.worker = new Worker('imageWorker.js');
+                this.worker = new Worker('activity12_webworker.js');
                 this.worker.onmessage = (e) => {
                     if (e.data.type === 'progress') {
                         // 진행도 업데이트 (팝업에 표시)
                         const progress = e.data.progress;
                         this.progressFillPopup.style.width = `${progress}%`;
                         this.progressTextPopup.textContent = `${progress}%`;
-                    } else {
+                    } else if (e.data.type === 'complete') {
                         // 이미지 처리 완료
                         const result = e.data;
-                        this.scaledCanvas.width = result.width;
-                        this.scaledCanvas.height = result.height;
-                        this.scaledCtx.putImageData(result, 0, 0);
+                        // ArrayBuffer를 Uint8ClampedArray로 변환하여 ImageData 생성
+                        const imageData = new ImageData(
+                            new Uint8ClampedArray(result.data),
+                            result.width,
+                            result.height
+                        );
 
-                        document.getElementById('scaledPlaceholder').style.display = 'none';
-                        this.scaledCanvas.style.display = 'block';
+                        // 겹침 모드: 업스케일된 이미지 표시
+                        this.overlapScaledCanvas.width = result.width;
+                        this.overlapScaledCanvas.height = result.height;
+                        this.overlapScaledCtx.putImageData(imageData, 0, 0);
 
-                        document.getElementById('scaledInfo').textContent =
-                            `${result.width} × ${result.height} 픽셀`;
+                        // 겹침 모드: 원본 이미지도 같은 크기로 확대 (정확한 비교를 위해)
+                        this.overlapOriginalCanvas.width = result.width;
+                        this.overlapOriginalCanvas.height = result.height;
+                        this.overlapOriginalCtx.imageSmoothingEnabled = false; // Nearest neighbor
+                        this.overlapOriginalCtx.drawImage(
+                            this.originalImage,
+                            0, 0,
+                            this.originalImage.width,
+                            this.originalImage.height,
+                            0, 0,
+                            result.width,
+                            result.height
+                        );
 
-                        this.actualSizeBtn.disabled = false;
-                        this.downloadBtn.disabled = false;
+                        // Before/After 컨테이너 높이 재조정 (업스케일된 크기 기준)
+                        const aspectRatio = (result.height / result.width) * 100;
+                        const wrapper = document.querySelector('.before-after-wrapper');
+                        if (wrapper) {
+                            wrapper.style.paddingBottom = `${aspectRatio}%`;
+                        }
+
+                        // 정보 업데이트
+                        document.getElementById('overlapInfo').textContent =
+                            `원본: ${this.originalImageData.width} × ${this.originalImageData.height} / 업스케일: ${result.width} × ${result.height} 픽셀`;
 
                         // 프로그레스 팝업 숨기기
                         this.progressPopupOverlay.classList.remove('show');
@@ -753,34 +1311,34 @@
                 // 슬라이더 변경
                 document.getElementById('scaleSlider').addEventListener('input', (e) => {
                     document.getElementById('scaleValue').textContent = `x${e.target.value}`;
-                    this.updateScaledImage();
+                    if (this.originalImageData) {
+                        this.updateScaledImage();
+                    }
                 });
 
-                // 보간법 변경
+                // 보간법 변경 (겹침 모드용)
                 document.querySelectorAll('input[name="interpolation"]').forEach(radio => {
                     radio.addEventListener('change', () => {
-                        this.updateScaledImage();
+                        if (this.originalImageData) {
+                            this.updateScaledImage();
+                        }
                     });
                 });
 
-                // 마우스 이벤트 (업스케일된 이미지)
-                this.scaledCanvas.addEventListener('mousemove', (e) => {
-                    this.showPixelInfo(e);
+                // 모든 결과 다운로드 버튼
+                document.getElementById('downloadAllBtn').addEventListener('click', () => {
+                    this.downloadAllResults();
                 });
 
-                this.scaledCanvas.addEventListener('mouseleave', () => {
-                    this.hideTooltip();
+                // 탭 전환 이벤트
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        this.switchView(e.target.dataset.view);
+                    });
                 });
 
-                // 실제 크기로 보기 버튼 이벤트
-                this.actualSizeBtn.addEventListener('click', () => {
-                    this.toggleActualSize();
-                });
-
-                // PNG 저장 버튼 이벤트
-                this.downloadBtn.addEventListener('click', () => {
-                    this.downloadUpscaledImage();
-                });
+                // Before/After 슬라이더 이벤트
+                this.initBeforeAfterSlider();
             }
 
             loadImage(file) {
@@ -793,6 +1351,9 @@
                         this.originalImage = img;
                         this.displayOriginalImage();
                         this.updateScaledImage();
+
+                        // 비교 결과 초기화
+                        this.comparisonResults = {};
                     };
                     img.src = e.target.result;
                 };
@@ -801,27 +1362,21 @@
 
             displayOriginalImage() {
                 const img = this.originalImage;
-                const maxSize = 400;
 
-                // 원본 해상도 그대로 캔버스에 설정
-                this.originalCanvas.width = img.width;
-                this.originalCanvas.height = img.height;
-                this.originalCtx.drawImage(img, 0, 0, img.width, img.height);
+                // 겹침 모드 원본 이미지
+                this.overlapOriginalCanvas.width = img.width;
+                this.overlapOriginalCanvas.height = img.height;
+                this.overlapOriginalCtx.drawImage(img, 0, 0, img.width, img.height);
 
-                // CSS로 크기 조절
-                this.originalCanvas.style.maxWidth = '100%';
-                this.originalCanvas.style.maxHeight = `${maxSize}px`;
-                this.originalCanvas.style.width = 'auto';
-                this.originalCanvas.style.height = 'auto';
+                // Before/After 컨테이너 높이를 이미지 비율에 맞게 조정
+                const aspectRatio = (img.height / img.width) * 100;
+                const wrapper = document.querySelector('.before-after-wrapper');
+                if (wrapper) {
+                    wrapper.style.paddingBottom = `${aspectRatio}%`;
+                }
 
                 // 원본 이미지 데이터 저장
-                this.originalImageData = this.originalCtx.getImageData(0, 0, img.width, img.height);
-
-                document.getElementById('originalPlaceholder').style.display = 'none';
-                this.originalCanvas.style.display = 'block';
-
-                document.getElementById('originalInfo').textContent =
-                    `${img.width} × ${img.height} 픽셀`;
+                this.originalImageData = this.overlapOriginalCtx.getImageData(0, 0, img.width, img.height);
             }
 
             updateScaledImage() {
@@ -835,106 +1390,12 @@
                 this.progressFillPopup.style.width = '0%';
                 this.progressTextPopup.textContent = '0%';
 
-                // 버튼 비활성화
-                this.actualSizeBtn.disabled = true;
-                this.downloadBtn.disabled = true;
-
-                if (interpolation === 'esrgan') {
-                    // ESRGAN은 백엔드 API를 통해 처리
-                    this.progressTextPopup.textContent = '이미지 서버 전송 중...';
-
-                    // originalImageData를 Base64 문자열로 변환
-                    const base64Image = this.getImageDataAsBase64(this.originalImageData);
-
-                    fetch('/upscale_esrgan', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            image: base64Image,
-                            scale: scale,
-                        }),
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.upscaled_image) {
-                                this.displayBase64Image(this.scaledCanvas, this.scaledCtx, data.upscaled_image);
-                                document.getElementById('scaledPlaceholder').style.display = 'none';
-                                this.scaledCanvas.style.display = 'block';
-                                document.getElementById('scaledInfo').textContent = `업스케일됨`; // 실제 크기 정보는 서버에서 받아와야 함
-                            } else {
-                                alert('ESRGAN 업스케일링에 실패했습니다.');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('ESRGAN 업스케일링 오류:', error);
-                            alert(`ESRGAN 업스케일링 중 오류가 발생했습니다.\n서버를 확인하거나 네트워크 연결을 점검해주세요.`);
-                        })
-                        .finally(() => {
-                            this.progressPopupOverlay.classList.remove('show');
-                            this.actualSizeBtn.disabled = false;
-                            this.downloadBtn.disabled = false;
-                        });
-
-                } else {
-                    // 기존 보간법은 Web Worker로 이미지 처리 요청
-                    this.worker.postMessage({
-                        imageData: this.originalImageData,
-                        scale: scale,
-                        interpolation: interpolation
-                    });
-                }
-            }
-
-            // ImageData를 Base64 URL로 변환하는 헬퍼 함수
-            getImageDataAsBase64(imageData) {
-                const tempCanvas = document.createElement('canvas');
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = imageData.width;
-                tempCanvas.height = imageData.height;
-                tempCtx.putImageData(imageData, 0, 0);
-                return tempCanvas.toDataURL();
-            }
-
-            // Base64 URL 이미지를 캔버스에 그리는 헬퍼 함수
-            displayBase64Image(canvas, ctx, base64Url) {
-                const img = new Image();
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    document.getElementById('scaledInfo').textContent = `${img.width} × ${img.height} 픽셀`;
-                };
-                img.src = base64Url;
-            }
-
-            toggleActualSize() {
-                const container = this.scaledCanvas.closest('.scaled-canvas-container');
-                if (!this.isActualSize) {
-                    // 실제 크기: 컨테이너에 스크롤, 캔버스는 원본 크기
-                    container.style.maxWidth = '100%';
-                    container.style.maxHeight = '500px';
-                    container.style.overflow = 'auto';
-                    this.scaledCanvas.style.maxWidth = 'none';
-                    this.scaledCanvas.style.maxHeight = 'none';
-                    this.actualSizeBtn.textContent = '🔙 축소해서 보기';
-                    this.isActualSize = true;
-                } else {
-                    // 축소 보기: 컨테이너에 스크롤 해제, 캔버스는 축소
-                    container.style.maxWidth = '100%';
-                    container.style.maxHeight = '500px';
-                    container.style.overflow = 'auto';
-                    this.scaledCanvas.style.maxWidth = '100%';
-                    this.scaledCanvas.style.maxHeight = '400px';
-                    this.actualSizeBtn.textContent = '🔍 실제 크기로 보기';
-                    this.isActualSize = false;
-                }
+                // Web Worker로 이미지 처리 요청
+                this.worker.postMessage({
+                    imageData: this.originalImageData,
+                    scale: scale,
+                    interpolation: interpolation
+                });
             }
 
             performUpscaling(originalData, scaledData, interpolation) {
@@ -1055,6 +1516,8 @@
             }
 
             showPixelInfo(event) {
+                if (!this.tooltip) return;
+
                 const rect = this.scaledCanvas.getBoundingClientRect();
                 const x = Math.floor((event.clientX - rect.left) * (this.scaledCanvas.width / rect.width));
                 const y = Math.floor((event.clientY - rect.top) * (this.scaledCanvas.height / rect.height));
@@ -1081,6 +1544,7 @@
             }
 
             hideTooltip() {
+                if (!this.tooltip) return;
                 this.tooltip.classList.remove('show');
             }
 
@@ -1096,37 +1560,262 @@
                 };
             }
 
-            downloadUpscaledImage() {
-                const link = document.createElement('a');
-                link.href = this.scaledCanvas.toDataURL('image/png');
-                link.download = 'upscaled_image.png';
-                link.click();
+            async compareAllMethods() {
+                if (!this.originalImageData) return;
+
+                const scale = parseFloat(document.getElementById('scaleSlider').value);
+
+                // 프로그레스 팝업 표시
+                this.progressPopupOverlay.classList.add('show');
+                this.progressFillPopup.style.width = '0%';
+                this.progressTextPopup.textContent = '비교 처리 중...';
+
+                // 모든 보간법 처리
+                for (let i = 0; i < this.interpolationMethods.length; i++) {
+                    const method = this.interpolationMethods[i];
+                    const progress = ((i + 1) / this.interpolationMethods.length * 100).toFixed(0);
+
+                    this.progressTextPopup.textContent = `${method} 처리 중... (${i + 1}/${this.interpolationMethods.length})`;
+                    this.progressFillPopup.style.width = `${progress}%`;
+
+                    await this.processComparisonMethod(method, scale);
+                }
+
+                // 프로그레스 팝업 숨기기
+                this.progressPopupOverlay.classList.remove('show');
             }
 
-            pingBackend() {
-                // 페이지 로드 시 백엔드에 신호 보내기
-                fetch('/ping', {
-                    method: 'GET',
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
+            async processComparisonMethod(method, scale) {
+                return new Promise((resolve) => {
+                    const canvas = document.getElementById(`compareCanvas_${method}`);
+                    const ctx = canvas.getContext('2d');
+
+                    // Web Worker 사용
+                    const worker = new Worker('activity12_webworker.js');
+                    worker.onmessage = (e) => {
+                        if (e.data.type === 'complete') {
+                            const result = e.data;
+                            // ArrayBuffer를 Uint8ClampedArray로 변환하여 ImageData 생성
+                            const imageData = new ImageData(
+                                new Uint8ClampedArray(result.data),
+                                result.width,
+                                result.height
+                            );
+
+                            canvas.width = result.width;
+                            canvas.height = result.height;
+                            ctx.putImageData(imageData, 0, 0);
+
+                            this.comparisonResults[method] = canvas;
+                            document.getElementById(`compareInfo_${method}`).textContent =
+                                `${result.width} × ${result.height} 픽셀`;
+
+                            worker.terminate();
+                            resolve();
                         }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('백엔드에 성공적으로 신호를 보냈습니다.');
-                    })
-                    .catch(error => {
-                        console.error('백엔드에 신호 보내기 중 오류가 발생했습니다:', error);
+                        // progress 메시지는 무시 (비교 모드에서는 표시 안 함)
+                    };
+
+                    worker.postMessage({
+                        imageData: this.originalImageData,
+                        scale: scale,
+                        interpolation: method
                     });
+                });
+            }
+
+            downloadAllResults() {
+                for (const method of this.interpolationMethods) {
+                    const canvas = document.getElementById(`compareCanvas_${method}`);
+                    if (canvas && canvas.width > 0) {
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL('image/png');
+                        link.download = `upscaled_${method}.png`;
+                        link.click();
+                    }
+                }
+            }
+
+            switchView(viewName) {
+                // 탭 버튼 활성화 상태 변경
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+
+                // 뷰 컨테이너 표시/숨김
+                document.querySelectorAll('.view-container').forEach(container => {
+                    container.classList.remove('active');
+                });
+
+                if (viewName === 'overlap') {
+                    document.getElementById('overlapView').classList.add('active');
+                } else if (viewName === 'compare') {
+                    document.getElementById('compareView').classList.add('active');
+                    // 비교 모드로 전환 시 자동으로 비교 실행
+                    if (this.originalImageData && Object.keys(this.comparisonResults).length === 0) {
+                        this.compareAllMethods();
+                    }
+                }
+
+                this.currentView = viewName;
+            }
+
+            initBeforeAfterSlider() {
+                const slider = document.getElementById('sliderControl');
+                const afterDiv = document.getElementById('afterImageDiv');
+                const container = document.getElementById('beforeAfterContainer');
+                let isDragging = false;
+
+                const updateSlider = (e) => {
+                    if (!isDragging && e.type !== 'click') return;
+
+                    const rect = container.getBoundingClientRect();
+                    let x = e.clientX - rect.left;
+                    x = Math.max(0, Math.min(x, rect.width));
+
+                    const percentage = (x / rect.width) * 100;
+                    slider.style.left = `${percentage}%`;
+                    afterDiv.style.clipPath = `inset(0 0 0 ${percentage}%)`;
+                };
+
+                slider.addEventListener('mousedown', () => {
+                    isDragging = true;
+                });
+
+                document.addEventListener('mousemove', updateSlider);
+
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                container.addEventListener('click', updateSlider);
+
+                // 터치 이벤트 지원
+                slider.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    e.preventDefault();
+                });
+
+                document.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    const touch = e.touches[0];
+                    const rect = container.getBoundingClientRect();
+                    let x = touch.clientX - rect.left;
+                    x = Math.max(0, Math.min(x, rect.width));
+
+                    const percentage = (x / rect.width) * 100;
+                    slider.style.left = `${percentage}%`;
+                    afterDiv.style.clipPath = `inset(0 0 0 ${percentage}%)`;
+                    e.preventDefault();
+                });
+
+                document.addEventListener('touchend', () => {
+                    isDragging = false;
+                });
+            }
+
+        }
+
+        // 모달 전역 변수
+        let currentModalIndex = 0;
+        const modalMethods = ['nearest', 'bilinear', 'bicubic'];
+
+        // 모달 함수들 (전역)
+        function openModal(method) {
+            const sourceCanvas = document.getElementById(`compareCanvas_${method}`);
+            if (!sourceCanvas || sourceCanvas.width === 0) return;
+
+            // 현재 인덱스 저장
+            currentModalIndex = modalMethods.indexOf(method);
+
+            // 모달 업데이트
+            updateModal(method);
+
+            // 모달 표시
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('active');
+        }
+
+        function updateModal(method, showToast = false) {
+            const sourceCanvas = document.getElementById(`compareCanvas_${method}`);
+            if (!sourceCanvas || sourceCanvas.width === 0) return;
+
+            const modalCanvas = document.getElementById('modalCanvas');
+            const modalTitle = document.getElementById('modalTitle');
+            const ctx = modalCanvas.getContext('2d');
+
+            // 캔버스 복사 (실제 크기로)
+            modalCanvas.width = sourceCanvas.width;
+            modalCanvas.height = sourceCanvas.height;
+            ctx.drawImage(sourceCanvas, 0, 0);
+
+            // 타이틀 설정 (인덱스 포함)
+            const titles = {
+                'nearest': '최근접 이웃 (Nearest Neighbor)',
+                'bilinear': '선형 보간 (Bilinear)',
+                'bicubic': '비큐빅 보간 (Bicubic)'
+            };
+            const titleText = titles[method] || method;
+            const indexText = `<span class="modal-index">(${currentModalIndex + 1}/${modalMethods.length})</span>`;
+            modalTitle.innerHTML = titleText + ' ' + indexText;
+
+            // 토스트 알림 표시 (네비게이션 시에만)
+            if (showToast) {
+                showToastNotification(titleText);
             }
         }
 
+        function showToastNotification(message) {
+            const toast = document.getElementById('toastNotification');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            // 1.5초 후 자동으로 숨기기
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 1500);
+        }
+
+        function navigateModal(direction) {
+            // 다음 인덱스 계산
+            currentModalIndex = (currentModalIndex + direction + modalMethods.length) % modalMethods.length;
+
+            // 모달 업데이트 (토스트 알림 표시)
+            const method = modalMethods[currentModalIndex];
+            updateModal(method, true);
+        }
+
+        function closeModal(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target === modal || event.target.classList.contains('modal-close')) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // 키보드 이벤트 (ESC, 화살표 키)
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('imageModal');
+            if (modal && modal.classList.contains('active')) {
+                if (e.key === 'Escape') {
+                    // ESC 키로 모달 닫기
+                    modal.classList.remove('active');
+                } else if (e.key === 'ArrowLeft') {
+                    // 왼쪽 화살표: 이전 보간법
+                    e.preventDefault();
+                    navigateModal(-1);
+                } else if (e.key === 'ArrowRight') {
+                    // 오른쪽 화살표: 다음 보간법
+                    e.preventDefault();
+                    navigateModal(1);
+                }
+            }
+        });
+
         // 앱 초기화
+        let upscalerInstance;
         document.addEventListener('DOMContentLoaded', () => {
-            const upscaler = new ImageUpscaler();
-            upscaler.pingBackend(); // 페이지 로드 시 백엔드에 신호 보내기
+            upscalerInstance = new ImageUpscaler();
         });
     </script>
 </body>
