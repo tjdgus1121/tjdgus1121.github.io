@@ -3,323 +3,1249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- 🔍 SEO (검색엔진 최적화) -->
-    <title>숫자 인식 해밍거리 비교</title>
-    <meta name="description" content="손글씨로 그린 숫자와 MNIST 데이터셋의 숫자들 간의 해밍거리를 계산하여 가장 유사한 숫자를 찾아보는 인공지능 수학 체험 활동입니다.">
-    <meta name="keywords" content="해밍거리, 숫자 인식, MNIST, 손글씨 인식, 유사도 비교, 인공지능 수학, 교육 활동">
+    <title>해밍 거리 - 개념과 체험</title>
+    <meta name="description" content="해밍 거리의 개념을 배우고 숫자 이미지로 직접 체험해보는 인공지능 수학 교육 사이트입니다.">
+    <meta name="keywords" content="해밍거리, Hamming Distance, 이진행렬, 이미지분류, 인공지능수학">
     <meta name="author" content="황성현">
     <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
     <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
-
-    <!-- 📱 SNS 공유 (Open Graph) -->
-    <meta property="og:title" content="숫자 인식 해밍거리 비교 - 인공지능 수학 탐구">
-    <meta property="og:description" content="손글씨로 그린 숫자와 MNIST 데이터셋의 숫자들 간의 해밍거리를 계산하여 가장 유사한 숫자를 찾아보는 인공지능 수학 체험 활동입니다.">
+    <meta property="og:title" content="해밍 거리 - 개념과 체험">
+    <meta property="og:description" content="해밍 거리의 개념을 배우고 숫자 이미지로 직접 체험해보세요.">
     <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
-    <meta property="og:url" content="https://tjdgus1121.github.io/activity11_similarity_check.html">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity_haming.html">
     <meta property="og:type" content="website">
-
-    <!-- 🔍 SEO (추가 메타데이터) -->
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://tjdgus1121.github.io/activity11_similarity_check.html">
-
-    <!-- Twitter Card -->
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity_haming.html">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="숫자 인식 해밍거리 비교">
-    <meta name="twitter:description" content="손글씨로 그린 숫자와 MNIST 데이터셋의 숫자들 간의 해밍거리를 계산하여 가장 유사한 숫자를 찾아보세요.">
-    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
-
     <meta name="subject" content="AI 수학 교육 체험">
-    <meta name="theme-color" content="#ff9a9e">
+    <meta name="theme-color" content="#6c8cff">
     <meta name="copyright" content="황성현">
-    <meta name="reply-to" content="tjdgus1121@naver.com">
-    <meta name="url" content="https://tjdgus1121.github.io/activity11_similarity_check.html">
 
-    <!-- 📎 스타일 및 폰트 -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
         integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="stylefooter.css">
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js"></script>
+
     <style>
+        :root {
+            --primary: #6c8cff;
+            --primary-dark: #4b5fc9;
+            --accent: #ff6b9d;
+            --success: #4caf7d;
+            --danger: #ff5757;
+            --warn: #ffb347;
+            --bg: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 100%);
+            --card-bg: #fff;
+            --text: #1f284a;
+            --muted: #6b7280;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
             font-family: 'Noto Sans KR', Arial, sans-serif;
+            margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 100%);
-            background-size: 400% 400%;
-            animation: gradientMove 12s ease-in-out infinite;
-            color: #333;
+            background: #eef1f8;
+            color: var(--text);
             min-height: 100vh;
-        }
-        @keyframes gradientMove {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
         }
 
         .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            background: linear-gradient(120deg, rgba(255,255,255,0.97) 0%, rgba(240,245,255,0.93) 100%);
-            background-size: 200% 200%;
-            animation: containerGradientMove 10s ease-in-out infinite;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
-        }
-        @keyframes containerGradientMove {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
-        }
-        
-        h1 {
-            color: #000000;
-            margin-bottom: 30px;
-            font-size: 3.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            font-family: 'Do hyeon', arial;
-            text-align: center;
-            font-weight: 300;
-        }
-        
-        h3 {
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-            font-weight: 800;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-            color: #333;
-        }
-        
-        .drawing-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin: 30px auto;
-            max-width: 1200px;
-            justify-items: center;
-        }
-        
-        .canvas-container, .binary-display {
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        
-        canvas {
-            border: 3px solid rgba(255, 255, 255, 0.5);
-            border-radius: 15px;
-            background: white;
-            cursor: crosshair;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-        }
-        
-        .binary-grid {
-            display: grid;
-            grid-template-columns: repeat(28, 1fr);
-            grid-template-rows: repeat(28, 1fr);
-            gap: 0px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 10px;
-            padding: 5px;
-            background: rgba(0, 0, 0, 0.3);
-            width: 280px;
-            height: 280px;
+            max-width: 1300px;
             margin: 0 auto;
-            box-sizing: content-box;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 36px 32px;
+            box-shadow: 0 8px 40px rgba(108,140,255,0.10);
+            margin-top: 20px;
         }
-        
-        .binary-cell {
-            /* grid-template-columns/rows에 의해 크기 자동 결정 */
-            /* width: 3px; */ /* 고정 크기 제거 */
-            /* height: 3px; */ /* 고정 크기 제거 */
-            transition: background-color 0.2s ease;
-            border: 1px solid #eeeeee77; /* 셀 테두리 색상을 적절한 밝기의 회색으로 조정 */
-            box-sizing: border-box; /* 테두리가 셀 크기에 포함되도록 설정 */
-        }
-        
-        .binary-cell.active {
-            background: #000;
-        }
-        
-        .binary-cell.inactive {
-            background: #fff;
-        }
-        
-        .controls {
+
+        h1 {
             text-align: center;
-            margin: 30px auto;
-            max-width: 1200px;
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 3em;
+            color: var(--text);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            font-size: 1.05em;
+            margin-bottom: 32px;
+        }
+
+        /* ── 탭 ── */
+        .tab-nav {
             display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 28px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
         }
-        
-        button {
-            background: #ff6b6b;
-            color: #f7f7f7;
+        .tab-btn {
+            background: none;
             border: none;
-            padding: 12px 24px;
-            margin: 5px;
-            border-radius: 25px;
-            font-size: 16px;
+            padding: 12px 28px;
+            font-size: 1.05em;
+            font-weight: 700;
+            color: var(--muted);
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: #f0f4ff;
+        }
+        .tab-btn:hover:not(.active) { color: var(--primary-dark); background: #f8faff; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── 개념 카드 ── */
+        .concept-card {
+            background: linear-gradient(120deg, #f0f4ff 0%, #e8f5ff 100%);
+            border-left: 5px solid var(--primary);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 28px;
+        }
+        .concept-card h2 { color: var(--primary); margin: 0 0 12px; font-size: 1.4em; }
+        .concept-card p { margin: 6px 0; line-height: 1.8; font-size: 1.05em; }
+        .formula-box {
+            background: var(--text);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            border-radius: 10px;
+            padding: 14px 24px;
+            margin: 14px 0 0;
+            display: inline-block;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── 섹션 제목 ── */
+        .section-title {
+            font-size: 1.3em;
             font-weight: 800;
+            color: var(--primary);
+            margin: 32px 0 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: var(--border);
+            border-radius: 2px;
         }
-        
-        .load-samples-btn {
-            background: #4ecdc4;
-            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
-        }
-        
-        .load-samples-btn:hover {
-            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
-        }
-        
-        .calculate-btn {
-            background: #ffa726;
-            box-shadow: 0 4px 15px rgba(255, 167, 38, 0.3);
-        }
-        
-        .calculate-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 167, 38, 0.4);
-        }
-        
-        .samples-section {
-            margin: 30px 0;
-        }
-        
-        .samples-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
+
+        /* ── 교과서 예제 ── */
+        .example-area {
+            display: flex;
             gap: 20px;
-            margin: 20px auto;
-            max-width: 1000px;
-            justify-items: center;
-            align-items: start;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            justify-content: center;
         }
-        
-        .sample-item {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            transition: transform 0.3s ease;
-            width: 100%;
-            max-width: 180px;
+        .concept-result-col {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
-        
-        .sample-item:hover {
-            transform: scale(1.05);
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        .sample-image {
-            width: 112px;
-            height: 112px;
-            margin: 0 auto 10px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: repeat(28, 1fr);
-            grid-template-rows: repeat(28, 1fr);
-            gap: 0;
-            background: white;
-        }
-        
-        .sample-info {
-            width: 100%;
+        .matrix-card {
+            background: #f8faff;
+            border-radius: 14px;
+            padding: 18px;
             text-align: center;
-            margin-top: 5px;
+            box-shadow: 0 2px 12px rgba(108,140,255,0.07);
+            flex: 0 0 auto;
         }
-        
-        .sample-info strong {
-            display: block;
-            font-size: 1.8em;
-            margin-bottom: 0;
-            color: #fff;
+        .matrix-card .label {
             font-weight: 800;
+            font-size: 1.1em;
+            color: var(--primary);
+            margin-bottom: 10px;
         }
-        
-        .sample-info .filename {
-            display: none;
+        .small-grid {
+            display: inline-grid;
+            grid-template-columns: repeat(5, 38px);  /* 5열 고정 (터치 접근성: 38px) */
+            gap: 4px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 7px;
+            background: #fff;
         }
-        
-        .results-section {
-            margin: 30px auto;
-            max-width: 1200px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 15px;
-            padding: 30px;
-            color: #fff;
-        }
-        
-        .distance-item {
+        .small-cell {
+            width: 38px;
+            height: 38px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
-            margin: 5px 0;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            transition: background 0.3s ease;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            border-radius: 5px;
+            transition: background 0.15s;
+        }
+        .small-cell.val-0 { background: #fff; color: #ccc; border: 1px solid #e5e7eb; }
+        .small-cell.val-1 { background: var(--text); color: #fff; }
+        .small-cell.diff  { background: var(--danger); color: #fff; }
+
+        .h-badge {
+            margin-top: 10px;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .h-badge span {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 8px;
+            padding: 3px 12px;
+            margin-left: 6px;
             font-size: 1.1em;
         }
-        
-        .distance-item strong {
-            font-weight: 800;
+
+        .arrow-label {
+            font-size: 2em;
+            color: var(--muted);
+            display: flex;
+            align-items: flex-start;
+            padding-top: 60px;
         }
-        
-        .distance-item:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .conclusion-box {
+            background: linear-gradient(120deg, #e8ffe8, #f0fff0);
+            border-left: 5px solid var(--success);
+            border-radius: 12px;
+            padding: 16px 22px;
+            font-size: 1.05em;
+            font-weight: 600;
+            color: #1a5c2a;
         }
-        
-        .closest-match {
-            background: linear-gradient(45deg, #4caf50, #8bc34a) !important;
-            font-weight: bold;
-            font-size: 1.1em;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+
+        /* ── 인터랙티브 미니 데모 ── */
+        .mini-demo-area {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
         }
-        
-        .status {
+        .mini-demo-grids {
+            display: flex;
+            gap: 56px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+        .mini-grid-item { text-align: center; flex: 0 0 auto; }
+        .mini-h-row {
+            display: flex;
+            gap: 28px;
+            justify-content: center;
+            align-items: stretch;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .mini-label { font-weight: 800; font-size: 1em; color: var(--primary); margin-bottom: 8px; }
+        .mini-hint { font-size: 0.85em; color: var(--muted); margin-top: 4px; }
+        .p-intro { margin-bottom: 16px; color: var(--muted); }
+        .diff-highlight { color: var(--danger); font-weight: 700; }
+        .diff-swatch { display: inline-block; width: 14px; height: 14px; background: var(--danger); border-radius: 3px; vertical-align: middle; }
+        .demo-hint { text-align: center; color: var(--muted); margin-top: 0; }
+        .text-center { text-align: center; }
+        .p-muted { color: var(--muted); margin-bottom: 12px; }
+        .p-muted-inline { margin: 0; }
+        .calc-center { text-align: center; margin-bottom: 24px; }
+        .calc-hint { color: var(--muted); font-size: 0.9em; margin-top: 8px; }
+        .binary-stats-text { text-align: center; color: var(--muted); font-size: 0.9em; margin-top: 8px; }
+        .step-badge-mt { margin-top: 28px; }
+        .mini-label-x { color: var(--accent); }
+        .text-muted-small { color: var(--muted); }
+        .mini-h-col { text-align: center; }
+        .mini-h-a { background: #059669; }
+        .mini-h-b { background: #7c3aed; }
+        .mini-h-result { background: #475569; font-size: 1.1em; }
+        .footer-full { width: 100%; }
+        .naver-img { height: 25px; filter: grayscale(100%); transition: filter 0.3s; }
+        .naver-img:hover { filter: grayscale(0%); }
+        .example-intro { margin-bottom: 16px; color: var(--muted); }
+        .example-conclusion { margin-top: 12px; }
+        .diff-rank-1 { color: var(--success); margin-bottom: 10px; }
+        .diff-rank-2 { color: var(--primary); margin-bottom: 10px; }
+        .diff-rank-wrapper { margin-bottom: 28px; }
+        .arrow-vs { font-size: 1.3em; padding-top: 60px; color: #999; }
+        .ref-pixel-on  { background: #1f284a; }
+        .ref-pixel-off { background: #fff; }
+        .dg-x-diff { background: var(--danger); }
+        .dg-x-on   { background: #1f284a; }
+        .dg-x-off  { background: #fff; }
+        .dg-ref-on  { background: #1f284a; }
+        .dg-ref-off { background: #fff; }
+        .mini-h-result.mini-result-correct { background: #059669; }
+        .mini-h-result.mini-result-alt     { background: #7c3aed; }
+        .mini-h-result.mini-result-tie     { background: var(--warn); }
+        .editable-cell { cursor: pointer; -webkit-user-select: none; user-select: none; }
+        .editable-cell:hover { opacity: 0.75; }
+
+        /* ── 셀 툴팁 (빨간 diff 셀 설명) ── */
+        .small-cell[data-tooltip] { position: relative; overflow: visible; }
+        .small-cell[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 115%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(31,40,74,0.93);
+            color: #fff;
+            font-size: 12px;
+            white-space: nowrap;
+            padding: 4px 10px;
+            border-radius: 7px;
+            z-index: 30;
+            pointer-events: none;
+            font-weight: 600;
+            letter-spacing: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .small-cell[data-tooltip]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: calc(115% - 7px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(31,40,74,0.93);
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        /* ── STEP 완료 상태 ── */
+        .step-badge { transition: background 0.4s ease; }
+        .step-badge.done { background: var(--success); }
+        .step-badge.done .step-check { display: inline; }
+        .step-check { display: none; }
+
+        /* ── 개념→활동 CTA ── */
+        .tab-cta {
+            background: linear-gradient(120deg, #e8f5ff 0%, #f0e8ff 100%);
+            border-radius: 16px;
+            padding: 28px 32px;
             text-align: center;
-            margin: 10px 0;
-            font-style: italic;
-            opacity: 0.9;
-            color: #555;
+            margin-top: 32px;
+            border: 2px dashed var(--primary);
+        }
+        .tab-cta p {
+            font-size: 1.1em;
+            color: var(--text);
+            margin: 0 0 16px;
+            font-weight: 600;
+        }
+        .cta-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 13px 36px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.18s, transform 0.1s;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.18);
+            font-family: 'Do Hyeon', sans-serif;
+            letter-spacing: 0.5px;
+        }
+        .cta-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
+
+        /* ── KNN 교육 설명 박스 ── */
+        .knn-explain {
+            background: linear-gradient(120deg, #fffbe6 0%, #fff8d6 100%);
+            border-left: 5px solid var(--warn);
+            border-radius: 14px;
+            padding: 20px 26px;
+            margin-top: 20px;
+            text-align: left;
+            color: var(--text);
+        }
+        .knn-explain .knn-title {
             font-size: 1.1em;
             font-weight: 800;
+            color: #b45309;
+            margin: 0 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .knn-explain p { margin: 0; line-height: 1.8; font-size: 0.98em; }
+        .knn-explain em { color: var(--primary-dark); font-style: normal; font-weight: 700; }
+        .mini-h-display {
+            text-align: center;
+            font-size: 1.6em;
+            font-weight: 800;
+            padding: 12px 28px;
+            color: #fff;
+            border-radius: 14px;
+            min-width: 180px;
+            margin: 0;
+        }
+        .mini-demo-btn {
+            display: block;
+            margin: 12px auto 0;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 28px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .mini-demo-btn:hover { background: var(--primary-dark); transform: scale(1.03); }
+
+        /* ── STEP 배지 ── */
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 30px;
+            padding: 6px 20px;
+            font-weight: 700;
+            font-size: 1em;
+            margin-bottom: 14px;
+        }
+
+        /* ── 기준 이미지 섹션 ── */
+        .ref-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 700px) {
+            .ref-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .ref-card {
+            background: #f8faff;
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: border 0.2s, transform 0.2s;
+            cursor: default;
+        }
+        .ref-card.highlight-ref {
+            border-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(76,175,125,0.2);
+        }
+        .ref-card .digit-label {
+            font-size: 1.4em;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+        .ref-img-grid {
+            display: inline-grid;
+            grid-template-columns: repeat(14, 1fr);
+            width: 140px;
+            height: 140px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .ref-pixel { width: 100%; height: 100%; }
+        .ref-dist-badge {
+            margin-top: 6px;
+            font-size: 0.85em;
+            font-weight: 700;
+            color: var(--muted);
+            min-height: 20px;
+        }
+        .ref-dist-badge.best { color: var(--success); font-size: 1em; }
+
+        .new-sample-btn {
+            background: #e8f0ff;
+            color: var(--primary-dark);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 9px 22px;
+            font-size: 0.95em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+        }
+        .new-sample-btn:hover { background: var(--primary); color: #fff; }
+
+        /* ── 개념 예제 (동적 이미지) ── */
+        .concept-example-wrap {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            min-height: 80px;
+        }
+        .concept-example-row {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            justify-content: center;
+        }
+        .concept-panel {
+            background: #fff;
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(108,140,255,0.10);
+        }
+        .concept-panel-label {
+            font-weight: 700;
+            font-size: 0.95em;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+        .concept-h-box {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 14px;
+            padding: 16px 28px;
+            text-align: center;
+            min-width: 140px;
+        }
+        .concept-h-label { font-size: 0.9em; opacity: 0.85; margin-bottom: 4px; }
+        .concept-h-value { font-size: 2.4em; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+        /* ── 그리기 섹션 ── */
+        .draw-area {
+            display: flex;
+            gap: 28px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .canvas-box, .preview-box {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+        .canvas-box h3, .preview-box h3 { margin: 0 0 12px; font-size: 1em; color: var(--primary); font-weight: 800; }
+        #drawingCanvas {
+            border: 2.5px solid var(--primary);
+            border-radius: 10px;
+            background: #fff;
+            cursor: crosshair;
+            display: block;
+        }
+        .canvas-btns { margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 22px;
+            font-size: 0.95em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover { filter: brightness(0.92); transform: scale(1.03); }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-clear   { background: #ffb6b9; color: #fff; }
+        .btn-calc    { background: var(--success); color: #fff; font-size: 1.1em; padding: 13px 36px; }
+        .btn-calc:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+        /* 14x14 이진 미리보기 */
+        .binary-preview {
+            display: inline-grid;
+            grid-template-columns: repeat(14, 1fr);
+            width: 280px;
+            height: 280px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .bp-cell { width: 100%; height: 100%; }
+        .bp-cell.on  { background: #1f284a; }
+        .bp-cell.off { background: #fff; }
+
+        /* ── 결과 섹션 ── */
+        .result-section { margin-top: 28px; }
+
+        /* 바 차트 */
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95em;
+        }
+        .bar-digit { width: 36px; font-weight: 800; color: var(--primary); text-align: right; }
+        .bar-track {
+            flex: 1;
+            background: #e8edf5;
+            border-radius: 8px;
+            height: 26px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #fff;
+            width: var(--bar-pct, 3%);
+            transition: width 0.6s ease;
+            min-width: 0;
+        }
+        .bar-fill.best-bar { background: var(--success); }
+        .bar-fill.other-bar { background: var(--primary); }
+        .bar-num { width: 38px; font-weight: 700; text-align: left; color: var(--text); }
+
+        /* 단계별 비교 */
+        .diff-section-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .grid-toggle-btn {
+            background: #e8f0ff;
+            color: var(--primary-dark);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 7px 18px;
+            font-size: 0.9em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .grid-toggle-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+        .grid-toggle-btn:hover { filter: brightness(0.93); }
+
+        .diff-rank-wrapper { margin-bottom: 36px; }
+        .diff-compare {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .diff-compare-row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .diff-panel {
+            background: #f8faff;
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+        .diff-panel h4 {
+            margin: 0 0 10px;
+            font-size: 1em;
+            color: var(--primary);
+            font-weight: 800;
+        }
+        .diff-grid-28 {
+            display: inline-grid;
+            grid-template-columns: repeat(28, 1fr);
+            width: 392px;
+            height: 392px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .dg-cell { width: 100%; height: 100%; }
+        .dg-same-0   { background: #fff; }
+        .dg-same-1   { background: #1f284a; }
+        .dg-same-bg  { background: #f0f4ff; }
+        .dg-diff     { background: var(--danger); }
+
+        /* ── 14×14 비교 시각화 ── */
+        .compare-block { margin-bottom: 40px; }
+        .compare-main {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 0;
+        }
+        .compare-grid-panel {
+            background: #f8faff;
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+        .compare-grid-panel h4 { margin: 0 0 6px; font-size: 1em; color: var(--primary); font-weight: 800; }
+        .compare-state-label {
+            display: inline-block;
+            font-size: 0.92em;
+            font-weight: 700;
+            color: var(--primary-dark);
+            background: #e8f0ff;
+            border-radius: 8px;
+            padding: 3px 12px;
+            margin-bottom: 10px;
+            min-width: 180px;
+            transition: all 0.25s;
+        }
+        .compare-grid-14 {
+            display: inline-grid;
+            grid-template-columns: repeat(14, 28px);
+            width: 392px;
+            height: 392px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .cg-cell {
+            width: 100%;
+            height: 100%;
+            transition: background-color 0.22s ease;
+        }
+        .cg-x-on    { background: #1f284a; }
+        .cg-x-off   { background: #f0f4ff; }
+        .cg-ref-on  { background: #1f284a; }
+        .cg-ref-off { background: #f0f4ff; }
+        .cg-diff    { background: var(--danger); }
+        .cg-same-1  { background: #1f284a; }
+        .cg-same-0  { background: #f0f4ff; }
+        .compare-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .compare-btn {
+            background: #e8f0ff;
+            color: var(--primary-dark);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 8px 16px;
+            font-size: 0.88em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+        .compare-btn.active { background: var(--primary); color: #fff; }
+        .compare-btn:hover { filter: brightness(0.92); }
+        .compare-btn-anim {
+            background: var(--success);
+            color: #fff;
+            border-color: var(--success);
+        }
+        .compare-btn-anim.anim-on {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+        .cg-cell {
+            box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15);
+        }
+
+        /* ── 블렌딩 애니메이션 스테이지 ── */
+        .blend-stage { margin-bottom: 12px; }
+        .blend-inner {
+            display: flex;
+            gap: 60px;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+            min-height: 342px;
+            overflow: visible;
+        }
+        .blend-panel {
+            flex: 0 0 auto;
+            text-align: center;
+            transition: transform 0.9s cubic-bezier(0.4,0,0.2,1), opacity 0.9s ease;
+        }
+        .blend-panel-result {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.45s ease;
+            pointer-events: none;
+        }
+        .blend-panel-result.visible { opacity: 1; pointer-events: auto; }
+        .blend-panel-label {
+            font-size: 0.92em;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 24px;
+        }
+        .blend-result-label { color: var(--primary); }
+        .blend-legend { font-size: 0.8em; font-weight: 600; color: var(--muted); }
+        .legend-swatch {
+            display: inline-block;
+            width: 11px; height: 11px;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin-right: 2px;
+        }
+        .legend-blue           { background: #3b82f6; }
+        .legend-red            { background: #ef4444; }
+        .legend-perc-counted   { background: #3b82f6; }
+        .legend-perc-uncounted { background: #f59e0b; }
+        .legend-perc-xonly     { background: #fca5a5; }
+        .compare-grid-14-sm {
+            display: inline-grid;
+            grid-template-columns: repeat(14, 22px);
+            width: 308px;
+            height: 308px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .cg-blend-both   { background: #3b82f6; }
+        .cg-blend-diff   { background: #ef4444; }
+        .cg-blend-empty  { background: #f0f4ff; }
+        /* 퍼셉트론 전용: A=1 X=0 (분모만) / A=0 X=1 (관계없음) */
+        .cg-blend-a-only { background: #f59e0b; }  /* 주황: 분모 포함, 분자 미포함 */
+        .cg-blend-x-only { background: #fca5a5; }  /* 연분홍: 퍼셉트론 계산과 무관 */
+
+        /* ── 분수 시각화 스트립 ── */
+        .frac-viz {
+            margin-top: 8px;
+            background: #f8faff;
+            border-radius: 10px;
+            padding: 10px 12px;
+            width: 308px;
+            box-sizing: border-box;
+            /* 블렌딩 전엔 숨김, 블렌딩 후 fade-in */
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 0.4s ease, max-height 0.4s ease;
+        }
+        .frac-viz.frac-visible {
+            opacity: 1;
+            max-height: 300px;
+        }
+        .frac-viz-title {
+            font-size: 0.8em;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+        .frac-legend-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 6px;
+            font-size: 0.75em;
+            color: var(--muted);
+            flex-wrap: wrap;
+        }
+        .frac-legend-item { display: flex; align-items: center; gap: 4px; }
+        .frac-swatch {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .frac-swatch-counted   { background: #3b82f6; }
+        .frac-swatch-uncounted { background: #f59e0b; }
+        .frac-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-bottom: 8px;
+            min-height: 12px;
+        }
+        .frac-cell {
+            width: 10px; height: 10px;
+            border-radius: 2px;
+            cursor: help;
+            transition: transform 0.1s;
+            position: relative;
+        }
+        .frac-cell:hover { transform: scale(1.5); z-index: 10; }
+        .frac-counted   { background: #3b82f6; }
+        .frac-uncounted { background: #f59e0b; }
+        .frac-formula {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-size: 0.98em;
+            font-weight: 700;
+            flex-wrap: wrap;
+        }
+        .frac-frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
+            vertical-align: middle;
+        }
+        .frac-frac-num   { color: #3b82f6; font-size: 1em; border-bottom: 2px solid var(--text); padding: 0 4px; }
+        .frac-frac-den   { color: var(--text); font-size: 1em; padding: 0 4px; }
+        .frac-eq         { color: var(--muted); }
+        .frac-result-val { color: var(--primary); font-size: 1.1em; }
+
+        /* 격자선 항상 ON */
+        .dg-cell {
+            box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.18);
+        }
+        .ref-pixel {
+            box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+        }
+        .bp-cell {
+            box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ── blend hover hint ── */
+        .blend-hover-hint {
+            font-size: 0.78em;
+            color: rgba(255,255,255,0.75);
+            margin-top: 8px;
+            text-align: center;
+            animation: hint-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes hint-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .blend-panel-result.visible {
+            cursor: pointer;
+        }
+
+        /* ── 붓 두께 버튼 ── */
+        .brush-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .brush-label {
+            font-size: 0.88em;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .brush-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s;
+            padding: 0;
+        }
+        .brush-btn:hover { border-color: var(--primary); }
+        .brush-btn.active { border-color: var(--primary); background: var(--primary); }
+        .brush-btn .dot {
+            background: var(--text);
+            border-radius: 50%;
+        }
+        .brush-btn.active .dot { background: #fff; }
+        .brush-btn-thin .dot  { width: 4px; height: 4px; }
+        .brush-btn-mid .dot   { width: 8px; height: 8px; }
+        .brush-btn-thick .dot { width: 13px; height: 13px; }
+
+        /* ── draw-area 개선 ── */
+        .draw-area {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .canvas-box {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+        .preview-box {
+            background: #f8faff;
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+        .draw-arrow {
+            font-size: 1.8em;
+            color: var(--muted);
+            align-self: center;
+            padding-top: 24px;
+        }
+
+        .op-vs {
+            font-size: 1.4em;
+            font-weight: 800;
+            color: var(--muted);
+            padding: 0 4px;
+            flex-shrink: 0;
+            align-self: center;
+            padding-top: 32px; /* align with grid (panel title h4 ~32px) */
+        }
+        .h-result-box {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 16px;
+            padding: 20px 32px;
+            text-align: center;
+            min-width: 140px;
+            margin-top: 34px; /* 라벨 높이 맞춤 */
+        }
+        .h-result-box .h-num {
+            font-size: 3em;
+            font-weight: 800;
+            display: block;
+            line-height: 1;
+        }
+        .h-result-box .h-label { font-size: 0.9em; opacity: 0.85; margin-top: 6px; }
+
+        /* 최종 결론 */
+        .final-result {
+            background: #1f284a;
+            color: #fff;
+            border-radius: 18px;
+            padding: 28px 32px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .final-result .big-digit {
+            font-size: 5em;
+            font-family: 'Do Hyeon', sans-serif;
+            line-height: 1;
+        }
+        .final-result p { font-size: 1.1em; margin: 8px 0 0; opacity: 0.9; }
+        .final-sub { opacity: 0.75; font-size: 0.95em; }
+
+        /* 접힘 상태 */
+        .collapsible-section { display: none; }
+        .collapsible-section.open { display: block; }
+
+        /* 로딩 */
+        .loading-indicator {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted);
+            font-size: 1em;
+        }
+        .hidden { display: none; }
+        .spinner {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 3px solid #ddd;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── 퍼셉트론 섹션 ── */
+        .perceptron-flow {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .perceptron-card {
+            background: #f8faff;
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(108,140,255,0.07);
+        }
+        .perceptron-card .p-label {
+            font-weight: 800;
+            font-size: 0.95em;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .weight-cell {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.60em;
+            font-weight: 700;
+            border-radius: 5px;
+        }
+        .weight-cell.w-active { background: #c7d9ff; color: var(--primary-dark); border: 1px solid #a3bfff; }
+        .weight-cell.w-zero   { background: #fff; color: #ccc; border: 1px solid #e5e7eb; }
+        .perceptron-op-label {
+            font-size: 1.7em;
+            color: var(--muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        .perceptron-op-label small {
+            font-size: 0.38em;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+        }
+        .perceptron-output {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 14px;
+            padding: 16px 20px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .perceptron-output .p-out-label { font-size: 0.82em; opacity: 0.85; margin-bottom: 4px; }
+        .perceptron-output .p-out-value { font-size: 2em; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+        .perceptron-compare-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+        .p-output-box {
+            text-align: center;
+            padding: 14px 24px;
+            border-radius: 14px;
+            color: #fff;
+            min-width: 160px;
+            transition: box-shadow 0.3s;
+        }
+        .p-output-box.p-a { background: #059669; }
+        .p-output-box.p-b { background: #7c3aed; }
+        .p-output-box.p-winner { box-shadow: 0 0 0 4px #fff, 0 0 0 7px currentColor; transform: scale(1.04); }
+        .p-out-num { font-size: 2em; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+        .p-out-sub { font-size: 0.85em; opacity: 0.85; margin-top: 4px; }
+        .perceptron-classify-box {
+            background: var(--text);
+            color: #fff;
+            border-radius: 14px;
+            padding: 14px 24px;
+            text-align: center;
+            min-width: 150px;
+            font-size: 1em;
+            font-weight: 700;
+        }
+        .perc-relation-box {
+            background: linear-gradient(120deg, #fff8e1 0%, #fffde7 100%);
+            border-left: 5px solid var(--warn);
+            border-radius: 12px;
+            padding: 16px 22px;
+            margin: 16px 0;
+            font-size: 0.98em;
+            line-height: 1.8;
+            color: var(--text);
+        }
+        .perc-relation-box strong { color: #b45309; }
+        .perc-example-area { margin-bottom: 8px; }
+        .perc-example-btn-row { margin-bottom: 24px; }
+        .perc-note { margin-top: 12px; }
+        .cta-btn-mr { margin-right: 12px; }
+        .cta-btn-perc { background: #7c3aed; }
+        .cta-btn-perc:hover { background: #6d28d9; }
+
+        /* ── 페이지 헤더 (제목 + 퍼셉트론 버튼) ── */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .page-header h1 { margin-bottom: 0; }
+        .perc-toggle-btn {
+            background: #7c3aed;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-size: 0.95em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.18s, transform 0.1s;
+            box-shadow: 0 2px 8px rgba(124,58,237,0.18);
+            font-family: 'Do Hyeon', sans-serif;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .perc-toggle-btn:hover { background: #6d28d9; transform: scale(1.03); }
+        .perc-toggle-btn.mode-perc {
+            background: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(108,140,255,0.18);
+        }
+        .perc-toggle-btn.mode-perc:hover { background: #3b4fb5; }
+        .hidden { display: none !important; }
+
+        /* 반응형 */
+        @media (max-width: 900px) {
+            .container { padding: 18px 10px; }
+            .example-area { justify-content: center; }
+            .draw-area { justify-content: center; }
+            .diff-compare { justify-content: center; }
+            h1 { font-size: 2em; }
         }
     </style>
 </head>
+
 <body>
     <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
         <i class="fas fa-bars"></i>
-      </div>
+    </div>
 
     <aside class="sidebar">
         <nav>
@@ -334,52 +1260,332 @@
             <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
             <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
             <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
-            <a href="activity11_similarity_check.html" class="active"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리 (구)</span></a>
+            <a href="activity_haming.html" class="active"><i class="fa fa-circle-nodes"></i><span>해밍 거리 체험</span></a>
             <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
             <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
-            <a href="activity17_Arbitrary_transfer.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
         </nav>
     </aside>
+
     <div class="container">
-        <h1>🔢 숫자 인식 해밍거리 비교</h1>
-        
-        <div class="drawing-section">
-            <div class="canvas-container">
-                <h3>✏️ 숫자를 그려주세요</h3>
-                <canvas id="drawingCanvas" width="280" height="280"></canvas>
-                <div class="controls">
-                    <button onclick="clearCanvas()">지우기</button>
-                    <button onclick="processDrawing()">28x28 변환</button>
+        <!-- 페이지 헤더 -->
+        <div class="page-header">
+            <h1>해밍 거리 (Hamming Distance)</h1>
+            <button type="button" class="perc-toggle-btn" id="percToggleBtn" onclick="toggleMode()">
+                🧠 퍼셉트론 알아보기
+            </button>
+        </div>
+        <p class="subtitle">이진 이미지 간의 유사도를 측정하고 숫자를 분류하는 원리를 탐구해보자</p>
+
+        <!-- 탭 내비게이션: 해밍 모드 -->
+        <div class="tab-nav" id="tabNavHamming">
+            <button type="button" class="tab-btn active" data-tab="concept" onclick="switchTab('concept')">📖 개념 이해</button>
+            <button type="button" class="tab-btn" data-tab="activity" onclick="switchTab('activity')">🎮 체험 활동</button>
+        </div>
+
+        <!-- 탭 내비게이션: 퍼셉트론 모드 -->
+        <div class="tab-nav hidden" id="tabNavPerc">
+            <button type="button" class="tab-btn active" data-tab="perc-concept" onclick="switchTab('perc-concept')">📖 개념 이해</button>
+            <button type="button" class="tab-btn" data-tab="perc-activity" onclick="switchTab('perc-activity')">🎮 체험하기</button>
+        </div>
+
+        <!-- ===== 탭 1: 개념 이해 ===== -->
+        <div id="tab-concept" class="tab-panel active">
+
+            <!-- 정의 -->
+            <div class="concept-card">
+                <h2>해밍 거리란?</h2>
+                <p>두 이진 행렬(0과 1로 이루어진 행렬)에서 <strong>서로 다른 값을 가지는 위치의 개수</strong>를 해밍 거리라고 합니다.</p>
+                <p>값이 다른 위치가 많을수록 두 행렬은 서로 멀리 떨어져 있다(다르다)고 볼 수 있습니다.</p>
+                <div class="formula-box">H(A, B) = (A와 B에서 값이 서로 다른 위치의 수)</div>
+            </div>
+
+            <!-- 해밍 거리 시각화 예제 -->
+            <div class="section-title"><i class="fa fa-images"></i> 해밍 거리 시각화 예제</div>
+            <p class="example-intro">
+                두 이미지 X와 A를 이진 행렬로 변환하고 H(X, A)를 구해봅시다.
+                <br><span class="diff-highlight">빨간 셀</span>이 두 행렬에서 서로 다른 위치입니다.
+            </p>
+
+            <div id="conceptLoading" class="concept-loading hidden">
+                <i class="fa fa-spinner fa-spin"></i> 이미지 로딩 중...
+            </div>
+            <div id="conceptExampleArea" class="concept-example-wrap">
+                <!-- JS로 렌더링 -->
+            </div>
+            <div class="text-center">
+                <button type="button" class="new-sample-btn" onclick="loadConceptExample()">
+                    <i class="fa fa-rotate"></i> 다른 문제
+                </button>
+            </div>
+
+            <!-- 인터랙티브 미니 데모 -->
+            <div class="section-title"><i class="fa fa-hand-pointer"></i> 직접 해보기 — 셀을 클릭해서 비트를 바꿔보세요</div>
+            <div class="mini-demo-area">
+                <p class="demo-hint">
+                    아래 <strong>X 행렬</strong>의 셀을 클릭하면 0↔1이 바뀌며 H(X,A), H(X,B)가 실시간으로 업데이트됩니다.
+                </p>
+                <div class="mini-demo-grids">
+                    <div class="mini-grid-item">
+                        <div class="mini-label">A (숫자 0)</div>
+                        <div id="miniGridA" class="small-grid"></div>
+                    </div>
+                    <div class="mini-grid-item">
+                        <div class="mini-label mini-label-x">X (미지수) <small class="text-muted-small">← 클릭!</small></div>
+                        <div id="miniGridX" class="small-grid"></div>
+                    </div>
+                    <div class="mini-grid-item">
+                        <div class="mini-label">B (숫자 6)</div>
+                        <div id="miniGridB" class="small-grid"></div>
+                    </div>
+                </div>
+                <div class="mini-h-row">
+                    <div id="miniHA" class="mini-h-display mini-h-a">H(X,A) = —</div>
+                    <div id="miniResult" class="mini-h-display mini-h-result">?</div>
+                    <div id="miniHB" class="mini-h-display mini-h-b">H(X,B) = —</div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="mini-demo-btn" onclick="resetMiniX()">X 초기화</button>
                 </div>
             </div>
-            
-            <div class="binary-display">
-                <h3>🔲 28x28 이진화 결과</h3>
-                <div id="binaryGrid" class="binary-grid"></div>
-                <div class="status" id="binaryStatus">숫자를 그리고 변환 버튼을 눌러주세요</div>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <button class="load-samples-btn" onclick="loadRandomSamples()">📂 랜덤 샘플 이미지 로드</button>
-            <button class="calculate-btn" onclick="calculateHammingDistances()" id="calculateBtn" disabled>📏 해밍거리 계산</button>
-        </div>
-        
-        <div class="samples-section" id="samplesSection" style="display: none;">
-            <h3>🎯 선택된 샘플 이미지들</h3>
-            <div id="samplesGrid" class="samples-grid"></div>
-        </div>
-        
-        <div class="results-section" id="resultsSection" style="display: none;">
-            <h3>📊 해밍거리 비교 결과</h3>
-            <div id="results"></div>
-        </div>
-    </div>
 
-    <footer class="footer">
+            <!-- 개념→활동 CTA -->
+            <div class="tab-cta">
+                <p>개념을 이해했다면 직접 숫자를 그려서 해밍 거리를 확인하거나, 퍼셉트론 분류를 탐구해보세요!</p>
+                <button type="button" class="cta-btn cta-btn-mr" onclick="switchTab('activity')">
+                    <i class="fa fa-pencil"></i> 체험 활동 →
+                </button>
+                <button type="button" class="cta-btn cta-btn-perc" onclick="toggleMode()">
+                    <i class="fa fa-brain"></i> 퍼셉트론 알아보기 →
+                </button>
+            </div>
+
+        </div><!-- /tab-concept -->
+
+
+        <!-- ===== 탭 2: 체험 활동 (해밍 거리) ===== -->
+        <div id="tab-activity" class="tab-panel">
+
+            <!-- STEP 1 -->
+            <div class="step-badge" id="hamStep1Badge"><span>STEP 1</span> 기준 이미지 확인 <span class="step-check">✓</span></div>
+            <p class="p-muted">
+                숫자 0~9 각 클래스에서 랜덤으로 선택된 기준 이미지입니다. 이 이미지들과 내가 그린 숫자의 해밍 거리를 비교합니다.
+            </p>
+            <button type="button" class="new-sample-btn" onclick="loadReferences()">
+                <i class="fa fa-shuffle"></i> 새 샘플 뽑기
+            </button>
+            <div id="hamRefLoading" class="loading-indicator hidden">
+                <span class="spinner"></span>이미지 로딩 중...
+            </div>
+            <div id="hamRefGrid" class="ref-grid"></div>
+
+            <!-- STEP 2 -->
+            <div class="step-badge step-badge-mt" id="hamStep2Badge"><span>STEP 2</span> 숫자 그리기 <span class="step-check">✓</span></div>
+            <div class="draw-area">
+                <div class="canvas-box">
+                    <h3>✏️ 여기에 숫자를 그려보세요</h3>
+                    <canvas id="hamCanvas" width="280" height="280"></canvas>
+                    <div class="brush-row">
+                        <span class="brush-label">붓 두께</span>
+                        <button type="button" class="brush-btn brush-btn-thin" data-canvas="ham" data-size="18" title="가늘게"><span class="dot"></span></button>
+                        <button type="button" class="brush-btn brush-btn-mid active" data-canvas="ham" data-size="22" title="보통"><span class="dot"></span></button>
+                        <button type="button" class="brush-btn brush-btn-thick" data-canvas="ham" data-size="26" title="굵게"><span class="dot"></span></button>
+                    </div>
+                    <div class="canvas-btns">
+                        <button type="button" class="btn btn-clear" onclick="clearHamCanvas()">지우기</button>
+                        <button type="button" class="btn btn-primary" onclick="convertHamDrawing()">이진화 변환</button>
+                    </div>
+                </div>
+                <div class="draw-arrow">→</div>
+                <div class="preview-box">
+                    <h3>🔲 이진화 결과 (14×14)</h3>
+                    <div id="hamBinaryPreview" class="binary-preview"></div>
+                    <p id="hamBinaryStats" class="binary-stats-text">
+                        숫자를 그리고 "이진화 변환"을 클릭하세요
+                    </p>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="step-badge" id="hamStep3Badge"><span>STEP 3</span> 해밍 거리 계산 <span class="step-check">✓</span></div>
+            <div class="calc-center">
+                <button type="button" class="btn btn-calc" id="hamCalcBtn" onclick="calculateHamming()" disabled>
+                    <i class="fa fa-ruler"></i> 해밍 거리 계산하기
+                </button>
+                <p id="hamCalcHint" class="calc-hint">
+                    STEP 1과 STEP 2를 모두 완료한 후 계산하세요
+                </p>
+            </div>
+
+            <!-- 결과 (숨김) -->
+            <div id="hamResultSection" class="result-section collapsible-section">
+
+                <div class="section-title"><i class="fa fa-chart-bar"></i> 각 숫자와의 해밍 거리</div>
+                <div id="hamBarChart" class="bar-chart"></div>
+
+                <div class="section-title"><i class="fa fa-magnifying-glass"></i> 단계별 비교 시각화</div>
+                <div class="diff-section-controls">
+                    <p class="p-muted p-muted-inline">
+                        해밍 거리가 가장 작은 두 후보와의 비교입니다.
+                        <span class="diff-swatch"></span> 빨간 셀 = 두 행렬에서 값이 다른 위치
+                    </p>
+                </div>
+                <div id="hamDiffArea"></div>
+
+                <div id="hamFinalResult" class="final-result"></div>
+            </div>
+
+        </div><!-- /tab-activity -->
+
+
+        <!-- ===== 퍼셉트론 탭 1: 개념 이해 ===== -->
+        <div id="tab-perc-concept" class="tab-panel">
+
+            <div class="concept-card">
+                <h2>가중치 행렬 W와 퍼셉트론</h2>
+                <p>기준 이미지 A(이진 행렬)에서 <strong>가중치 행렬 W<sub>A</sub></strong>를 만들 수 있습니다.</p>
+                <p>A의 1의 개수를 <strong>|A|</strong>라 하면: <strong>W<sub>A</sub> = (1/|A|) × A</strong></p>
+                <p>퍼셉트론 P<sub>A</sub>의 출력값은 X와 W<sub>A</sub>의 내적(성분별 곱의 합)입니다:</p>
+                <div class="formula-box">P<sub>A</sub>(X) = X · W<sub>A</sub> = Σ(X<sub>i</sub> × A<sub>i</sub>) / |A|</div>
+                <p class="perc-note">이 값이 클수록 X가 A와 <strong>더 유사</strong>합니다.
+                출력값이 <strong>가장 큰</strong> 퍼셉트론의 클래스로 분류합니다.</p>
+            </div>
+
+            <!-- 교과서 예제 동적 렌더 -->
+            <div class="section-title"><i class="fa fa-images"></i> 가중치 행렬 시각화 예제</div>
+            <p class="example-intro">A → W<sub>A</sub> = (1/|A|)A 변환과 퍼셉트론 출력값 P(X) = X · W<sub>A</sub>를 확인해봅시다.</p>
+            <div id="perceptronExampleArea" class="perc-example-area"></div>
+            <div class="text-center perc-example-btn-row">
+                <button type="button" class="new-sample-btn" onclick="loadPerceptronExample()">
+                    <i class="fa fa-rotate"></i> 다른 문제
+                </button>
+            </div>
+
+            <!-- 직접 해보기 -->
+            <div class="section-title"><i class="fa fa-hand-pointer"></i> 직접 해보기 — X 셀을 클릭해보세요</div>
+            <div class="mini-demo-area">
+                <p class="demo-hint">
+                    아래 <strong>X 행렬</strong>의 셀을 클릭하면 0↔1이 바뀌며
+                    퍼셉트론 출력값 P(X,A)와 P(X,B)가 실시간으로 업데이트됩니다.
+                </p>
+                <div class="mini-demo-grids">
+                    <div class="mini-grid-item">
+                        <div class="mini-label">A (숫자 0)</div>
+                        <div id="percGridA" class="small-grid"></div>
+                        <div class="mini-hint">|A| = <span id="percSizeA">—</span></div>
+                    </div>
+                    <div class="mini-grid-item">
+                        <div class="mini-label mini-label-x">X (미지수) <small class="text-muted-small">← 클릭!</small></div>
+                        <div id="percGridX" class="small-grid"></div>
+                    </div>
+                    <div class="mini-grid-item">
+                        <div class="mini-label">B (숫자 6)</div>
+                        <div id="percGridB" class="small-grid"></div>
+                        <div class="mini-hint">|B| = <span id="percSizeB">—</span></div>
+                    </div>
+                </div>
+                <div class="mini-h-row">
+                    <div id="percPA" class="mini-h-display mini-h-a">P(X,A) = —</div>
+                    <div id="percResult" class="mini-h-display mini-h-result">?</div>
+                    <div id="percPB" class="mini-h-display mini-h-b">P(X,B) = —</div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="mini-demo-btn" onclick="resetPercX()">X 초기화</button>
+                </div>
+            </div>
+
+            <div class="tab-cta">
+                <p>개념을 이해했다면 직접 숫자를 그려서 퍼셉트론 분류를 체험해보세요!</p>
+                <button type="button" class="cta-btn" onclick="switchTab('perc-activity')">
+                    <i class="fa fa-pencil"></i> 체험하기 →
+                </button>
+            </div>
+
+        </div><!-- /tab-perc-concept -->
+
+
+        <!-- ===== 퍼셉트론 탭 2: 체험하기 ===== -->
+        <div id="tab-perc-activity" class="tab-panel">
+
+            <!-- STEP 1 -->
+            <div class="step-badge" id="percStep1Badge"><span>STEP 1</span> 기준 이미지 확인 <span class="step-check">✓</span></div>
+            <p class="p-muted">
+                숫자 0~9 각 클래스에서 랜덤으로 선택된 기준 이미지입니다. 이 이미지들과 내가 그린 숫자의 퍼셉트론 출력값을 비교합니다.
+            </p>
+            <button type="button" class="new-sample-btn" onclick="loadReferences()">
+                <i class="fa fa-shuffle"></i> 새 샘플 뽑기
+            </button>
+            <div id="percRefLoading" class="loading-indicator hidden">
+                <span class="spinner"></span>이미지 로딩 중...
+            </div>
+            <div id="percRefGrid" class="ref-grid"></div>
+
+            <!-- STEP 2 -->
+            <div class="step-badge step-badge-mt" id="percStep2Badge"><span>STEP 2</span> 숫자 그리기 <span class="step-check">✓</span></div>
+            <div class="draw-area">
+                <div class="canvas-box">
+                    <h3>✏️ 여기에 숫자를 그려보세요</h3>
+                    <canvas id="percCanvas" width="280" height="280"></canvas>
+                    <div class="brush-row">
+                        <span class="brush-label">붓 두께</span>
+                        <button type="button" class="brush-btn brush-btn-thin" data-canvas="perc" data-size="18" title="가늘게"><span class="dot"></span></button>
+                        <button type="button" class="brush-btn brush-btn-mid active" data-canvas="perc" data-size="22" title="보통"><span class="dot"></span></button>
+                        <button type="button" class="brush-btn brush-btn-thick" data-canvas="perc" data-size="26" title="굵게"><span class="dot"></span></button>
+                    </div>
+                    <div class="canvas-btns">
+                        <button type="button" class="btn btn-clear" onclick="clearPercCanvas()">지우기</button>
+                        <button type="button" class="btn btn-primary" onclick="convertPercDrawing()">이진화 변환</button>
+                    </div>
+                </div>
+                <div class="draw-arrow">→</div>
+                <div class="preview-box">
+                    <h3>🔲 이진화 결과 (14×14)</h3>
+                    <div id="percBinaryPreview" class="binary-preview"></div>
+                    <p id="percBinaryStats" class="binary-stats-text">
+                        숫자를 그리고 "이진화 변환"을 클릭하세요
+                    </p>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="step-badge" id="percStep3Badge"><span>STEP 3</span> 퍼셉트론 출력값 계산 <span class="step-check">✓</span></div>
+            <div class="calc-center">
+                <button type="button" class="btn btn-calc" id="percCalcBtn" onclick="calculatePerc()" disabled>
+                    <i class="fa fa-brain"></i> 퍼셉트론 출력값 계산하기
+                </button>
+                <p id="percCalcHint" class="calc-hint">
+                    STEP 1과 STEP 2를 모두 완료한 후 계산하세요
+                </p>
+            </div>
+
+            <!-- 결과 (숨김) -->
+            <div id="percResultSection" class="result-section collapsible-section">
+
+                <div class="section-title"><i class="fa fa-chart-bar"></i> 각 숫자와의 퍼셉트론 출력값</div>
+                <div id="percBarChart" class="bar-chart"></div>
+
+                <div class="section-title"><i class="fa fa-magnifying-glass"></i> 단계별 비교 시각화</div>
+                <div class="diff-section-controls">
+                    <p class="p-muted p-muted-inline">
+                        퍼셉트론 출력값이 가장 큰 두 후보와의 비교입니다. 블렌딩 시 분수 시각화가 표시됩니다.&nbsp;
+                        <span class="legend-swatch legend-perc-counted"></span> X=1, A=1 (기여)&nbsp;
+                        <span class="legend-swatch legend-perc-uncounted"></span> X=0, A=1 (미기여)
+                    </p>
+                </div>
+                <div id="percDiffArea"></div>
+
+                <div id="percFinalResult" class="final-result"></div>
+            </div>
+
+        </div><!-- /tab-perc-activity -->
+
+    </div><!-- /container -->
+
+    <footer class="footer footer-full">
         <div class="footer-content">
             <div>
                 <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
@@ -388,544 +1594,1338 @@
                     Contact : tjdgus1121@naver.com
                 </div>
             </div>
-
             <div class="social-links">
-                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
-                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
-                    <img src="naver.png" alt="메일 보내기"
-                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
-                        onmouseover="this.style.filter='grayscale(0%)';"
-                        onmouseout="this.style.filter='grayscale(100%)';">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link" aria-label="이메일 보내기"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener" aria-label="네이버 메일 보내기">
+                    <img src="naver.png" alt="네이버 메일 보내기" class="naver-img">
                 </a>
             </div>
-
             <div class="copyright">
                 이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
                 다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
             </div>
-
+        </div>
     </footer>
 
-
     <script>
-        // 전역 변수
-        let canvas, ctx;
-        let isDrawing = false;
-        let userBinaryData = null;
-        let sampleImages = [];
-        let sampleBinaryData = [];
-        
-        // 캔버스 초기화
-        function initCanvas() {
-            canvas = document.getElementById('drawingCanvas');
-            ctx = canvas.getContext('2d');
-            
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 8;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            
-            // 마우스 이벤트
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-            
-            // 터치 이벤트 (모바일 지원)
-            canvas.addEventListener('touchstart', handleTouch);
-            canvas.addEventListener('touchmove', handleTouch);
-            canvas.addEventListener('touchend', stopDrawing);
+    // ─────────────────────────────────────────────
+    //  공통 유틸
+    // ─────────────────────────────────────────────
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+
+    let currentMode = 'hamming'; // 'hamming' | 'perceptron'
+
+    function switchTab(name) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+
+        // 현재 모드에 맞는 nav 버튼만 active 처리
+        const activeNav = currentMode === 'hamming' ? 'tabNavHamming' : 'tabNavPerc';
+        document.querySelectorAll('#' + activeNav + ' .tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === name);
+        });
+    }
+
+    function toggleMode() {
+        currentMode = currentMode === 'hamming' ? 'perceptron' : 'hamming';
+
+        const navHamming = document.getElementById('tabNavHamming');
+        const navPerc    = document.getElementById('tabNavPerc');
+        const toggleBtn  = document.getElementById('percToggleBtn');
+
+        if (currentMode === 'perceptron') {
+            navHamming.classList.add('hidden');
+            navPerc.classList.remove('hidden');
+            toggleBtn.textContent = '← 해밍 거리로 돌아가기';
+            toggleBtn.classList.add('mode-perc');
+            switchTab('perc-concept');
+        } else {
+            navPerc.classList.add('hidden');
+            navHamming.classList.remove('hidden');
+            toggleBtn.textContent = '🧠 퍼셉트론 알아보기';
+            toggleBtn.classList.remove('mode-perc');
+            switchTab('concept');
         }
-        
-        function startDrawing(e) {
-            isDrawing = true;
-            draw(e);
-        }
-        
-        function draw(e) {
-            if (!isDrawing) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
-        
-        function stopDrawing() {
-            if (isDrawing) {
-                isDrawing = false;
-                ctx.beginPath();
+    }
+
+    // ─────────────────────────────────────────────
+    //  교과서 예제 데이터 (7행 × 5열)
+    // ─────────────────────────────────────────────
+    const COLS = 5, ROWS = 7;
+
+    // 교과서와 동일한 행렬
+    const matA = [
+        [0,1,1,1,0],
+        [1,0,0,0,1],
+        [1,1,0,0,1],
+        [1,0,1,0,1],
+        [1,0,0,1,1],
+        [1,0,0,0,1],
+        [0,1,1,1,0]
+    ].flat();
+
+    const matB = [
+        [0,1,1,1,0],
+        [1,0,0,0,0],
+        [1,0,0,0,0],
+        [1,1,1,1,0],
+        [1,0,0,0,1],
+        [1,0,0,0,1],
+        [0,1,1,1,0]
+    ].flat();
+
+    const matX_orig = [
+        [0,1,1,1,0],
+        [1,0,0,0,1],
+        [1,1,0,0,0],
+        [0,0,1,1,0],
+        [1,0,0,0,1],
+        [1,0,0,0,1],
+        [0,1,1,1,0]
+    ].flat();
+
+    let matX = [...matX_orig];
+
+    function hammingDist(a, b) {
+        let d = 0;
+        for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+        return d;
+    }
+
+    // 28×28(784) → 14×14(196) 다운샘플: 2×2 블록 과반수 투표
+    function downsample14(mat784) {
+        const result = [];
+        for (let by = 0; by < 14; by++) {
+            for (let bx = 0; bx < 14; bx++) {
+                const sum = mat784[(by*2)*28+(bx*2)]
+                          + mat784[(by*2)*28+(bx*2+1)]
+                          + mat784[(by*2+1)*28+(bx*2)]
+                          + mat784[(by*2+1)*28+(bx*2+1)];
+                result.push(sum >= 2 ? 1 : 0);
             }
         }
-        
-        function handleTouch(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
-                                            e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
+        return result;
+    }
+
+    // 14×14 diff 맵: 2×2 블록 내 하나라도 다르면 diff=1
+    function diffMap14(matX196, matRef196) {
+        return matX196.map((v, i) => v !== matRef196[i] ? 1 : 0);
+    }
+
+    // ── 개념 예제 (5×7 교과서 스타일) ──
+    // 각 행렬은 7행 × 5열 = 35개 원소 (행 순서로 나열)
+    const conceptProblems = [
+        {
+            xLabel: 'X (미지수)',
+            xMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,1,0,1,   // ← (2,2) 변형
+                1,0,0,0,1,
+                1,0,0,0,1,
+                1,0,0,0,0,   // ← (5,4) 변형
+                0,1,1,1,1    // ← (6,4) 변형
+            ],
+            aLabel: 'A (숫자 0)',
+            aMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ]
+            // H = 3
+        },
+        {
+            xLabel: 'X (숫자 3)',
+            xMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                0,0,0,0,1,
+                0,0,1,1,0,
+                0,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ],
+            aLabel: 'A (숫자 8)',
+            aMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ]
+            // H = 3
+        },
+        {
+            xLabel: 'X (숫자 0)',
+            xMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ],
+            aLabel: 'A (숫자 8)',
+            aMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ]
+            // H = 5  (3행만 전부 다름)
+        },
+        {
+            xLabel: 'X (숫자 9)',
+            xMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,1,
+                0,0,0,0,1,
+                0,0,0,0,1,
+                0,1,1,1,0
+            ],
+            aLabel: 'A (숫자 3)',
+            aMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                0,0,0,0,1,
+                0,0,1,1,0,
+                0,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ]
+            // H = 4
+        },
+        {
+            xLabel: 'X (숫자 5)',
+            xMat: [
+                1,1,1,1,1,
+                1,0,0,0,0,
+                1,1,1,1,0,
+                0,0,0,0,1,
+                0,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ],
+            aLabel: 'A (숫자 6)',
+            aMat: [
+                0,1,1,1,0,
+                1,0,0,0,0,
+                1,0,0,0,0,
+                1,1,1,1,0,
+                1,0,0,0,1,
+                1,0,0,0,1,
+                0,1,1,1,0
+            ]
+            // H = 11
+        },
+        {
+            xLabel: 'X (숫자 1)',
+            xMat: [
+                0,0,1,0,0,
+                0,1,1,0,0,
+                0,0,1,0,0,
+                0,0,1,0,0,
+                0,0,1,0,0,
+                0,0,1,0,0,
+                0,1,1,1,0
+            ],
+            aLabel: 'A (숫자 7)',
+            aMat: [
+                1,1,1,1,1,
+                0,0,0,0,1,
+                0,0,0,1,0,
+                0,0,1,0,0,
+                0,0,1,0,0,
+                0,0,1,0,0,
+                0,0,1,0,0
+            ]
+            // H = 11
+        },
+        {
+            xLabel: 'X (숫자 2)',
+            xMat: [
+                0,1,1,1,0,
+                1,0,0,0,1,
+                0,0,0,0,1,
+                0,0,0,1,0,
+                0,0,1,0,0,
+                0,1,0,0,0,
+                1,1,1,1,1
+            ],
+            aLabel: 'A (숫자 7)',
+            aMat: [
+                1,1,1,1,1,
+                0,0,0,0,1,
+                0,0,0,1,0,
+                0,0,1,0,0,
+                0,0,1,0,0,
+                0,0,1,0,0,
+                0,0,1,0,0
+            ]
+            // H = 13
+        }
+    ];
+
+    let currentProblemIdx = -1;
+
+    function loadConceptExample() {
+        let idx;
+        do {
+            idx = Math.floor(Math.random() * conceptProblems.length);
+        } while (idx === currentProblemIdx && conceptProblems.length > 1);
+        currentProblemIdx = idx;
+        renderConceptExample(conceptProblems[idx]);
+    }
+
+    function renderConceptExample(problem) {
+        const area = document.getElementById('conceptExampleArea');
+        area.innerHTML = '';
+
+        const { xLabel, xMat, aLabel, aMat } = problem;
+        const h = hammingDist(xMat, aMat);
+
+        // ── 행 1: X | → | A | → | [비교결과 + H(X,A)] ──
+        const row = document.createElement('div');
+        row.className = 'example-area';
+
+        // X (원본)
+        row.appendChild(makeConceptCard(xLabel, xMat, null));
+
+        // 화살표 1
+        const arrow1 = document.createElement('div');
+        arrow1.className = 'arrow-label';
+        arrow1.textContent = '→';
+        row.appendChild(arrow1);
+
+        // A (원본)
+        row.appendChild(makeConceptCard(aLabel, aMat, null));
+
+        // 화살표 2
+        const arrow2 = document.createElement('div');
+        arrow2.className = 'arrow-label';
+        arrow2.textContent = '→';
+        row.appendChild(arrow2);
+
+        // 비교결과 + H(X,A) 세로 묶음
+        const resultCol = document.createElement('div');
+        resultCol.className = 'concept-result-col';
+
+        // 비교 결과 카드
+        resultCol.appendChild(makeConceptCard('비교 결과', aMat, xMat));
+
+        // H 결과 박스
+        const hBox = document.createElement('div');
+        hBox.className = 'concept-h-box';
+        hBox.innerHTML = `<div class="concept-h-label">H(X, A)</div>
+                          <div class="concept-h-value">${h}</div>
+                          <div class="concept-h-label">서로 다른 위치: ${h}개</div>`;
+        resultCol.appendChild(hBox);
+
+        row.appendChild(resultCol);
+        area.appendChild(row);
+    }
+
+    function makeConceptCard(title, mat, compareWith) {
+        const card = document.createElement('div');
+        card.className = 'matrix-card';
+        card.innerHTML = `<div class="label">${title}</div>`;
+
+        const grid = document.createElement('div');
+        grid.className = 'small-grid';
+        mat.forEach((v, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'small-cell';
+            if (compareWith && v !== compareWith[i]) {
+                cell.classList.add('diff');
+                cell.dataset.tooltip = `이 위치: X=${compareWith[i]}, A=${v} → 다름!`;
+            } else {
+                cell.classList.add(v === 1 ? 'val-1' : 'val-0');
+            }
+            cell.textContent = v;
+            grid.appendChild(cell);
+        });
+        card.appendChild(grid);
+        return card;
+    }
+
+    // ── 인터랙티브 미니 데모 ──
+    function renderMiniGrids() {
+        renderStaticGrid('miniGridA', matA);
+        renderStaticGrid('miniGridB', matB);
+        renderEditableGrid();
+        updateMiniH();
+    }
+
+    function renderStaticGrid(id, mat) {
+        const grid = document.getElementById(id);
+        grid.innerHTML = '';
+        mat.forEach(v => {
+            const cell = document.createElement('div');
+            cell.className = `small-cell ${v === 1 ? 'val-1' : 'val-0'}`;
+            cell.textContent = v;
+            grid.appendChild(cell);
+        });
+    }
+
+    function renderEditableGrid() {
+        const grid = document.getElementById('miniGridX');
+        grid.innerHTML = '';
+        matX.forEach((v, i) => {
+            const cell = document.createElement('div');
+            cell.className = `small-cell editable-cell ${v === 1 ? 'val-1' : 'val-0'}`;
+            cell.textContent = v;
+            cell.title = '클릭하여 0↔1 전환';
+            cell.addEventListener('click', () => {
+                matX[i] = matX[i] === 0 ? 1 : 0;
+                renderEditableGrid();
+                updateMiniH();
             });
-            canvas.dispatchEvent(mouseEvent);
-        }
-        
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            userBinaryData = null;
-            updateBinaryDisplay([]);
-            document.getElementById('binaryStatus').textContent = '숫자를 그리고 변환 버튼을 눌러주세요';
-        }
-        
-        // 28x28 변환 및 이진화
-        function processDrawing() {
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // 28x28로 리사이즈
-            const resized = resizeImageData(imageData, 28, 28);
-            
-            // 이진화 (픽셀값 > 127 → 1, 아니면 0)
-            userBinaryData = [];
-            for (let i = 0; i < resized.data.length; i += 4) {
-                const r = resized.data[i];
-                const g = resized.data[i + 1];
-                const b = resized.data[i + 2];
-                const alpha = resized.data[i + 3];
-                
-                // 그레이스케일 변환 후 이진화
-                const gray = (r + g + b) / 3;
-                // 투명한 부분은 0, 그려진 부분은 픽셀값으로 판단
-                const value = alpha > 0 && gray < 127 ? 1 : 0;
-                userBinaryData.push(value);
-            }
-            
-            updateBinaryDisplay(userBinaryData);
-            document.getElementById('binaryStatus').textContent = `변환 완료! (1의 개수: ${userBinaryData.filter(x => x === 1).length})`;
-            
-            // 사용자 입력 이진 데이터가 준비되면 해밍거리 계산 버튼 활성화
-            document.getElementById('calculateBtn').disabled = false;
-        }
-        
-        function resizeImageData(imageData, newWidth, newHeight) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = imageData.width;
-            canvas.height = imageData.height;
-            ctx.putImageData(imageData, 0, 0);
-            
-            const resizedCanvas = document.createElement('canvas');
-            const resizedCtx = resizedCanvas.getContext('2d');
-            resizedCanvas.width = newWidth;
-            resizedCanvas.height = newHeight;
-            
-            resizedCtx.drawImage(canvas, 0, 0, newWidth, newHeight);
-            return resizedCtx.getImageData(0, 0, newWidth, newHeight);
-        }
-        
-        function updateBinaryDisplay(binaryData) {
-            const grid = document.getElementById('binaryGrid');
-            grid.innerHTML = '';
-            
-            for (let i = 0; i < 28 * 28; i++) {
-                const cell = document.createElement('div');
-                cell.className = `binary-cell ${binaryData[i] === 1 ? 'active' : 'inactive'}`;
-                grid.appendChild(cell);
-            }
-        }
-        
-        // 랜덤 샘플 이미지 로드
-        function loadRandomSamples() {
-            sampleImages = []; // 이전 샘플 초기화
-            sampleBinaryData = []; // 이전 이진 데이터 초기화
-            
-            const processedSamples = []; // 처리된 샘플을 임시 저장할 배열
-            let samplesProcessedCount = 0;
-            const totalSamples = 10; // 숫자 0부터 9까지 총 10개 샘플
+            grid.appendChild(cell);
+        });
+    }
 
-            for (let digit = 0; digit <= 9; digit++) {
-                const randomIndex = Math.floor(Math.random() * 10); // 각 숫자에 대해 랜덤 파일 선택
-                const filename = `number${digit}${randomIndex}.png`;
-                const imagePath = `image/${filename}`;
-
-                const img = new Image();
-
-                img.onload = function() {
-                    // 이미지가 성공적으로 로드되면 처리
-                    const binary = convertImageToBinary(img);
-                    processedSamples.push({
-                        digit: digit,
-                        path: imagePath,
-                        filename: filename,
-                        binaryData: binary
-                    });
-                    samplesProcessedCount++;
-                    checkAllSamplesProcessed();
-                };
-
-                img.onerror = function() {
-                    // 이미지 로드 실패 시 더미 데이터 생성
-                    const dummyBinary = generateDummyDigitBinary(digit);
-                    processedSamples.push({
-                        digit: digit,
-                        path: imagePath, // 실패했더라도 경로 정보는 유지
-                        filename: filename, // 실패했더라도 파일명 정보는 유지
-                        binaryData: dummyBinary // 더미 이진 데이터
-                    });
-                    samplesProcessedCount++;
-                    checkAllSamplesProcessed();
-                };
-
-                img.src = imagePath;
-            }
-
-            function checkAllSamplesProcessed() {
-                if (samplesProcessedCount === totalSamples) {
-                    // 모든 샘플이 처리되면 숫자 순서대로 정렬
-                    processedSamples.sort((a, b) => a.digit - b.digit);
-
-                    // 정렬된 데이터를 최종 배열에 할당
-                    sampleImages = processedSamples.map(sample => ({
-                         digit: sample.digit,
-                         path: sample.path,
-                         filename: sample.filename
-                    }));
-                    sampleBinaryData = processedSamples.map(sample => sample.binaryData);
-
-                    // 샘플 표시
-                    displaySamples();
-                }
-            }
+    function updateMiniH() {
+        const hA = hammingDist(matX, matA);
+        const hB = hammingDist(matX, matB);
+        document.getElementById('miniHA').textContent = `H(X,A) = ${hA}`;
+        document.getElementById('miniHB').textContent = `H(X,B) = ${hB}`;
+        const res = document.getElementById('miniResult');
+        res.classList.remove('mini-result-correct', 'mini-result-alt', 'mini-result-tie');
+        if (hA < hB) {
+            res.textContent = '→ 숫자 0으로 분류';
+            res.classList.add('mini-result-correct');
+        } else if (hB < hA) {
+            res.textContent = '→ 숫자 6으로 분류';
+            res.classList.add('mini-result-alt');
+        } else {
+            res.textContent = '동률! (H 동일)';
+            res.classList.add('mini-result-tie');
         }
-        
-        // 이미지를 28x28 이진 데이터로 변환하는 함수
-        function convertImageToBinary(img) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 28;
-            canvas.height = 28;
-            
-            // 이미지를 28x28로 리사이즈
-            ctx.drawImage(img, 0, 0, 28, 28);
-            const imageData = ctx.getImageData(0, 0, 28, 28);
-            
-            // 이진화
-            const binary = new Array(28 * 28).fill(0);
-            for (let i = 0; i < imageData.data.length; i += 4) {
-                const r = imageData.data[i];
-                const g = imageData.data[i + 1];
-                const b = imageData.data[i + 2];
-                const alpha = imageData.data[i + 3];
-                
-                // 그레이스케일 변환 후 이진화
-                const gray = (r + g + b) / 3;
-                binary[i / 4] = alpha > 0 && gray < 127 ? 1 : 0;
-            }
-            
-            return binary;
+    }
+
+    function resetMiniX() {
+        matX = [...matX_orig];
+        renderEditableGrid();
+        updateMiniH();
+    }
+
+    // ─────────────────────────────────────────────
+    //  체험 활동 — 기준 이미지
+    // ─────────────────────────────────────────────
+    let refBinaryData = [];   // [{digit, binary[196]}, ...]  ← 14×14 다운샘플
+    let hamUserBinary = null; // [196] 이진 (14×14) — 해밍 캔버스
+    let percUserBinary = null;// [196] 이진 (14×14) — 퍼셉트론 캔버스
+    let lastResults = null;
+
+    function loadReferences() {
+        ['hamRefLoading', 'percRefLoading'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+        document.getElementById('hamRefGrid').innerHTML = '';
+        document.getElementById('percRefGrid').innerHTML = '';
+        refBinaryData = [];
+        lastResults = null;
+        document.getElementById('hamResultSection').classList.remove('open');
+        document.getElementById('percResultSection').classList.remove('open');
+        document.getElementById('hamStep3Badge').classList.remove('done');
+        document.getElementById('percStep3Badge').classList.remove('done');
+
+        let completed = 0;
+        const pending = [];
+
+        function checkDone() {
+            completed++;
+            if (completed === 10) finishLoadRef(pending);
         }
-        
-        function displaySamples() {
-            const samplesGrid = document.getElementById('samplesGrid');
-            const samplesSection = document.getElementById('samplesSection');
-            
-            samplesGrid.innerHTML = '';
-            samplesSection.style.display = 'block';
-            
-            sampleImages.forEach((sample, index) => {
-                const sampleItem = document.createElement('div');
-                sampleItem.className = 'sample-item';
-                
-                // 이진화된 이미지를 표시할 컨테이너
-                const binaryContainer = document.createElement('div');
-                binaryContainer.className = 'sample-image';
-                binaryContainer.id = `sample-${index}`;
-                // 스타일은 CSS 클래스에서 관리
-                
-                // 이진 데이터를 셀로 변환
-                const binaryData = sampleBinaryData[index];
-                for (let i = 0; i < 28 * 28; i++) {
-                    const cell = document.createElement('div');
-                    // 셀 스타일은 CSS 클래스에서 관리
-                    cell.className = `binary-cell ${binaryData[i] === 1 ? 'active' : 'inactive'}`;
-                    binaryContainer.appendChild(cell);
-                }
-                
-                sampleItem.appendChild(binaryContainer);
-                
-                // 숫자 정보 표시 (파일 이름은 숨김 처리)
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'sample-info';
-                infoDiv.innerHTML = `
-                    <strong>${sample.digit}</strong>
-                    <div class="filename">${sample.filename}</div>
-                `;
-                sampleItem.appendChild(infoDiv);
-                
-                samplesGrid.appendChild(sampleItem);
-            });
-        }
-        
-        function generateDummyDigitBinary(digit) {
-            // 각 숫자의 간단한 패턴을 생성 (실제로는 이미지에서 로드)
-            const patterns = {
-                0: [
-                    "  ████████  ",
-                    " ██      ██ ",
-                    "██        ██",
-                    "██   ██   ██",
-                    "██  ████  ██",
-                    "██ ██  ██ ██",
-                    "████    ████",
-                    "██        ██",
-                    "██        ██",
-                    " ██      ██ ",
-                    "  ████████  "
-                ],
-                1: [
-                    "     ██     ",
-                    "   ████     ",
-                    " ██████     ",
-                    "     ██     ",
-                    "     ██     ",
-                    "     ██     ",
-                    "     ██     ",
-                    "     ██     ",
-                    "     ██     ",
-                    "     ██     ",
-                    " ██████████ "
-                ],
-                2: [
-                    " ████████   ",
-                    "██      ██  ",
-                    "        ██  ",
-                    "        ██  ",
-                    "      ██    ",
-                    "    ██      ",
-                    "  ██        ",
-                    " ██         ",
-                    "██          ",
-                    "██          ",
-                    "████████████"
-                ],
-                3: [
-                    " ████████   ",
-                    "██      ██  ",
-                    "        ██  ",
-                    "        ██  ",
-                    "   ██████   ",
-                    "        ██  ",
-                    "        ██  ",
-                    "        ██  ",
-                    "██      ██  ",
-                    " ████████   "
-                ],
-                4: [
-                    "       ██   ",
-                    "     ████   ",
-                    "   ██ ██    ",
-                    "  ██  ██    ",
-                    " ██   ██    ",
-                    "██    ██    ",
-                    "████████████",
-                    "      ██    ",
-                    "      ██    ",
-                    "      ██    "
-                ],
-                5: [
-                    "████████████",
-                    "██          ",
-                    "██          ",
-                    "██          ",
-                    "███████████ ",
-                    "          ██",
-                    "          ██",
-                    "          ██",
-                    "██      ██  ",
-                    " ████████   "
-                ],
-                6: [
-                    "  ████████  ",
-                    " ██      ██ ",
-                    "██          ",
-                    "██          ",
-                    "██ ███████  ",
-                    "███      ██ ",
-                    "██        ██",
-                    "██        ██",
-                    " ██      ██ ",
-                    "  ████████  "
-                ],
-                7: [
-                    "████████████",
-                    "          ██",
-                    "         ██ ",
-                    "        ██  ",
-                    "       ██   ",
-                    "      ██    ",
-                    "     ██     ",
-                    "    ██      ",
-                    "   ██       ",
-                    "  ██        "
-                ],
-                8: [
-                    "  ████████  ",
-                    " ██      ██ ",
-                    "██        ██",
-                    " ██      ██ ",
-                    "  ████████  ",
-                    " ██      ██ ",
-                    "██        ██",
-                    "██        ██",
-                    " ██      ██ ",
-                    "  ████████  "
-                ],
-                9: [
-                    "  ████████  ",
-                    " ██      ██ ",
-                    "██        ██",
-                    "██        ██",
-                    " ██      ███",
-                    "  ███████ ██",
-                    "          ██",
-                    "          ██",
-                    " ██      ██ ",
-                    "  ████████  "
-                ]
+
+        for (let d = 0; d <= 9; d++) {
+            const idx = Math.floor(Math.random() * 10);
+            const path = `image/number${d}${idx}.png`;
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function () {
+                const bin = imgToBinary(img);
+                pending.push({ digit: d, binary: bin, path });
+                checkDone();
             };
-            
-            const pattern = patterns[digit] || patterns[0];
-            const binary = new Array(28 * 28).fill(0);
-            
-            // 패턴을 28x28에 맞게 조정
-            const startY = Math.floor((28 - pattern.length) / 2);
-            pattern.forEach((row, y) => {
-                const startX = Math.floor((28 - row.length) / 2);
-                for (let x = 0; x < row.length && x + startX < 28; x++) {
-                    if (row[x] === '█') {
-                        const index = (startY + y) * 28 + (startX + x);
-                        if (index >= 0 && index < 28 * 28) {
-                            binary[index] = 1;
-                        }
-                    }
-                }
+            img.onerror = function () {
+                checkDone(); // 파일 없으면 해당 숫자 카드 생략
+            };
+            img.src = path;
+        }
+    }
+
+    function finishLoadRef(pending) {
+        pending.sort((a, b) => a.digit - b.digit);
+        refBinaryData = pending.map(p => ({
+            ...p,
+            binary: p.binary.length === 196 ? p.binary : downsample14(p.binary)
+        }));
+        ['hamRefLoading', 'percRefLoading'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        renderRefGrid('hamRefGrid', 'h');
+        renderRefGrid('percRefGrid', 'p');
+        updateHamCalcBtn();
+        updatePercCalcBtn();
+        document.getElementById('hamStep1Badge').classList.add('done');
+        document.getElementById('percStep1Badge').classList.add('done');
+    }
+
+    function imgToBinary(img) {
+        const c = document.createElement('canvas');
+        c.width = 28; c.height = 28;
+        const ctx = c.getContext('2d');
+        // 흰 배경으로 먼저 채워서 투명 PNG도 올바르게 처리
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 28, 28);
+        ctx.drawImage(img, 0, 0, 28, 28);
+        const data = ctx.getImageData(0, 0, 28, 28).data;
+        const bin = [];
+        for (let i = 0; i < data.length; i += 4) {
+            const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+            bin.push(gray < 200 ? 1 : 0);
+        }
+        // 밀도가 너무 높으면 흰 글자 on 검정 배경 → 반전
+        const density = bin.filter(v => v === 1).length / 784;
+        if (density > 0.6) return bin.map(v => 1 - v);
+        return bin;
+    }
+
+    function renderRefGrid(gridId, prefix, results) {
+        const grid = document.getElementById(gridId);
+        grid.innerHTML = '';
+        refBinaryData.forEach(({ digit, binary }) => {
+            const card = document.createElement('div');
+            card.className = 'ref-card';
+            card.id = `refcard-${prefix}-${digit}`;
+
+            const imgGrid = document.createElement('div');
+            imgGrid.className = 'ref-img-grid';
+            binary.forEach(v => {
+                const px = document.createElement('div');
+                px.className = `ref-pixel ${v === 1 ? 'ref-pixel-on' : 'ref-pixel-off'}`;
+                imgGrid.appendChild(px);
             });
-            
-            // 약간의 노이즈 추가
-            for (let i = 0; i < 50; i++) {
-                const randomIndex = Math.floor(Math.random() * binary.length);
-                if (Math.random() < 0.1) {
-                    binary[randomIndex] = binary[randomIndex] === 1 ? 0 : 1;
-                }
-            }
-            
-            return binary;
-        }
-        
-        // 해밍거리 계산
-        function calculateHammingDistances() {
-            if (!userBinaryData) {
-                alert('먼저 사용자 입력을 28x28로 변환해주세요!');
-                return;
-            }
-            
-            if (sampleBinaryData.length === 0) {
-                alert('먼저 샘플 이미지를 로드해주세요!');
-                return;
-            }
-            
-            const results = [];
-            let minDistance = Infinity;
-            let closestDigit = -1;
-            
-            sampleBinaryData.forEach((sampleBinary, index) => {
-                const distance = calculateHamming(userBinaryData, sampleBinary);
-                results.push({
-                    digit: sampleImages[index].digit,
-                    distance: distance
-                });
-                
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestDigit = sampleImages[index].digit;
-                }
-            });
-            
-            displayResults(results, closestDigit, minDistance);
-        }
-        
-        function calculateHamming(array1, array2) {
-            if (array1.length !== array2.length) {
-                throw new Error('배열 길이가 다릅니다.');
-            }
-            
-            let distance = 0;
-            for (let i = 0; i < array1.length; i++) {
-                if (array1[i] !== array2[i]) {
-                    distance++;
-                }
-            }
-            return distance;
-        }
-        
-        function displayResults(results, closestDigit, minDistance) {
-            const resultsSection = document.getElementById('resultsSection');
-            const resultsDiv = document.getElementById('results');
-            
-            resultsSection.style.display = 'block';
-            resultsDiv.innerHTML = '';
-            
-            // 결과를 거리순으로 정렬
-            results.sort((a, b) => a.distance - b.distance);
-            
-            results.forEach(result => {
-                const item = document.createElement('div');
-                item.className = 'distance-item';
-                if (result.digit === closestDigit && result.distance === minDistance) {
-                    item.classList.add('closest-match');
-                }
-                
-                item.innerHTML = `
-                    <span>숫자 ${result.digit}과 해밍거리:</span>
-                    <span><strong>${result.distance}</strong></span>
-                `;
-                
-                resultsDiv.appendChild(item);
-            });
-            
-            // 최종 결과 표시
-            const finalResult = document.createElement('div');
-            finalResult.style.marginTop = '20px';
-            finalResult.style.textAlign = 'center';
-            finalResult.style.fontSize = '1.3em';
-            finalResult.style.fontWeight = 'bold';
-            finalResult.style.padding = '15px';
-            finalResult.style.background = 'linear-gradient(45deg, #4caf50, #8bc34a)';
-            finalResult.style.borderRadius = '15px';
-            finalResult.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.3)';
-            finalResult.innerHTML = `🎯 가장 유사한 숫자: ${closestDigit} (거리: ${minDistance})`;
-            
-            resultsDiv.appendChild(finalResult);
-        }
-        
-        // 페이지 로드 시 초기화
-        window.addEventListener('load', function() {
-            initCanvas();
-            
-            // 이진 그리드 초기화
-            const grid = document.getElementById('binaryGrid');
-            for (let i = 0; i < 28 * 28; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'binary-cell inactive';
-                grid.appendChild(cell);
-            }
+
+            const distBadge = document.createElement('div');
+            distBadge.className = 'ref-dist-badge';
+            distBadge.id = `refdist-${prefix}-${digit}`;
+
+            card.innerHTML = `<div class="digit-label">${digit}</div>`;
+            card.appendChild(imgGrid);
+            card.appendChild(distBadge);
+            grid.appendChild(card);
         });
 
-        // 현재 연도를 푸터에 표시하는 스크립트
-        document.getElementById('current-year').textContent = new Date().getFullYear();
+        if (results) applyRefResults(results, prefix);
+    }
+
+    function applyRefResults(results, prefix, isHamming) {
+        const best = isHamming
+            ? results.reduce((a, b) => a.score < b.score ? a : b)
+            : results.reduce((a, b) => a.score > b.score ? a : b);
+        results.forEach(({ digit, score }) => {
+            const badge = document.getElementById(`refdist-${prefix}-${digit}`);
+            const card  = document.getElementById(`refcard-${prefix}-${digit}`);
+            if (!badge || !card) return;
+            const isBest = digit === best.digit;
+            badge.textContent = isHamming ? `H = ${score}` : `P = ${score.toFixed(3)}`;
+            if (isBest) {
+                badge.classList.add('best');
+                badge.textContent = isHamming ? `★ H = ${score} (최소)` : `★ P = ${score.toFixed(3)} (최대)`;
+                card.classList.add('highlight-ref');
+            } else {
+                badge.classList.remove('best');
+                card.classList.remove('highlight-ref');
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────
+    //  체험 활동 — 그리기
+    // ─────────────────────────────────────────────
+    let hamCanvas, hamCtx, hamIsDrawing = false, hamBrushSize = 22;
+    let percCanvas, percCtx, percIsDrawing = false, percBrushSize = 22;
+
+    function initCanvasFor(canvasEl, getCtx, setCtx, setIsDrawing, getIsDrawing, brushDataAttr) {
+        const c = canvasEl;
+        const ctx = c.getContext('2d');
+        setCtx(ctx);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, 280, 280);
+        ctx.strokeStyle = '#1f284a';
+        ctx.lineWidth = 22;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        const getPos = e => { const r = c.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+        c.addEventListener('mousedown', e => { setIsDrawing(true); ctx.beginPath(); ctx.moveTo(...getPos(e)); });
+        c.addEventListener('mousemove', e => { if (!getIsDrawing()) return; ctx.lineTo(...getPos(e)); ctx.stroke(); });
+        c.addEventListener('mouseup', () => setIsDrawing(false));
+        c.addEventListener('mouseout', () => setIsDrawing(false));
+        c.addEventListener('touchstart', e => { e.preventDefault(); setIsDrawing(true); ctx.beginPath(); ctx.moveTo(...getPos(e.touches[0])); });
+        c.addEventListener('touchmove', e => { e.preventDefault(); if (!getIsDrawing()) return; ctx.lineTo(...getPos(e.touches[0])); ctx.stroke(); });
+        c.addEventListener('touchend', () => setIsDrawing(false));
+
+        document.querySelectorAll(`.brush-btn[data-canvas="${brushDataAttr}"]`).forEach(btn => {
+            btn.addEventListener('click', () => {
+                ctx.lineWidth = parseInt(btn.dataset.size);
+                document.querySelectorAll(`.brush-btn[data-canvas="${brushDataAttr}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    function initCanvas() {
+        hamCanvas = document.getElementById('hamCanvas');
+        initCanvasFor(hamCanvas,
+            () => {}, ctx => { hamCtx = ctx; },
+            v => { hamIsDrawing = v; }, () => hamIsDrawing, 'ham');
+
+        percCanvas = document.getElementById('percCanvas');
+        initCanvasFor(percCanvas,
+            () => {}, ctx => { percCtx = ctx; },
+            v => { percIsDrawing = v; }, () => percIsDrawing, 'perc');
+    }
+
+    function clearHamCanvas() {
+        hamCtx.fillStyle = '#fff';
+        hamCtx.fillRect(0, 0, 280, 280);
+        hamUserBinary = null;
+        document.getElementById('hamBinaryPreview').innerHTML = '';
+        document.getElementById('hamBinaryStats').textContent = '숫자를 그리고 "이진화 변환"을 클릭하세요';
+        document.getElementById('hamResultSection').classList.remove('open');
+        updateHamCalcBtn();
+    }
+
+    function clearPercCanvas() {
+        percCtx.fillStyle = '#fff';
+        percCtx.fillRect(0, 0, 280, 280);
+        percUserBinary = null;
+        document.getElementById('percBinaryPreview').innerHTML = '';
+        document.getElementById('percBinaryStats').textContent = '숫자를 그리고 "이진화 변환"을 클릭하세요';
+        document.getElementById('percResultSection').classList.remove('open');
+        updatePercCalcBtn();
+    }
+
+    function binarizeCanvas(sourceCanvas) {
+        const tmp = document.createElement('canvas');
+        tmp.width = 14; tmp.height = 14;
+        const tCtx = tmp.getContext('2d');
+        tCtx.imageSmoothingEnabled = true;
+        tCtx.imageSmoothingQuality = 'high';
+        tCtx.drawImage(sourceCanvas, 0, 0, 14, 14);
+        const data = tCtx.getImageData(0, 0, 14, 14).data;
+        const bin = [];
+        for (let i = 0; i < data.length; i += 4) {
+            bin.push((data[i] + data[i+1] + data[i+2]) / 3 < 160 ? 1 : 0);
+        }
+        return bin;
+    }
+
+    function renderBinaryPreview(bin, previewId, statsId) {
+        const preview = document.getElementById(previewId);
+        preview.innerHTML = '';
+        bin.forEach(v => {
+            const c = document.createElement('div');
+            c.className = `bp-cell ${v === 1 ? 'on' : 'off'}`;
+            preview.appendChild(c);
+        });
+        const ones = bin.filter(v => v === 1).length;
+        document.getElementById(statsId).textContent =
+            `활성 픽셀: ${ones} / 196 (${(ones/196*100).toFixed(1)}%)`;
+    }
+
+    function convertHamDrawing() {
+        hamUserBinary = binarizeCanvas(hamCanvas);
+        renderBinaryPreview(hamUserBinary, 'hamBinaryPreview', 'hamBinaryStats');
+        updateHamCalcBtn();
+        document.getElementById('hamStep2Badge').classList.add('done');
+    }
+
+    function convertPercDrawing() {
+        percUserBinary = binarizeCanvas(percCanvas);
+        renderBinaryPreview(percUserBinary, 'percBinaryPreview', 'percBinaryStats');
+        updatePercCalcBtn();
+        document.getElementById('percStep2Badge').classList.add('done');
+    }
+
+    function updateHamCalcBtn() {
+        const ready = hamUserBinary !== null && refBinaryData.length === 10;
+        document.getElementById('hamCalcBtn').disabled = !ready;
+        document.getElementById('hamCalcHint').textContent = ready
+            ? '준비 완료! 계산 버튼을 클릭하세요.'
+            : 'STEP 1(기준 이미지 로드)과 STEP 2(이진화 변환)를 모두 완료한 후 계산하세요.';
+    }
+
+    function updatePercCalcBtn() {
+        const ready = percUserBinary !== null && refBinaryData.length === 10;
+        document.getElementById('percCalcBtn').disabled = !ready;
+        document.getElementById('percCalcHint').textContent = ready
+            ? '준비 완료! 계산 버튼을 클릭하세요.'
+            : 'STEP 1(기준 이미지 로드)과 STEP 2(이진화 변환)를 모두 완료한 후 계산하세요.';
+    }
+
+    // ─────────────────────────────────────────────
+    //  체험 활동 — 계산 & 결과
+    // ─────────────────────────────────────────────
+    function calculateHamming() {
+        if (!hamUserBinary || refBinaryData.length === 0) return;
+
+        const results = refBinaryData.map(({ digit, binary }) => {
+            const dist = hammingDist(hamUserBinary, binary);
+            return { digit, binary, score: dist, dist };
+        });
+
+        results.sort((a, b) => a.score - b.score);   // 낮을수록 유사
+        lastResults = results;
+
+        applyRefResults(results, 'h', true);
+        renderBarChart(results, 'hamBarChart', true);
+        renderDiffArea(results, 'hamDiffArea', hamUserBinary, true);
+        renderFinal(results[0], 'hamFinalResult', 'hamResultSection', 'hamStep3Badge', true);
+    }
+
+    function calculatePerc() {
+        if (!percUserBinary || refBinaryData.length === 0) return;
+
+        const results = refBinaryData.map(({ digit, binary }) => {
+            const sumRef = binary.reduce((s, v) => s + v, 0);
+            const dot    = percUserBinary.reduce((s, v, i) => s + v * binary[i], 0);
+            const score  = sumRef > 0 ? dot / sumRef : 0;
+            return { digit, binary, score, dot, sumRef };
+        });
+
+        results.sort((a, b) => b.score - a.score);   // 높을수록 유사
+        lastResults = results;
+
+        applyRefResults(results, 'p', false);
+        renderBarChart(results, 'percBarChart', false);
+        renderDiffArea(results, 'percDiffArea', percUserBinary, false);
+        renderFinal(results[0], 'percFinalResult', 'percResultSection', 'percStep3Badge', false);
+    }
+
+    function renderBarChart(results, chartId, isHamming) {
+        const chart = document.getElementById(chartId);
+        chart.innerHTML = '';
+        // 해밍: 낮을수록 좋음 → 역비율로 bar 길이 계산
+        // 퍼셉트론: 높을수록 좋음
+        const best = isHamming
+            ? results.reduce((a, b) => a.score < b.score ? a : b)
+            : results.reduce((a, b) => a.score > b.score ? a : b);
+        const maxVal = isHamming
+            ? Math.max(...results.map(r => r.score))
+            : Math.max(...results.map(r => r.score));
+
+        const byDigit = [...results].sort((a, b) => a.digit - b.digit);
+        byDigit.forEach(({ digit, score }) => {
+            const pct = isHamming
+                ? (maxVal > 0 ? (1 - score / maxVal) * 100 : 3)
+                : (maxVal > 0 ? score / maxVal * 100 : 3);
+            const isBest = digit === best.digit;
+            const row = document.createElement('div');
+            row.className = 'bar-row';
+
+            const digitEl = document.createElement('div');
+            digitEl.className = 'bar-digit';
+            digitEl.textContent = `숫자 ${digit}`;
+
+            const fill = document.createElement('div');
+            fill.className = `bar-fill ${isBest ? 'best-bar' : 'other-bar'}`;
+            fill.style.setProperty('--bar-pct', `${Math.max(pct, 3)}%`);
+            fill.textContent = isBest ? '★' : '';
+
+            const track = document.createElement('div');
+            track.className = 'bar-track';
+            track.appendChild(fill);
+
+            const numEl = document.createElement('div');
+            numEl.className = 'bar-num';
+            numEl.textContent = isHamming ? score : score.toFixed(3);
+
+            row.appendChild(digitEl);
+            row.appendChild(track);
+            row.appendChild(numEl);
+            chart.appendChild(row);
+        });
+    }
+
+    function renderDiffArea(results, areaId, userBin, isHamming) {
+        if (window._compareIntervals) {
+            window._compareIntervals.forEach(id => clearInterval(id));
+            window._compareIntervals = [];
+        }
+
+        const top2 = results.slice(0, 2);
+        const area = document.getElementById(areaId);
+        area.innerHTML = '';
+        top2.forEach(({ digit, binary, score, dot, sumRef }, rank) => {
+            area.appendChild(createCompareBlock(userBin, binary, digit, score, dot, sumRef, rank, isHamming));
+        });
+    }
+
+    function createCompareBlock(matX196, matRef196, digit, score, dot, sumRef, rank, isHamming) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'compare-block';
+
+        // 제목
+        const title = document.createElement('h4');
+        title.className = rank === 0 ? 'diff-rank-1' : 'diff-rank-2';
+        const scoreLabel = isHamming ? `H = ${score}` : `P = ${score.toFixed(3)}`;
+        title.textContent = `${rank === 0 ? '1위 ★' : '2위'} — 숫자 ${digit} 와(과) 비교 (${scoreLabel})`;
+        wrapper.appendChild(title);
+
+        const xDown   = matX196;
+        const refDown = matRef196;
+
+        // ── blend-inner ──────────────────────────────────────────
+        const blendInner = document.createElement('div');
+        blendInner.className = 'blend-inner';
+
+        // X 패널
+        const xPanel = document.createElement('div');
+        xPanel.className = 'blend-panel';
+        const xLbl = document.createElement('div');
+        xLbl.className = 'blend-panel-label';
+        xLbl.textContent = '내가 그린 X';
+        xPanel.appendChild(xLbl);
+        const xGrid = document.createElement('div');
+        xGrid.className = 'compare-grid-14-sm';
+        xDown.forEach(v => {
+            const c = document.createElement('div');
+            c.className = `cg-cell ${v === 1 ? 'cg-x-on' : 'cg-x-off'}`;
+            xGrid.appendChild(c);
+        });
+        xPanel.appendChild(xGrid);
+
+        // 기준 패널
+        const refPanel = document.createElement('div');
+        refPanel.className = 'blend-panel';
+        const refLbl = document.createElement('div');
+        refLbl.className = 'blend-panel-label';
+        refLbl.textContent = `기준 이미지 (숫자 ${digit})`;
+        refPanel.appendChild(refLbl);
+        const refGrid = document.createElement('div');
+        refGrid.className = 'compare-grid-14-sm';
+        refDown.forEach(v => {
+            const c = document.createElement('div');
+            c.className = `cg-cell ${v === 1 ? 'cg-ref-on' : 'cg-ref-off'}`;
+            refGrid.appendChild(c);
+        });
+        refPanel.appendChild(refGrid);
+
+        // 블렌딩 결과 패널 (중앙, 처음엔 숨김)
+        const blendPanel = document.createElement('div');
+        blendPanel.className = 'blend-panel-result';
+
+        // 범례
+        const blendLbl = document.createElement('div');
+        blendLbl.className = 'blend-panel-label blend-result-label';
+        if (isHamming) {
+            blendLbl.innerHTML =
+                '블렌딩 결과&nbsp;<span class="blend-legend">' +
+                '<span class="legend-swatch legend-blue"></span>둘 다 1&nbsp;&nbsp;' +
+                '<span class="legend-swatch legend-red"></span>값이 다름</span>';
+        } else {
+            blendLbl.innerHTML =
+                '블렌딩 결과&nbsp;<span class="blend-legend">' +
+                '<span class="legend-swatch legend-perc-counted"></span>X=1, A=1 (기여)&nbsp;&nbsp;' +
+                '<span class="legend-swatch legend-perc-uncounted"></span>X=0, A=1 (미기여)&nbsp;&nbsp;' +
+                '<span class="legend-swatch legend-perc-xonly"></span>X=1, A=0</span>';
+        }
+        blendPanel.appendChild(blendLbl);
+
+        // 블렌드 그리드 (셀 색상 + 툴팁)
+        const blendGrid = document.createElement('div');
+        blendGrid.className = 'compare-grid-14-sm';
+        for (let i = 0; i < 196; i++) {
+            const c = document.createElement('div');
+            const xv = xDown[i], rv = refDown[i];
+            if (isHamming) {
+                c.className = 'cg-cell ' + (
+                    xv === 1 && rv === 1 ? 'cg-blend-both'  :
+                    xv !== rv            ? 'cg-blend-diff'  :
+                                           'cg-blend-empty'
+                );
+                if (xv !== rv) c.title = xv === 1
+                    ? 'X=1, A=0 → 해밍 거리 +1'
+                    : 'X=0, A=1 → 해밍 거리 +1';
+                else c.title = `X=A=${xv} → 동일 (해밍 거리 +0)`;
+            } else {
+                c.className = 'cg-cell ' + (
+                    xv === 1 && rv === 1 ? 'cg-blend-both'   :
+                    xv === 0 && rv === 1 ? 'cg-blend-a-only' :
+                    xv === 1 && rv === 0 ? 'cg-blend-x-only' :
+                                           'cg-blend-empty'
+                );
+                if (xv === 1 && rv === 1) c.title = `X=1, A=1 → +1/${sumRef} 기여 ✓`;
+                else if (xv === 0 && rv === 1) c.title = `X=0, A=1 → 분모(${sumRef}) 포함, 분자 미포함`;
+                else if (xv === 1 && rv === 0) c.title = `X=1, A=0 → 퍼셉트론 계산과 무관`;
+                else c.title = 'X=0, A=0 → 해당 없음';
+            }
+            blendGrid.appendChild(c);
+        }
+        blendPanel.appendChild(blendGrid);
+
+        blendInner.appendChild(xPanel);
+        blendInner.appendChild(refPanel);
+        blendInner.appendChild(blendPanel);
+
+        // 퍼셉트론 전용: 분수 시각화 (blend-inner 아래 정상 흐름에 배치)
+        let fracViz = null;
+        if (!isHamming) {
+            fracViz = document.createElement('div');
+            fracViz.className = 'frac-viz'; // 초기엔 숨김 (CSS: opacity 0, max-height 0)
+
+            const fracTitle = document.createElement('div');
+            fracTitle.className = 'frac-viz-title';
+            fracTitle.textContent = `P(X, ${digit}) 계산 — A의 활성 픽셀(|A|=${sumRef}개) 기여 현황`;
+            fracViz.appendChild(fracTitle);
+
+            const fracLegend = document.createElement('div');
+            fracLegend.className = 'frac-legend-row';
+            fracLegend.innerHTML =
+                '<span class="frac-legend-item"><span class="frac-swatch frac-swatch-counted"></span>X=1 AND A=1 (기여)</span>' +
+                '<span class="frac-legend-item"><span class="frac-swatch frac-swatch-uncounted"></span>X=0, A=1 (미기여)</span>';
+            fracViz.appendChild(fracLegend);
+
+            const fracStrip = document.createElement('div');
+            fracStrip.className = 'frac-strip';
+            let cellIdx = 0;
+            for (let i = 0; i < 196; i++) {
+                if (refDown[i] === 1) {
+                    const sq = document.createElement('div');
+                    const contributes = xDown[i] === 1;
+                    cellIdx++;
+                    sq.className = `frac-cell ${contributes ? 'frac-counted' : 'frac-uncounted'}`;
+                    sq.title = contributes
+                        ? `A=1 ${cellIdx}번째 셀 (위치 ${i}): X=1 → 기여 ✓`
+                        : `A=1 ${cellIdx}번째 셀 (위치 ${i}): X=0 → 미기여`;
+                    fracStrip.appendChild(sq);
+                }
+            }
+            fracViz.appendChild(fracStrip);
+
+            const fracFormula = document.createElement('div');
+            fracFormula.className = 'frac-formula';
+            fracFormula.innerHTML =
+                `P(X, ${digit}) =&nbsp;` +
+                `<span class="frac-frac">` +
+                `  <span class="frac-frac-num">${dot}</span>` +
+                `  <span class="frac-frac-den">${sumRef}</span>` +
+                `</span>` +
+                `<span class="frac-eq">=</span>` +
+                `<span class="frac-result-val">${score.toFixed(3)}</span>`;
+            fracViz.appendChild(fracFormula);
+        }
+
+        // ── 버튼 ──────────────────────────────────────────────────
+        const btnRow = document.createElement('div');
+        btnRow.className = 'compare-btns';
+
+        const btnBlend = document.createElement('button');
+        btnBlend.type = 'button';
+        btnBlend.className = 'compare-btn compare-btn-anim';
+        btnBlend.innerHTML = '<i class="fa fa-layer-group"></i> 블렌딩 애니메이션';
+
+        const btnReset = document.createElement('button');
+        btnReset.type = 'button';
+        btnReset.className = 'compare-btn';
+        btnReset.innerHTML = '<i class="fa fa-rotate-left"></i> 초기화';
+        btnReset.disabled = true;
+
+        let t1 = null, t2 = null, t3 = null, tRejoin = null;
+        let blended = false;
+        let hovering = false;
+        let savedXDelta = 0, savedRDelta = 0;
+
+        function resetView() {
+            clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(tRejoin);
+            blended = false; hovering = false;
+            xPanel.style.transition  = refPanel.style.transition  = 'none';
+            xPanel.style.transform   = refPanel.style.transform   = '';
+            xPanel.style.opacity     = refPanel.style.opacity     = '1';
+            xPanel.style.visibility  = refPanel.style.visibility  = '';
+            blendPanel.classList.remove('visible');
+            blendPanel.style.opacity = '0';
+            if (fracViz) fracViz.classList.remove('frac-visible');
+            btnBlend.disabled = false;
+            btnBlend.innerHTML = '<i class="fa fa-layer-group"></i> 블렌딩 애니메이션';
+            btnReset.disabled = true;
+        }
+
+        // hover → 찢기
+        function splitView() {
+            if (!blended || hovering) return;
+            clearTimeout(tRejoin);
+            hovering = true;
+            blendPanel.style.transition = 'opacity 0.25s ease';
+            blendPanel.classList.remove('visible');
+            if (fracViz) fracViz.classList.remove('frac-visible');
+            xPanel.style.transition = refPanel.style.transition = 'none';
+            xPanel.style.visibility = refPanel.style.visibility = '';
+            xPanel.style.opacity    = refPanel.style.opacity    = '0';
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                xPanel.style.transition = refPanel.style.transition =
+                    'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease';
+                xPanel.style.transform  = refPanel.style.transform  = '';
+                xPanel.style.opacity    = refPanel.style.opacity    = '1';
+            }));
+        }
+
+        // 마우스 떼면 → 다시 붙이기
+        function rejoinView() {
+            if (!hovering) return;
+            hovering = false;
+            xPanel.style.transition = refPanel.style.transition =
+                'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease';
+            xPanel.style.transform   = `translateX(${savedXDelta}px)`;
+            refPanel.style.transform = `translateX(${savedRDelta}px)`;
+            xPanel.style.opacity = refPanel.style.opacity = '0.5';
+
+            tRejoin = setTimeout(() => {
+                xPanel.style.transition = refPanel.style.transition = 'opacity 0.22s ease';
+                xPanel.style.opacity    = refPanel.style.opacity    = '0';
+                setTimeout(() => {
+                    xPanel.style.visibility = refPanel.style.visibility = 'hidden';
+                    blendPanel.style.transition = 'opacity 0.4s ease';
+                    blendPanel.classList.add('visible');
+                    if (fracViz) fracViz.classList.add('frac-visible');
+                }, 220);
+            }, 650);
+        }
+
+        blendPanel.addEventListener('mouseenter', splitView);
+        blendInner.addEventListener('mouseleave', rejoinView);
+
+        btnBlend.addEventListener('click', () => {
+            btnBlend.disabled = true;
+            btnReset.disabled = false;
+
+            requestAnimationFrame(() => {
+                const iRect  = blendInner.getBoundingClientRect();
+                const xRect  = xPanel.getBoundingClientRect();
+                const rRect  = refPanel.getBoundingClientRect();
+                const cx     = iRect.left + iRect.width / 2;
+                savedXDelta  = cx - (xRect.left + xRect.width / 2);
+                savedRDelta  = cx - (rRect.left + rRect.width / 2);
+
+                xPanel.style.transition = refPanel.style.transition =
+                    'transform 0.9s cubic-bezier(0.4,0,0.2,1), opacity 0.9s ease';
+                xPanel.style.transform   = `translateX(${savedXDelta}px)`;
+                xPanel.style.opacity     = '0.5';
+                refPanel.style.transform = `translateX(${savedRDelta}px)`;
+                refPanel.style.opacity   = '0.5';
+
+                t1 = setTimeout(() => {
+                    xPanel.style.transition = refPanel.style.transition = 'opacity 0.25s ease';
+                    xPanel.style.opacity    = refPanel.style.opacity    = '0';
+
+                    t2 = setTimeout(() => {
+                        xPanel.style.visibility = refPanel.style.visibility = 'hidden';
+                        blendPanel.style.transition = 'opacity 0.45s ease';
+                        blendPanel.classList.add('visible');
+                        if (fracViz) fracViz.classList.add('frac-visible');
+                        t3 = setTimeout(() => {
+                            blended = true;
+                            btnBlend.innerHTML = '<i class="fa fa-check"></i> 블렌딩 완료';
+                        }, 500);
+                    }, 280);
+                }, 950);
+            });
+        });
+
+        btnReset.addEventListener('click', resetView);
+        btnRow.appendChild(btnBlend);
+        btnRow.appendChild(btnReset);
+
+        // ── 결과 박스 ─────────────────────────────────────────────
+        const hBox = document.createElement('div');
+        hBox.className = 'h-result-box';
+        if (isHamming) {
+            hBox.innerHTML =
+                `<span class="h-num">${score}</span>` +
+                `<div class="h-label">H(X, ${digit}) = ${score}</div>` +
+                `<div class="h-label">다른 위치의 수</div>`;
+        } else {
+            hBox.innerHTML =
+                `<span class="h-num">${score.toFixed(2)}</span>` +
+                `<div class="h-label">P(X, ${digit}) = ${dot} / ${sumRef}</div>` +
+                `<div class="h-label">겹치는 1의 수 / 기준 1의 수</div>`;
+        }
+
+        // 최종 조립
+        const blendStageDiv = document.createElement('div');
+        blendStageDiv.className = 'blend-stage';
+        blendStageDiv.appendChild(blendInner);
+        // fracViz는 blend-inner 아래 정상 흐름으로 배치 (absolute 밖)
+        if (fracViz) blendStageDiv.appendChild(fracViz);
+
+        const mainRow = document.createElement('div');
+        mainRow.className = 'compare-main';
+        mainRow.appendChild(blendStageDiv);
+        mainRow.appendChild(hBox);
+
+        wrapper.appendChild(mainRow);
+        wrapper.appendChild(btnRow);
+        return wrapper;
+    }
+
+    function makeCompareBtn(label, isActive) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'compare-btn' + (isActive ? ' active' : '');
+        btn.textContent = label;
+        return btn;
+    }
+
+    function makeDiffPanel(title, mat, compare, role) {
+        const panel = document.createElement('div');
+        panel.className = 'diff-panel';
+        panel.innerHTML = `<h4>${title}</h4>`;
+        const grid = document.createElement('div');
+        grid.className = 'diff-grid-28';
+        mat.forEach((v, i) => {
+            const c = document.createElement('div');
+            const isDiff = v !== compare[i];
+            if (role === 'x' && isDiff) {
+                c.className = 'dg-cell dg-x-diff';
+            } else {
+                c.className = `dg-cell ${v === 1 ? (role === 'x' ? 'dg-x-on' : 'dg-ref-on') : (role === 'x' ? 'dg-x-off' : 'dg-ref-off')}`;
+            }
+            grid.appendChild(c);
+        });
+        panel.appendChild(grid);
+        return panel;
+    }
+
+    function makeDiffGridPanel(matX, matRef) {
+        const panel = document.createElement('div');
+        panel.className = 'diff-panel';
+        panel.innerHTML = '<h4>차이 시각화 <small class="text-muted-small">(빨강=다름)</small></h4>';
+        const grid = document.createElement('div');
+        grid.className = 'diff-grid-28';
+        matX.forEach((v, i) => {
+            const c = document.createElement('div');
+            if (v !== matRef[i]) {
+                c.className = 'dg-cell dg-diff';
+            } else {
+                c.className = `dg-cell ${v === 1 ? 'dg-same-1' : 'dg-same-bg'}`;
+            }
+            grid.appendChild(c);
+        });
+        panel.appendChild(grid);
+        return panel;
+    }
+
+    function renderFinal(best, finalId, resultSectionId, step3BadgeId, isHamming) {
+        // 재계산 시 이전 설명 박스 제거
+        const el = document.getElementById(finalId);
+        const prevExplain = el.nextElementSibling;
+        if (prevExplain && prevExplain.classList.contains('knn-explain')) prevExplain.remove();
+        if (isHamming) {
+            el.innerHTML = `
+                <div class="big-digit">${best.digit}</div>
+                <p>해밍 거리가 가장 작은 숫자: <strong>${best.digit}</strong> (H = ${best.score})</p>
+                <p class="final-sub">인공지능이 이미지 X를 숫자 <strong>${best.digit}</strong>로 분류했습니다!</p>`;
+            const explain = document.createElement('div');
+            explain.className = 'knn-explain';
+            explain.innerHTML = `
+                <div class="knn-title"><i class="fa fa-lightbulb"></i> 이것이 해밍 거리 분류의 원리!</div>
+                <p>각 기준 이미지 A와 내 그림 X의 <em>해밍 거리 H(X, A)</em>를 계산합니다.<br>
+                H(X, A)가 <em>가장 작은</em> 클래스로 분류합니다. 값이 작을수록 두 이미지가 <em>더 유사</em>함을 의미합니다.</p>`;
+            el.insertAdjacentElement('afterend', explain);
+        } else {
+            el.innerHTML = `
+                <div class="big-digit">${best.digit}</div>
+                <p>퍼셉트론 출력값이 가장 큰 숫자: <strong>${best.digit}</strong> (P = ${best.score.toFixed(3)})</p>
+                <p class="final-sub">인공지능이 이미지 X를 숫자 <strong>${best.digit}</strong>로 분류했습니다!</p>`;
+            const explain = document.createElement('div');
+            explain.className = 'knn-explain';
+            explain.innerHTML = `
+                <div class="knn-title"><i class="fa fa-lightbulb"></i> 이것이 퍼셉트론 분류의 원리!</div>
+                <p>각 기준 이미지 A에 대해 W<sub>A</sub> = (1/|A|)A를 만들고,<br>
+                P<sub>A</sub>(X) = X · W<sub>A</sub> (겹치는 1의 수 / 기준 이미지의 1의 수)를 계산합니다.<br>
+                <em>출력값이 가장 큰</em> 퍼셉트론의 클래스로 분류합니다.</p>`;
+            el.insertAdjacentElement('afterend', explain);
+        }
+        document.getElementById(step3BadgeId).classList.add('done');
+        document.getElementById(resultSectionId).classList.add('open');
+        document.getElementById(resultSectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ─────────────────────────────────────────────
+    //  퍼셉트론 분류 섹션
+    // ─────────────────────────────────────────────
+    let percMatX = [...matX_orig];
+    let currentPercProblemIdx = -1;
+
+    function perceptronOutput(x, a) {
+        const sumA = a.reduce((s, v) => s + v, 0);
+        if (sumA === 0) return 0;
+        return x.reduce((s, v, i) => s + v * a[i], 0) / sumA;
+    }
+
+    function loadPerceptronExample() {
+        let idx;
+        do {
+            idx = Math.floor(Math.random() * conceptProblems.length);
+        } while (idx === currentPercProblemIdx && conceptProblems.length > 1);
+        currentPercProblemIdx = idx;
+        renderPerceptronExample(conceptProblems[idx]);
+    }
+
+    function renderPerceptronExample(problem) {
+        const area = document.getElementById('perceptronExampleArea');
+        area.innerHTML = '';
+        const { xLabel, xMat, aLabel, aMat } = problem;
+        const sumA = aMat.reduce((s, v) => s + v, 0);
+        const dot  = xMat.reduce((s, v, i) => s + v * aMat[i], 0);
+        const pOut = dot / sumA;
+
+        // ── 행 1: A → W_A ──
+        const row1 = document.createElement('div');
+        row1.className = 'perceptron-flow';
+
+        row1.appendChild(makePercCard(aLabel, aMat, false, 0));
+
+        const op1 = document.createElement('div');
+        op1.className = 'perceptron-op-label';
+        op1.innerHTML = `→<small>×&nbsp;1/${sumA}</small>`;
+        row1.appendChild(op1);
+
+        row1.appendChild(makePercCard(`W = (1/${sumA})A`, aMat, true, sumA));
+
+        const op2 = document.createElement('div');
+        op2.className = 'perceptron-op-label';
+        op2.innerHTML = `<small>내적</small>·`;
+        row1.appendChild(op2);
+
+        row1.appendChild(makePercCard(xLabel, xMat, false, 0));
+
+        const op3 = document.createElement('div');
+        op3.className = 'perceptron-op-label';
+        op3.innerHTML = `→<small>=</small>`;
+        row1.appendChild(op3);
+
+        const outBox = document.createElement('div');
+        outBox.className = 'perceptron-output';
+        outBox.innerHTML = `
+            <div class="p-out-label">P(X, ${aLabel.split(' ')[0]})</div>
+            <div class="p-out-value">${pOut.toFixed(2)}</div>
+            <div class="p-out-label">${dot} / ${sumA}</div>`;
+        row1.appendChild(outBox);
+
+        area.appendChild(row1);
+    }
+
+    function makePercCard(title, mat, isWeight, divisor) {
+        const card = document.createElement('div');
+        card.className = 'perceptron-card';
+        card.innerHTML = `<div class="p-label">${title}</div>`;
+        const grid = document.createElement('div');
+        grid.className = 'small-grid';
+        mat.forEach(v => {
+            const cell = document.createElement('div');
+            if (isWeight) {
+                cell.className = `weight-cell ${v === 1 ? 'w-active' : 'w-zero'}`;
+                cell.textContent = v === 1 ? `1/${divisor}` : '0';
+            } else {
+                cell.className = `small-cell ${v === 1 ? 'val-1' : 'val-0'}`;
+                cell.textContent = v;
+            }
+            grid.appendChild(cell);
+        });
+        card.appendChild(grid);
+        return card;
+    }
+
+    // ── 인터랙티브 퍼셉트론 데모 ──
+    function renderPercGrids() {
+        const sumA = matA.reduce((s, v) => s + v, 0);
+        const sumB = matB.reduce((s, v) => s + v, 0);
+        renderStaticGrid('percGridA', matA);
+        renderStaticGrid('percGridB', matB);
+        document.getElementById('percSizeA').textContent = sumA;
+        document.getElementById('percSizeB').textContent = sumB;
+        renderPercEditableGrid();
+        updatePercOutput();
+    }
+
+    function renderPercEditableGrid() {
+        const grid = document.getElementById('percGridX');
+        grid.innerHTML = '';
+        percMatX.forEach((v, i) => {
+            const cell = document.createElement('div');
+            cell.className = `small-cell editable-cell ${v === 1 ? 'val-1' : 'val-0'}`;
+            cell.textContent = v;
+            cell.title = '클릭하여 0↔1 전환';
+            cell.addEventListener('click', () => {
+                percMatX[i] = percMatX[i] === 0 ? 1 : 0;
+                renderPercEditableGrid();
+                updatePercOutput();
+            });
+            grid.appendChild(cell);
+        });
+    }
+
+    function updatePercOutput() {
+        const pA  = perceptronOutput(percMatX, matA);
+        const pB  = perceptronOutput(percMatX, matB);
+        const dotA = percMatX.reduce((s, v, i) => s + v * matA[i], 0);
+        const dotB = percMatX.reduce((s, v, i) => s + v * matB[i], 0);
+        const sumA = matA.reduce((s, v) => s + v, 0);
+        const sumB = matB.reduce((s, v) => s + v, 0);
+        document.getElementById('percPA').textContent = `P(X,A) = ${pA.toFixed(2)}`;
+        document.getElementById('percPB').textContent = `P(X,B) = ${pB.toFixed(2)}`;
+        const res = document.getElementById('percResult');
+        res.classList.remove('mini-result-correct', 'mini-result-alt', 'mini-result-tie');
+        if (pA > pB) {
+            res.textContent = '→ 숫자 0으로 분류';
+            res.classList.add('mini-result-correct');
+        } else if (pB > pA) {
+            res.textContent = '→ 숫자 6으로 분류';
+            res.classList.add('mini-result-alt');
+        } else {
+            res.textContent = '동률! (P 동일)';
+            res.classList.add('mini-result-tie');
+        }
+    }
+
+    function resetPercX() {
+        percMatX = [...matX_orig];
+        renderPercEditableGrid();
+        updatePercOutput();
+    }
+
+    // ─────────────────────────────────────────────
+    //  초기화
+    // ─────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        loadConceptExample();
+        loadPerceptronExample();
+        renderMiniGrids();
+        renderPercGrids();
+        initCanvas();
+
+        // 체험 탭 열 때 기준 이미지 자동 로드
+        document.querySelector('#tabNavHamming [data-tab="activity"]').addEventListener('click', () => {
+            if (refBinaryData.length === 0) loadReferences();
+        });
+        document.querySelector('#tabNavPerc [data-tab="perc-activity"]').addEventListener('click', () => {
+            if (refBinaryData.length === 0) loadReferences();
+        });
+    });
     </script>
 </body>
 </html>
