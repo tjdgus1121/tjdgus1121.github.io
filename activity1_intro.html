@@ -35,16 +35,14 @@
     <meta name="url" content="https://tjdgus1121.github.io/activity1_intro.html">
 
     <title>패턴을 행렬로 표현하기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="stylefooter.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&family=Gamja+Flower&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
         integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
-        rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js"></script>
@@ -170,20 +168,20 @@
         }
         .container {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: stretch;
             justify-content: center;
-            gap: 36px;
+            gap: 24px;
             max-width: 1200px;
             width: 100%;
         }
         .instructions-container {
             background: rgba(245,247,250,0.92);
             border-radius: 16px;
-            padding: 26px 20px 20px 20px;
+            padding: 20px 14px;
             box-shadow: 0 2px 10px rgba(80,80,120,0.07);
-            min-width: 180px;
-            max-width: 260px;
-            width: 100%;
+            flex: 0 0 140px;
+            width: 140px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -193,8 +191,8 @@
         }
         .instructions-container h2 {
             color: #3b3b3b;
-            font-size: 1.08em;
-            margin-bottom: 13px;
+            font-size: 0.88em;
+            margin-bottom: 10px;
             font-weight: 700;
         }
         .filelink{
@@ -203,13 +201,16 @@
         }
         .instructions-container p {
             color: #555;
-            font-size: 1em;
+            font-size: 0.82em;
             line-height: 1.5;
         }
         .grid-container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 500px;
             background: rgba(255,255,255,0.96);
             border-radius: 16px;
             padding: 28px 20px 20px 20px;
@@ -241,9 +242,8 @@
             transition: background 0.18s, box-shadow 0.18s;
             border-radius: 4px;
             box-shadow: 0 1px 2px rgba(80,80,120,0.03);
-            min-width: 22px;
-            min-height: 22px;
-            font-size: 1em;
+            min-width: 0;
+            min-height: 0;
         }
         .cell.black {
             background: #222;
@@ -277,16 +277,19 @@
             box-shadow: 0 8px 24px rgba(102,126,234,0.13);
         }
         .matrix-container {
-            min-width: 180px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            max-width: 450px;
+            justify-content: center;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 500px;
             background: rgba(255,255,255,0.96);
             border-radius: 16px;
-            padding: 28px 20px 20px 20px;
+            padding: 28px 28px 28px 28px;
             box-shadow: 0 2px 10px rgba(80,80,120,0.07);
             border: 1.2px solid #e3e8f0;
+            overflow: visible;
         }
         .matrix-container h2 {
             color: #3b3b3b;
@@ -294,18 +297,31 @@
             margin-bottom: 10px;
         }
         .matrix {
-            font-family: 'Roboto Mono', 'Menlo', 'Consolas', monospace;
-            white-space: pre;
-            background: #f5f7fa;
-            padding: 18px 10px 18px 10px;
-            border-radius: 8px;
-            overflow-x: auto;
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 0;
+            background: transparent;
+            border: none;
             width: 100%;
-            max-height: 450px;
-            overflow-y: auto;
-            font-size: 1.08em;
-            color: #2d2d2d;
-            box-shadow: 0 2px 8px rgba(80,80,120,0.05);
+            max-width: 500px;
+            min-width: 300px;
+        }
+        .matrix-cell {
+            aspect-ratio: 1 / 1;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+            font-size: clamp(0.65rem, 1.8vw, 1.05rem);
+            font-weight: 700;
+            color: #94A3B8;
+            min-width: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .matrix-cell.is-zero {
+            color: #1E293B;
         }
         @media (max-width: 900px) {
             .container {
@@ -319,13 +335,25 @@
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
+                flex-wrap: wrap;
                 gap: 18px;
+            }
+            .instructions-container {
+                flex: unset;
+                width: 100%;
+                max-width: 100%;
+            }
+            .grid-container, .matrix-container {
+                flex: unset;
+                width: 100%;
+                max-width: 100%;
             }
             .main-content-wrapper {
                 padding: 10px 2vw 10px 2vw;
             }
-            .grid {
+            .grid, .matrix {
                 max-width: 340px;
+                min-width: 240px;
             }
             .pattern-grid {
                 width: 60px;
@@ -341,53 +369,49 @@
             }
         }
         @media (min-width: 900px) {
-            .grid {
+            .grid, .matrix {
                 max-width: 520px;
-            }
-            .cell {
-                min-width: 22px;
-                min-height: 22px;
             }
         }
     </style>
 <style>
 
-/* === bracket-wrap: curved ( ) using percentage border-radius === */
+/* === bracket-wrap: curved ( ) — 괄호가 matrix 콘텐츠 바깥으로 돌출 === */
 .bracket-wrap{
   position: relative;
-  display: inline-block;
-  padding: 0 32px; /* space for brackets */
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0; /* matrix 너비를 줄이지 않음 */
+  overflow: visible;
 }
 
 .bracket-wrap::before,
 .bracket-wrap::after{
   content: "";
   position: absolute;
-  top: 6px;
-  bottom: 6px;
-  width: 22px;                 /* visual bracket thickness */
+  top: 0;
+  bottom: 0;
+  width: 20px;
   pointer-events: none;
   box-sizing: border-box;
   z-index: 1;
 
-  border: 4px solid #2d2d2d;   /* bracket color & stroke width */
+  border: 4px solid #2d2d2d;
   border-top-color: transparent;
   border-bottom-color: transparent;
-
-  /* Use percentage to make curvature adapt to element height */
-  /* First value: horizontal radius %, second: vertical radius % */
   border-radius: 50% / 40%;
 }
 
-/* Left bracket ( */
+/* Left bracket ( — matrix 왼쪽 바깥으로 돌출 */
 .bracket-wrap::before{
-  left: 0;
+  left: -26px;
   border-right-color: transparent;
 }
 
-/* Right bracket ) */
+/* Right bracket ) — matrix 오른쪽 바깥으로 돌출 */
 .bracket-wrap::after{
-  right: 0;
+  right: -26px;
   border-left-color: transparent;
 }
 
@@ -444,23 +468,25 @@
             <div class="grid-container">
                 <h2>15×15 행렬</h2>
                 <div class="grid" id="grid"></div>
-                <div class="controls">
-                    <button id="showMatrix">행렬 표시</button>
-                    <button id="clearGrid">초기화</button>
-                </div>
             </div>
-            
+
             <div class="matrix-container">
                 <h2>이진행렬</h2>
                 <div class="matrix" id="matrix"></div>
             </div>
+        </div>
+
+        <div class="controls">
+            <button type="button" id="showMatrix">행렬 표시</button>
+            <button type="button" id="clearGrid">초기화</button>
         </div>
     </div> <!-- main-content-wrapper 닫기 -->
     
     <footer class="footer">
         <div class="footer-content">
             <div>
-                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트<a class="filelink" href="https://naver.me/GA8tN56c" target="blank">(체험파일)</a> <a href="https://naver.me/G6QJSjVR" target="blank">rgb</a>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트<a class="filelink" href="https://drive.google.com/file/d/1-UK3dqbXkGffI4GumA5IgXmUYIiBzNCx/view?usp=sharing" target="blank">(체험파일)</a>
+                <a href="https://padlet.com/usezizon/11-29-ib4c9oj9qntz4z4l" target="_blank" style="text-decoration:none; color: inherit;">11. 29 패들렛</a></div>
                 <div class="creator-info">
                     Designed & Developed by <span>황성현</span><br>
                     Contact : tjdgus1121@naver.com
@@ -481,7 +507,7 @@
                 이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
                 다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
             </div>
-
+        </div>
     </footer>
     <!-- TensorFlow.js 추가 -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
@@ -512,48 +538,47 @@
             // 모델 로드 시작 (실제 로드는 비활성화됨)
             loadModel();
 
-            // Create 15x15 grid
+            // 그리드 셀 & 행렬 셀을 동시에 생성 (인덱스 1:1 대응)
+            const matCells = [];
+
             for (let i = 0; i < 15 * 15; i++) {
+                // 행렬 셀 미리 생성
+                const matCell = document.createElement('div');
+                matCell.className = 'matrix-cell';
+                matCell.textContent = '1';
+                matrixDisplay.appendChild(matCell);
+                matCells.push(matCell);
+
+                // 그리드 셀 생성
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.dataset.index = i;
                 cell.addEventListener('click', function() {
                     this.classList.toggle('black');
+                    const isBlack = this.classList.contains('black');
+                    matCells[i].className = 'matrix-cell' + (isBlack ? ' is-zero' : '');
+                    matCells[i].textContent = isBlack ? '0' : '1';
                 });
                 grid.appendChild(cell);
             }
-            
-            // Generate and display matrix
-            showMatrixBtn.addEventListener('click', async function() {
-                const cells = document.querySelectorAll('.cell');
-                let matrixText = '';
-                let matrixData = [];
-                
-                for (let i = 0; i < 15; i++) {
-                    let row = '';
-                    let rowData = [];
-                    for (let j = 0; j < 15; j++) {
-                        const cell = cells[i * 15 + j];
-                        // White (not black) is 1, black is 0
-                        const value = cell.classList.contains('black') ? '0' : '1';
-                        row += value + ' ';
-                        rowData.push(cell.classList.contains('black') ? 0 : 1);
-                    }
-                    matrixText += row.trim() + '\n';
-                    matrixData.push(rowData);
-                }
-                
-                matrixDisplay.textContent = matrixText;
 
-            });
-            
-            // Clear the grid (set all cells to white)
-            clearGridBtn.addEventListener('click', function() {
+            // 행렬 표시 버튼 — 전체 재동기화 (실시간 연동 보조)
+            showMatrixBtn.addEventListener('click', function() {
                 const cells = document.querySelectorAll('.cell');
-                cells.forEach(cell => {
-                    cell.classList.remove('black');
+                cells.forEach((cell, idx) => {
+                    const isBlack = cell.classList.contains('black');
+                    matCells[idx].className = 'matrix-cell' + (isBlack ? ' is-zero' : '');
+                    matCells[idx].textContent = isBlack ? '0' : '1';
                 });
-                matrixDisplay.textContent = '';
+            });
+
+            // 초기화
+            clearGridBtn.addEventListener('click', function() {
+                document.querySelectorAll('.cell').forEach((cell, idx) => {
+                    cell.classList.remove('black');
+                    matCells[idx].className = 'matrix-cell';
+                    matCells[idx].textContent = '1';
+                });
             });
             
             // Define some preset patterns
@@ -643,23 +668,18 @@
                 patternGallery.appendChild(patternItem);
             });
             
-            // Function to apply a pattern to the main grid
+            // 패턴 적용 — 그리드 & 행렬 동시 업데이트
             function applyPattern(patternGrid) {
-                // Clear the grid first
-                clearGridBtn.click();
-                
+                clearGridBtn.click(); // 초기화 (그리드 + 행렬 모두 리셋)
+
                 const cells = document.querySelectorAll('.cell');
-                const centerOffset = Math.floor((15 - 15) / 2);
-                
-                // Apply the pattern at the center of the grid
                 for (let i = 0; i < 15; i++) {
                     for (let j = 0; j < 15; j++) {
-                        const gridI = i + centerOffset;
-                        const gridJ = j + centerOffset;
-                        const index = gridI * 15 + gridJ;
-                        
+                        const index = i * 15 + j;
                         if (patternGrid[i][j] === 1) {
                             cells[index].classList.add('black');
+                            matCells[index].className = 'matrix-cell is-zero';
+                            matCells[index].textContent = '0';
                         }
                     }
                 }
