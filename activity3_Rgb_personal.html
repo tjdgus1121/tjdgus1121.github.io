@@ -84,8 +84,11 @@ h1 em{font-style:italic;background:linear-gradient(120deg,#F9A8D4 0%,#A78BFA 55%
 .subtype-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.28);backdrop-filter:blur(8px);padding:6px 16px;border-radius:50px;font-size:12px;font-weight:700;margin-bottom:20px;}
 
 .r-palette-row{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
-.r-sw{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.5);box-shadow:0 3px 10px rgba(0,0,0,.12);transition:transform .2s;cursor:default;}
+.r-sw{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.5);box-shadow:0 3px 10px rgba(0,0,0,.12);transition:transform .2s;cursor:default;position:relative;}
 .r-sw:hover{transform:scale(1.18) translateY(-3px);}
+.r-sw .sw-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(30,20,40,.88);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:600;line-height:1.5;white-space:nowrap;padding:5px 10px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;}
+.r-sw .sw-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(30,20,40,.88);}
+.r-sw:hover .sw-tip{opacity:1;}
 .conf-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.22);backdrop-filter:blur(8px);padding:6px 16px;border-radius:50px;font-size:11px;font-weight:600;}
 
 /* ─── 12시즌 맵 ─── */
@@ -429,9 +432,10 @@ const SEASONS_12 = {
     // 연하고 밝은 파스텔 웜
     best:['#FDE68A','#FECDD3','#FED7AA','#A7F3D0','#FEF9C3','#FBCFE8'],
     bestLabel:['버터 옐로우','베이비 핑크','피치 크림','민트 크림','레몬 크림','파우더 핑크'],
-    good:['#FCA5A5','#FCD34D','#6EE7B7','#BFDBFE','#DDD6FE','#F0FDFB'],
-    avoid:['#1E3A5F','#4B0082','#92400E','#374151'],
-    avoidLabel:['딥 네이비','딥 퍼플','번트 브라운','차콜'],
+    good:['#FCA5A5','#FCD34D','#6EE7B7','#FDBA74','#FEE2E2','#F0FDFB'],
+    goodLabel:['라이트 코랄','소프트 옐로우','민트 그린','아프리콧','라이트 핑크','크림 화이트'],
+    avoid:['#1E3A5F','#4B0082','#92400E','#374151','#1A1A2E','#6B7280'],
+    avoidLabel:['딥 네이비','딥 퍼플','번트 브라운','차콜','블랙','쿨 그레이'],
     traits:['매우 밝고 섬세한 피부','연한 파스텔이 가장 잘 어울림','강한 색은 얼굴이 묻혀 보임','라이트 & 소프트한 느낌'],
     celebs:['설현','박보영','아이유(청순)','차은우'],
   },
@@ -445,6 +449,7 @@ const SEASONS_12 = {
     best:['#F9A8D4','#FB923C','#FCD34D','#34D399','#FDE68A','#FCA5A5'],
     bestLabel:['살몬 핑크','코랄 오렌지','레몬 옐로우','에메랄드 민트','버터 옐로우','피치'],
     good:['#FDBA74','#A7F3D0','#FEF9C3','#D9F99D','#FECDD3','#86EFAC'],
+    goodLabel:['피치 오렌지','소프트 민트','크림 옐로우','라임 그린','베이비 핑크','라이트 그린'],
     avoid:['#1E3A5F','#4B0082','#2D4A22','#1A1A2E'],
     avoidLabel:['딥 네이비','딥 퍼플','다크 그린','블랙'],
     traits:['따뜻하고 선명한 복숭아빛 피부','황금빛 언더톤','생기 있고 활발한 인상','선명한 웜 컬러가 가장 어울림'],
@@ -460,6 +465,7 @@ const SEASONS_12 = {
     best:['#D97706','#F59E0B','#FB923C','#84CC16','#FDBA74','#FCD34D'],
     bestLabel:['앰버 골드','허니 옐로우','오렌지','라임 그린','아프리콧','골든 옐로우'],
     good:['#FCA5A5','#A7F3D0','#FEF3C7','#FDE68A','#86EFAC','#FDBA74'],
+    goodLabel:['소프트 코랄','소프트 민트','크림 화이트','버터 옐로우','라이트 민트','피치'],
     avoid:['#1E3A5F','#312E81','#164E63','#1A1A2E'],
     avoidLabel:['딥 네이비','인디고','딥 씨블루','블랙'],
     traits:['황금빛·오렌지빛 강한 언더톤','카멜·아이보리 피부','봄 중 가장 따뜻한 타입','골든 계열에서 피부가 빛남'],
@@ -477,6 +483,7 @@ const SEASONS_12 = {
     best:['#BAE6FD','#DDD6FE','#FBCFE8','#D1FAE5','#E0E7FF','#FCE7F3'],
     bestLabel:['파우더 블루','퍼플 라벤더','파우더 핑크','민트 라이트','퍼리윙클','핑크 라벤더'],
     good:['#93C5FD','#C4B5FD','#F0ABFC','#6EE7B7','#A5B4FC','#FDA4AF'],
+    goodLabel:['소프트 블루','소프트 라벤더','라이트 오키드','민트 그린','퍼리윙클','로즈 핑크'],
     avoid:['#B45309','#7C2D12','#92400E','#78350F'],
     avoidLabel:['골든 옐로우','버건디','번트 오렌지','다크 브라운'],
     traits:['매우 밝고 투명한 쿨톤 피부','파스텔 블루·라벤더가 가장 어울림','진한 색은 얼굴이 눌려 보임','청순하고 섬세한 인상'],
@@ -492,6 +499,7 @@ const SEASONS_12 = {
     best:['#93C5FD','#C4B5FD','#F0ABFC','#86BFCA','#A5B4FC','#FBCFE8'],
     bestLabel:['파우더 블루','라벤더','라일락','아쿠아 그레이','퍼리윙클','로즈 핑크'],
     good:['#BAE6FD','#DDD6FE','#E0E7FF','#F5D0FE','#D1FAE5','#FCE7F3'],
+    goodLabel:['파우더 블루','퍼플 라벤더','아이스 퍼플','소프트 라일락','민트 크림','로즈 화이트'],
     avoid:['#B45309','#7C2D12','#92400E','#78350F'],
     avoidLabel:['골든 옐로우','버건디','번트 오렌지','다크 브라운'],
     traits:['핑크빛 쿨 언더톤','부드럽고 뮤트한 피부','서늘하고 우아한 인상','파스텔·뮤트 블루가 잘 어울림'],
@@ -507,6 +515,7 @@ const SEASONS_12 = {
     best:['#FDA4AF','#F472B6','#C084FC','#818CF8','#67E8F9','#A78BFA'],
     bestLabel:['로즈 핑크','핫 핑크 (소프트)','소프트 퍼플','로얄 라벤더','아이스 블루','모브'],
     good:['#FBCFE8','#DDD6FE','#BAE6FD','#F5D0FE','#E0E7FF','#93C5FD'],
+    goodLabel:['파우더 핑크','라벤더','파우더 블루','소프트 라일락','아이스 퍼플','소프트 블루'],
     avoid:['#D97706','#B45309','#78350F','#14532D'],
     avoidLabel:['오렌지','앰버','다크 브라운','다크 그린'],
     traits:['로즈빛 쿨 언더톤','화사하고 선명한 쿨톤','모브·로즈 계열에서 피부가 빛남','블루·퍼플이 잘 어울림'],
@@ -524,6 +533,7 @@ const SEASONS_12 = {
     best:['#9CA3AF','#D4B896','#A8956A','#86EFAC','#D1D5DB','#BEF264'],
     bestLabel:['소프트 그레이','카멜 베이지','웜 탄','소프트 세이지','미스티 그레이','올리브 그린'],
     good:['#FCD34D','#FBBF24','#6B7280','#9CA3AF','#D1FAE5','#FDE68A'],
+    goodLabel:['레몬 옐로우','허니 옐로우','슬레이트 그레이','쿨 그레이','민트 크림','버터 옐로우'],
     avoid:['#DB2777','#7C3AED','#1D4ED8','#FFFFFF'],
     avoidLabel:['핫 핑크','바이올렛','로얄 블루','퓨어 화이트'],
     traits:['뮤트하고 부드러운 웜톤','내추럴하고 차분한 인상','소프트 어스톤이 가장 잘 어울림','선명한 색은 피부가 거칠어 보임'],
@@ -539,6 +549,7 @@ const SEASONS_12 = {
     best:['#D97706','#B45309','#92400E','#78350F','#A16207','#CA8A04'],
     bestLabel:['앰버','버닝 오렌지','테라코타','번트 레드','골든 브라운','머스타드'],
     good:['#FCD34D','#FBBF24','#F59E0B','#D1FAE5','#6B7280','#9CA3AF'],
+    goodLabel:['골든 옐로우','허니 옐로우','앰버 옐로우','민트 크림','슬레이트 그레이','쿨 그레이'],
     avoid:['#DB2777','#7C3AED','#1D4ED8','#0891B2'],
     avoidLabel:['핫 핑크','바이올렛','로얄 블루','스카이 블루'],
     traits:['황토·테라코타 언더톤','깊고 따뜻한 피부색','성숙하고 중후한 인상','어스톤에서 피부가 빛남'],
@@ -554,6 +565,7 @@ const SEASONS_12 = {
     best:['#78350F','#451A03','#365314','#1C1917','#713F12','#3F6212'],
     bestLabel:['다크 브라운','에스프레소','다크 올리브','블랙 커피','다크 카멜','포레스트 올리브'],
     good:['#92400E','#B45309','#365314','#3F6212','#D97706','#78350F'],
+    goodLabel:['테라코타','버닝 오렌지','다크 올리브','올리브 그린','앰버','다크 브라운'],
     avoid:['#FBCFE8','#E0E7FF','#BAE6FD','#FAFAFA'],
     avoidLabel:['파우더 핑크','라이트 라벤더','아이스 블루','화이트'],
     traits:['깊고 어두운 웜톤','강렬하고 카리스마 있는 인상','매우 어두운 어스톤에서 빛남','밝은 파스텔은 얼굴이 떠 보임'],
@@ -571,6 +583,7 @@ const SEASONS_12 = {
     best:['#DBEAFE','#EDE9FE','#F1F5F9','#BAE6FD','#E0E7FF','#F0F9FF'],
     bestLabel:['아이스 블루','아이스 라벤더','아이스 그레이','파우더 블루','아이스 퍼플','아이스 화이트'],
     good:['#93C5FD','#A5B4FC','#C4B5FD','#67E8F9','#7DD3FC','#818CF8'],
+    goodLabel:['소프트 블루','퍼리윙클','소프트 라벤더','아쿠아','스카이 블루','슬레이트 블루'],
     avoid:['#D97706','#B45309','#FDE68A','#FCA5A5'],
     avoidLabel:['오렌지','앰버','버터 옐로우','피치'],
     traits:['아이스하고 투명한 쿨톤','차갑고 우아한 인상','아이스 컬러에서 피부가 맑아 보임','웜톤 컬러는 얼굴이 칙칙해짐'],
@@ -586,6 +599,7 @@ const SEASONS_12 = {
     best:['#1E1B4B','#831843','#164E63','#14532D','#EF4444','#FAFAFA'],
     bestLabel:['딥 네이비','버건디','딥 씨블루','딥 포레스트','크림슨','퓨어 화이트'],
     good:['#3730A3','#BE185D','#155E75','#166534','#DC2626','#F8FAFC'],
+    goodLabel:['딥 인디고','딥 마젠타','딥 씨블루','딥 포레스트','크림슨 레드','화이트'],
     avoid:['#FDE68A','#FCA5A5','#D97706','#B45309'],
     avoidLabel:['버터 옐로우','피치','오렌지','카멜'],
     traits:['차갑고 맑은 쿨 언더톤','높은 명암 대비','선명하고 강한 인상','원색·다크컬러가 가장 돋보임'],
@@ -601,6 +615,7 @@ const SEASONS_12 = {
     best:['#0F172A','#1E1B4B','#4A044E','#022C22','#450A0A','#312E81'],
     bestLabel:['딥 블랙 네이비','미드나이트','딥 플럼','다크 에메랄드','다크 버건디','딥 인디고'],
     good:['#1E3A5F','#4C1D95','#064E3B','#7F1D1D','#831843','#1E1B4B'],
+    goodLabel:['딥 네이비','딥 바이올렛','딥 에메랄드','다크 레드','딥 마젠타','미드나이트'],
     avoid:['#FDE68A','#FECDD3','#D97706','#FCA5A5'],
     avoidLabel:['버터 옐로우','베이비 핑크','오렌지','피치'],
     traits:['깊고 신비로운 다크 쿨톤','강렬하고 카리스마 있는 인상','매우 어두운 쿨 컬러에서 빛남','밝고 따뜻한 색은 피부가 칙칙해 보임'],
@@ -2150,6 +2165,11 @@ function hslToRgb(h, s, l){
 function hexToRgb(hex){
   return {r:parseInt(hex.slice(1,3),16), g:parseInt(hex.slice(3,5),16), b:parseInt(hex.slice(5,7),16)};
 }
+function makeSwatch(hex, label){
+  const {r,g,b}=hexToRgb(hex);
+  const name=label||hex.toUpperCase();
+  return `<div class="r-sw" style="background:${hex}"><span class="sw-tip">${name}<br>RGB(${r}, ${g}, ${b})</span></div>`;
+}
 
 // ══════════════════════════════════════════════════════
 function shadeColor(hex, pct){
@@ -2190,7 +2210,7 @@ function buildDraping(subtypeKey, analysisData){
   // 개인화 팔레트 생성 (분석 데이터가 있으면 동적, 없으면 기본값)
   const pal = analysisData ? generatePersonalPalette(analysisData) : {
     best: s.best, bestLabels: s.bestLabel,
-    good: s.good, avoid: s.avoid, avoidLabels: s.avoidLabel
+    good: s.good, goodLabels: s.goodLabel, avoid: s.avoid, avoidLabels: s.avoidLabel
   };
 
   playColors = pal.best; playLabels = pal.bestLabels;
@@ -2218,7 +2238,7 @@ function buildDraping(subtypeKey, analysisData){
     </div>`;
   palEl.innerHTML =
     mkRow('BEST', pal.best, pal.bestLabels, false) +
-    mkRow('GOOD', pal.good, null, false) +
+    mkRow('GOOD', pal.good, pal.goodLabels, false) +
     mkRow('AVOID', pal.avoid, pal.avoidLabels, true);
 
   // BEST vs AVOID 비교 카드
@@ -2237,7 +2257,7 @@ function buildDraping(subtypeKey, analysisData){
     </div>`;
 
   // Hero 팔레트 스와치도 갱신
-  document.getElementById('rPal').innerHTML = pal.best.map(c=>`<div class="r-sw" style="background:${c}"></div>`).join('');
+  document.getElementById('rPal').innerHTML = pal.best.map((c,i)=>makeSwatch(c,pal.bestLabel&&pal.bestLabel[i])).join('');
 }
 
 // ══════════════════════════════════════════════════════
@@ -2254,7 +2274,7 @@ async function renderResult(d){
   document.getElementById('rSub').textContent=`${d.sampleCount}px 분석 · Hue ${d.hue}° · L ${d.ligPct}% · S ${d.satPct}% · 조명보정 R×${d.correctionK.r} G×${d.correctionK.g} B×${d.correctionK.b}`;
   document.getElementById('rSubBadge').innerHTML=`<span>${s.emoji}</span><span>${s.subDesc}</span>`;
   document.getElementById('rConf').textContent=`종합 확신도 ${d.overallConf}%`;
-  document.getElementById('rPal').innerHTML=s.best.map(c=>`<div class="r-sw" style="background:${c}"></div>`).join('');
+  document.getElementById('rPal').innerHTML=s.best.map((c,i)=>makeSwatch(c,s.bestLabel&&s.bestLabel[i])).join('');
 
   // 12시즌 맵
   const mapEl=document.getElementById('seasonMap');
