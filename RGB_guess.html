@@ -505,7 +505,7 @@
         <div class="success-content" style="padding: 50px 40px; min-width: 500px; max-width: 550px;">
             <h2 class="success-title" style="font-size: 2em; margin-bottom: 15px;">🏆 경쟁모드</h2>
             <div style="margin: 30px 0; font-size: 1.05em; color: #2d3748; line-height: 1.8; text-align: center;">
-                20번의 기회 동안 최대한 많은 정답을 맞춰보세요!<br>
+                최대한 많은 정답을 맞춰보세요!<br>
                 친구들과 함께 경쟁할 수 있습니다.
             </div>
             <div style="display: flex; gap: 15px; margin-bottom: 15px;">
@@ -525,9 +525,21 @@
                     style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; margin-bottom: 15px;">
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2d3748;">시도 횟수 설정</label>
-                    <input type="number" id="maxAttemptsInput" min="5" max="30" value="20" 
+                    <input type="number" id="maxAttemptsInput" min="5" max="40" value="20"
                         style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;">
-                    <div style="font-size: 0.9em; color: #718096; margin-top: 5px;">최소 5회 ~ 최대 30회</div>
+                    <div style="font-size: 0.9em; color: #718096; margin-top: 5px;">최소 5회 ~ 최대 40회</div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2d3748;">⏱️ 타이머 설정</label>
+                    <select id="timerInput" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; background: white; cursor: pointer;">
+                        <option value="0">없음</option>
+                        <option value="1">1분</option>
+                        <option value="2">2분</option>
+                        <option value="3" selected>3분</option>
+                        <option value="4">4분</option>
+                        <option value="5">5분</option>
+                    </select>
+                    <div style="font-size: 0.9em; color: #718096; margin-top: 5px;">시간 초과 시 자동으로 게임 종료</div>
                 </div>
             </div>
             <div style="display: flex; gap: 10px;">
@@ -576,6 +588,10 @@
     <!-- 경쟁모드 게임 진행 중 정보 패널 -->
     <div id="competitionPanel" style="display: none; position: fixed; top: 80px; right: 20px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 100; min-width: 250px;">
         <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 15px; color: #2d3748;">🏆 경쟁 현황</div>
+        <div id="timerRow" style="display: none; margin-bottom: 10px; text-align: center; background: #fff5f5; border-radius: 8px; padding: 8px;">
+            <span style="color: #718096; font-size: 0.85em;">남은 시간</span><br>
+            <span style="font-weight: bold; font-size: 1.8em; color: #e53e3e; font-variant-numeric: tabular-nums;" id="timerDisplay">00:00</span>
+        </div>
         <div style="margin-bottom: 10px;">
             <span style="color: #718096;">남은 기회:</span>
             <span style="font-weight: bold; font-size: 1.3em; color: #e53e3e;" id="remainingAttempts">20</span>
@@ -648,6 +664,8 @@
         let playerName = null;
         let maxAttempts = 20;
         let correctCount = 0;
+        let timerMinutes = 0;
+        let competitionTimerInterval = null;
 
         document.getElementById('attemptCount').textContent = attemptCount;
         
@@ -803,19 +821,21 @@
         async function createRoom() {
             const name = document.getElementById('hostNameInput').value.trim();
             const attempts = parseInt(document.getElementById('maxAttemptsInput').value);
-            
+            const timer = parseInt(document.getElementById('timerInput').value);
+
             if (!name) {
                 alert('닉네임을 입력해주세요!');
                 return;
             }
 
-            if (attempts < 5 || attempts > 30) {
-                alert('시도 횟수는 5회에서 30회 사이로 설정해주세요!');
+            if (attempts < 5 || attempts > 40) {
+                alert('시도 횟수는 5회에서 40회 사이로 설정해주세요!');
                 return;
             }
 
             playerName = name;
             maxAttempts = attempts;
+            timerMinutes = timer;
             
             // 6자리 랜덤 방 코드 생성
             const roomCode = Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -837,6 +857,7 @@
                 host: playerId,
                 status: 'waiting',
                 maxAttempts: attempts,
+                timerMinutes: timer,
                 problems: problems,
                 currentProblemIndex: 0,
                 players: {
@@ -956,6 +977,12 @@
                 }
             }
             
+            if (competitionTimerInterval) {
+                clearInterval(competitionTimerInterval);
+                competitionTimerInterval = null;
+            }
+            document.getElementById('timerRow').style.display = 'none';
+
             currentRoom = null;
             isCompetitionMode = false;
             document.getElementById('waitingRoomModal').classList.remove('show');
@@ -985,10 +1012,16 @@
             const snapshot = await get(roomRef);
             const roomData = snapshot.val();
             maxAttempts = roomData.maxAttempts || 20;
-            
+            timerMinutes = roomData.timerMinutes || 0;
+
             document.getElementById('competitionPanel').style.display = 'block';
             document.getElementById('remainingAttempts').textContent = maxAttempts;
             document.getElementById('correctAnswers').textContent = correctCount;
+
+            // 타이머 시작 (설정된 경우)
+            if (timerMinutes > 0) {
+                startCompetitionTimer(timerMinutes * 60);
+            }
             
             // 실시간 랭킹 업데이트 리스너
             const playersRef = ref(database, `rooms/${currentRoom}/players`);
@@ -1106,7 +1139,39 @@
             }
         }
 
+        function startCompetitionTimer(seconds) {
+            const timerRow = document.getElementById('timerRow');
+            const timerDisplay = document.getElementById('timerDisplay');
+            timerRow.style.display = 'block';
+
+            let remaining = seconds;
+            const update = () => {
+                const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+                const s = String(remaining % 60).padStart(2, '0');
+                timerDisplay.textContent = `${m}:${s}`;
+                timerDisplay.style.color = remaining <= 10 ? '#c53030' : '#e53e3e';
+                timerRow.style.background = remaining <= 10 ? '#fed7d7' : '#fff5f5';
+            };
+            update();
+
+            competitionTimerInterval = setInterval(() => {
+                remaining--;
+                update();
+                if (remaining <= 0) {
+                    clearInterval(competitionTimerInterval);
+                    competitionTimerInterval = null;
+                    endCompetitionGame();
+                }
+            }, 1000);
+        }
+
         async function endCompetitionGame() {
+            // 타이머 정리
+            if (competitionTimerInterval) {
+                clearInterval(competitionTimerInterval);
+                competitionTimerInterval = null;
+            }
+
             // 내 최종 점수를 Firebase에 저장 (finished 상태로)
             const playerRef = ref(database, `rooms/${currentRoom}/players/${playerId}`);
             await update(playerRef, {

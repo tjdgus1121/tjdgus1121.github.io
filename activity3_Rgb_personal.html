@@ -1,0 +1,2335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ColorMe 🎨 퍼스널컬러 진단</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<!-- face-api.js: 브라우저 내 무료 68점 랜드마크 (눈 좌표 기반 affine 정렬용) -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js" crossorigin="anonymous"></script>
+<style>
+:root{--bg:#FDFAF7;--card:#fff;--text:#1E1E1E;--muted:#888;--border:#EDE8E2;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:998;opacity:.22;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");}
+
+header{text-align:center;padding:44px 20px 24px;}
+.eyebrow{font-size:10px;letter-spacing:5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:block;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(42px,9vw,72px);font-weight:400;line-height:1;}
+h1 em{font-style:italic;background:linear-gradient(120deg,#F9A8D4 0%,#A78BFA 55%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tagline{font-size:12px;color:var(--muted);margin-top:9px;font-weight:300;letter-spacing:.5px;}
+.ribbon{display:flex;max-width:480px;margin:18px auto;border-radius:18px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.06);}
+.rc{flex:1;padding:9px 3px;text-align:center;font-size:10px;font-weight:700;color:rgba(0,0,0,.55);}
+.rc.s1{background:#FEE2E2;}.rc.s2{background:#DBEAFE;}.rc.s3{background:#FEF3C7;}.rc.s4{background:#EDE9FE;}
+
+.wrap{max-width:680px;margin:0 auto;padding:0 18px 100px;}
+.prog{display:flex;justify-content:center;gap:6px;margin-bottom:34px;}
+.pd{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all .3s;}
+.pd.on{background:#A78BFA;transform:scale(1.5);}.pd.done{background:var(--text);}
+.step{display:none;animation:fadeUp .4s ease;}.step.on{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* UPLOAD */
+.upzone{border:2px dashed var(--border);border-radius:26px;padding:56px 26px;text-align:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;background:var(--card);}
+.upzone:hover,.upzone.drag{border-color:#A78BFA;box-shadow:0 10px 32px rgba(167,139,250,.13);transform:translateY(-2px);}
+.upzone::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 30% 40%,rgba(249,168,212,.05),transparent 55%),radial-gradient(circle at 70% 70%,rgba(147,197,253,.05),transparent 55%);}
+.up-ico{font-size:52px;display:block;margin-bottom:13px;animation:bob 3s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.up-title{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;margin-bottom:6px;}
+.up-hint{font-size:12px;color:var(--muted);line-height:1.9;}
+.btn-up{display:inline-block;margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,#F9A8D4,#A78BFA);color:#fff;border:none;border-radius:50px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .3s;box-shadow:0 5px 16px rgba(167,139,250,.28);}
+.btn-up:hover{transform:translateY(-2px);}
+#fileIn{display:none;}
+
+/* PREVIEW */
+.prev-row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;}
+.img-wrap{position:relative;border-radius:16px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.09);flex-shrink:0;}
+#prevImg{display:block;width:200px;height:240px;object-fit:cover;}
+#faceOv{position:absolute;top:0;left:0;width:200px;height:240px;pointer-events:none;}
+.prev-side{flex:1;min-width:190px;}
+.side-title{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;margin-bottom:10px;}
+.face-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:5px 11px;border-radius:18px;margin-bottom:11px;}
+.face-badge.ok{background:#ECFDF5;color:#059669;}.face-badge.no{background:#FEF2F2;color:#DC2626;}
+.info-box{background:#F8F4FF;border-radius:12px;padding:12px 14px;font-size:11px;line-height:1.9;color:#5B21B6;margin-bottom:15px;}
+.btn-analyze{width:100%;padding:14px;background:var(--text);color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .3s;margin-top:18px;}
+.btn-analyze:hover{background:#111;transform:translateY(-2px);}
+.btn-analyze:disabled{background:#ccc;cursor:not-allowed;transform:none;}
+#errMsg{margin-top:10px;font-size:12px;color:#DC2626;display:none;}
+
+/* LOADING */
+.loading-wrap{text-align:center;padding:64px 20px;}
+.dots{display:flex;justify-content:center;gap:11px;margin-bottom:30px;}
+.dot{width:15px;height:15px;border-radius:50%;animation:bounce 1.2s ease-in-out infinite;}
+.dot:nth-child(1){background:#F9A8D4;animation-delay:0s}.dot:nth-child(2){background:#93C5FD;animation-delay:.2s}
+.dot:nth-child(3){background:#FB923C;animation-delay:.4s}.dot:nth-child(4){background:#A78BFA;animation-delay:.6s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)scale(1)}40%{transform:translateY(-13px)scale(1.2)}}
+.loading-title{font-family:'Noto Serif KR',serif;font-size:16px;margin-bottom:6px;}
+.loading-sub{font-size:12px;color:var(--muted);}
+.l-steps{margin-top:22px;display:flex;flex-direction:column;gap:5px;max-width:240px;margin-inline:auto;}
+.l-step{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;font-size:11px;color:var(--muted);background:#fff;transition:all .4s;}
+.l-step.on{background:#F3F0FF;color:#7C3AED;font-weight:600;}.l-step.done{background:#F0FDF4;color:#16A34A;}
+
+/* ─── RESULT HERO ─── */
+.result-hero{border-radius:24px;padding:36px 28px;text-align:center;position:relative;overflow:hidden;margin-bottom:18px;box-shadow:0 12px 44px rgba(0,0,0,.1);}
+.result-hero::before{content:'';position:absolute;top:-40%;left:-30%;width:160%;height:160%;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.2),transparent 60%);pointer-events:none;}
+.r-eyebrow{font-size:9px;letter-spacing:4px;text-transform:uppercase;opacity:.65;margin-bottom:7px;}
+.r-name{font-family:'Playfair Display',serif;font-size:clamp(28px,7vw,48px);font-weight:700;line-height:1.1;margin-bottom:3px;}
+.r-sub{font-size:11px;opacity:.7;font-weight:300;margin-bottom:6px;}
+
+/* ★ 서브타입 배지 */
+.subtype-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.28);backdrop-filter:blur(8px);padding:6px 16px;border-radius:50px;font-size:12px;font-weight:700;margin-bottom:20px;}
+
+.r-palette-row{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.r-sw{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.5);box-shadow:0 3px 10px rgba(0,0,0,.12);transition:transform .2s;cursor:default;}
+.r-sw:hover{transform:scale(1.18) translateY(-3px);}
+.conf-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.22);backdrop-filter:blur(8px);padding:6px 16px;border-radius:50px;font-size:11px;font-weight:600;}
+
+/* ─── 12시즌 맵 ─── */
+.season-map-section{background:var(--card);border-radius:20px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:18px;}
+.season-map-section h3{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.season-map{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.sm-col{display:flex;flex-direction:column;gap:4px;}
+.sm-season-label{font-size:9px;font-weight:700;text-align:center;padding:5px 3px;border-radius:7px;letter-spacing:.5px;color:rgba(0,0,0,.55);}
+.sm-chip{padding:6px 4px;border-radius:8px;font-size:9px;font-weight:600;text-align:center;color:rgba(0,0,0,.5);cursor:default;transition:all .3s;border:2px solid transparent;line-height:1.4;}
+.sm-chip.active{border-color:rgba(0,0,0,.25)!important;color:rgba(0,0,0,.7)!important;transform:scale(1.04);box-shadow:0 3px 12px rgba(0,0,0,.12);}
+
+/* ─── 3축 카드 ─── */
+.axis-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.axis-card{background:var(--card);border-radius:14px;padding:16px 14px;box-shadow:0 2px 10px rgba(0,0,0,.05);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.axis-card::before{content:'';position:absolute;left:0;top:0;right:0;height:3px;border-radius:3px 3px 0 0;}
+.axis-card.warm::before{background:linear-gradient(90deg,#FDE68A,#FB923C);}
+.axis-card.cool::before{background:linear-gradient(90deg,#93C5FD,#C4B5FD);}
+.axis-card.light::before{background:linear-gradient(90deg,#FDE68A,#FCA5A5);}
+.axis-card.dark::before{background:linear-gradient(90deg,#6B7280,#374151);}
+.axis-card.clear::before{background:linear-gradient(90deg,#34D399,#60A5FA);}
+.axis-card.muted::before{background:linear-gradient(90deg,#D1D5DB,#9CA3AF);}
+.axis-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.axis-verdict-text{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.axis-verdict-conf{font-size:10px;color:var(--muted);margin-bottom:8px;}
+.axis-gauge-wrap{position:relative;height:6px;background:#F0EBF8;border-radius:3px;overflow:hidden;margin-bottom:7px;}
+.axis-gauge-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.16,1,.3,1);}
+.axis-gauge-center{position:absolute;top:0;bottom:0;left:50%;width:2px;background:rgba(0,0,0,.1);}
+.axis-desc{font-size:10px;color:var(--muted);line-height:1.7;flex:1;}
+.axis-desc b{color:var(--text);}
+@media(max-width:500px){.axis-cards{grid-template-columns:1fr;}}
+
+/* ─── 서브타입 분기 카드 ─── */
+.subtype-logic{background:linear-gradient(135deg,#F8F4FF,#FFF0F9);border-radius:18px;padding:20px;margin-bottom:18px;border-left:4px solid #C4B5FD;}
+.subtype-logic-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#7C3AED;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+/* 1행 4열 가로 플로우 */
+.subtype-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;align-items:stretch;}
+.sf-row{display:flex;flex-direction:column;justify-content:center;padding:10px 12px;border-radius:10px;font-size:11px;background:rgba(255,255,255,.6);position:relative;text-align:center;line-height:1.5;}
+.sf-row.active{background:white;font-weight:700;color:#6D28D9;box-shadow:0 2px 8px rgba(109,40,217,.1);}
+/* 열 사이 화살표: 가상요소로 처리 */
+.sf-row:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:14px;color:#C4B5FD;z-index:1;pointer-events:none;}
+.sf-arrow{display:none;}  /* 기존 세로 화살표 숨김 */
+@media(max-width:520px){
+  .subtype-flow{grid-template-columns:1fr;}
+  .sf-row:not(:last-child)::after{content:'↓';right:50%;bottom:-12px;top:auto;transform:translateX(50%);}
+}
+
+.mode-toggle{display:flex;gap:0;background:#F0EBF8;border-radius:20px;padding:3px;margin-bottom:14px;width:fit-content;}
+.mode-btn{padding:7px 18px;border-radius:17px;border:none;background:transparent;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .25s;color:var(--muted);}
+.mode-btn.active{background:#fff;color:#6D28D9;box-shadow:0 2px 8px rgba(109,40,217,.15);}
+/* ─── 코디모드 ─── */
+.coordi-upload-area{border:2px dashed var(--border);border-radius:14px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;background:var(--bg);}
+.coordi-upload-area:hover{border-color:#A78BFA;background:#FAF8FF;}
+.coordi-upload-area .up-icon{font-size:28px;margin-bottom:6px;}
+.coordi-upload-area p{font-size:11px;color:var(--muted);margin:0;}
+.coordi-canvas-wrap{position:relative;border-radius:14px;overflow:hidden;display:inline-block;max-width:100%;}
+.coordi-canvas-wrap canvas{display:block;max-width:100%;border-radius:14px;}
+.coordi-hint{font-size:10px;color:var(--muted);text-align:center;margin:6px 0 10px;}
+.coordi-tolerance{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:11px;color:var(--muted);}
+.coordi-tolerance input[type=range]{flex:1;accent-color:#7C3AED;}
+.coordi-status{font-size:11px;color:#7C3AED;font-weight:600;margin-bottom:8px;min-height:16px;}
+/* ─── DRAPING ─── */
+.draping-section{background:var(--card);border-radius:20px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:18px;}
+.draping-section h3{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.draping-section .d-desc{font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.7;}
+.draping-stage{border-radius:16px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;padding:20px;transition:background-color .5s ease;min-height:200px;background:#F0F0F0;}
+.draping-color-info{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.42);backdrop-filter:blur(8px);color:#fff;padding:5px 13px;border-radius:18px;font-size:11px;font-weight:600;letter-spacing:.5px;white-space:nowrap;z-index:2;}
+.draping-palettes{display:flex;flex-direction:column;gap:11px;margin-top:16px;}
+.dpal-row{display:flex;align-items:center;gap:9px;}
+.dpal-label{font-size:10px;font-weight:700;width:38px;color:var(--muted);flex-shrink:0;}
+.dpal-sws{display:flex;gap:6px;flex-wrap:wrap;}
+.dpal-sw{width:32px;height:32px;border-radius:9px;cursor:pointer;border:3px solid transparent;box-shadow:0 2px 7px rgba(0,0,0,.09);transition:all .2s;position:relative;}
+.dpal-sw:hover{transform:scale(1.18);z-index:1;}
+.dpal-sw.active{border-color:rgba(0,0,0,.3);transform:scale(1.12);box-shadow:0 3px 12px rgba(0,0,0,.18);}
+.dpal-sw .tip{visibility:hidden;position:absolute;bottom:108%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:3px 7px;border-radius:5px;font-size:9px;white-space:nowrap;pointer-events:none;z-index:10;}
+.dpal-sw:hover .tip{visibility:visible;}
+.draping-ctrl{display:flex;align-items:center;gap:9px;margin-top:11px;}
+.btn-play{padding:6px 14px;background:var(--text);color:#fff;border:none;border-radius:18px;font-size:11px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .2s;}
+.btn-play:hover{background:#333;}
+.play-hint{font-size:10px;color:var(--muted);}
+.compare-row{display:flex;gap:9px;margin-top:14px;}
+.compare-card{flex:1;border-radius:13px;overflow:hidden;cursor:pointer;transition:transform .2s;}
+.compare-card:hover{transform:translateY(-2px);}
+.compare-bg{height:70px;display:flex;align-items:center;justify-content:center;transition:background .4s;}
+.compare-face{width:44px;height:44px;border-radius:50%;overflow:hidden;border:3px solid rgba(255,255,255,.65);box-shadow:0 2px 8px rgba(0,0,0,.14);}
+.compare-face img{width:100%;height:100%;object-fit:cover;object-position:top center;}
+.compare-info{padding:7px 9px;background:var(--card);}
+.compare-tag{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.compare-name{font-size:11px;font-weight:600;color:var(--text);margin-top:1px;}
+
+/* two-col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.r-card{background:var(--card);border-radius:16px;padding:17px;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+.r-card h3{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.trait-list{display:flex;flex-direction:column;gap:6px;}
+.trait{display:flex;align-items:center;gap:7px;font-size:12px;}
+.tdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.celeb-wrap{display:flex;flex-wrap:wrap;gap:5px;}
+.celeb{padding:4px 10px;background:#F8F4FF;color:#6D28D9;border-radius:16px;font-size:11px;font-weight:600;}
+
+/* btns */
+.btn-share{display:block;width:100%;padding:14px;margin-bottom:8px;background:linear-gradient(135deg,#F9A8D4,#A78BFA);color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .3s;box-shadow:0 4px 16px rgba(167,139,250,.25);}
+.btn-share:hover{transform:translateY(-2px);}
+.btn-again{display:block;width:100%;padding:12px;background:transparent;color:var(--muted);border:2px solid var(--border);border-radius:13px;font-size:13px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .3s;}
+.btn-again:hover{border-color:var(--text);color:var(--text);}
+
+.sec-title{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:600;margin-bottom:5px;}
+.sec-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.8;}
+.logic-head{font-family:'Noto Serif KR',serif;font-size:13px;font-weight:600;margin-bottom:11px;margin-top:4px;}
+.logic-note{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.7;}
+@media(max-width:460px){.two-col,.compare-row{grid-template-columns:1fr;}.prev-row{flex-direction:column;}#prevImg,#faceOv{width:100%;}}
+
+/* ── 얼굴 선택 UI ── */
+.face-select-bar{margin-top:10px;padding:10px 12px;background:#F3F0FF;border-radius:11px;font-size:11px;color:#5B21B6;display:none;}
+.face-select-bar b{font-weight:700;}
+.face-btns{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap;}
+.face-btn{padding:6px 14px;border-radius:20px;border:2px solid #C4B5FD;background:#fff;color:#6D28D9;font-size:11px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .2s;}
+.face-btn:hover{background:#EDE9FE;}
+.face-btn.selected{background:#7C3AED;color:#fff;border-color:#7C3AED;}
+
+/* ── 픽셀 검증 스트립 ── */
+.pixel-verify{margin-top:12px;display:none;}
+.pv-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.pv-strip{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;}
+.pv-swatch{width:18px;height:18px;border-radius:4px;flex-shrink:0;}
+.pv-avg{display:flex;align-items:center;gap:8px;margin-top:5px;}
+.pv-avg-color{width:32px;height:32px;border-radius:8px;border:2px solid rgba(0,0,0,.08);flex-shrink:0;}
+.pv-avg-info{font-size:11px;color:var(--muted);line-height:1.7;}
+.pv-avg-info b{color:var(--text);}
+.pv-warn{font-size:10px;color:#D97706;background:#FEF3C7;padding:5px 9px;border-radius:7px;margin-top:5px;display:none;}</style>
+</head>
+<body>
+<header>
+  <span class="eyebrow">✦ AI Personal Color Lab · 12 Season · No API Key</span>
+  <h1>Color<em>Me</em></h1>
+  <p class="tagline">얼굴 사진 → 4축 분석 → 12시즌 퍼스널컬러 진단 · GitHub Pages 배포 가능</p>
+  <div class="ribbon">
+    <div class="rc s1">🌸 봄 라이트·트루·웜</div>
+    <div class="rc s2">🌊 여름 라이트·트루·쿨</div>
+    <div class="rc s3">🍂 가을 소프트·트루·다크</div>
+    <div class="rc s4">❄️ 겨울 쿨·트루·다크</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="prog">
+    <div class="pd on" id="pd1"></div>
+    <div class="pd" id="pd2"></div>
+    <div class="pd" id="pd3"></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step on" id="s1">
+    <div class="sec-title">📸 얼굴 사진 업로드</div>
+    <p class="sec-sub">정면 · 밝은 조명 사진을 올려주세요. 모든 분석은 브라우저 안에서만 처리돼요.</p>
+    <div class="upzone" id="upZone" onclick="document.getElementById('fileIn').click()">
+      <span class="up-ico">🤳</span>
+      <div class="up-title">사진을 여기에 드래그하거나</div>
+      <div class="up-hint">정면 · 밝은 조명 권장 · JPG / PNG · 최대 10MB</div>
+      <button class="btn-up" onmousedown="event.stopPropagation();document.getElementById('fileIn').click();">📂 사진 선택하기</button>
+    </div>
+    <input type="file" id="fileIn" accept="image/*">
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step" id="s2">
+    <div class="sec-title">🔍 사진 확인 & 분석</div>
+    <p class="sec-sub">MediaPipe가 얼굴을 감지하고 피부 픽셀을 4축으로 분석합니다.</p>
+    <div class="prev-row">
+      <div class="img-wrap">
+        <img id="prevImg" src="" alt="업로드 사진">
+        <canvas id="faceOv"></canvas>
+      </div>
+      <div class="prev-side">
+        <div class="side-title">분석 준비!</div>
+        <div id="faceBadge" class="face-badge ok">🟢 얼굴 감지 대기 중</div>
+
+        <!-- 여러 얼굴 선택 UI -->
+        <div class="face-select-bar" id="faceSelectBar">
+          <b id="faceSelectTitle">얼굴이 여러 명 감지됐어요</b><br>
+          분석할 얼굴 번호를 클릭해 선택하세요. 선택한 얼굴의 테두리가 강조돼요.
+          <div class="face-btns" id="faceBtns"></div>
+        </div>
+
+        <div class="info-box">
+          🔬 <strong>4축 12시즌 진단</strong><br>
+          축1. Warm / Cool (색온도)<br>
+          축2. Light / Dark (명도)<br>
+          축3. Clear / Muted (채도)<br>
+          축4. 수치 조합 → 12시즌 서브타입
+        </div>
+
+        <!-- 픽셀 검증 스트립 -->
+        <div class="pixel-verify" id="pixelVerify">
+          <div class="pv-label">🔬 샘플링된 피부 픽셀 검증</div>
+          <div class="pv-strip" id="pvStrip"></div>
+          <div class="pv-avg">
+            <div class="pv-avg-color" id="pvAvgColor"></div>
+            <div class="pv-avg-info" id="pvAvgInfo">—</div>
+          </div>
+          <div class="pv-warn" id="pvWarn"></div>
+        </div>
+
+      </div>
+    </div>
+    <!-- 버튼: prev-row 바깥 → 사진·정보 두 컬럼 아래 전체 너비 CTA -->
+    <button type="button" class="btn-analyze" id="btnA" onclick="runAnalysis()">✨ 퍼스널컬러 분석 시작</button>
+    <p id="errMsg"></p>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" id="s3">
+    <div class="loading-wrap">
+      <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div class="loading-title">AI가 분석 중이에요</div>
+      <div class="loading-sub" id="lsub">모델 초기화 중...</div>
+      <div class="l-steps">
+        <div class="l-step" id="ls1">📸 얼굴 랜드마크 감지</div>
+        <div class="l-step" id="ls2">🎨 피부 픽셀 샘플링</div>
+        <div class="l-step" id="ls3">🌡️ 축1 색온도 판정</div>
+        <div class="l-step" id="ls4">☀️ 축2 명도 판정</div>
+        <div class="l-step" id="ls5">✨ 축3 채도 판정</div>
+        <div class="l-step" id="ls6">🎯 축4 서브타입 확정</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step" id="s4">
+    <div id="rHero" class="result-hero">
+      <div class="r-eyebrow" id="rEye">PERSONAL COLOR</div>
+      <div class="r-name" id="rName">—</div>
+      <div class="r-sub" id="rSub">—</div>
+      <div class="subtype-badge" id="rSubBadge">—</div>
+      <div class="r-palette-row" id="rPal"></div>
+      <div class="conf-pill"><span>✦</span><span id="rConf">—</span></div>
+    </div>
+
+    <!-- 12시즌 맵 -->
+    <div class="season-map-section">
+      <h3>🗺️ 12시즌 진단 맵 — 현재 위치</h3>
+      <div class="season-map" id="seasonMap"></div>
+    </div>
+
+    <!-- 3축 카드 -->
+    <div class="logic-head">📐 3축 측정값</div>
+    <div class="axis-cards" id="axisCards"></div>
+
+    <!-- 드래이핑 -->
+    <div class="draping-section">
+      <h3>👗 드래이핑</h3>
+
+      <!-- 모드 토글 -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="modeBtnBg"    onclick="switchDrapingMode('bg')">🎨 배경모드</button>
+        <button class="mode-btn"        id="modeBtnCoodi" onclick="switchDrapingMode('coodi')">👔 코디모드</button>
+      </div>
+
+      <!-- ① 배경모드 -->
+      <div id="modeStageBg">
+        <p class="d-desc" style="margin-bottom:10px;">팔레트를 클릭하면 배경색이 바뀌어요. 어떤 색이 가장 자연스럽고 화사하게 보이는지 확인해보세요!</p>
+        <div class="draping-stage" id="drapingStage">
+          <div class="draping-color-info" id="drapingInfo">배경색을 선택해보세요</div>
+        </div>
+      </div>
+
+      <!-- ② 코디모드 -->
+      <div id="modeStageCoodi" style="display:none;">
+        <p class="d-desc" style="margin-bottom:14px;">성별을 선택하면 모델 사진에 내 얼굴을 합성하고, 퍼스널컬러로 티셔츠를 자동으로 바꿔드려요!</p>
+
+        <!-- 성별 질문 -->
+        <div style="background:#F8F4FF;border-radius:14px;padding:16px 14px;margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:700;color:#6D28D9;letter-spacing:.5px;margin-bottom:10px;">당신의 성별은 무엇인가요?</div>
+          <div style="display:flex;gap:8px;">
+            <button class="mode-btn" id="genderBtnM" onclick="selectModelGender('male')"   style="flex:1;padding:11px 0;font-size:13px;">남성</button>
+            <button class="mode-btn" id="genderBtnF" onclick="selectModelGender('female')" style="flex:1;padding:11px 0;font-size:13px;">여성</button>
+          </div>
+        </div>
+
+        <!-- 모델 캔버스 -->
+        <div id="modelCanvasWrap" style="display:none;margin-bottom:4px;">
+          <!-- 줌 버튼: 캔버스 위에 배치 → transform-origin:top center 덕에 확대 시 캔버스가 아래쪽으로만 팽창, 버튼과 간섭 없음 -->
+          <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:8px;">
+            <button type="button" onclick="modelZoom(-1)" title="축소" style="width:32px;height:32px;border:none;border-radius:50%;background:linear-gradient(135deg,#A78BFA,#818CF8);color:#fff;font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);line-height:32px;flex-shrink:0;">−</button>
+            <span id="modelZoomLabel" style="font-size:11px;color:#888;min-width:38px;text-align:center;">100%</span>
+            <button type="button" onclick="modelZoom(1)"  title="확대" style="width:32px;height:32px;border:none;border-radius:50%;background:linear-gradient(135deg,#A78BFA,#818CF8);color:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);line-height:32px;flex-shrink:0;">+</button>
+          </div>
+          <div style="text-align:center;overflow:hidden;border-radius:14px;">
+            <canvas id="modelCv" style="max-width:100%;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.12);transform-origin:top center;transition:transform .15s;"></canvas>
+          </div>
+          <!-- (구 줌 버튼 위치 제거) -->
+          </div>
+        </div>
+
+        <div class="coordi-status" id="modelStatus"></div>
+
+        <!-- 원본 복원 -->
+        <div style="text-align:right;margin-bottom:4px;" id="modelResetWrap" style="display:none;">
+          <button onclick="resetModelCoordi()" style="font-size:10px;padding:4px 10px;border:1.5px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;color:var(--muted);">↩ 원본으로</button>
+        </div>
+      </div>
+
+      <!-- 공통: 팔레트 + 자동재생 + 비교 -->
+      <div class="draping-palettes" id="drapingPalettes"></div>
+      <div class="draping-ctrl">
+        <button class="btn-play" id="btnPlay" onclick="togglePlay()">▶ 자동 재생</button>
+        <span class="play-hint">BEST 색상을 순서대로 보여줘요</span>
+      </div>
+      <div style="margin-top:13px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">⚡ BEST vs AVOID 비교</div>
+        <div class="compare-row" id="compareRow"></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="r-card"><h3>✦ 주요 특징</h3><div class="trait-list" id="rTraits"></div></div>
+      <div class="r-card"><h3>⭐ 같은 타입 셀럽</h3><div class="celeb-wrap" id="rCelebs"></div></div>
+    </div>
+
+    <button class="btn-share" onclick="doShare()">📤 결과 공유하기</button>
+    <button class="btn-again" onclick="restart()">🔄 다시 진단하기</button>
+  </div>
+</div>
+<canvas id="pixCv" style="display:none"></canvas>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  ★ 12시즌 데이터
+//
+//  4시즌 × 3서브타입 = 12시즌
+//  각 서브타입은 서로 다른 팔레트, 특징, 셀럽을 가짐
+// ══════════════════════════════════════════════════════
+const SEASONS_12 = {
+
+  // ── 봄 (Warm + Light) ──────────────────────────────
+  spring_light: {
+    season:'spring', subIdx:0,
+    name:'봄 라이트', nameEn:'Light Spring', emoji:'🌱',
+    subDesc:'밝고 연한 봄 · 파스텔 웜톤',
+    gradient:'linear-gradient(135deg,#FFF0F5,#FDE68A,#FECDD3)',
+    textColor:'#4A1515',
+    // 연하고 밝은 파스텔 웜
+    best:['#FDE68A','#FECDD3','#FED7AA','#A7F3D0','#FEF9C3','#FBCFE8'],
+    bestLabel:['버터 옐로우','베이비 핑크','피치 크림','민트 크림','레몬 크림','파우더 핑크'],
+    good:['#FCA5A5','#FCD34D','#6EE7B7','#BFDBFE','#DDD6FE','#F0FDFB'],
+    avoid:['#1E3A5F','#4B0082','#92400E','#374151'],
+    avoidLabel:['딥 네이비','딥 퍼플','번트 브라운','차콜'],
+    traits:['매우 밝고 섬세한 피부','연한 파스텔이 가장 잘 어울림','강한 색은 얼굴이 묻혀 보임','라이트 & 소프트한 느낌'],
+    celebs:['설현','박보영','아이유(청순)','차은우'],
+  },
+  spring_true: {
+    season:'spring', subIdx:1,
+    name:'봄 트루', nameEn:'True Spring', emoji:'🌸',
+    subDesc:'선명하고 따뜻한 전형적 봄',
+    gradient:'linear-gradient(135deg,#FEF3C7,#FCA5A5,#F9A8D4)',
+    textColor:'#3D1A1A',
+    // 선명하고 따뜻한 코랄·오렌지 계열
+    best:['#F9A8D4','#FB923C','#FCD34D','#34D399','#FDE68A','#FCA5A5'],
+    bestLabel:['살몬 핑크','코랄 오렌지','레몬 옐로우','에메랄드 민트','버터 옐로우','피치'],
+    good:['#FDBA74','#A7F3D0','#FEF9C3','#D9F99D','#FECDD3','#86EFAC'],
+    avoid:['#1E3A5F','#4B0082','#2D4A22','#1A1A2E'],
+    avoidLabel:['딥 네이비','딥 퍼플','다크 그린','블랙'],
+    traits:['따뜻하고 선명한 복숭아빛 피부','황금빛 언더톤','생기 있고 활발한 인상','선명한 웜 컬러가 가장 어울림'],
+    celebs:['손예진','수지','김태희','임수정'],
+  },
+  spring_warm: {
+    season:'spring', subIdx:2,
+    name:'봄 웜', nameEn:'Warm Spring', emoji:'🌻',
+    subDesc:'황금빛 깊은 봄 · 웜톤이 강함',
+    gradient:'linear-gradient(135deg,#FDE68A,#FB923C,#FCA5A5)',
+    textColor:'#2D1500',
+    // 황금·오렌지·카멜 계열, 봄 중 가장 따뜻
+    best:['#D97706','#F59E0B','#FB923C','#84CC16','#FDBA74','#FCD34D'],
+    bestLabel:['앰버 골드','허니 옐로우','오렌지','라임 그린','아프리콧','골든 옐로우'],
+    good:['#FCA5A5','#A7F3D0','#FEF3C7','#FDE68A','#86EFAC','#FDBA74'],
+    avoid:['#1E3A5F','#312E81','#164E63','#1A1A2E'],
+    avoidLabel:['딥 네이비','인디고','딥 씨블루','블랙'],
+    traits:['황금빛·오렌지빛 강한 언더톤','카멜·아이보리 피부','봄 중 가장 따뜻한 타입','골든 계열에서 피부가 빛남'],
+    celebs:['아이유(성숙)','신민아','공효진','한가인'],
+  },
+
+  // ── 여름 (Cool + Light) ─────────────────────────────
+  summer_light: {
+    season:'summer', subIdx:0,
+    name:'여름 라이트', nameEn:'Light Summer', emoji:'🌬️',
+    subDesc:'밝고 연한 쿨톤 · 파스텔 쿨',
+    gradient:'linear-gradient(135deg,#EFF6FF,#E0E7FF,#FCE7F3)',
+    textColor:'#1E1B4B',
+    // 매우 연한 파스텔 쿨
+    best:['#BAE6FD','#DDD6FE','#FBCFE8','#D1FAE5','#E0E7FF','#FCE7F3'],
+    bestLabel:['파우더 블루','퍼플 라벤더','파우더 핑크','민트 라이트','퍼리윙클','핑크 라벤더'],
+    good:['#93C5FD','#C4B5FD','#F0ABFC','#6EE7B7','#A5B4FC','#FDA4AF'],
+    avoid:['#B45309','#7C2D12','#92400E','#78350F'],
+    avoidLabel:['골든 옐로우','버건디','번트 오렌지','다크 브라운'],
+    traits:['매우 밝고 투명한 쿨톤 피부','파스텔 블루·라벤더가 가장 어울림','진한 색은 얼굴이 눌려 보임','청순하고 섬세한 인상'],
+    celebs:['문가영','박소담','김고은','정소민'],
+  },
+  summer_true: {
+    season:'summer', subIdx:1,
+    name:'여름 트루', nameEn:'True Summer', emoji:'🌊',
+    subDesc:'부드럽고 뮤트한 전형적 여름',
+    gradient:'linear-gradient(135deg,#BAE6FD,#C4B5FD,#FBCFE8)',
+    textColor:'#1E1B4B',
+    // 뮤트하고 부드러운 쿨
+    best:['#93C5FD','#C4B5FD','#F0ABFC','#86BFCA','#A5B4FC','#FBCFE8'],
+    bestLabel:['파우더 블루','라벤더','라일락','아쿠아 그레이','퍼리윙클','로즈 핑크'],
+    good:['#BAE6FD','#DDD6FE','#E0E7FF','#F5D0FE','#D1FAE5','#FCE7F3'],
+    avoid:['#B45309','#7C2D12','#92400E','#78350F'],
+    avoidLabel:['골든 옐로우','버건디','번트 오렌지','다크 브라운'],
+    traits:['핑크빛 쿨 언더톤','부드럽고 뮤트한 피부','서늘하고 우아한 인상','파스텔·뮤트 블루가 잘 어울림'],
+    celebs:['박신혜','문채원','송혜교','아이린'],
+  },
+  summer_cool: {
+    season:'summer', subIdx:2,
+    name:'여름 쿨', nameEn:'Cool Summer', emoji:'🫐',
+    subDesc:'차갑고 로즈빛이 강한 여름',
+    gradient:'linear-gradient(135deg,#EDE9FE,#C4B5FD,#FBCFE8)',
+    textColor:'#1E1B4B',
+    // 로즈·모브·더스티 계열
+    best:['#FDA4AF','#F472B6','#C084FC','#818CF8','#67E8F9','#A78BFA'],
+    bestLabel:['로즈 핑크','핫 핑크 (소프트)','소프트 퍼플','로얄 라벤더','아이스 블루','모브'],
+    good:['#FBCFE8','#DDD6FE','#BAE6FD','#F5D0FE','#E0E7FF','#93C5FD'],
+    avoid:['#D97706','#B45309','#78350F','#14532D'],
+    avoidLabel:['오렌지','앰버','다크 브라운','다크 그린'],
+    traits:['로즈빛 쿨 언더톤','화사하고 선명한 쿨톤','모브·로즈 계열에서 피부가 빛남','블루·퍼플이 잘 어울림'],
+    celebs:['한예슬','이나영','김지원','수영'],
+  },
+
+  // ── 가을 (Warm + Dark) ──────────────────────────────
+  autumn_soft: {
+    season:'autumn', subIdx:0,
+    name:'가을 소프트', nameEn:'Soft Autumn', emoji:'🌾',
+    subDesc:'부드럽고 뮤트한 가을 · 내추럴',
+    gradient:'linear-gradient(135deg,#FEF3C7,#D4B896,#A8956A)',
+    textColor:'#FFF8F0',
+    // 뮤트하고 부드러운 어스톤
+    best:['#9CA3AF','#D4B896','#A8956A','#86EFAC','#D1D5DB','#BEF264'],
+    bestLabel:['소프트 그레이','카멜 베이지','웜 탄','소프트 세이지','미스티 그레이','올리브 그린'],
+    good:['#FCD34D','#FBBF24','#6B7280','#9CA3AF','#D1FAE5','#FDE68A'],
+    avoid:['#DB2777','#7C3AED','#1D4ED8','#FFFFFF'],
+    avoidLabel:['핫 핑크','바이올렛','로얄 블루','퓨어 화이트'],
+    traits:['뮤트하고 부드러운 웜톤','내추럴하고 차분한 인상','소프트 어스톤이 가장 잘 어울림','선명한 색은 피부가 거칠어 보임'],
+    celebs:['공효진','손담비','이효리','박하선'],
+  },
+  autumn_true: {
+    season:'autumn', subIdx:1,
+    name:'가을 트루', nameEn:'True Autumn', emoji:'🍂',
+    subDesc:'깊고 따뜻한 전형적 가을',
+    gradient:'linear-gradient(135deg,#FDE68A,#FB923C,#92400E)',
+    textColor:'#FFF8F0',
+    // 테라코타·번트·머스타드
+    best:['#D97706','#B45309','#92400E','#78350F','#A16207','#CA8A04'],
+    bestLabel:['앰버','버닝 오렌지','테라코타','번트 레드','골든 브라운','머스타드'],
+    good:['#FCD34D','#FBBF24','#F59E0B','#D1FAE5','#6B7280','#9CA3AF'],
+    avoid:['#DB2777','#7C3AED','#1D4ED8','#0891B2'],
+    avoidLabel:['핫 핑크','바이올렛','로얄 블루','스카이 블루'],
+    traits:['황토·테라코타 언더톤','깊고 따뜻한 피부색','성숙하고 중후한 인상','어스톤에서 피부가 빛남'],
+    celebs:['전지현','김혜수','이하늬','고소영'],
+  },
+  autumn_dark: {
+    season:'autumn', subIdx:2,
+    name:'가을 다크', nameEn:'Dark Autumn', emoji:'🍁',
+    subDesc:'깊고 어두운 가을 · 강렬한 어스톤',
+    gradient:'linear-gradient(135deg,#92400E,#78350F,#451A03)',
+    textColor:'#FEF3C7',
+    // 매우 깊고 어두운 어스톤
+    best:['#78350F','#451A03','#365314','#1C1917','#713F12','#3F6212'],
+    bestLabel:['다크 브라운','에스프레소','다크 올리브','블랙 커피','다크 카멜','포레스트 올리브'],
+    good:['#92400E','#B45309','#365314','#3F6212','#D97706','#78350F'],
+    avoid:['#FBCFE8','#E0E7FF','#BAE6FD','#FAFAFA'],
+    avoidLabel:['파우더 핑크','라이트 라벤더','아이스 블루','화이트'],
+    traits:['깊고 어두운 웜톤','강렬하고 카리스마 있는 인상','매우 어두운 어스톤에서 빛남','밝은 파스텔은 얼굴이 떠 보임'],
+    celebs:['정우성','이병헌','이정재','원빈'],
+  },
+
+  // ── 겨울 (Cool + Dark) ──────────────────────────────
+  winter_cool: {
+    season:'winter', subIdx:0,
+    name:'겨울 쿨', nameEn:'Cool Winter', emoji:'🌨️',
+    subDesc:'차갑고 맑은 쿨톤 · 아이스 컬러',
+    gradient:'linear-gradient(135deg,#E0E7FF,#A5B4FC,#C4B5FD)',
+    textColor:'#1E1B4B',
+    // 아이스·차가운 파스텔 선명
+    best:['#DBEAFE','#EDE9FE','#F1F5F9','#BAE6FD','#E0E7FF','#F0F9FF'],
+    bestLabel:['아이스 블루','아이스 라벤더','아이스 그레이','파우더 블루','아이스 퍼플','아이스 화이트'],
+    good:['#93C5FD','#A5B4FC','#C4B5FD','#67E8F9','#7DD3FC','#818CF8'],
+    avoid:['#D97706','#B45309','#FDE68A','#FCA5A5'],
+    avoidLabel:['오렌지','앰버','버터 옐로우','피치'],
+    traits:['아이스하고 투명한 쿨톤','차갑고 우아한 인상','아이스 컬러에서 피부가 맑아 보임','웜톤 컬러는 얼굴이 칙칙해짐'],
+    celebs:['한효주','이영애','김태리','박은빈'],
+  },
+  winter_true: {
+    season:'winter', subIdx:1,
+    name:'겨울 트루', nameEn:'True Winter', emoji:'❄️',
+    subDesc:'고대비·선명한 전형적 겨울',
+    gradient:'linear-gradient(135deg,#1E1B4B,#4C1D95,#831843)',
+    textColor:'#FFFFFF',
+    // 블랙·화이트·선명한 원색
+    best:['#1E1B4B','#831843','#164E63','#14532D','#EF4444','#FAFAFA'],
+    bestLabel:['딥 네이비','버건디','딥 씨블루','딥 포레스트','크림슨','퓨어 화이트'],
+    good:['#3730A3','#BE185D','#155E75','#166534','#DC2626','#F8FAFC'],
+    avoid:['#FDE68A','#FCA5A5','#D97706','#B45309'],
+    avoidLabel:['버터 옐로우','피치','오렌지','카멜'],
+    traits:['차갑고 맑은 쿨 언더톤','높은 명암 대비','선명하고 강한 인상','원색·다크컬러가 가장 돋보임'],
+    celebs:['윤아','박민영','김소현','블랙핑크 지수'],
+  },
+  winter_dark: {
+    season:'winter', subIdx:2,
+    name:'겨울 다크', nameEn:'Dark Winter', emoji:'🌑',
+    subDesc:'깊고 어두운 쿨톤 · 신비로운',
+    gradient:'linear-gradient(135deg,#0F172A,#1E1B4B,#4A044E)',
+    textColor:'#E0E7FF',
+    // 매우 깊고 어두운 쿨
+    best:['#0F172A','#1E1B4B','#4A044E','#022C22','#450A0A','#312E81'],
+    bestLabel:['딥 블랙 네이비','미드나이트','딥 플럼','다크 에메랄드','다크 버건디','딥 인디고'],
+    good:['#1E3A5F','#4C1D95','#064E3B','#7F1D1D','#831843','#1E1B4B'],
+    avoid:['#FDE68A','#FECDD3','#D97706','#FCA5A5'],
+    avoidLabel:['버터 옐로우','베이비 핑크','오렌지','피치'],
+    traits:['깊고 신비로운 다크 쿨톤','강렬하고 카리스마 있는 인상','매우 어두운 쿨 컬러에서 빛남','밝고 따뜻한 색은 피부가 칙칙해 보임'],
+    celebs:['이종석','공유','박서준','현빈'],
+  }
+};
+
+// 12시즌 맵 정의 (4계절 × 3서브)
+const SEASON_MAP_DEF = {
+  spring: ['spring_light','spring_true','spring_warm'],
+  summer: ['summer_light','summer_true','summer_cool'],
+  autumn: ['autumn_soft','autumn_true','autumn_dark'],
+  winter: ['winter_cool','winter_true','winter_dark'],
+};
+const SEASON_MAP_COLORS = {
+  spring:['#FFF0F5','#FEF3C7','#FDE68A'],
+  summer:['#EFF6FF','#DBEAFE','#EDE9FE'],
+  autumn:['#FFFBEB','#FEF3C7','#FEE2E2'],
+  winter:['#EEF2FF','#EDE9FE','#0F172A'],
+};
+const SEASON_MAP_TEXT = {
+  spring:['rgba(0,0,0,.55)','rgba(0,0,0,.55)','rgba(0,0,0,.55)'],
+  summer:['rgba(0,0,0,.55)','rgba(0,0,0,.55)','rgba(0,0,0,.55)'],
+  autumn:['rgba(0,0,0,.55)','rgba(0,0,0,.55)','rgba(0,0,0,.55)'],
+  winter:['rgba(0,0,0,.55)','rgba(0,0,0,.55)','#E0E7FF'],
+};
+const SEASON_MAP_LABELS = {
+  spring:['봄 라이트','봄 트루','봄 웜'],
+  summer:['여름 라이트','여름 트루','여름 쿨'],
+  autumn:['가을 소프트','가을 트루','가을 다크'],
+  winter:['겨울 쿨','겨울 트루','겨울 다크'],
+};
+const SEASON_HEADER = {
+  spring:'🌸 봄 (Warm)',
+  summer:'🌊 여름 (Cool)',
+  autumn:'🍂 가을 (Warm)',
+  winter:'❄️ 겨울 (Cool)',
+};
+const SEASON_HEADER_BG = {spring:'#FEE2E2',summer:'#DBEAFE',autumn:'#FEF3C7',winter:'#EDE9FE'};
+
+// ══════════════════════════════════════════════════════
+//  MEDIAPIPE — 최대 4명 감지, 얼굴 선택 UI
+// ══════════════════════════════════════════════════════
+let fm=null,fmReady=false;
+let allLandmarks=[];   // 감지된 모든 얼굴 랜드마크
+let selectedFaceIdx=0; // 사용자가 선택한 얼굴 번호
+
+(function(){
+  try{
+    fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
+    fm.setOptions({maxNumFaces:4,refineLandmarks:false,minDetectionConfidence:.35,minTrackingConfidence:.35});
+    fm.onResults(onFaceRes);
+    fm.initialize().then(()=>{fmReady=true;}).catch(e=>console.warn('FM:',e));
+  }catch(e){console.warn('FM init:',e);}
+})();
+
+// ── 모델 코디: FaceMesh 결과 라우팅 플래그 ──
+let modelFMWaiting = false;
+let modelLandmarks = null;
+let _modelFMResolve = null;
+
+function onFaceRes(res){
+  // 모델 이미지 감지 중이면 별도 변수에 저장 후 리턴
+  if (modelFMWaiting) {
+    modelLandmarks = (res.multiFaceLandmarks && res.multiFaceLandmarks.length > 0)
+      ? res.multiFaceLandmarks[0] : null;
+    if (_modelFMResolve) { _modelFMResolve(); _modelFMResolve = null; }
+    return;
+  }
+
+  const badge=document.getElementById('faceBadge');
+  const bar=document.getElementById('faceSelectBar');
+
+  if(res.multiFaceLandmarks&&res.multiFaceLandmarks.length>0){
+    allLandmarks=res.multiFaceLandmarks;
+    const count=allLandmarks.length;
+
+    // 배지 업데이트
+    badge.className='face-badge ok';
+    badge.textContent=`🟢 얼굴 ${count}명 감지 성공!`;
+
+    if(count===1){
+      // 1명: 바로 선택, 선택 UI 숨김
+      selectedFaceIdx=0;
+      bar.style.display='none';
+    }else{
+      // 여러 명: 선택 UI 표시
+      bar.style.display='block';
+      document.getElementById('faceSelectTitle').textContent=`👥 얼굴 ${count}명이 감지됐어요`;
+      buildFaceBtns(count);
+    }
+    drawAllFaces(allLandmarks, selectedFaceIdx);
+    showPixelPreview(); // 선택된 얼굴의 픽셀 미리보기
+
+  }else{
+    allLandmarks=[];
+    badge.className='face-badge no';
+    badge.textContent='🔴 얼굴 미감지 · 중앙 영역으로 분석';
+    bar.style.display='none';
+    document.getElementById('pixelVerify').style.display='none';
+  }
+}
+
+// 얼굴 번호 버튼 생성
+function buildFaceBtns(count){
+  const wrap=document.getElementById('faceBtns');
+  wrap.innerHTML='';
+  for(let i=0;i<count;i++){
+    const btn=document.createElement('button');
+    btn.className='face-btn'+(i===selectedFaceIdx?' selected':'');
+    btn.textContent=`얼굴 ${i+1}번`;
+    btn.onclick=()=>selectFace(i);
+    wrap.appendChild(btn);
+  }
+}
+
+// 얼굴 선택
+function selectFace(idx){
+  selectedFaceIdx=idx;
+  // 버튼 활성화 상태 업데이트
+  document.querySelectorAll('.face-btn').forEach((b,i)=>b.classList.toggle('selected',i===idx));
+  // 오버레이 다시 그리기
+  drawAllFaces(allLandmarks, idx);
+  // 픽셀 미리보기 갱신
+  showPixelPreview();
+}
+
+// ── FaceMesh 주요 연결선 (거미줄 메시) ─────────────────
+// MediaPipe FaceMesh 468 랜드마크 주요 연결 쌍
+// 얼굴 윤곽 / 눈 / 눈썹 / 코 / 입 / 내부 격자
+const MESH_CONNECTIONS = [
+  // 얼굴 외곽
+  [10,338],[338,297],[297,332],[332,284],[284,251],[251,389],[389,356],[356,454],[454,323],[323,361],[361,288],[288,397],[397,365],[365,379],[379,378],[378,400],[400,377],[377,152],[152,148],[148,176],[176,149],[149,150],[150,136],[136,172],[172,58],[58,132],[132,93],[93,234],[234,127],[127,162],[162,21],[21,54],[54,103],[103,67],[67,109],[109,10],
+  // 왼쪽 눈
+  [33,7],[7,163],[163,144],[144,145],[145,153],[153,154],[154,155],[155,133],[33,246],[246,161],[161,160],[160,159],[159,158],[158,157],[157,173],[173,133],
+  // 오른쪽 눈
+  [362,382],[382,381],[381,380],[380,374],[374,373],[373,390],[390,249],[249,263],[362,398],[398,384],[384,385],[385,386],[386,387],[387,388],[388,466],[466,263],
+  // 왼쪽 눈썹
+  [70,63],[63,105],[105,66],[66,107],[107,55],[55,65],[65,52],[52,53],[53,46],
+  // 오른쪽 눈썹
+  [336,296],[296,334],[334,293],[293,300],[300,285],[285,295],[295,282],[282,283],[283,276],
+  // 코 능선
+  [168,6],[6,197],[197,195],[195,5],[5,4],[4,1],[1,19],[19,94],
+  // 코 하단
+  [98,97],[97,2],[2,326],[326,327],[327,294],[294,278],[278,344],[344,440],[440,275],[275,4],
+  // 입 외곽
+  [61,185],[185,40],[40,39],[39,37],[37,0],[0,267],[267,269],[269,270],[270,409],[409,291],[61,146],[146,91],[91,181],[181,84],[84,17],[17,314],[314,405],[405,321],[321,375],[375,291],
+  // 입술 내부
+  [78,191],[191,80],[80,81],[81,82],[82,13],[13,312],[312,311],[311,310],[310,415],[415,308],[78,95],[95,88],[88,178],[178,87],[87,14],[14,317],[317,402],[402,318],[318,324],[324,308],
+  // 얼굴 내부 격자 (세로)
+  [10,151],[151,9],[9,8],[8,168],
+  [109,69],[69,104],[104,68],[68,71],
+  [338,337],[337,299],[299,333],[333,298],
+  // 얼굴 내부 격자 (가로/대각)
+  [234,93],[93,132],[132,58],[58,172],
+  [454,356],[356,389],[389,251],[251,284],
+  [127,34],[34,139],[139,156],[156,143],
+  [356,371],[371,266],[266,425],[425,427],
+  [21,162],[162,127],[127,234],
+  [54,103],[103,67],[67,109],
+  // 볼 영역
+  [116,123],[123,147],[147,213],[213,192],[192,214],[214,210],[210,211],[211,32],[32,208],
+  [345,346],[346,347],[347,348],[348,349],[349,350],[350,277],[277,437],[437,420],[420,360],
+  // 이마
+  [109,10],[10,338],[338,337],[337,9],[9,151],[151,108],[108,69],
+  [70,53],[53,52],[52,65],[65,55],[55,8],
+  [285,295],[295,282],[282,283],[283,276],[276,353],
+  // 눈 아래
+  [226,31],[31,228],[228,229],[229,230],[230,231],[231,232],[232,233],[233,244],
+  [446,261],[261,448],[448,449],[449,450],[450,451],[451,452],[452,453],[453,464],
+];
+
+// 모든 얼굴 박스 + 메시 그리기 (선택된 얼굴 = 거미줄 메시)
+function drawAllFaces(landmarks, activeIdx){
+  const img=document.getElementById('prevImg');
+  const cv=document.getElementById('faceOv');
+  cv.width=img.clientWidth; cv.height=img.clientHeight;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const W=cv.width, H=cv.height;
+
+  landmarks.forEach((lm,fIdx)=>{
+    const isActive=fIdx===activeIdx;
+    const xs=lm.map(l=>l.x*W), ys=lm.map(l=>l.y*H);
+    const x1=Math.min(...xs),y1=Math.min(...ys),x2=Math.max(...xs),y2=Math.max(...ys);
+    const pad=6;
+
+    if(isActive){
+      // ── 선택된 얼굴: 전체 메시 거미줄 그리기 ──
+      // 반투명 연결선
+      ctx.strokeStyle='rgba(167,139,250,0.35)';
+      ctx.lineWidth=0.6;
+      ctx.setLineDash([]);
+      MESH_CONNECTIONS.forEach(([a,b])=>{
+        const la=lm[a],lb=lm[b];
+        if(!la||!lb)return;
+        ctx.beginPath();
+        ctx.moveTo(la.x*W,la.y*H);
+        ctx.lineTo(lb.x*W,lb.y*H);
+        ctx.stroke();
+      });
+      // 468개 랜드마크 점
+      ctx.fillStyle='rgba(139,92,246,0.65)';
+      lm.forEach(l=>{
+        ctx.beginPath();
+        ctx.arc(l.x*W,l.y*H,1.2,0,Math.PI*2);
+        ctx.fill();
+      });
+      // 윤곽선 강조
+      ctx.beginPath();
+      FACE_OUTLINE_IDXS.forEach((idx,i)=>{
+        const l=lm[idx];
+        i===0?ctx.moveTo(l.x*W,l.y*H):ctx.lineTo(l.x*W,l.y*H);
+      });
+      ctx.closePath();
+      ctx.strokeStyle='rgba(124,58,237,0.75)';
+      ctx.lineWidth=1.5;
+      ctx.stroke();
+
+    }else{
+      // 비선택 얼굴: 바운딩 박스만
+      ctx.strokeStyle='rgba(156,163,175,.5)';
+      ctx.lineWidth=1.5;
+      ctx.setLineDash([5,4]);
+      ctx.strokeRect(x1-pad,y1-pad,x2-x1+pad*2,y2-y1+pad*2);
+      ctx.setLineDash([]);
+    }
+
+    // 얼굴 번호 레이블
+    ctx.fillStyle=isActive?'rgba(124,58,237,.88)':'rgba(107,114,128,.65)';
+    ctx.beginPath();
+    const lx=x1-pad, ly=y1-pad-1;
+    ctx.roundRect(lx,ly-18,36,20,4);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font=`bold ${isActive?12:11}px sans-serif`;
+    ctx.fillText(`${fIdx+1}번`,lx+5,ly-3);
+  });
+}
+
+// ── 픽셀 검증 스트립 ─────────────────────────────────
+// 실제 샘플링될 픽셀을 미리 색 스와치로 보여줌
+// → "이 색들을 분석에 사용해요" 직접 확인 가능
+function showPixelPreview(){
+  const imgEl=document.getElementById('prevImg');
+  const lm=allLandmarks[selectedFaceIdx];
+  if(!lm||!imgEl.naturalWidth)return;
+
+  // 실제 샘플링 실행 (분석 전 미리보기용)
+  const px=samplePixels(lm,imgEl);
+  const verifyEl=document.getElementById('pixelVerify');
+
+  if(px.length===0){
+    verifyEl.style.display='block';
+    document.getElementById('pvStrip').innerHTML='';
+    document.getElementById('pvWarn').style.display='block';
+    document.getElementById('pvWarn').textContent='⚠️ 피부 픽셀을 추출하지 못했어요. 조명이 더 밝은 정면 사진을 사용해주세요.';
+    return;
+  }
+
+  verifyEl.style.display='block';
+  document.getElementById('pvWarn').style.display='none';
+
+  // 대표 색상 40개만 스트립으로 표시 (픽셀 간격 샘플링)
+  const step=Math.max(1,Math.floor(px.length/40));
+  const strip=document.getElementById('pvStrip');
+  strip.innerHTML=px.filter((_,i)=>i%step===0).slice(0,40)
+    .map(([r,g,b])=>`<div class="pv-swatch" style="background:rgb(${r},${g},${b})" title="rgb(${r},${g},${b})"></div>`)
+    .join('');
+
+  // 평균색 계산
+  let rS=0,gS=0,bS=0;
+  px.forEach(([r,g,b])=>{rS+=r;gS+=g;bS+=b;});
+  const n=px.length;
+  const aR=Math.round(rS/n), aG=Math.round(gS/n), aB=Math.round(bS/n);
+  const[hue,sat,lig]=toHSL(aR,aG,aB);
+
+  document.getElementById('pvAvgColor').style.background=`rgb(${aR},${aG},${aB})`;
+  document.getElementById('pvAvgInfo').innerHTML=
+    `유효 피부 픽셀 <b>${n}개</b> 추출됨<br>`+
+    `평균 RGB <b>(${aR}, ${aG}, ${aB})</b><br>`+
+    `Hue <b>${Math.round(hue)}°</b> · S <b>${Math.round(sat*100)}%</b> · L <b>${Math.round(lig*100)}%</b>`;
+
+  // 신뢰도 경고
+  const warn=document.getElementById('pvWarn');
+  if(n<100){
+    warn.style.display='block';
+    warn.textContent=`⚠️ 유효 픽셀 ${n}개 — 100개 미만이면 정확도가 낮을 수 있어요.`;
+  } else if(lig>0.82){
+    warn.style.display='block';
+    warn.textContent='⚠️ 평균 명도가 매우 높아요 (과노출 가능). 더 어두운 사진을 사용하면 정확해져요.';
+  } else if(lig<0.28){
+    warn.style.display='block';
+    warn.textContent='⚠️ 평균 명도가 매우 낮아요 (저조도 가능). 더 밝은 사진을 사용하면 정확해져요.';
+  } else {
+    warn.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  UPLOAD
+// ══════════════════════════════════════════════════════
+document.getElementById('fileIn').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadFile(f);});
+const upZ=document.getElementById('upZone');
+upZ.addEventListener('dragover',e=>{e.preventDefault();upZ.classList.add('drag');});
+upZ.addEventListener('dragleave',()=>upZ.classList.remove('drag'));
+upZ.addEventListener('drop',e=>{e.preventDefault();upZ.classList.remove('drag');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadFile(f);});
+function loadFile(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    const prevImg=document.getElementById('prevImg');
+    prevImg.src=e.target.result;
+    prevImg.onload=async()=>{
+      const cv=document.getElementById('faceOv');
+      cv.width=prevImg.clientWidth;cv.height=prevImg.clientHeight;
+      if(fmReady&&fm){
+        try{await fm.send({image:prevImg});}catch(e){console.warn('FM send:',e);}
+      }
+      goStep(2);
+    };
+  };
+  r.readAsDataURL(file);
+}
+
+function goStep(n){
+  [1,2,3,4].forEach(i=>{const el=document.getElementById('s'+i);if(el)el.classList.toggle('on',i===n);});
+  [1,2,3].forEach(i=>{const d=document.getElementById('pd'+i);d.className='pd'+(i===n&&n<=3?' on':i<n?' done':'');});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function getSkinIdxs(){
+  return[10,67,69,104,108,109,151,338,297,299,333,334,296,336,9,8,
+    116,117,118,119,120,121,93,234,127,147,187,207,213,192,214,210,
+    345,346,347,348,349,350,323,454,356,376,411,427,433,416,434,430,
+    6,197,195,5,4,45,51,275,281,159,160,161,146,386,387,388,373,
+    152,175,171,148,176,149,150,136,172,58];
+}
+// ── 얼굴 윤곽 내부 픽셀만 샘플링 ──────────────────────
+// MediaPipe FaceMesh의 외곽 실루엣 인덱스를 이용해
+// 얼굴 윤곽 폴리곤 내부인지 ray-casting으로 판별
+// → 배경색이 샘플에 섞이는 것을 차단
+
+// FaceMesh 얼굴 실루엣 윤곽 인덱스 (시계방향 외곽선)
+const FACE_OUTLINE_IDXS = [
+  10,338,297,332,284,251,389,356,454,323,361,288,
+  397,365,379,378,400,377,152,148,176,149,150,136,
+  172,58,132,93,234,127,162,21,54,103,67,109
+];
+
+function pointInPolygon(px,py,poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;
+  }
+  return inside;
+}
+
+function getFacePolygon(landmarks, W, H){
+  return FACE_OUTLINE_IDXS.map(i=>[landmarks[i].x*W, landmarks[i].y*H]);
+}
+
+// 피부색 판별 필터 (HSL 공간)
+function isSkinPixel(r,g,b){
+  const[h,s,l]=toHSL(r,g,b);
+  if(h>50&&h<330)return false;
+  if(s<0.05||s>0.60)return false;
+  if(l<0.25||l>0.85)return false;
+  return true;
+}
+
+// Fix 1: 파라미터명 충돌 해소 + 얼굴 윤곽 마스크 적용
+function samplePixels(landmarks, imgEl){
+  const cv=document.getElementById('pixCv');
+  cv.width=imgEl.naturalWidth; cv.height=imgEl.naturalHeight;
+  const ctx=cv.getContext('2d'); ctx.drawImage(imgEl,0,0);
+  const W=cv.width, H=cv.height;
+
+  // 얼굴 윤곽 폴리곤 생성
+  const poly=getFacePolygon(landmarks, W, H);
+
+  // 바운딩 박스로 탐색 범위 제한 (속도)
+  const xs=poly.map(p=>p[0]), ys=poly.map(p=>p[1]);
+  const bx1=Math.max(0,Math.floor(Math.min(...xs))),
+        bx2=Math.min(W-1,Math.ceil(Math.max(...xs))),
+        by1=Math.max(0,Math.floor(Math.min(...ys))),
+        by2=Math.min(H-1,Math.ceil(Math.max(...ys)));
+
+  const px=[];
+  // 격자 샘플링 (4px 간격) — 윤곽 내부만
+  for(let y=by1;y<=by2;y+=4){
+    for(let x=bx1;x<=bx2;x+=4){
+      if(!pointInPolygon(x,y,poly))continue;
+      try{
+        const d=ctx.getImageData(x,y,1,1).data;
+        if(isSkinPixel(d[0],d[1],d[2]))px.push([d[0],d[1],d[2]]);
+      }catch(e){}
+    }
+  }
+  return px;
+}
+function sampleFallback(imgEl){
+  const cv=document.getElementById('pixCv');cv.width=imgEl.naturalWidth;cv.height=imgEl.naturalHeight;
+  const ctx=cv.getContext('2d');ctx.drawImage(imgEl,0,0);const px=[];
+  const cx=Math.round(cv.width*.5),cy=Math.round(cv.height*.38),rad=Math.round(Math.min(cv.width,cv.height)*.18);
+  for(let dx=-rad;dx<=rad;dx+=3){for(let dy=-rad;dy<=rad;dy+=3){
+    if(dx*dx+dy*dy>rad*rad)continue;
+    const x=Math.max(0,Math.min(cv.width-1,cx+dx)),y=Math.max(0,Math.min(cv.height-1,cy+dy));
+    try{
+      const d=ctx.getImageData(x,y,1,1).data;
+      if(isSkinPixel(d[0],d[1],d[2]))px.push([d[0],d[1],d[2]]);
+    }catch(e){}
+  }}
+  return px;
+}
+function toHSL(r,g,b){
+  r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h,s,l=(mx+mn)/2;
+  if(mx===mn){h=s=0;}
+  else{const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);
+    switch(mx){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break;}}
+  return[h*360,s,l];
+}
+
+// ══════════════════════════════════════════════════════
+//  ★ 4축 분석 엔진 (→ 12시즌)
+//
+//  축1. 색온도 Warm/Cool   (Hue 기반)
+//  축2. 명도   Light/Dark  (HSL L, 임계 50%)
+//  축3. 채도   Clear/Muted (HSL S + 분산)
+//  축4. 서브타입 분기
+//       봄 안에서:   L·S 조합으로 라이트/트루/웜
+//       여름 안에서: L·S 조합으로 라이트/트루/쿨
+//       가을 안에서: L·S 조합으로 소프트/트루/다크
+//       겨울 안에서: L·S 조합으로 쿨/트루/다크
+// ══════════════════════════════════════════════════════
+function analyze4Axis(pixels){
+  if(!pixels.length)return null;
+  const n=pixels.length;
+
+  // ─ Fix 4. Gray World Assumption 조명 정규화 ──────────
+  // 이미지 전체 R·G·B 채널 평균이 동일해야 한다는 가정 하에
+  // 각 채널에 보정 계수를 곱해 조명색 영향을 상쇄
+  // 예: 형광등 사진은 B 채널이 높아 쿨톤으로 보이는 왜곡 보정
+  let rS=0,gS=0,bS=0;
+  pixels.forEach(([r,g,b])=>{rS+=r;gS+=g;bS+=b;});
+  const rawR=rS/n, rawG=gS/n, rawB=bS/n;
+  const grayMean=(rawR+rawG+rawB)/3;
+  const krr=grayMean/rawR, kgg=grayMean/rawG, kbb=grayMean/rawB;
+  // 보정 계수가 너무 크면(극단적 조명) 70% 적용으로 완화
+  const blend=0.70;
+  const kr=1+(krr-1)*blend, kg=1+(kgg-1)*blend, kb=1+(kbb-1)*blend;
+  const corrected=pixels.map(([r,g,b])=>[
+    Math.max(0,Math.min(255,r*kr)),
+    Math.max(0,Math.min(255,g*kg)),
+    Math.max(0,Math.min(255,b*kb))
+  ]);
+  let crS=0,cgS=0,cbS=0;
+  corrected.forEach(([r,g,b])=>{crS+=r;cgS+=g;cbS+=b;});
+  const aR=crS/n, aG=cgS/n, aB=cbS/n;
+
+  // ─ Fix 3. 원형 Hue 평균 (Circular Mean) ───────────────
+  // 기존: RGB 평균 → HSL 1회 변환 → Hue 0°+350°=175° 오류
+  // 개선: 픽셀마다 HSL 변환 → sin/cos 성분으로 원형 평균
+  //       Hue를 단위원 위의 벡터로 표현하면 wraparound 문제 해결
+  let sinSum=0, cosSum=0, satSum=0, ligSum=0;
+  corrected.forEach(([r,g,b])=>{
+    const[h,s,l]=toHSL(r,g,b);
+    const rad=h*Math.PI/180;
+    sinSum+=Math.sin(rad); cosSum+=Math.cos(rad);
+    satSum+=s; ligSum+=l;
+  });
+  const hue=((Math.atan2(sinSum/n, cosSum/n)*180/Math.PI)+360)%360;
+  const sat=satSum/n;
+  const lig=ligSum/n;
+
+  // 분산 (픽셀 대비도, 보정 픽셀 기준)
+  let varS=0;
+  corrected.forEach(([r,g,b])=>{const lv=(r+g+b)/3; varS+=(lv-(aR+aG+aB)/3)**2;});
+  const stdDev=Math.sqrt(varS/n);
+
+  // ─ 축1. 색온도 ─
+  const rbDiff=aR-aB;
+  let hueWarmScore;
+  if(hue>=14&&hue<=42)hueWarmScore=1-Math.abs(hue-28)/14*.3;
+  else if(hue<=13||hue>=345)hueWarmScore=-0.6-Math.min(.4,Math.abs(hue>180?360-hue:hue-7)/15);
+  else if(hue>42&&hue<70)hueWarmScore=0.4-(hue-42)/30*.5;
+  else hueWarmScore=0;
+  const rbScore=(rbDiff-65)/60;
+  const warmthFinal=hueWarmScore*.7+rbScore*.3;
+  const isWarm=warmthFinal>0;
+  const warmConf=Math.min(95,Math.round(Math.abs(warmthFinal)*80+10));
+
+  // ─ 축2. 명도 ─
+  const LIGHT_THRESH=.50;const isLight=lig>LIGHT_THRESH;
+  const lightConf=Math.min(95,Math.round(Math.abs(lig-LIGHT_THRESH)/.45*100+10));
+
+  // ─ 축3. 채도 ─
+  const clarityScore=sat*.55+Math.min(1,stdDev/65)*.45;
+  const CLEAR_THRESH=.20;const isClear=clarityScore>CLEAR_THRESH;
+  const clearConf=Math.min(95,Math.round(Math.abs(clarityScore-CLEAR_THRESH)/.4*100+10));
+
+  // ─ 4시즌 우선 결정 ─
+  let mainSeason;
+  if(isWarm&&isLight)mainSeason='spring';
+  else if(isWarm&&!isLight)mainSeason='autumn';
+  else if(!isWarm&&isLight)mainSeason='summer';
+  else mainSeason='winter';
+
+  // ─ 축4. 서브타입 분기 ─
+  // 각 시즌 안에서 L·S 수치로 3단계 세분화
+  const ligPct=lig*100;const satPct=sat*100;
+  let subtype;let subtypeLogic=[];
+
+  if(mainSeason==='spring'){
+    // 봄 라이트: L > 68% AND S < 18% → 연하고 밝음
+    // 봄 웜:     황색 편향 강함 (hue > 28) OR S > 30% → 황금빛
+    // 봄 트루:   그 사이 → 전형적 봄
+    subtypeLogic=[
+      {label:`L=${ligPct.toFixed(0)}% · S=${satPct.toFixed(0)}% · Hue=${hue.toFixed(0)}°`},
+      {label:`봄 라이트 조건: L>68% AND S<18%`,match:ligPct>68&&satPct<18,key:'spring_light'},
+      {label:`봄 웜 조건: Hue>28° AND S>28%`,match:hue>28&&satPct>28,key:'spring_warm'},
+      {label:`봄 트루 조건: 위 조건 외 기본값`,match:true,key:'spring_true'},
+    ];
+    if(ligPct>68&&satPct<18)subtype='spring_light';
+    else if(hue>28&&satPct>28)subtype='spring_warm';
+    else subtype='spring_true';
+  }
+  else if(mainSeason==='summer'){
+    // 여름 라이트: L > 65% AND S < 15% → 매우 연함
+    // 여름 쿨:    핑크 편향 강함 (hue < 10 or > 350) AND S > 20%
+    // 여름 트루:  그 사이
+    subtypeLogic=[
+      {label:`L=${ligPct.toFixed(0)}% · S=${satPct.toFixed(0)}% · Hue=${hue.toFixed(0)}°`},
+      {label:`여름 라이트 조건: L>65% AND S<15%`,match:ligPct>65&&satPct<15,key:'summer_light'},
+      {label:`여름 쿨 조건: Hue<10° AND S>20%`,match:(hue<10||hue>350)&&satPct>20,key:'summer_cool'},
+      {label:`여름 트루 조건: 위 조건 외 기본값`,match:true,key:'summer_true'},
+    ];
+    if(ligPct>65&&satPct<15)subtype='summer_light';
+    else if((hue<10||hue>350)&&satPct>20)subtype='summer_cool';
+    else subtype='summer_true';
+  }
+  else if(mainSeason==='autumn'){
+    // 가을 다크: L < 38% → 매우 어두움
+    // 가을 소프트: S < 18% → 뮤트하고 부드러움
+    // 가을 트루: 그 사이
+    subtypeLogic=[
+      {label:`L=${ligPct.toFixed(0)}% · S=${satPct.toFixed(0)}% · Hue=${hue.toFixed(0)}°`},
+      {label:`가을 다크 조건: L<38%`,match:ligPct<38,key:'autumn_dark'},
+      {label:`가을 소프트 조건: S<18%`,match:satPct<18,key:'autumn_soft'},
+      {label:`가을 트루 조건: 위 조건 외 기본값`,match:true,key:'autumn_true'},
+    ];
+    if(ligPct<38)subtype='autumn_dark';
+    else if(satPct<18)subtype='autumn_soft';
+    else subtype='autumn_true';
+  }
+  else{// winter
+    // 겨울 다크: L < 38% → 매우 어두움
+    // 겨울 쿨: L > 55% (상대적으로 밝은 겨울) → 아이스
+    // 겨울 트루: 그 사이
+    subtypeLogic=[
+      {label:`L=${ligPct.toFixed(0)}% · S=${satPct.toFixed(0)}% · Hue=${hue.toFixed(0)}°`},
+      {label:`겨울 다크 조건: L<38%`,match:ligPct<38,key:'winter_dark'},
+      {label:`겨울 쿨 조건: L>55%`,match:ligPct>55,key:'winter_cool'},
+      {label:`겨울 트루 조건: 위 조건 외 기본값`,match:true,key:'winter_true'},
+    ];
+    if(ligPct<38)subtype='winter_dark';
+    else if(ligPct>55)subtype='winter_cool';
+    else subtype='winter_true';
+  }
+
+  const overallConf=Math.round((warmConf+lightConf+clearConf)/3);
+  return{
+    aR:Math.round(aR),aG:Math.round(aG),aB:Math.round(aB),
+    rawR:Math.round(rawR),rawG:Math.round(rawG),rawB:Math.round(rawB),
+    hue:Math.round(hue),satPct:Math.round(sat*100),ligPct:Math.round(lig*100),
+    rbDiff:Math.round(aR-aB),stdDev:Math.round(stdDev),sampleCount:n,
+    correctionK:{r:kr.toFixed(2),g:kg.toFixed(2),b:kb.toFixed(2)},
+    axis:{
+      warm:{hue:Math.round(hue),rbDiff:Math.round(aR-aB),warmthFinal:Math.round(warmthFinal*100),isWarm,conf:warmConf},
+      light:{ligPct:Math.round(lig*100),isLight,conf:lightConf},
+      clarity:{satPct:Math.round(sat*100),contPct:Math.round(Math.min(1,stdDev/65)*100),clarityScore:Math.round(clarityScore*100),isClear,conf:clearConf}
+    },
+    mainSeason,subtype,subtypeLogic,overallConf
+  };
+}
+
+// ══════════════════════════════════════════════════════
+//  LOADING
+// ══════════════════════════════════════════════════════
+let lTimer=null;
+function startLoading(){
+  const ids=['ls1','ls2','ls3','ls4','ls5','ls6'];
+  const txts=['얼굴 랜드마크 감지 중...','피부 픽셀 샘플링 중...','Hue 기반 색온도 판정 중...','HSL 명도 판정 중...','채도·대비 판정 중...','12시즌 서브타입 확정 중...'];
+  ids.forEach(id=>document.getElementById(id).className='l-step');
+  document.getElementById(ids[0]).className='l-step on';document.getElementById('lsub').textContent=txts[0];
+  let i=0;lTimer=setInterval(()=>{
+    if(i<ids.length-1){document.getElementById(ids[i]).className='l-step done';i++;document.getElementById(ids[i]).className='l-step on';document.getElementById('lsub').textContent=txts[i];}
+  },620);
+}
+function stopLoading(){clearInterval(lTimer);['ls1','ls2','ls3','ls4','ls5','ls6'].forEach(id=>document.getElementById(id).className='l-step done');}
+
+// ══════════════════════════════════════════════════════
+//  RUN ANALYSIS
+// ══════════════════════════════════════════════════════
+async function runAnalysis(){
+  document.getElementById('btnA').disabled=true;document.getElementById('errMsg').style.display='none';
+  goStep(3);startLoading();
+  const imgEl=document.getElementById('prevImg');
+  try{
+    // MediaPipe 미실행 상태면 실행 (이미지 로드 직후 감지 안 된 경우)
+    if(fmReady&&fm&&allLandmarks.length===0){
+      await fm.send({image:imgEl});
+      await new Promise(r=>setTimeout(r,500));
+    }
+    // 선택된 얼굴의 랜드마크 사용
+    const chosenLM=allLandmarks[selectedFaceIdx]||null;
+    let px=chosenLM?samplePixels(chosenLM,imgEl):[];
+    if(px.length<60)px=sampleFallback(imgEl);
+    if(px.length<20)throw new Error('피부 영역을 추출할 수 없어요. 더 밝고 정면인 사진을 사용해주세요.');
+    await new Promise(r=>setTimeout(r,500));
+    const result=analyze4Axis(px);
+    stopLoading();await new Promise(r=>setTimeout(r,300));
+    await renderResult(result);
+  }catch(e){
+    stopLoading();goStep(2);
+    const m=document.getElementById('errMsg');m.style.cssText='display:block;margin-top:10px;font-size:12px;color:#DC2626;';
+    m.textContent='⚠️ '+(e.message||'오류가 발생했어요.');
+    document.getElementById('btnA').disabled=false;console.error('분석오류:',e);
+  }
+}
+
+let faceCutoutURL = '';  // 배경 제거된 얼굴 dataURL 캐시
+
+// ══════════════════════════════════════════════════════
+//  배경 제거 — 헤어 포함 머리 전체 영역 추출
+//
+//  전략:
+//  1. 얼굴 랜드마크로 바운딩 박스 계산
+//  2. 위쪽(헤어)·옆·아래(목) 방향으로 확장
+//  3. 확장된 영역에서 배경색(이미지 모서리 샘플)을 감지
+//  4. 배경과 유사한 픽셀만 투명화 (헤어는 배경과 다른 색이므로 보존)
+// ══════════════════════════════════════════════════════
+
+// 이미지 모서리 4곳을 샘플해서 배경 평균색 추정
+function estimateBgColor(ctx, W, H){
+  const corners=[[5,5],[W-5,5],[5,H-5],[W-5,H-5],[W/2|0,5],[5,H/2|0],[W-5,H/2|0]];
+  let r=0,g=0,b=0,n=0;
+  corners.forEach(([x,y])=>{
+    try{
+      const d=ctx.getImageData(x|0,y|0,1,1).data;
+      r+=d[0];g+=d[1];b+=d[2];n++;
+    }catch(e){}
+  });
+  return n?{r:r/n,g:g/n,b:b/n}:{r:255,g:255,b:255};
+}
+
+// 픽셀이 배경색에 가까운지 (유클리드 거리)
+function isBgPixel(r,g,b,bg,thresh=40){
+  return Math.sqrt((r-bg.r)**2+(g-bg.g)**2+(b-bg.b)**2)<thresh;
+}
+
+async function createFaceCutout(imgEl, landmarks) {
+  if (!imgEl.naturalWidth || !landmarks) return null;
+  const W = imgEl.naturalWidth, H = imgEl.naturalHeight;
+
+  // ── 1. 얼굴 바운딩 박스 계산 ──
+  const xs = landmarks.map(l => l.x * W), ys = landmarks.map(l => l.y * H);
+  const faceX1 = Math.min(...xs), faceX2 = Math.max(...xs);
+  const faceY1 = Math.min(...ys), faceY2 = Math.max(...ys);
+  const faceW = faceX2 - faceX1, faceH = faceY2 - faceY1;
+
+  // ── 2. 패딩 적용 (헤어 AI 커버 + 귀·목) ──
+  const padUp   = faceH * 0.90;   // 위쪽 넉넉하게 (헤어 AI가 채움)
+  const padSide = faceW * 0.25;
+  const padDown = faceH * 0.28;
+
+  const cropX1 = Math.max(0, Math.floor(faceX1 - padSide));
+  const cropY1 = Math.max(0, Math.floor(faceY1 - padUp));
+  const cropX2 = Math.min(W, Math.ceil(faceX2 + padSide));
+  const cropY2 = Math.min(H, Math.ceil(faceY2 + padDown));
+  const cropW  = cropX2 - cropX1;
+  const cropH  = cropY2 - cropY1;
+
+  // ── 3. 크롭 캔버스에 원본 그리기 ──
+  const cv = document.createElement('canvas');
+  cv.width = cropW; cv.height = cropH;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(imgEl, cropX1, cropY1, cropW, cropH, 0, 0, cropW, cropH);
+
+  // ── 4. 마스크 캔버스 (얼굴 폴리곤 + 헤어 AI 합산) ──
+  const maskCv = document.createElement('canvas');
+  maskCv.width = cropW; maskCv.height = cropH;
+  const maskCtx = maskCv.getContext('2d');
+
+  // 4a. 얼굴 폴리곤 마스크 (블러 경계)
+  const poly = FACE_OUTLINE_IDXS.map(idx => ({
+    x: landmarks[idx].x * W - cropX1,
+    y: landmarks[idx].y * H - cropY1
+  }));
+  const pcx = poly.reduce((s, p) => s + p.x, 0) / poly.length;
+  const pcy = poly.reduce((s, p) => s + p.y, 0) / poly.length;
+  const expanded = poly.map(p => ({
+    x: pcx + (p.x - pcx) * 1.08,
+    y: pcy + (p.y - pcy) * (p.y < pcy ? 1.05 : 1.10)
+  }));
+  maskCtx.filter = 'blur(6px)';
+  maskCtx.fillStyle = '#fff';
+  maskCtx.beginPath();
+  expanded.forEach((p, i) => i === 0 ? maskCtx.moveTo(p.x, p.y) : maskCtx.lineTo(p.x, p.y));
+  maskCtx.closePath();
+  maskCtx.fill();
+  maskCtx.filter = 'none';
+
+  // 4b. 헤어 세그멘테이션 마스크 (MediaPipe Hair Segmenter, confidence 0~255)
+  const hairMask = await getHairMask(imgEl);
+  if (hairMask) {
+    // 신뢰도(0~255)를 alpha로 직접 사용 → 경계부 자연스러운 반투명
+    const hairCv = document.createElement('canvas');
+    hairCv.width = cropW; hairCv.height = cropH;
+    const hairCtx = hairCv.getContext('2d');
+    const hairImg = hairCtx.createImageData(cropW, cropH);
+    const hd = hairImg.data;
+    for (let cy = 0; cy < cropH; cy++) {
+      for (let cx = 0; cx < cropW; cx++) {
+        const sx = cx + cropX1, sy = cy + cropY1;
+        if (sx >= W || sy >= H) continue;
+        const conf = hairMask[sy * W + sx];
+        if (conf > 0) {
+          const i4 = (cy * cropW + cx) * 4;
+          hd[i4] = hd[i4+1] = hd[i4+2] = 255;
+          hd[i4+3] = conf; // 신뢰도 그대로 alpha → 실처럼 가는 경계 표현
+        }
+      }
+    }
+    hairCtx.putImageData(hairImg, 0, 0);
+
+    // 약한 블러로 픽셀 계단 제거 (큰 블러 불필요 — 이미 신뢰도가 그라데이션)
+    const blurCv = document.createElement('canvas');
+    blurCv.width = cropW; blurCv.height = cropH;
+    const blurCtx = blurCv.getContext('2d');
+    blurCtx.filter = 'blur(2px)';
+    blurCtx.drawImage(hairCv, 0, 0);
+    blurCtx.filter = 'none';
+
+    // 얼굴 폴리곤 마스크와 헤어 마스크 합산 (lighten = pixel-wise max)
+    maskCtx.globalCompositeOperation = 'lighten';
+    maskCtx.drawImage(blurCv, 0, 0);
+    maskCtx.globalCompositeOperation = 'source-over';
+  }
+
+  // ── 5. 마스크 적용 → 최종 투명 PNG ──
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(maskCv, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+
+  return cv.toDataURL('image/png');
+}
+
+// ── 드래이핑 스테이지 canvas 렌더 ───────────────────────
+// 배경색 + 투명 컷아웃 합성, 얼굴 zoom in
+let drapingCanvas=null, drapingCtx=null;
+let currentDrapingColor='#F0F0F0';
+
+function initDrapingCanvas(){
+  const stage=document.getElementById('drapingStage');
+  // canvas 대신 img 태그 사용 — stage 배경색이 투명 영역으로 비침
+  stage.innerHTML=`
+    <img id="drapingFaceImg" src="" alt="드래이핑"
+      style="position:relative;z-index:1;max-height:320px;max-width:100%;display:block;margin:auto;border-radius:8px;">
+    <div class="draping-color-info" id="drapingInfo">배경색을 선택해보세요</div>`;
+}
+
+function renderDrapingCanvas(bgColor){
+  if(!faceCutoutURL)return;
+  // stage 배경색 변경 → 투명 PNG 뒤로 배경색이 비침
+  const stage=document.getElementById('drapingStage');
+  if(stage){
+    stage.style.backgroundColor=bgColor;
+    stage.style.transition='background-color .4s ease';
+  }
+  // face img src 설정 (이미 설정됐으면 재설정 불필요)
+  const img=document.getElementById('drapingFaceImg');
+  if(img && img.src !== faceCutoutURL) img.src=faceCutoutURL;
+}
+
+function renderCompareCanvas(color, canvasId){
+  // compare도 canvas → div+img 방식으로
+  const cv=document.getElementById(canvasId);
+  if(!cv||!faceCutoutURL)return;
+  // canvas 대신 parent div 배경색 + img
+  const parent=cv.parentElement;
+  if(parent){
+    parent.style.backgroundColor=color;
+    parent.style.display='flex';
+    parent.style.alignItems='center';
+    parent.style.justifyContent='center';
+    parent.innerHTML=`<img src="${faceCutoutURL}" style="max-height:70px;max-width:90%;display:block;border-radius:6px;">`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  개인화 팔레트 생성기
+//  실제 측정된 Hue·S·L 수치로 색상 조화 이론 적용
+//
+//  색상 조화 원칙:
+//   BEST  = 동색조(유사색) + 피부 언더톤 보완
+//   GOOD  = 분리보색(Split-Complementary)
+//   AVOID = 충돌색 (피부와 대비 과다 or 언더톤 반대)
+// ══════════════════════════════════════════════════════
+function hslToHex(h,s,l){
+  h=((h%360)+360)%360; s=Math.max(0,Math.min(1,s)); l=Math.max(0,Math.min(1,l));
+  const a=s*Math.min(l,1-l);
+  const f=n=>{const k=(n+h/30)%12; return l-a*Math.max(Math.min(k-3,9-k,1),-1);};
+  const toHex=v=>Math.round(v*255).toString(16).padStart(2,'0');
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+
+function generatePersonalPalette(d){
+  const h = d.hue;           // 피부 Hue (°)
+  const s = d.satPct / 100;  // 피부 채도
+  const l = d.ligPct / 100;  // 피부 명도
+  const isWarm = d.axis.warm.isWarm;
+  const isLight = d.axis.light.isLight;
+  const isClear = d.axis.clarity.isClear;
+
+  // ── 피부 명도·채도에 맞춘 색상 강도 결정 ──
+  // 밝은 피부 → 파스텔/연한 색이 잘 어울림
+  // 어두운 피부 → 깊고 진한 색이 잘 어울림
+  // 선명한 피부 → 선명한 색, 탁한 피부 → 탁한/뮤트 색
+  const palL_base = isLight ? Math.min(0.82, l + 0.18) : Math.max(0.25, l - 0.08);
+  const palL_deep = isLight ? Math.max(0.38, l - 0.15) : Math.max(0.18, l - 0.22);
+  const palS_base = isClear ? Math.min(0.80, s * 2.2 + 0.20) : Math.min(0.45, s * 1.4 + 0.10);
+  const palS_muted = palS_base * 0.55;
+
+  // ── BEST: 피부와 조화로운 유사색 계열 6가지 ──
+  // 웜톤: 피부 Hue 기준 ±30° 유사색 (황-주황-적 계열)
+  // 쿨톤: 피부 Hue 기준 ±20° + 청-자 계열
+  const bestOffsets = isWarm
+    ? [-25, -12, 0, 14, 28, 42]    // 따뜻한 색상 유사색 범위
+    : [-20, -8,  0, 10, 20, 160];  // 쿨 유사색 + 먼 청색 계열 1개
+  const best = bestOffsets.map((offset, i) => {
+    const bh = h + offset;
+    // 앞 3개는 연한 톤, 뒤 3개는 깊은 톤
+    const bl = i < 3 ? palL_base : palL_deep;
+    const bs = i < 3 ? palS_base : Math.min(0.75, palS_base * 1.1);
+    return hslToHex(bh, bs, bl);
+  });
+
+  // 색상명 생성 (Hue 범위별)
+  const hueName = hue => {
+    const n=[['레드',0,15],['주황',15,40],['옐로우',40,65],['옐로우그린',65,100],
+             ['그린',100,150],['시안',150,190],['블루',190,240],['인디고',240,270],
+             ['바이올렛',270,310],['핑크',310,345],['로즈',345,360]];
+    const h=((hue%360)+360)%360;
+    const e=n.find(([,a,b])=>h>=a&&h<b)||n[0];
+    return e[0];
+  };
+  const bestLabels = bestOffsets.map((offset,i) => {
+    const nm = hueName(h + offset);
+    const tone = i < 3 ? (isLight?'라이트 ':'소프트 ') : (isLight?'딥 ':'다크 ');
+    return tone + nm;
+  });
+
+  // ── GOOD: 분리보색 (Split-Complementary) ──
+  // 보색에서 ±30° 이동 → 대비는 있되 충돌은 줄임
+  const compH = h + 180;
+  const good = [
+    hslToHex(compH - 30, palS_muted * 1.3, palL_base),
+    hslToHex(compH,      palS_muted * 1.0, palL_base),
+    hslToHex(compH + 30, palS_muted * 1.3, palL_base),
+    hslToHex(compH - 30, palS_muted * 0.8, palL_deep),
+    hslToHex(compH,      palS_muted * 0.8, palL_deep),
+    hslToHex(compH + 30, palS_muted * 0.8, palL_deep),
+  ];
+
+  // ── AVOID: 피부와 충돌하는 색 ──
+  // 웜톤이면 차가운 청-자 계열 원색이 충돌
+  // 쿨톤이면 강한 오렌지-황 계열이 충돌
+  const avoidH = isWarm ? h + 185 : h + 175;
+  const avoidS = 0.75;
+  const avoid = [
+    hslToHex(avoidH,      avoidS, 0.55),
+    hslToHex(avoidH + 20, avoidS, 0.50),
+    hslToHex(avoidH - 20, avoidS, 0.60),
+    hslToHex(avoidH,      avoidS, 0.35),
+  ];
+  const avoidLabels = [
+    isWarm?'아이스 블루':'오렌지',
+    isWarm?'퍼플':'골드',
+    isWarm?'라벤더':'버닝 옐로우',
+    isWarm?'딥 블루':'다크 오렌지',
+  ];
+
+  return { best, bestLabels, good, avoid, avoidLabels };
+}
+
+
+// ══════════════════════════════════════════════════════
+//  코디모드 v2 — BEST / AVOID 2장 비교
+// ══════════════════════════════════════════════════════
+let drapingMode = 'bg';
+
+// 슬롯별 상태
+const SLOTS = {
+  best:  { origData: null, targetHSL: null, lastColor: null },
+  avoid: { origData: null, targetHSL: null, lastColor: null },
+};
+
+function switchDrapingMode(mode){
+  drapingMode = mode;
+  document.getElementById('modeBtnBg').classList.toggle('active', mode==='bg');
+  document.getElementById('modeBtnCoodi').classList.toggle('active', mode==='coodi');
+  document.getElementById('modeStageBg').style.display    = mode==='bg'    ? '' : 'none';
+  document.getElementById('modeStageCoodi').style.display = mode==='coodi' ? '' : 'none';
+}
+
+// ── 사진 업로드 ──
+function loadCoordiPhoto(slot, event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const cvId = slot==='best' ? 'coordiCvBest' : 'coordiCvAvoid';
+      const cv  = document.getElementById(cvId);
+      const ctx = cv.getContext('2d');
+      const maxW = 130;
+      const scale = Math.min(1, maxW / img.naturalWidth);
+      cv.width  = Math.round(img.naturalWidth  * scale);
+      cv.height = Math.round(img.naturalHeight * scale);
+      ctx.drawImage(img, 0, 0, cv.width, cv.height);
+
+      SLOTS[slot].origData  = ctx.getImageData(0, 0, cv.width, cv.height);
+      SLOTS[slot].targetHSL = null;
+      SLOTS[slot].lastColor = null;
+
+      cv.style.display = 'block';
+      document.getElementById('uploadArea' + (slot==='best'?'Best':'Avoid')).style.display = 'none';
+      document.getElementById('coordiToleranceWrap').style.display = '';
+      document.getElementById('coordiResetWrap').style.display = '';
+      document.getElementById('status' + (slot==='best'?'Best':'Avoid')).textContent = '👆 옷 위를 클릭하세요';
+
+      cv.onclick = (e) => onCoordiClick(slot, e);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── 클릭 → 색상 샘플링 ──
+function onCoordiClick(slot, e){
+  const cvId = slot==='best' ? 'coordiCvBest' : 'coordiCvAvoid';
+  const cv   = document.getElementById(cvId);
+  const rect = cv.getBoundingClientRect();
+  const scaleX = cv.width  / rect.width;
+  const scaleY = cv.height / rect.height;
+  const x = Math.round((e.clientX - rect.left) * scaleX);
+  const y = Math.round((e.clientY - rect.top)  * scaleY);
+
+  const orig = SLOTS[slot].origData;
+  let rSum=0, gSum=0, bSum=0, cnt=0;
+  for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++){
+    const px = Math.max(0, Math.min(cv.width-1,  x+dx));
+    const py = Math.max(0, Math.min(cv.height-1, y+dy));
+    const i  = (py * cv.width + px) * 4;
+    rSum += orig.data[i]; gSum += orig.data[i+1]; bSum += orig.data[i+2]; cnt++;
+  }
+  const r = rSum/cnt, g = gSum/cnt, b = bSum/cnt;
+  SLOTS[slot].targetHSL = rgbToHsl(r, g, b);
+
+  const statusId = 'status' + (slot==='best'?'Best':'Avoid');
+  document.getElementById(statusId).textContent =
+    `✅ RGB(${Math.round(r)},${Math.round(g)},${Math.round(b)}) 감지`;
+
+  if(SLOTS[slot].lastColor) applyColorToSlot(slot, SLOTS[slot].lastColor);
+}
+
+// ── 허용 범위 변경 ──
+function onToleranceChange(val){
+  document.getElementById('coordiToleranceVal').textContent = val;
+  coordiTolerance = parseInt(val);
+  ['best','avoid'].forEach(slot => {
+    if(SLOTS[slot].targetHSL && SLOTS[slot].lastColor)
+      applyColorToSlot(slot, SLOTS[slot].lastColor);
+  });
+}
+let coordiTolerance = 28;
+
+// ── 색상 교체 (슬롯별) ──
+function applyColorToSlot(slot, hexColor){
+  const s = SLOTS[slot];
+  if(!s.origData || !s.targetHSL) return;
+  s.lastColor = hexColor;
+
+  const cvId = slot==='best' ? 'coordiCvBest' : 'coordiCvAvoid';
+  const cv   = document.getElementById(cvId);
+  const ctx  = cv.getContext('2d');
+
+  const newRGB = hexToRgb(hexColor);
+  const newHSL = rgbToHsl(newRGB.r, newRGB.g, newRGB.b);
+  const [tH, tS, tL] = s.targetHSL;
+  const tol = coordiTolerance;
+  const src = s.origData.data;
+  const out = ctx.createImageData(cv.width, cv.height);
+  const dst = out.data;
+
+  for(let i=0; i<src.length; i+=4){
+    const r=src[i], g=src[i+1], b=src[i+2], a=src[i+3];
+    const [pH, pS, pL] = rgbToHsl(r, g, b);
+    const dH = Math.min(Math.abs(pH-tH), 360-Math.abs(pH-tH));
+    const dS = Math.abs(pS-tS);
+    const dL = Math.abs(pL-tL);
+
+    const isWhiteish = tL > 70 && tS < 18;
+    const matched = isWhiteish
+      ? (dL < tol * 0.85 && pS < 25)
+      : (dH < tol*1.8 && dS < tol*0.9 && dL < tol*1.1);
+
+    if(matched){
+      const deltaL = pL - tL;
+      const [nR, nG, nB] = hslToRgb(newHSL[0], newHSL[1],
+        Math.max(0, Math.min(100, newHSL[2] + deltaL)));
+      const blend = isWhiteish ? 1.0 : Math.max(0.7, 1-(dH/(tol*1.8))*0.3);
+      dst[i]   = Math.round(r*(1-blend) + nR*blend);
+      dst[i+1] = Math.round(g*(1-blend) + nG*blend);
+      dst[i+2] = Math.round(b*(1-blend) + nB*blend);
+      dst[i+3] = a;
+    } else {
+      dst[i]=r; dst[i+1]=g; dst[i+2]=b; dst[i+3]=a;
+    }
+  }
+  ctx.putImageData(out, 0, 0);
+}
+
+// ── 원본 복원 ──
+function resetCoordi(){
+  ['best','avoid'].forEach(slot => {
+    const s = SLOTS[slot];
+    if(!s.origData) return;
+    const cvId = slot==='best' ? 'coordiCvBest' : 'coordiCvAvoid';
+    const cv   = document.getElementById(cvId);
+    cv.getContext('2d').putImageData(s.origData, 0, 0);
+    s.targetHSL = null; s.lastColor = null;
+    document.getElementById('status'+(slot==='best'?'Best':'Avoid')).textContent = '↩ 복원됨. 다시 클릭하세요.';
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  모델 코디 모드
+// ══════════════════════════════════════════════════════
+let modelOrigData      = null;
+let modelCompositeData = null;
+let modelTargetHSL     = null;
+let modelLastColor     = null;
+let modelTolerance     = 32;
+let modelAlphaMask     = null;  // PNG 원본 알파채널: 배경 픽셀 통한 BFS 누출 방지
+let modelZoomScale     = 1.0;
+
+function modelZoom(dir) {
+  modelZoomScale = Math.max(0.5, Math.min(3.0, modelZoomScale + dir * 0.2));
+  document.getElementById('modelCv').style.transform = `scale(${modelZoomScale})`;
+  document.getElementById('modelZoomLabel').textContent = Math.round(modelZoomScale * 100) + '%';
+}
+
+
+async function selectModelGender(gender) {
+  document.getElementById('genderBtnM').classList.toggle('active', gender === 'male');
+  document.getElementById('genderBtnF').classList.toggle('active', gender === 'female');
+
+  const imgPath  = gender === 'male' ? 'man_model.png' : 'woman_model.png';
+  const statusEl = document.getElementById('modelStatus');
+  statusEl.textContent = '모델 이미지 로드 중...';
+  document.getElementById('modelCanvasWrap').style.display = 'none';
+  document.getElementById('modelResetWrap').style.display  = 'none';
+  modelTargetHSL = null;
+  modelLastColor = null;
+  modelZoomScale = 1.0;
+  document.getElementById('modelCv').style.transform = '';
+
+  const img = new Image();
+  img.onerror = () => {
+    statusEl.textContent = '이미지 로드 실패 — man_model.png / woman_model.png 파일을 확인하세요.';
+  };
+  img.onload = async () => {
+    // ── 1. 캔버스에 모델 이미지 그리기 ──
+    const cv  = document.getElementById('modelCv');
+    const maxW = 300;
+    const sc  = Math.min(1, maxW / img.naturalWidth);
+    cv.width  = Math.round(img.naturalWidth  * sc);
+    cv.height = Math.round(img.naturalHeight * sc);
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    modelOrigData = ctx.getImageData(0, 0, cv.width, cv.height);
+
+    // ── 1a. PNG 알파 마스크: 투명 배경 픽셀을 BFS 장벽으로 사용 ──
+    // canvas는 투명→흰색으로 렌더링하므로 원본 alpha 채널 별도 보존
+    {
+      const mCv = document.createElement('canvas');
+      mCv.width = cv.width; mCv.height = cv.height;
+      const mCtx = mCv.getContext('2d');
+      mCtx.drawImage(img, 0, 0, cv.width, cv.height);
+      const mPx = mCtx.getImageData(0, 0, cv.width, cv.height).data;
+      modelAlphaMask = new Uint8Array(cv.width * cv.height);
+      for (let i = 0; i < modelAlphaMask.length; i++) modelAlphaMask[i] = mPx[i*4+3] > 20 ? 1 : 0;
+    }
+
+    document.getElementById('modelCanvasWrap').style.display = 'block';
+
+    // ── 2. MediaPipe FaceMesh: 얼굴 인식 ──
+    statusEl.textContent = '얼굴 인식 중...';
+    const cropRatio = 0.42;
+    const cropH     = Math.round(img.naturalHeight * cropRatio);
+    const offCv = document.createElement('canvas');
+    offCv.width = img.naturalWidth; offCv.height = cropH;
+    const offCtx = offCv.getContext('2d');
+    offCtx.fillStyle = '#FFFFFF';
+    offCtx.fillRect(0, 0, offCv.width, offCv.height);
+    offCtx.drawImage(img, 0, 0);
+
+    modelFMWaiting = true;
+    try {
+      if (fmReady && fm) {
+        await new Promise(resolve => {
+          _modelFMResolve = resolve;
+          fm.send({ image: offCv }).catch(() => resolve());
+          setTimeout(resolve, 2500);
+        });
+      }
+    } catch(e) { console.warn('model FM:', e); }
+    modelFMWaiting = false;
+
+    if (modelLandmarks) {
+      modelLandmarks = modelLandmarks.map(l => ({
+        x: l.x, y: l.y * cropRatio, z: l.z || 0
+      }));
+    }
+
+    // ── 4. 얼굴 합성 ──
+    if (modelLandmarks && faceCutoutURL) {
+      statusEl.textContent = '얼굴 합성 중...';
+      await compositeFaceOnModel(cv, modelLandmarks);
+    }
+
+    // ── 5. 합성본 저장 ──
+    modelCompositeData = ctx.getImageData(0, 0, cv.width, cv.height);
+    modelOrigData      = modelCompositeData;
+
+    // ── 6. 퍼스널컬러 자동 적용 ──
+    const autoApplied = autoApplyShirtColor(cv);
+    statusEl.textContent = autoApplied
+      ? '퍼스널컬러 자동 적용 완료! 팔레트로 다른 색도 바꿔보세요.'
+      : (modelLandmarks ? '합성 완료! 티셔츠 위를 클릭해 색상을 감지하세요.' : '티셔츠 위를 클릭해 색상을 감지하세요.');
+
+    document.getElementById('modelResetWrap').style.display = '';
+    cv.style.cursor = 'crosshair';
+    cv.onclick = onModelShirtClick;
+  };
+  img.src = imgPath;
+}
+
+// ── face-api.js 초기화: 브라우저 내 무료 AI 랜드마크 (API 키 불필요) ──
+// @vladmandic/face-api = 원본 face-api.js 유지보수 포크
+const FACEAPI_MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+let faceApiReady = false;
+(async () => {
+  try {
+    await faceapi.nets.tinyFaceDetector.loadFromUri(FACEAPI_MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(FACEAPI_MODEL_URL);
+    faceApiReady = true;
+    console.log('[face-api] 모델 로드 완료 ✓');
+  } catch(e) { console.warn('[face-api] 모델 로드 실패 — 기본 방식 사용:', e.message); }
+})();
+
+// ── MediaPipe Tasks Vision 헤어 세그멘터 (lazy init) ─────────────────────
+// 동적 import → 첫 사용 시에만 ~2.7MB 모델 다운로드 (API 키 불필요)
+let _hairSegmenter = null;
+
+async function ensureHairSegmenter() {
+  if (_hairSegmenter) return true;
+  try {
+    const { FilesetResolver, ImageSegmenter } =
+      await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');
+    const visionFiles = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+    );
+    _hairSegmenter = await ImageSegmenter.createFromOptions(visionFiles, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite',
+        delegate: 'GPU'
+      },
+      runningMode: 'IMAGE',
+      outputCategoryMask: false,
+      outputConfidenceMasks: true   // 0.0~1.0 신뢰도 → 자연스러운 반투명 경계
+    });
+    console.log('[hair-seg] 모델 로드 완료 ✓');
+    return true;
+  } catch(e) {
+    console.warn('[hair-seg] 초기화 실패 — 폴백 폴리곤 마스크 사용:', e.message);
+    return false;
+  }
+}
+
+// imgEl → Uint8Array(W*H), 값=0~255 (헤어 신뢰도 × 255, 자연스러운 반투명 경계)
+async function getHairMask(imgEl) {
+  const ok = await ensureHairSegmenter();
+  if (!ok || !_hairSegmenter) return null;
+  try {
+    const result = _hairSegmenter.segment(imgEl);
+    // confidenceMasks[0] = hair 채널 (Float32Array, 0.0~1.0)
+    if (!result.confidenceMasks || !result.confidenceMasks[0]) return null;
+    const raw = result.confidenceMasks[0].getAsFloat32Array();
+    result.confidenceMasks.forEach(m => m.close());
+    const mask = new Uint8Array(imgEl.naturalWidth * imgEl.naturalHeight);
+    for (let i = 0; i < mask.length; i++) mask[i] = Math.round(raw[i] * 255);
+    return mask;
+  } catch(e) {
+    console.warn('[hair-seg] 세그멘테이션 실패:', e.message);
+    return null;
+  }
+}
+
+// imgSrc(data URL) → 68점 랜드마크로 좌·우 눈 중심 좌표 반환
+// 반환: { leftEye:{x,y}, rightEye:{x,y} } (컷아웃 이미지 픽셀 좌표계)
+async function getFaceEyeCenters(imgSrc) {
+  if (!faceApiReady) return null;
+  try {
+    const img = await new Promise(res => {
+      const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = imgSrc;
+    });
+    if (!img) return null;
+    // 투명 배경은 감지 실패 → 회색 배경에 그려서 전달
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ct = c.getContext('2d');
+    ct.fillStyle = '#888'; ct.fillRect(0, 0, c.width, c.height);
+    ct.drawImage(img, 0, 0);
+    const det = await faceapi.detectSingleFace(c, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks();
+    if (!det) return null;
+    const lm  = det.landmarks.positions;
+    const avg = pts => pts.reduce((a, p) => ({ x: a.x + p.x / pts.length, y: a.y + p.y / pts.length }), { x: 0, y: 0 });
+    return { leftEye: avg(lm.slice(36, 42)), rightEye: avg(lm.slice(42, 48)) };
+  } catch(e) { return null; }
+}
+
+// ── 티셔츠 자동 감지 + 첫 번째 퍼스널컬러 적용 ──
+// 토르소 중심 영역을 샘플링해 셔츠 색상 자동 감지
+function autoApplyShirtColor(cv) {
+  if (!playColors || !playColors.length || !modelOrigData) return false;
+  const W = cv.width, H = cv.height;
+  // 셔츠 위치: 가로 중심, 세로 35~45% (목 아래 ~ 허리 위)
+  const cx = Math.round(W * 0.50);
+  const cy = Math.round(H * 0.40);
+  let rS = 0, gS = 0, bS = 0, n = 0;
+  for (let dy = -7; dy <= 7; dy++) {
+    for (let dx = -7; dx <= 7; dx++) {
+      const px = Math.max(0, Math.min(W - 1, cx + dx));
+      const py = Math.max(0, Math.min(H - 1, cy + dy));
+      const i4 = (py * W + px) * 4;
+      if (modelOrigData.data[i4 + 3] < 30) continue;
+      rS += modelOrigData.data[i4];
+      gS += modelOrigData.data[i4 + 1];
+      bS += modelOrigData.data[i4 + 2];
+      n++;
+    }
+  }
+  if (!n) return false;
+  modelTargetHSL = rgbToHsl(rS / n, gS / n, bS / n);
+  modelClickX = cx;
+  modelClickY = cy;
+  applyColorToModel(playColors[0]);
+  return true;
+}
+
+// ── 얼굴 합성: face-api.js 눈 좌표 기반 affine 정렬 + 블러 폴리곤 마스크 ──
+// face-api.js 없으면 기존 바운딩박스 방식으로 자동 폴백
+function compositeFaceOnModel(cv, landmarks) {
+  return new Promise(resolve => {
+    if (!faceCutoutURL) { resolve(); return; }
+    const W = cv.width, H = cv.height;
+
+    const lm10 = landmarks[10], lm152 = landmarks[152];
+    const lm234 = landmarks[234], lm454 = landmarks[454];
+    if (!lm10 || !lm152 || !lm234 || !lm454) { resolve(); return; }
+
+    const fL = lm234.x * W, fR = lm454.x * W;
+    const fT = lm10.y  * H, fB = lm152.y * H;
+    const fCX = (fL + fR) / 2, fCY = (fT + fB) / 2;
+    const fW = fR - fL, fH = fB - fT;
+    if (fW < 8 || fH < 8) { resolve(); return; }
+
+    // 폴리곤 6% 확장
+    const poly = FACE_OUTLINE_IDXS.map(idx => [
+      fCX + (landmarks[idx].x * W - fCX) * 1.06,
+      fCY + (landmarks[idx].y * H - fCY) * 1.06
+    ]);
+
+    // MediaPipe 랜드마크에서 모델 눈 중심 추출
+    // 좌안: 33, 133, 159, 145 / 우안: 263, 362, 386, 374
+    const mpAvg = idxs => idxs.reduce(
+      (a, i) => ({ x: a.x + landmarks[i].x * W / idxs.length, y: a.y + landmarks[i].y * H / idxs.length }),
+      { x: 0, y: 0 }
+    );
+    const modelLeftEye  = mpAvg([33, 133, 159, 145]);
+    const modelRightEye = mpAvg([263, 362, 386, 374]);
+
+    const userFace = new Image();
+    userFace.onerror = () => resolve();
+    userFace.onload = () => {
+      // async 내부 처리
+      (async () => {
+        const ctx = cv.getContext('2d');
+        ctx.putImageData(modelOrigData, 0, 0);
+
+        const tmpCv = document.createElement('canvas');
+        tmpCv.width = W; tmpCv.height = H;
+        const tmpCtx = tmpCv.getContext('2d');
+
+        // ── face-api.js: 사용자 컷아웃에서 눈 중심 감지 → affine 정렬 ──
+        const userEyes = await getFaceEyeCenters(faceCutoutURL);
+
+        if (userEyes) {
+          // 양쪽 눈 기반 회전 · 스케일 · 위치 동시 정렬
+          const { leftEye: sL, rightEye: sR } = userEyes;   // 소스(컷아웃) 눈 중심
+          const dL = modelLeftEye, dR = modelRightEye;       // 대상(모델) 눈 중심
+
+          const srcAngle = Math.atan2(sR.y - sL.y, sR.x - sL.x);
+          const dstAngle = Math.atan2(dR.y - dL.y, dR.x - dL.x);
+          const rotation = dstAngle - srcAngle;
+
+          const srcDist = Math.hypot(sR.x - sL.x, sR.y - sL.y);
+          const dstDist = Math.hypot(dR.x - dL.x, dR.y - dL.y);
+          const scale   = dstDist / Math.max(srcDist, 1);
+
+          const srcMidX = (sL.x + sR.x) / 2, srcMidY = (sL.y + sR.y) / 2;
+          const dstMidX = (dL.x + dR.x) / 2, dstMidY = (dL.y + dR.y) / 2;
+
+          tmpCtx.save();
+          tmpCtx.translate(dstMidX, dstMidY);
+          tmpCtx.rotate(rotation);
+          tmpCtx.scale(scale, scale);
+          tmpCtx.translate(-srcMidX, -srcMidY);
+          tmpCtx.globalAlpha = 0.95;
+          tmpCtx.drawImage(userFace, 0, 0, userFace.naturalWidth, userFace.naturalHeight);
+          tmpCtx.globalAlpha = 1.0;
+          tmpCtx.restore();
+        } else {
+          // ── 폴백: 바운딩박스 스케일 방식 ──
+          const scW = fW / (userFace.naturalWidth  / 1.4);
+          const scH = fH / (userFace.naturalHeight / 2.03);
+          const s   = Math.max(scW, scH);
+          tmpCtx.globalAlpha = 0.95;
+          tmpCtx.drawImage(userFace, fCX - userFace.naturalWidth * s * 0.5,
+            fCY - userFace.naturalHeight * s * 0.62,
+            userFace.naturalWidth * s, userFace.naturalHeight * s);
+          tmpCtx.globalAlpha = 1.0;
+        }
+
+        // ── 블러 폴리곤 마스크로 경계 부드럽게 ──
+        const maskCv = document.createElement('canvas');
+        maskCv.width = W; maskCv.height = H;
+        const maskCtx = maskCv.getContext('2d');
+        maskCtx.filter = 'blur(6px)';
+        maskCtx.fillStyle = '#fff';
+        maskCtx.beginPath();
+        poly.forEach(([x, y], i) => i === 0 ? maskCtx.moveTo(x, y) : maskCtx.lineTo(x, y));
+        maskCtx.closePath();
+        maskCtx.fill();
+
+        tmpCtx.globalCompositeOperation = 'destination-in';
+        tmpCtx.filter = 'none';
+        tmpCtx.drawImage(maskCv, 0, 0);
+        tmpCtx.globalCompositeOperation = 'source-over';
+
+        ctx.drawImage(tmpCv, 0, 0);
+        resolve();
+      })();
+    };
+    userFace.src = faceCutoutURL;
+  });
+}
+
+// ── 티셔츠 클릭: 색상 샘플링 + 클릭 좌표 저장 ──
+let modelClickX = 0, modelClickY = 0;
+
+function onModelShirtClick(e) {
+  const cv   = document.getElementById('modelCv');
+  const rect = cv.getBoundingClientRect();
+  const x    = Math.round((e.clientX - rect.left) * (cv.width  / rect.width));
+  const y    = Math.round((e.clientY - rect.top)  * (cv.height / rect.height));
+  if (!modelOrigData) return;
+
+  let rSum = 0, gSum = 0, bSum = 0, cnt = 0;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const px = Math.max(0, Math.min(cv.width  - 1, x + dx));
+    const py = Math.max(0, Math.min(cv.height - 1, y + dy));
+    const i  = (py * cv.width + px) * 4;
+    if (modelOrigData.data[i + 3] < 30) continue;
+    rSum += modelOrigData.data[i];
+    gSum += modelOrigData.data[i + 1];
+    bSum += modelOrigData.data[i + 2];
+    cnt++;
+  }
+  if (cnt === 0) {
+    document.getElementById('modelStatus').textContent = '투명 영역이에요. 티셔츠 위를 다시 클릭해 주세요.';
+    return;
+  }
+  const r = rSum / cnt, g = gSum / cnt, b = bSum / cnt;
+  modelTargetHSL = rgbToHsl(r, g, b);
+  modelClickX = x;
+  modelClickY = y;
+  document.getElementById('modelStatus').textContent =
+    `색상 감지! RGB(${Math.round(r)},${Math.round(g)},${Math.round(b)}) — 팔레트를 클릭해 바꿔보세요.`;
+
+  if (playColors && playColors.length > 0) {
+    applyColorToModel(playColors[0]);
+    document.getElementById('modelStatus').textContent =
+      '퍼스널컬러 자동 적용! 팔레트로 다른 색도 시도해보세요.';
+  }
+}
+
+// ── 팔레트 → 티셔츠 색 교체: BFS 플러드 필 ──
+// 클릭 지점에서 HSL 허용 범위 내 연결된 픽셀만 색칠 → 분리된 살색 영역 보호
+function applyColorToModel(hexColor) {
+  if (!modelOrigData || !modelTargetHSL) {
+    const st = document.getElementById('modelStatus');
+    if (st) st.textContent = '먼저 티셔츠 위를 클릭해 색상을 감지하세요.';
+    return;
+  }
+  modelLastColor = hexColor;
+  const cv  = document.getElementById('modelCv');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const newRGB = hexToRgb(hexColor);
+  const newHSL = rgbToHsl(newRGB.r, newRGB.g, newRGB.b);
+  const [tH, tS, tL] = modelTargetHSL;
+  const tol = modelTolerance;
+  const src = modelOrigData.data;
+  const out = new Uint8ClampedArray(src);  // 원본 복사본에서 시작
+
+  // 피부색 제외: 따뜻한 색조(적-황 계열) + 셔츠보다 현저히 어두운 픽셀
+  // 베이지 셔츠(L≈80)와 달리 피부는 L≈50~68 → 이 차이로 구분
+  function isProbablySkin(pH, pS, pL) {
+    const warmHue = pH <= 55 || pH >= 310;
+    return warmHue && pS >= 18 && pL < tL - 12;
+  }
+
+  // 픽셀이 티셔츠 색상 범위에 속하는지 판단
+  const isLight = tL > 60 && tS < 30;
+  function matches(r, g, b) {
+    const [pH, pS, pL] = rgbToHsl(r, g, b);
+    if (pL < 10) return false;
+    if (isProbablySkin(pH, pS, pL)) return false;  // 피부색 픽셀 제외
+    const dH = Math.min(Math.abs(pH - tH), 360 - Math.abs(pH - tH));
+    const dS = Math.abs(pS - tS);
+    const dL = Math.abs(pL - tL);
+    return isLight
+      ? (dL < tol * 0.9 && dS < tol * 0.6 && pL > 55)
+      : (dH < tol * 1.4 && dS < tol * 0.8 && dL < tol * 0.9);
+  }
+
+  function recolor(i4) {
+    const r = src[i4], g = src[i4+1], b = src[i4+2];
+    const [, , pL] = rgbToHsl(r, g, b);
+    const deltaL = pL - tL;
+    const [nR, nG, nB] = hslToRgb(
+      newHSL[0], Math.min(newHSL[1], 90),
+      Math.max(10, Math.min(95, newHSL[2] + deltaL))
+    );
+    const blend = isLight ? Math.min(1, (pL - 45) / 18) : 0.88;
+    out[i4]   = Math.round(r * (1 - blend) + nR * blend);
+    out[i4+1] = Math.round(g * (1 - blend) + nG * blend);
+    out[i4+2] = Math.round(b * (1 - blend) + nB * blend);
+  }
+
+  // BFS 플러드 필 — typed array 큐로 성능 확보
+  const visited = new Uint8Array(W * H);
+  const queue   = new Int32Array(W * H);
+  let head = 0, tail = 0;
+
+  const startPos = Math.round(modelClickY) * W + Math.round(modelClickX);
+  if (src[startPos * 4 + 3] >= 30 && matches(src[startPos*4], src[startPos*4+1], src[startPos*4+2])) {
+    queue[tail++] = startPos;
+    visited[startPos] = 1;
+  }
+
+  while (head < tail) {
+    const pos = queue[head++];
+    const i4  = pos * 4;
+    if (src[i4 + 3] < 30) continue;  // 투명 픽셀 건너뜀
+    if (!matches(src[i4], src[i4+1], src[i4+2])) continue;
+
+    recolor(i4);
+
+    const x = pos % W, y = (pos / W) | 0;
+    const neighbors = [
+      x > 0   ? pos - 1 : -1,
+      x < W-1 ? pos + 1 : -1,
+      y > 0   ? pos - W : -1,
+      y < H-1 ? pos + W : -1,
+    ];
+    for (const nb of neighbors) {
+      // modelAlphaMask: 원본 PNG에서 투명인 픽셀(배경)은 BFS 통과 금지
+      if (nb >= 0 && !visited[nb] && (!modelAlphaMask || modelAlphaMask[nb])) {
+        visited[nb] = 1; queue[tail++] = nb;
+      }
+    }
+  }
+
+  ctx.putImageData(new ImageData(out, W, H), 0, 0);
+}
+
+function resetModelCoordi() {
+  if (!modelCompositeData) return;
+  modelOrigData  = modelCompositeData;
+  modelTargetHSL = null;
+  modelLastColor = null;
+  document.getElementById('modelCv').getContext('2d').putImageData(modelCompositeData, 0, 0);
+  document.getElementById('modelStatus').textContent = '↩ 복원됐어요. 티셔츠를 다시 클릭해 색상을 감지하세요.';
+}
+
+// ── RGB ↔ HSL 유틸 ──
+function rgbToHsl(r, g, b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h=0, s=0, l=(max+min)/2;
+  if(max!==min){
+    const d=max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=((g-b)/d+(g<b?6:0))/6; break;
+      case g: h=((b-r)/d+2)/6; break;
+      case b: h=((r-g)/d+4)/6; break;
+    }
+  }
+  return [h*360, s*100, l*100];
+}
+function hslToRgb(h, s, l){
+  h/=360; s/=100; l/=100;
+  if(s===0) return [Math.round(l*255), Math.round(l*255), Math.round(l*255)];
+  const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q;
+  const hue2rgb=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+  return [Math.round(hue2rgb(p,q,h+1/3)*255), Math.round(hue2rgb(p,q,h)*255), Math.round(hue2rgb(p,q,h-1/3)*255)];
+}
+function hexToRgb(hex){
+  return {r:parseInt(hex.slice(1,3),16), g:parseInt(hex.slice(3,5),16), b:parseInt(hex.slice(5,7),16)};
+}
+
+// ══════════════════════════════════════════════════════
+function shadeColor(hex, pct){
+  let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  r=Math.max(0,Math.min(255,r+pct)); g=Math.max(0,Math.min(255,g+pct)); b=Math.max(0,Math.min(255,b+pct));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+// ── setDrapingColor ────
+let playTimer=null,playIdx=0,playColors=[],playLabels=[];
+
+function setDrapingColor(color, label){
+  if(drapingMode === 'coodi'){
+    // 모델 코디: 팔레트 클릭 → 티셔츠 색 자동 교체
+    applyColorToModel(color);
+    const st = document.getElementById('modelStatus');
+    if (st) st.textContent = `퍼스널컬러 적용: ${label || color}`;
+  } else {
+    const stage = document.getElementById('drapingStage');
+    if(stage) stage.style.backgroundColor = color;
+    document.getElementById('drapingInfo').textContent = label || color;
+  }
+  document.querySelectorAll('.dpal-sw').forEach(sw=>sw.classList.toggle('active', sw.dataset.color===color));
+}
+
+function togglePlay(){
+  const btn=document.getElementById('btnPlay');
+  if(playTimer){clearInterval(playTimer);playTimer=null;btn.textContent='▶ 자동 재생';}
+  else{
+    playIdx=0;btn.textContent='⏹ 정지';
+    playTimer=setInterval(()=>{setDrapingColor(playColors[playIdx],playLabels[playIdx]||playColors[playIdx]);playIdx=(playIdx+1)%playColors.length;},1200);
+  }
+}
+
+function buildDraping(subtypeKey, analysisData){
+  const s = SEASONS_12[subtypeKey];
+
+  // 개인화 팔레트 생성 (분석 데이터가 있으면 동적, 없으면 기본값)
+  const pal = analysisData ? generatePersonalPalette(analysisData) : {
+    best: s.best, bestLabels: s.bestLabel,
+    good: s.good, avoid: s.avoid, avoidLabels: s.avoidLabel
+  };
+
+  playColors = pal.best; playLabels = pal.bestLabels;
+  window._lastAvoidColor = pal.avoid[0] || null;
+
+  // 드래이핑 초기화
+  initDrapingCanvas();
+  setTimeout(()=>{
+    const fimg = document.getElementById('drapingFaceImg');
+    if(fimg) fimg.src = faceCutoutURL;
+    const stage = document.getElementById('drapingStage');
+    if(stage) stage.style.backgroundColor = pal.best[0];
+    document.getElementById('drapingInfo').textContent = pal.bestLabels[0] || pal.best[0];
+  }, 50);
+
+  const palEl = document.getElementById('drapingPalettes');
+  const mkRow = (label, cols, labels, avoid) => `
+    <div class="dpal-row">
+      <div class="dpal-label" style="${avoid?'color:#EF4444;':''}">${label}</div>
+      <div class="dpal-sws">${cols.map((c,i) => `
+        <div class="dpal-sw" data-color="${c}" style="background:${c};" onclick="setDrapingColor('${c}','${labels&&labels[i]||c}')">
+          <div class="tip">${labels&&labels[i]||c}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  palEl.innerHTML =
+    mkRow('BEST', pal.best, pal.bestLabels, false) +
+    mkRow('GOOD', pal.good, null, false) +
+    mkRow('AVOID', pal.avoid, pal.avoidLabels, true);
+
+  // BEST vs AVOID 비교 카드
+  document.getElementById('compareRow').innerHTML = `
+    <div class="compare-card" onclick="setDrapingColor('${pal.best[0]}','${pal.bestLabels[0]||pal.best[0]}')">
+      <div class="compare-bg" style="background:${pal.best[0]};height:80px;display:flex;align-items:center;justify-content:center;">
+        <img src="${faceCutoutURL}" style="max-height:70px;max-width:90%;display:block;border-radius:6px;">
+      </div>
+      <div class="compare-info"><div class="compare-tag">✅ BEST</div><div class="compare-name">${pal.bestLabels[0]||pal.best[0]}</div></div>
+    </div>
+    <div class="compare-card" onclick="setDrapingColor('${pal.avoid[0]}','${pal.avoidLabels&&pal.avoidLabels[0]||pal.avoid[0]}')">
+      <div class="compare-bg" style="background:${pal.avoid[0]};height:80px;display:flex;align-items:center;justify-content:center;">
+        <img src="${faceCutoutURL}" style="max-height:70px;max-width:90%;display:block;border-radius:6px;">
+      </div>
+      <div class="compare-info"><div class="compare-tag">❌ AVOID</div><div class="compare-name">${pal.avoidLabels&&pal.avoidLabels[0]||pal.avoid[0]}</div></div>
+    </div>`;
+
+  // Hero 팔레트 스와치도 갱신
+  document.getElementById('rPal').innerHTML = pal.best.map(c=>`<div class="r-sw" style="background:${c}"></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER RESULT
+// ══════════════════════════════════════════════════════
+async function renderResult(d){
+  const s=SEASONS_12[d.subtype];
+
+  // Hero
+  const hero=document.getElementById('rHero');
+  hero.style.background=s.gradient;hero.style.color=s.textColor;
+  document.getElementById('rEye').textContent=`✦ ${s.nameEn} ${s.emoji}`;
+  document.getElementById('rName').textContent=s.name;
+  document.getElementById('rSub').textContent=`${d.sampleCount}px 분석 · Hue ${d.hue}° · L ${d.ligPct}% · S ${d.satPct}% · 조명보정 R×${d.correctionK.r} G×${d.correctionK.g} B×${d.correctionK.b}`;
+  document.getElementById('rSubBadge').innerHTML=`<span>${s.emoji}</span><span>${s.subDesc}</span>`;
+  document.getElementById('rConf').textContent=`종합 확신도 ${d.overallConf}%`;
+  document.getElementById('rPal').innerHTML=s.best.map(c=>`<div class="r-sw" style="background:${c}"></div>`).join('');
+
+  // 12시즌 맵
+  const mapEl=document.getElementById('seasonMap');
+  mapEl.innerHTML=Object.entries(SEASON_MAP_DEF).map(([sk,subtypes])=>`
+    <div class="sm-col">
+      <div class="sm-season-label" style="background:${SEASON_HEADER_BG[sk]}">${SEASON_HEADER[sk]}</div>
+      ${subtypes.map((st,i)=>`
+        <div class="sm-chip ${d.subtype===st?'active':''}" style="background:${SEASON_MAP_COLORS[sk][i]};color:${SEASON_MAP_TEXT[sk][i]};${d.subtype===st?'font-weight:700;':''}">
+          ${SEASON_MAP_LABELS[sk][i]}
+        </div>`).join('')}
+    </div>`).join('');
+
+  // 서브타입 분기 논리 — 1행 4열
+  // 3축 카드
+  const ax=d.axis;const ac=document.getElementById('axisCards');ac.innerHTML='';
+  const warmPct=Math.max(5,Math.min(95,ax.warm.warmthFinal/2+50));
+  ac.innerHTML+=`
+  <div class="axis-card ${ax.warm.isWarm?'warm':'cool'}">
+    <div class="axis-label">축 1 · 색온도</div>
+    <div class="axis-verdict-text">${ax.warm.isWarm?'🔥 Warm':'❄️ Cool'}</div>
+    <div class="axis-verdict-conf">확신 ${ax.warm.conf}%</div>
+    <div class="axis-gauge-wrap"><div class="axis-gauge-fill" style="width:${warmPct}%;background:${ax.warm.isWarm?'linear-gradient(90deg,#FDE68A,#FB923C)':'linear-gradient(90deg,#BAE6FD,#A78BFA)'}"></div><div class="axis-gauge-center"></div></div>
+    <div class="axis-desc">Hue <b>${ax.warm.hue}°</b> (Warm:14~42°)<br>R-B차 <b>${ax.warm.rbDiff}</b> (기준 65)</div>
+  </div>
+  <div class="axis-card ${ax.light.isLight?'light':'dark'}">
+    <div class="axis-label">축 2 · 명도</div>
+    <div class="axis-verdict-text">${ax.light.isLight?'☀️ Light':'🌙 Dark'}</div>
+    <div class="axis-verdict-conf">확신 ${ax.light.conf}%</div>
+    <div class="axis-gauge-wrap"><div class="axis-gauge-fill" style="width:${ax.light.ligPct}%;background:${ax.light.isLight?'linear-gradient(90deg,#FEF9C3,#FDE68A)':'linear-gradient(90deg,#6B7280,#374151)'}"></div><div class="axis-gauge-center"></div></div>
+    <div class="axis-desc">HSL L값 <b>${ax.light.ligPct}%</b><br>기준 <b>50%</b> 대비 ${ax.light.isLight?`+${ax.light.ligPct-50}%`:`-${50-ax.light.ligPct}%`}</div>
+  </div>
+  <div class="axis-card ${ax.clarity.isClear?'clear':'muted'}">
+    <div class="axis-label">축 3 · 채도 (보조)</div>
+    <div class="axis-verdict-text">${ax.clarity.isClear?'✨ Clear':'🌫️ Muted'}</div>
+    <div class="axis-verdict-conf">확신 ${ax.clarity.conf}%</div>
+    <div class="axis-gauge-wrap"><div class="axis-gauge-fill" style="width:${ax.clarity.clarityScore}%;background:${ax.clarity.isClear?'linear-gradient(90deg,#6EE7B7,#60A5FA)':'linear-gradient(90deg,#D1D5DB,#9CA3AF)'}"></div><div class="axis-gauge-center"></div></div>
+    <div class="axis-desc">채도(S) <b>${ax.clarity.satPct}%</b><br>대비도 <b>${ax.clarity.contPct}%</b></div>
+  </div>`;
+
+  // 배경 제거 컷아웃 생성 (드래이핑에 사용)
+  const chosenLM=allLandmarks[selectedFaceIdx]||null;
+  const imgEl=document.getElementById('prevImg');
+  faceCutoutURL = chosenLM ? (await createFaceCutout(imgEl, chosenLM) || imgEl.src) : imgEl.src;
+
+  // 드래이핑 (개인화 팔레트 포함)
+  buildDraping(d.subtype, d);
+
+  // 특징 / 셀럽
+  const tc=['#F9A8D4','#93C5FD','#FB923C','#A78BFA'];
+  document.getElementById('rTraits').innerHTML=s.traits.map((t,i)=>`<div class="trait"><div class="tdot" style="background:${tc[i]}"></div><span>${t}</span></div>`).join('');
+  document.getElementById('rCelebs').innerHTML=s.celebs.map(c=>`<div class="celeb">${c}</div>`).join('');
+
+  goStep(4);
+}
+
+function doShare(){
+  const name=document.getElementById('rName').textContent;
+  const text=`🎨 나의 퍼스널컬러는 "${name}" 타입!\nColorMe AI 12시즌 진단 ✨`;
+  if(navigator.share)navigator.share({title:'나의 퍼스널컬러',text});
+  else{navigator.clipboard?.writeText(text);alert('📋 클립보드에 복사되었어요!');}
+}
+function restart(){
+  if(playTimer){clearInterval(playTimer);playTimer=null;}
+  allLandmarks=[];selectedFaceIdx=0;
+  document.getElementById('fileIn').value='';
+  document.getElementById('btnA').disabled=false;
+  document.getElementById('errMsg').style.display='none';
+  document.getElementById('btnPlay').textContent='▶ 자동 재생';
+  document.getElementById('faceOv').getContext('2d').clearRect(0,0,9999,9999);
+  document.getElementById('faceBadge').className='face-badge ok';
+  document.getElementById('faceBadge').textContent='🟢 얼굴 감지 대기 중';
+  document.getElementById('faceSelectBar').style.display='none';
+  document.getElementById('pixelVerify').style.display='none';
+  goStep(1);
+}
+</script>
+</body>
+</html>
