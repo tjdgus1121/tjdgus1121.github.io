@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNN Convolution Visualizer</title>
+    <title>CNN 합성곱 시각화 도구</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700&family=Audiowide&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -16,8 +16,8 @@
 
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 50%, #ADD8E6 100%);
-            color: #333;
+            background: linear-gradient(160deg, #dbeafe 0%, #ede9fe 50%, #d1fae5 100%);
+            color: #1e293b;
             padding: 20px;
             min-height: 100vh;
         }
@@ -25,58 +25,260 @@
         .container {
             max-width: 1800px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
             padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 40px rgba(99, 102, 241, 0.1);
+        }
+
+        .site-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding: 30px 20px 24px;
+            background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 50%, #fdf4ff 100%);
+            border-radius: 20px;
+            border: 1.5px solid rgba(99, 102, 241, 0.15);
+            box-shadow: 0 4px 24px rgba(99, 102, 241, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .site-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% -10%, rgba(139, 92, 246, 0.15) 0%, transparent 65%);
+            pointer-events: none;
+        }
+
+        .site-header-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 58px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 18px;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+            margin-bottom: 14px;
+        }
+
+        .site-header-icon svg {
+            width: 30px;
+            height: 30px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         h1 {
-            font-family: 'Orbitron', sans-serif;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.8em;
-            font-weight: 700;
-            background: linear-gradient(135deg, #4A90E2, #7B68EE);
+            font-size: 2.4em;
+            font-weight: 900;
+            margin: 0 0 10px;
+            line-height: 1.15;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.18em;
+        }
+
+        .h1-cnn {
+            font-family: 'Audiowide', sans-serif;
+            font-size: 1.1em;
+            font-weight: 400;
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 5px;
+        }
+
+        .h1-rest {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 900;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             letter-spacing: 1px;
         }
 
-        .controls {
-            background: rgba(135, 206, 235, 0.15);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border: 2px solid rgba(135, 206, 235, 0.3);
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 20px;
+        .site-header-sub {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.85em;
+            color: #8b5cf6;
+            font-weight: 500;
+            letter-spacing: 3.5px;
+            text-transform: uppercase;
+            opacity: 0.75;
         }
 
-        .control-section {
-            background: rgba(255, 255, 255, 0.3);
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px solid rgba(135, 206, 235, 0.4);
+        /* ===== Stepper ===== */
+        .stepper-wrapper {
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: 20px;
+            padding: 24px 28px 20px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
         }
 
-        .control-section h3 {
-            color: #1976D2;
-            margin-bottom: 10px;
-            font-size: 1em;
+        /* Track: circles + connectors */
+        .stepper-track {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+
+        .step-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            flex-shrink: 0;
+        }
+
+        .step-circle {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #94a3b8;
             display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 1.1em;
+            border: 3px solid #e2e8f0;
+            transition: all 0.35s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-node.active .step-circle {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.18), 0 4px 14px rgba(99, 102, 241, 0.4);
+        }
+
+        .step-node.completed .step-circle {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-color: #10b981;
+        }
+
+        .step-node.completed .step-circle::after {
+            content: '✓';
+            font-family: sans-serif;
+            font-size: 1.1em;
+        }
+
+        .step-node.completed .step-circle .step-num { display: none; }
+
+        .step-node-label {
+            font-size: 0.7em;
+            font-weight: 700;
+            color: #bbb;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            max-width: 88px;
+            line-height: 1.3;
+            transition: color 0.3s;
+        }
+
+        .step-node.active .step-node-label  { color: #6366f1; }
+        .step-node.completed .step-node-label { color: #10b981; }
+
+        .step-connector {
+            flex: 1;
+            height: 3px;
+            background: #e2e8f0;
+            margin-top: 22px;
+            border-radius: 2px;
+            transition: background 0.5s;
+            min-width: 12px;
+        }
+
+        .step-connector.done {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        /* Panels grid */
+        .stepper-panels {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .step-panel {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s;
+            opacity: 0.45;
+            pointer-events: none;
+        }
+
+        .step-panel.active {
+            opacity: 1;
+            pointer-events: auto;
+            border-color: #6366f1;
+            background: #fff;
+            box-shadow: 0 4px 18px rgba(99, 102, 241, 0.13);
+        }
+
+        .step-panel.completed {
+            opacity: 1;
+            pointer-events: auto;
+            border-color: #6ee7b7;
+            background: #f0fdf4;
+        }
+
+        .step-panel-title {
+            display: none; /* labels live in the track */
         }
 
         .control-section-description {
-            color: #555;
-            font-size: 0.8em;
+            color: #777;
+            font-size: 0.78em;
             margin-bottom: 10px;
             font-weight: 500;
+        }
+
+        .pixel-size-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .pixel-size-grid label {
+            font-size: 0.82em;
+            font-weight: 700;
+            color: #6366f1;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        .pixel-size-grid input[type="number"] {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 1.25em;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: center;
+            padding: 10px 6px;
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+
+        .pixel-size-grid input[type="number"]:focus {
+            border-color: #6366f1;
         }
 
         .control-group {
@@ -94,7 +296,7 @@
         label {
             font-weight: 600;
             font-size: 0.75em;
-            color: #2c3e50;
+            color: #475569;
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
@@ -103,10 +305,10 @@
         input[type="file"],
         select {
             padding: 8px;
-            border: 2px solid rgba(135, 206, 235, 0.5);
+            border: 2px solid rgba(99, 102, 241, 0.2);
             border-radius: 8px;
             background: white;
-            color: #333;
+            color: #1e293b;
             font-size: 0.9em;
             transition: border-color 0.3s;
         }
@@ -114,7 +316,7 @@
         input[type="number"]:focus,
         select:focus {
             outline: none;
-            border-color: #4CAF50;
+            border-color: #6366f1;
         }
 
         input[type="file"] {
@@ -125,7 +327,7 @@
             padding: 8px 16px;
             border: none;
             border-radius: 8px;
-            background: #4CAF50;
+            background: #6366f1;
             color: white;
             font-size: 0.85em;
             font-weight: 600;
@@ -136,9 +338,9 @@
         }
 
         button:hover {
-            background: #45a049;
+            background: #4f46e5;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         button:disabled {
@@ -155,34 +357,83 @@
         }
 
         .animation-controls button {
-            padding: 8px 16px;
-            font-size: 0.85em;
+            padding: 9.2px 16px;
+            font-size: 0.98em;
         }
 
         .animation-controls #playBtn {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #10b981, #059669);
         }
 
         .animation-controls #playBtn:hover:not(:disabled) {
-            background: #45a049;
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
 
         .animation-controls #pauseBtn {
-            background: #FF9800;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
         }
 
         .animation-controls #pauseBtn:hover:not(:disabled) {
-            background: #F57C00;
-            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+            background: linear-gradient(135deg, #d97706, #b45309);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
         }
 
         .animation-controls #resetBtn {
-            background: #f44336;
+            background: linear-gradient(135deg, #f43f5e, #e11d48);
         }
 
         .animation-controls #resetBtn:hover:not(:disabled) {
-            background: #d32f2f;
-            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+            background: linear-gradient(135deg, #e11d48, #be123c);
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+        }
+
+        .speed-slider-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .speed-slider-wrap input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #6366f1, #a78bfa);
+            outline: none;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+        }
+
+        .speed-slider-wrap input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #6366f1;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.4);
+            cursor: pointer;
+        }
+
+        .speed-slider-wrap input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #6366f1;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.4);
+            cursor: pointer;
+        }
+
+        .speed-value-display {
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1em;
+            font-weight: 700;
+            color: #6366f1;
         }
 
         .checkbox-group {
@@ -254,18 +505,18 @@
         }
 
         .image-section {
-            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             border-radius: 20px;
             padding: 25px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            border: 3px solid rgba(135, 206, 235, 0.5);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
+            border: 2px solid rgba(99, 102, 241, 0.15);
         }
 
         .image-section h2 {
             text-align: center;
             margin-bottom: 20px;
             font-size: 1.8em;
-            color: #2c3e50;
+            color: #1e293b;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -310,7 +561,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            border: 2px solid rgba(255, 0, 0, 0.9);
+            border: 2px solid rgba(244, 63, 94, 0.95);
             box-sizing: border-box;
         }
 
@@ -324,7 +575,7 @@
         }
 
         .kernel-grid-cell {
-            border: 1px solid rgba(255, 0, 0, 0.5);
+            border: 1px solid rgba(244, 63, 94, 0.5);
             box-sizing: border-box;
         }
 
@@ -332,7 +583,7 @@
         .result-highlight {
             position: absolute;
             pointer-events: none;
-            border: 2px solid rgba(0, 255, 0, 0.9);
+            border: 2px solid rgba(52, 211, 153, 0.95);
             display: none;
             z-index: 10;
             box-sizing: border-box;
@@ -366,21 +617,21 @@
             text-align: center;
             font-size: 1em;
             font-weight: bold;
-            border: 2px solid rgba(255, 193, 7, 0.5);
+            border: 2px solid rgba(99, 102, 241, 0.3);
             border-radius: 8px;
             background: white;
         }
 
         .feature-maps {
-            background: rgba(156, 39, 176, 0.1);
+            background: rgba(139, 92, 246, 0.07);
             padding: 25px;
             border-radius: 15px;
             margin-top: 30px;
-            border: 2px solid rgba(156, 39, 176, 0.3);
+            border: 2px solid rgba(139, 92, 246, 0.25);
         }
 
         .feature-maps h3 {
-            color: #7B1FA2;
+            color: #7c3aed;
             margin-bottom: 20px;
             text-align: center;
             font-size: 1.5em;
@@ -398,8 +649,8 @@
             padding: 15px;
             border-radius: 15px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border: 2px solid rgba(156, 39, 176, 0.2);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+            border: 2px solid rgba(139, 92, 246, 0.2);
         }
 
         .feature-map-item canvas {
@@ -411,56 +662,60 @@
         .feature-map-item h4 {
             margin-top: 12px;
             font-size: 0.95em;
-            color: #7B1FA2;
+            color: #7c3aed;
         }
 
         .pooling-section {
-            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             border-radius: 20px;
             padding: 25px;
             margin-bottom: 30px;
-            border: 3px solid #FF9800;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            border: 2px solid #f59e0b;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
         }
 
         .pooling-section h2 {
             text-align: center;
-            color: #F57C00;
+            color: #b45309;
             margin-bottom: 20px;
             font-size: 1.8em;
         }
 
         .info-panel {
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-            padding: 18px;
-            border-radius: 10px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            padding: 18px 24px;
+            border-radius: 12px;
             margin-bottom: 20px;
-            font-size: 1em;
-            color: #2e7d32;
-            border: 2px solid #4CAF50;
-            font-weight: 500;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 1.08em;
+            line-height: 1.7;
+            color: #064e3b;
+            border: 2px solid #6ee7b7;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 0.2px;
         }
 
         .progress-bar {
             width: 100%;
-            height: 12px;
-            background: rgba(0, 0, 0, 0.1);
+            height: 10px;
+            background: #e2e8f0;
             border-radius: 6px;
             overflow: hidden;
             margin-top: 15px;
-            border: 1px solid rgba(0, 0, 0, 0.2);
+            border: none;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 60%, #ec4899 100%);
             width: 0%;
             transition: width 0.3s;
-            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
         }
 
-        @media (max-width: 1600px) {
-            .controls {
+        @media (max-width: 1400px) {
+            .stepper-panels {
                 grid-template-columns: repeat(3, 1fr);
             }
         }
@@ -470,7 +725,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .controls {
+            .stepper-panels {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
@@ -484,8 +739,17 @@
                 font-size: 2em;
             }
 
-            .controls {
+            .stepper-panels {
                 grid-template-columns: 1fr;
+            }
+
+            .stepper-track {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .step-connector {
+                display: none;
             }
 
             .canvas-container canvas {
@@ -497,103 +761,124 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔍 CNN Convolution Visualizer</h1>
+        <div class="site-header">
+            <div class="site-header-icon">
+                <svg viewBox="0 0 24 24">
+                    <!-- magnifying glass -->
+                    <circle cx="10.5" cy="10.5" r="6.5"/>
+                    <line x1="15.5" y1="15.5" x2="21" y2="21"/>
+                    <!-- grid lines inside -->
+                    <line x1="7.5" y1="10.5" x2="13.5" y2="10.5"/>
+                    <line x1="10.5" y1="7.5"  x2="10.5" y2="13.5"/>
+                </svg>
+            </div>
+            <h1><span class="h1-cnn">CNN</span><span class="h1-rest">합성곱 시각화 도구</span></h1>
+            <div class="site-header-sub">합성곱 신경망 · 인터랙티브 데모</div>
+        </div>
 
-        <div class="controls">
-            <!-- 1단계: 이미지 업로드 -->
-            <div class="control-section">
-                <h3>📁 1단계: 이미지 업로드</h3>
-                <p class="control-section-description">분석할 이미지를 선택하세요</p>
-                <div class="control-group">
-                    <div class="control-item">
-                        <input type="file" id="imageUpload" accept="image/*" style="font-size: 1.05em;">
-                    </div>
+        <div class="stepper-wrapper">
+            <!-- Track -->
+            <div class="stepper-track">
+                <div class="step-node active" id="node1">
+                    <div class="step-circle"><span class="step-num">1</span></div>
+                    <div class="step-node-label">이미지 &amp; 크기</div>
+                </div>
+                <div class="step-connector" id="conn1"></div>
+                <div class="step-node" id="node2">
+                    <div class="step-circle"><span class="step-num">2</span></div>
+                    <div class="step-node-label">필터 선택</div>
+                </div>
+                <div class="step-connector" id="conn2"></div>
+                <div class="step-node" id="node3">
+                    <div class="step-circle"><span class="step-num">3</span></div>
+                    <div class="step-node-label">추가 옵션</div>
+                </div>
+                <div class="step-connector" id="conn3"></div>
+                <div class="step-node" id="node4">
+                    <div class="step-circle"><span class="step-num">4</span></div>
+                    <div class="step-node-label">시각화 시작</div>
+                </div>
+                <div class="step-connector" id="conn4"></div>
+                <div class="step-node" id="node5">
+                    <div class="step-circle"><span class="step-num">5</span></div>
+                    <div class="step-node-label">커널 편집</div>
                 </div>
             </div>
 
-            <!-- 2단계: 이미지 설정 -->
-            <div class="control-section">
-                <h3>⚙️ 2단계: 이미지 크기 설정</h3>
-                <p class="control-section-description">이미지를 몇 개의 픽셀로 나눌지 설정하세요 (예: 32×32)</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="control-item">
-                        <label for="gridWidth">가로 픽셀 수</label>
-                    </div>
-                    <div class="control-item">
-                        <label for="gridHeight">세로 픽셀 수</label>
-                    </div>
-                    <div class="control-item">
-                        <input type="number" id="gridWidth" value="32" min="8" max="128">
-                    </div>
-                    <div class="control-item">
-                        <input type="number" id="gridHeight" value="32" min="8" max="128">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3단계: 커널 선택 -->
-            <div class="control-section">
-                <h3>🎯 3단계: 필터(커널) 선택</h3>
-                <p class="control-section-description">이미지에 적용할 필터를 선택하세요</p>
-                <div class="control-group">
-                    <div class="control-item">
-                        <label for="kernelSelect">필터 종류</label>
-                        <select id="kernelSelect" style="font-size: 1.05em;">
-                            <option value="identity">Identity (원본)</option>
-                            <option value="edge_detection">Edge Detection (윤곽선 검출)</option>
-                            <option value="sharpen">Sharpen (선명하게)</option>
-                            <option value="blur">Box Blur (흐리게)</option>
-                            <option value="gaussian">Gaussian Blur (부드럽게 흐리게)</option>
-                            <option value="emboss">Emboss (엠보싱)</option>
-                            <option value="outline">Outline (외곽선)</option>
-                            <option value="sobel_x">Sobel X (가로 엣지)</option>
-                            <option value="sobel_y">Sobel Y (세로 엣지)</option>
-                        </select>
+            <!-- Panels -->
+            <div class="stepper-panels">
+                <!-- Panel 1: 이미지 & 크기 -->
+                <div class="step-panel active" id="panel1">
+                    <p class="control-section-description">이미지를 선택하고 픽셀 분할 수를 설정하세요</p>
+                    <div class="control-group">
+                        <div class="control-item">
+                            <input type="file" id="imageUpload" accept="image/*" style="font-size: 1.05em;">
+                        </div>
+                        <div class="pixel-size-grid">
+                            <div class="control-item">
+                                <label for="gridWidth">가로 픽셀 수</label>
+                                <input type="number" id="gridWidth" value="32" min="8" max="128">
+                            </div>
+                            <div class="control-item">
+                                <label for="gridHeight">세로 픽셀 수</label>
+                                <input type="number" id="gridHeight" value="32" min="8" max="128">
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 4단계: 추가 옵션 -->
-            <div class="control-section">
-                <h3>🔧 4단계: 추가 옵션</h3>
-                <p class="control-section-description">원하는 추가 기능을 선택하세요</p>
-                <div class="control-group">
-                    <div class="control-item">
-                        <label>애니메이션 속도</label>
-                        <select id="animSpeed" style="font-size: 0.9em;">
-                            <option value="1">x1 (느림)</option>
-                            <option value="2" selected>x2 (보통)</option>
-                            <option value="4">x4 (빠름)</option>
-                            <option value="8">x8 (매우 빠름)</option>
-                            <option value="16">x16 (초고속)</option>
-                            <option value="32">x32 (최고속)</option>
-                        </select>
-                    </div>
-                    <div class="control-item checkbox-group">
-                        <input type="checkbox" id="showFeatureMaps">
-                        <label for="showFeatureMaps">다양한 필터</label>
+                <!-- Panel 2: 필터 선택 -->
+                <div class="step-panel" id="panel2">
+                    <p class="control-section-description">이미지에 적용할 필터를 선택하세요</p>
+                    <div class="control-group">
+                        <div class="control-item">
+                            <label for="kernelSelect">필터 종류</label>
+                            <select id="kernelSelect" style="font-size: 1.05em;">
+                                <option value="identity">Identity (원본)</option>
+                                <option value="edge_detection">Edge Detection (윤곽선 검출)</option>
+                                <option value="sharpen">Sharpen (선명하게)</option>
+                                <option value="blur">Box Blur (흐리게)</option>
+                                <option value="gaussian">Gaussian Blur (부드럽게 흐리게)</option>
+                                <option value="emboss">Emboss (엠보싱)</option>
+                                <option value="outline">Outline (외곽선)</option>
+                                <option value="sobel_x">Sobel X (가로 엣지)</option>
+                                <option value="sobel_y">Sobel Y (세로 엣지)</option>
+                            </select>
+                        </div>
+                        <div class="control-item checkbox-group">
+                            <input type="checkbox" id="showFeatureMaps">
+                            <label for="showFeatureMaps">다양한 필터</label>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 5단계: 애니메이션 제어 -->
-            <div class="control-section">
-                <h3>▶️ 5단계: 시각화 시작</h3>
-                <p class="control-section-description">필터가 이미지를 어떻게 처리하는지 확인하세요</p>
-                <div class="animation-controls">
-                    <button id="playBtn" disabled>▶ 재생</button>
-                    <button id="pauseBtn" disabled>⏸ 일시정지</button>
-                    <button id="resetBtn" disabled>🔄 리셋</button>
+                <!-- Panel 3: 추가 옵션 -->
+                <div class="step-panel" id="panel3">
+                    <p class="control-section-description">슬라이더로 애니메이션 속도를 조절하세요</p>
+                    <div class="control-item speed-slider-wrap">
+                        <label for="animSpeed">애니메이션 속도</label>
+                        <input type="range" id="animSpeed" min="0" max="7" step="1" value="1">
+                        <div class="speed-value-display" id="speedDisplay">x2 (보통)</div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 6단계: 현재 커널 편집 -->
-            <div class="control-section" id="kernelEditSection" style="display: none;">
-                <h3>✏️ 현재 커널 편집</h3>
-                <p class="control-section-description">커널 값을 수정하고 적용하세요</p>
-                <div class="kernel-grid" id="kernelGrid" style="margin-top: 10px;"></div>
-                <div style="text-align: center; margin-top: 10px;">
-                    <button id="applyKernelBtn">커널 적용</button>
+                <!-- Panel 4: 시각화 시작 -->
+                <div class="step-panel" id="panel4">
+                    <p class="control-section-description">필터가 이미지를 어떻게 처리하는지 확인하세요</p>
+                    <div class="animation-controls">
+                        <button id="playBtn" disabled>▶ 재생</button>
+                        <button id="pauseBtn" disabled>⏸ 일시정지</button>
+                        <button id="resetBtn" disabled>🔄 리셋</button>
+                    </div>
+                </div>
+
+                <!-- Panel 5: 커널 편집 -->
+                <div class="step-panel" id="panel5">
+                    <p class="control-section-description">커널 값을 수정하고 적용하세요</p>
+                    <div class="kernel-grid" id="kernelGrid" style="margin-top: 10px;"></div>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <button id="applyKernelBtn">커널 적용</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -678,7 +963,24 @@
         const progressFill = document.getElementById('progressFill');
         const showFeatureMaps = document.getElementById('showFeatureMaps');
         const kernelGrid = document.getElementById('kernelGrid');
-        const kernelEditSection = document.getElementById('kernelEditSection');
+
+        // 애니메이션 속도 슬라이더
+        const SPEED_STEPS = [
+            { value: 1,   label: 'x1 (느림)' },
+            { value: 2,   label: 'x2 (보통)' },
+            { value: 4,   label: 'x4 (빠름)' },
+            { value: 8,   label: 'x8 (매우 빠름)' },
+            { value: 16,  label: 'x16 (초고속)' },
+            { value: 32,  label: 'x32 (최고속)' },
+            { value: 64,  label: 'x64 (울트라)' },
+            { value: 128, label: 'x128 (극초속)' },
+        ];
+        const animSpeedEl   = document.getElementById('animSpeed');
+        const speedDisplay  = document.getElementById('speedDisplay');
+        function getAnimSpeed() { return SPEED_STEPS[parseInt(animSpeedEl.value)].value; }
+        animSpeedEl.addEventListener('input', () => {
+            speedDisplay.textContent = SPEED_STEPS[parseInt(animSpeedEl.value)].label;
+        });
 
         // 미리 정의된 커널들
         const kernels = {
@@ -729,6 +1031,30 @@
             ]
         };
 
+        // ===== Stepper =====
+        function setStepState(n, state) {
+            const node  = document.getElementById('node'  + n);
+            const panel = document.getElementById('panel' + n);
+            node.className  = 'step-node'  + (state ? ' ' + state : '');
+            panel.className = 'step-panel' + (state ? ' ' + state : '');
+        }
+
+        function advanceToStep(n) {
+            for (let i = 1; i <= 5; i++) {
+                if (i < n) {
+                    setStepState(i, 'completed');
+                    const conn = document.getElementById('conn' + i);
+                    if (conn) conn.classList.add('done');
+                } else if (i === n) {
+                    setStepState(i, 'active');
+                } else {
+                    setStepState(i, '');
+                    const conn = document.getElementById('conn' + i);
+                    if (conn) conn.classList.remove('done');
+                }
+            }
+        }
+
         // 커널 시각화 및 편집 가능하게 표시
         function displayKernel(kernel) {
             kernelGrid.innerHTML = '';
@@ -738,13 +1064,11 @@
                     const input = document.createElement('input');
                     input.type = 'number';
                     input.step = '0.1';
-                    input.value = kernel[i][j].toFixed(1);
+                    input.value = kernel[i][j].toFixed(2);
                     input.className = 'kernel-input';
                     kernelGrid.appendChild(input);
                 }
             }
-
-            kernelEditSection.style.display = 'block';
         }
 
         // 3x3 격자 생성
@@ -758,68 +1082,55 @@
         }
 
         // 커널 오버레이 위치 업데이트
+        // object-fit:contain 적용된 캔버스의 실제 렌더링 영역 계산
+        function getCanvasRenderInfo(canvasEl, containerEl) {
+            const cr = canvasEl.getBoundingClientRect();
+            const pr = containerEl.getBoundingClientRect();
+
+            // CSS 박스 크기 (700×700 고정)
+            const cssW = cr.width;
+            const cssH = cr.height;
+            // 내부 픽셀 크기
+            const intW = canvasEl.width;
+            const intH = canvasEl.height;
+
+            // object-fit:contain → 비율 유지하며 축소/확대
+            const scale   = Math.min(cssW / intW, cssH / intH);
+            const renderW = intW * scale;
+            const renderH = intH * scale;
+
+            // letterbox 여백 (콘텐츠가 CSS 박스 안에서 가운데 정렬됨)
+            const offsetX = (cssW - renderW) / 2;
+            const offsetY = (cssH - renderH) / 2;
+
+            // 컨테이너 기준 캔버스 박스 좌상단
+            const boxLeft = cr.left - pr.left;
+            const boxTop  = cr.top  - pr.top;
+
+            return {
+                left:   boxLeft + offsetX,  // 실제 콘텐츠 시작 X
+                top:    boxTop  + offsetY,  // 실제 콘텐츠 시작 Y
+                pxW:    scale,              // 픽셀 1개 가로 크기(px)
+                pxH:    scale,              // 픽셀 1개 세로 크기(px)
+            };
+        }
+
         function updateKernelOverlay(x, y) {
-            const canvasRect = originalCanvas.getBoundingClientRect();
-            const containerRect = originalContainer.getBoundingClientRect();
-
-            const canvasWidth = originalCanvas.width;
-            const canvasHeight = originalCanvas.height;
-
-            // 캔버스의 실제 표시 크기
-            const displayWidth = canvasRect.width;
-            const displayHeight = canvasRect.height;
-
-            // 픽셀 하나의 크기
-            const pixelWidth = displayWidth / canvasWidth;
-            const pixelHeight = displayHeight / canvasHeight;
-
-            // 3x3 커널 크기
-            const kernelDisplayWidth = pixelWidth * 3;
-            const kernelDisplayHeight = pixelHeight * 3;
-
-            // 캔버스의 왼쪽 상단 위치 (컨테이너 기준)
-            const canvasLeft = (containerRect.width - displayWidth) / 2;
-            const canvasTop = (containerRect.height - displayHeight) / 2;
-
-            // 커널 오버레이 위치 (중앙 기준으로 -1 픽셀부터 시작)
-            const left = canvasLeft + (x - 1) * pixelWidth;
-            const top = canvasTop + (y - 1) * pixelHeight;
-
-            kernelOverlay.style.left = left + 'px';
-            kernelOverlay.style.top = top + 'px';
-            kernelOverlay.style.width = kernelDisplayWidth + 'px';
-            kernelOverlay.style.height = kernelDisplayHeight + 'px';
+            const { left, top, pxW, pxH } = getCanvasRenderInfo(originalCanvas, originalContainer);
+            kernelOverlay.style.left    = (left + (x - 1) * pxW) + 'px';
+            kernelOverlay.style.top     = (top  + (y - 1) * pxH) + 'px';
+            kernelOverlay.style.width   = (pxW * 3) + 'px';
+            kernelOverlay.style.height  = (pxH * 3) + 'px';
             kernelOverlay.style.display = 'block';
         }
 
         // 결과 하이라이트 위치 업데이트
         function updateResultHighlight(x, y) {
-            const canvasRect = resultCanvas.getBoundingClientRect();
-            const containerRect = resultContainer.getBoundingClientRect();
-
-            const canvasWidth = resultCanvas.width;
-            const canvasHeight = resultCanvas.height;
-
-            // 캔버스의 실제 표시 크기
-            const displayWidth = canvasRect.width;
-            const displayHeight = canvasRect.height;
-
-            // 픽셀 하나의 크기
-            const pixelWidth = displayWidth / canvasWidth;
-            const pixelHeight = displayHeight / canvasHeight;
-
-            // 캔버스의 왼쪽 상단 위치 (컨테이너 기준)
-            const canvasLeft = (containerRect.width - displayWidth) / 2;
-            const canvasTop = (containerRect.height - displayHeight) / 2;
-
-            // 결과 하이라이트 위치 (단일 픽셀)
-            const left = canvasLeft + x * pixelWidth;
-            const top = canvasTop + y * pixelHeight;
-
-            resultHighlight.style.left = left + 'px';
-            resultHighlight.style.top = top + 'px';
-            resultHighlight.style.width = pixelWidth + 'px';
-            resultHighlight.style.height = pixelHeight + 'px';
+            const { left, top, pxW, pxH } = getCanvasRenderInfo(resultCanvas, resultContainer);
+            resultHighlight.style.left    = (left + x * pxW) + 'px';
+            resultHighlight.style.top     = (top  + y * pxH) + 'px';
+            resultHighlight.style.width   = pxW + 'px';
+            resultHighlight.style.height  = pxH + 'px';
             resultHighlight.style.display = 'block';
         }
 
@@ -846,6 +1157,7 @@
                 const img = new Image();
                 img.onload = () => {
                     processImage(img);
+                    advanceToStep(2);
                     updateInfo('이미지가 로드되었습니다. 자동으로 설정을 적용합니다...');
                     // 자동 적용
                     applySettings();
@@ -993,7 +1305,7 @@
 
             totalSteps = width * height;
 
-            const animSpeedMultiplier = parseInt(document.getElementById('animSpeed').value);
+            const animSpeedMultiplier = getAnimSpeed();
 
             // 기본 애니메이션 속도 (ms)
             const baseSpeed = 30;
@@ -1139,6 +1451,17 @@
                 updateInfo('✅ 설정이 적용되었습니다. "재생" 버튼을 클릭하여 애니메이션을 시작하세요.');
                 playBtn.disabled = false;
                 resetBtn.disabled = false;
+
+                // Stepper: complete steps 1-2, activate 3-5
+                setStepState(1, 'completed');
+                document.getElementById('conn1').classList.add('done');
+                setStepState(2, 'completed');
+                document.getElementById('conn2').classList.add('done');
+                setStepState(3, 'active');
+                document.getElementById('conn3').classList.add('done');
+                setStepState(4, 'active');
+                document.getElementById('conn4').classList.add('done');
+                setStepState(5, 'active');
             }, 100);
         }
 

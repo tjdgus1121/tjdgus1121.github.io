@@ -55,24 +55,51 @@
     <script src="nav.js"></script>
     <style>
         :root {
-            --primary-color: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary-color: #ec4899;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --info-color: #3b82f6;
-            --light-gray: #f8fafc;
-            --border-color: #e2e8f0;
-            --text-primary: #1e293b;
+            /* ══ 대표 컬러 1: 인디고 — 브랜드·모드·강조 ══ */
+            --p-50:  #eef2ff;
+            --p-100: #e0e7ff;
+            --p-200: #c7d2fe;
+            --p-400: #818cf8;
+            --p-500: #6366f1;
+            --p-600: #4f46e5;
+            --p-700: #4338ca;
+
+            /* ══ 대표 컬러 2: 틸 — 액션·다운로드·슬라이더 ══ */
+            --a-50:  #f0fdfa;
+            --a-100: #ccfbf1;
+            --a-200: #99f6e4;
+            --a-400: #2dd4bf;
+            --a-500: #14b8a6;
+            --a-600: #0d9488;
+            --a-700: #0f766e;
+
+            /* ── 시맨틱 (needs-image 경고만) ── */
+            --warning-color: #d97706;
+            --danger-color:  #ef4444;
+
+            /* ── 하위 호환 ── */
+            --primary-color:   var(--p-500);
+            --primary-dark:    var(--p-600);
+            --secondary-color: var(--a-500);
+            --success-color:   var(--a-500);
+            --info-color:      var(--p-500);
+
+            /* ── 중립 ── */
+            --light-gray:     #f8fafc;
+            --border-color:   #e2e8f0;
+            --text-primary:   #1e293b;
             --text-secondary: #64748b;
+
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            --border-radius: 0.75rem;
-            --border-radius-lg: 1rem;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.07);
+            --shadow-xl: 0 20px 40px -8px rgb(99 102 241 / 0.09), 0 8px 16px -4px rgb(0 0 0 / 0.05);
+
+            --glass-bg:     rgba(255, 255, 255, 0.82);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --border-radius:    0.875rem;
+            --border-radius-lg: 1.25rem;
+            --transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -87,23 +114,7 @@
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
-            background: linear-gradient(120deg, #f8fafc 0%, #e0e7ff 40%, #c7d2fe 70%, #f0abfc 100%);
-            background-size: 300% 300%;
-            animation: gradientBG 18s ease-in-out infinite;
-        }
-
-        @keyframes gradientBG {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
+            background: #f5f7ff;
         }
 
         .main-container {
@@ -119,20 +130,13 @@
         }
 
         .header-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: 50%;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-            transform: translateX(-50%);
-            border-radius: 50%;
+            display: none;
         }
 
         h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-size: clamp(2rem, 4.5vw, 3.5rem);
             font-family: 'Do Hyeon', sans-serif;
+            color: var(--p-700);
             font-weight: 400;
             color: #22223b;
             margin-bottom: 1rem;
@@ -159,12 +163,14 @@
         }
 
         .upload-card {
-            background: white;
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
             border-radius: var(--border-radius-lg);
-            padding: 2rem;
-            box-shadow: var(--shadow-xl);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-xl), inset 0 1px 0 var(--glass-border);
             transition: var(--transition);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--glass-border);
             position: relative;
             overflow: hidden;
         }
@@ -174,39 +180,41 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            bottom: 0;
+            width: 4px;
+            background: var(--p-500);
+            border-radius: 4px 0 0 4px;
         }
 
         .upload-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-xl), 0 0 0 1px var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 24px 48px -8px rgba(99, 102, 241, 0.18), inset 0 1px 0 var(--glass-border);
+            border-color: rgba(99, 102, 241, 0.3);
         }
 
         .upload-title {
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 700;
             color: var(--text-primary);
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            justify-content: center;
-            text-align: center;
+            letter-spacing: -0.01em;
         }
 
         .upload-title::before {
             content: '';
-            width: 8px;
-            height: 8px;
-            background: var(--primary-color);
-            border-radius: 50%;
+            width: 4px;
+            height: 1em;
+            background: var(--p-500);
+            border-radius: 2px;
+            flex-shrink: 0;
         }
 
         .preview-container {
             position: relative;
-            height: 180px;
+            height: 240px;
             background: var(--light-gray);
             border: 2px dashed var(--border-color);
             border-radius: var(--border-radius);
@@ -246,36 +254,42 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            background: var(--primary-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
+            background: var(--a-50);
+            color: var(--a-700);
+            padding: 0.6rem 1.5rem;
+            border-radius: 9999px;
             cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            border: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1.5px solid var(--a-200);
             transition: var(--transition);
             text-decoration: none;
             justify-content: center;
+            width: 100%;
+            letter-spacing: 0.01em;
         }
 
         .custom-file-upload-button:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            background: var(--a-500);
+            color: white;
+            border-color: var(--a-500);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
         }
 
         .custom-file-upload-button::before {
-            content: '📁';
-            font-size: 1.1rem;
+            content: '📂';
+            font-size: 1rem;
         }
 
         .result-section {
-            background: white;
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
             border-radius: var(--border-radius-lg);
-            padding: 2rem;
-            box-shadow: var(--shadow-xl);
-            border: 1px solid var(--border-color);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-xl), inset 0 1px 0 var(--glass-border);
+            border: 1px solid var(--glass-border);
             position: relative;
             overflow: hidden;
         }
@@ -285,33 +299,36 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--success-color), var(--info-color));
+            bottom: 0;
+            width: 4px;
+            background: var(--a-500);
+            border-radius: 4px 0 0 4px;
         }
 
         .section-title {
-            font-size: 1.3rem;
-            font-weight: 600;
+            font-size: 1.1rem;
+            font-weight: 700;
             color: var(--text-primary);
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            justify-content: center;;
+            gap: 0.625rem;
+            letter-spacing: -0.01em;
         }
 
         .section-title::before {
             content: '';
-            width: 8px;
-            height: 8px;
-            background: var(--success-color);
-            border-radius: 50%;
+            width: 4px;
+            height: 1.1em;
+            background: var(--a-500);
+            border-radius: 2px;
+            flex-shrink: 0;
         }
 
         .result-canvas {
-            width: 70%;
-            height: 60%;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
             background: var(--light-gray);
             border-radius: var(--border-radius);
             display: block;
@@ -351,111 +368,137 @@
         }
 
         .size-input {
-            width: 80px;
-            padding: 0.5rem 1rem;
-            border: 2px solid #c7d2fe;
-            border-radius: 1.5rem;
-            background: #f8fafc;
+            width: 72px;
+            padding: 0.45rem 0.75rem;
+            border: 1.5px solid rgba(99, 102, 241, 0.25);
+            border-radius: 9999px;
+            background: rgba(99, 102, 241, 0.05);
             color: #3730a3;
             text-align: center;
-            font-size: 1rem;
-            box-shadow: 0 2px 8px rgba(199, 210, 254, 0.08);
+            font-size: 0.9rem;
+            font-weight: 600;
             transition: border 0.2s, box-shadow 0.2s;
         }
 
         .size-input:focus {
             outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-            background: #e0e7ff;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            background: rgba(99, 102, 241, 0.08);
         }
 
         .input-group label {
-            font-size: 1rem;
-            color: #3730a3;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
             font-weight: 500;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0 1.2rem;
-            border-radius: var(--border-radius);
-            font-size: 0.9rem;
-            font-weight: 500;
+            gap: 0.4rem;
+            padding: 0 1.25rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
             border: none;
             cursor: pointer;
             transition: var(--transition);
             text-decoration: none;
             justify-content: center;
-            min-height: 44px;
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+            min-height: 40px;
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
         }
 
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0);
+            transition: background 0.15s;
+        }
+
+        .btn:hover::after { background: rgba(255, 255, 255, 0.1); }
+        .btn:active { transform: scale(0.96); }
+
+        /* solid indigo — 주요 액션 */
         .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: var(--p-500);
             color: white;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+            background: var(--p-600);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.32);
         }
 
-        .btn-primary:active {
-            transform: translateY(0);
+        /* outlined indigo — 보조 액션 */
+        .btn-secondary {
+            background: var(--p-50);
+            color: var(--p-700);
+            border: 1.5px solid var(--p-200);
+            box-shadow: none;
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, #10b981, #059669);
+        .btn-secondary:hover {
+            background: var(--p-100);
+            border-color: var(--p-400);
+            transform: translateY(-1px);
+        }
+
+        /* ghost indigo — 아이콘/유틸리티 버튼 */
+        .btn-ghost {
+            background: transparent;
+            color: var(--p-600);
+            border: 1.5px solid var(--p-200);
+            box-shadow: none;
+            min-height: 36px;
+            padding: 0 0.875rem;
+        }
+
+        .btn-ghost:hover {
+            background: var(--p-50);
+            border-color: var(--p-400);
+        }
+
+        /* solid teal — 액션·다운로드·적용 전용 */
+        .btn-success,
+        .btn-accent {
+            background: var(--a-500);
             color: white;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.25);
         }
 
-        .btn-success:hover {
-            background: linear-gradient(135deg, #059669, #047857);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        .btn-success:hover,
+        .btn-accent:hover {
+            background: var(--a-600);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(20, 184, 166, 0.32);
         }
 
-        .btn-success:active {
-            transform: translateY(0);
+        /* ghost teal — 슬라이더·셀 크기 버튼 */
+        .btn-ghost {
+            background: transparent;
+            color: var(--p-600);
+            border: 1.5px solid var(--p-200);
+            box-shadow: none;
+            min-height: 36px;
+            padding: 0 0.875rem;
         }
 
-        .btn-info {
-            background: linear-gradient(135deg, #06b6d4, #0891b2);
-            color: white;
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        .btn-ghost:hover {
+            background: var(--p-50);
+            border-color: var(--p-400);
         }
 
-        .btn-info:hover {
-            background: linear-gradient(135deg, #0891b2, #0e7490);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4);
-        }
-
-        .btn-info:active {
-            transform: translateY(0);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-        }
-
-        .btn-warning:hover {
-            background: linear-gradient(135deg, #d97706, #b45309);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-        }
-
-        .btn-warning:active {
-            transform: translateY(0);
-        }
+        /* alias — 하위 호환 */
+        .btn-info    { background: var(--p-500); color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
+        .btn-info:hover { background: var(--p-600); transform: translateY(-1px); }
+        .btn-warning { background: var(--p-50); color: var(--p-700); border: 1.5px solid var(--p-200); }
 
         /* 크기 적용 버튼 그룹 전체 가운데 정렬 */
         .control-row .input-group {
@@ -470,125 +513,94 @@
             justify-content: center;
         }
 
+        /* 모드 버튼 — 인디고 단일 계열 */
         .mode-button {
-            min-width: 120px;
-            flex: 1 1 120px;
-            background: #f3f4f6;
-            color: var(--primary-color);
-            height: 50px;
-        }
-
-        /* 숫자모드, 컬러모드, 혼합모드 각각 배경색 지정 */
-        #numberMode {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        #colorMode {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        #mixedMode {
-            background: linear-gradient(90deg, #e0e7ff 0%, #fee2e2 100%);
-            color: #6366f1;
-            animation: modeGradient 6s ease-in-out infinite alternate;
-        }
-
-        @keyframes modeGradient {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            100% {
-                background-position: 100% 50%;
-            }
-        }
-
-        .mode-button {
-            padding: 0 1.2rem;
-            border: 2px solid transparent;
-            border-radius: var(--border-radius);
-            font-size: 0.875rem;
-            font-weight: 500;
+            min-width: 100px;
+            flex: 1 1 100px;
+            height: 42px;
+            padding: 0 1.25rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            background: var(--light-gray);
-            color: var(--primary-color);
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.05);
-        }
-
-        .mode-button.active {
-            border-color: var(--primary-color);
-            background: var(--primary-color);
-            color: white;
-            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+            border: 1.5px solid var(--p-200);
+            background: var(--p-50);
+            color: var(--p-700);
+            letter-spacing: 0.01em;
         }
 
         .mode-button:hover:not(.active) {
-            background: var(--secondary-color);
-            color: #fff;
-            border-color: var(--secondary-color);
+            background: var(--p-100);
+            border-color: var(--p-400);
+        }
+
+        .mode-button.active {
+            background: var(--p-500);
+            color: white;
+            border-color: var(--p-500);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.28);
         }
 
         .slider-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.625rem;
             width: auto;
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
+            background: var(--a-50);
+            border: 1px solid var(--a-200);
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            flex-wrap: wrap;
         }
 
         .slider-container label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            min-width: 48px;
-            text-align: right;
-        }
-
-        .slider-value {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--primary-color);
-            min-width: 32px;
-            text-align: left;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--a-700);
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
         }
 
         .slider {
-            width: 180px;
+            width: 160px;
             min-width: 80px;
-            max-width: 220px;
-            height: 6px;
+            max-width: 200px;
+            height: 5px;
             background: var(--border-color);
-            border-radius: 3px;
+            border-radius: 9999px;
             outline: none;
-            transition: var(--transition);
+            cursor: pointer;
+            accent-color: var(--primary-color);
         }
 
         .slider::-webkit-slider-thumb {
             appearance: none;
             width: 20px;
             height: 20px;
-            background: var(--primary-color);
+            background: var(--p-500);
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: var(--shadow-sm);
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
             transition: var(--transition);
         }
 
         .slider::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
-            box-shadow: var(--shadow-md);
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
         }
 
         .matrix-section {
-            background: white;
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
             border-radius: var(--border-radius-lg);
-            padding: 2rem;
-            box-shadow: var(--shadow-xl);
-            border: 1px solid var(--border-color);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-xl), inset 0 1px 0 var(--glass-border);
+            border: 1px solid var(--glass-border);
             position: relative;
             overflow: hidden;
             margin-top: 2rem;
@@ -599,9 +611,10 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--warning-color), var(--danger-color));
+            bottom: 0;
+            width: 4px;
+            background: var(--p-500);
+            border-radius: 4px 0 0 4px;
         }
 
         .matrix-header {
@@ -614,17 +627,22 @@
         }
 
         .matrix-title {
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.15rem;
+            font-weight: 700;
             color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.625rem;
+            letter-spacing: -0.01em;
         }
 
         .matrix-title::before {
-            content: '📊';
-            font-size: 1.2rem;
+            content: '';
+            width: 4px;
+            height: 1.15em;
+            background: var(--p-500);
+            border-radius: 2px;
+            flex-shrink: 0;
         }
 
         .matrix-controls {
@@ -651,43 +669,52 @@
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             background: var(--light-gray);
-        }
-
-        .matrix-table {
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 12px;
-            font-weight:600;
-            font-family: 'arial', monospace;
-        }
-
-        .matrix-table td {
-            border: 1px solid var(--border-color);
-            text-align: center;
-            padding: 0;
-            box-sizing: border-box;
-            white-space: nowrap;
-            overflow: hidden;
-            transition: var(--transition);
-        }
-
-        .matrix-table td:hover {
-            background: rgba(99, 102, 241, 0.1);
-            transform: scale(1.05);
-            z-index: 1;
             position: relative;
+        }
+
+        #matrixSpacer {
+            position: relative;
+        }
+
+        #matrixCells {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: grid;
+        }
+
+        .vcell {
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-family: Arial, monospace;
+            box-sizing: border-box;
+            overflow: hidden;
+            cursor: pointer;
+            transition: none;
+        }
+
+        .vcell:hover {
+            outline: 2px solid var(--primary-color);
+            position: relative;
+            z-index: 1;
         }
 
         .pixel-info {
             margin-top: 1rem;
-            padding: 1rem;
-            background: var(--light-gray);
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            font-size: 0.9rem;
+            padding: 0.75rem 1.25rem;
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: 9999px;
+            border: 1px solid rgba(99, 102, 241, 0.12);
+            font-size: 0.875rem;
+            font-weight: 500;
             color: var(--text-secondary);
             text-align: center;
         }
+
+        .loading-indicator--hidden { display: none !important; }
 
         .loading-indicator {
             position: fixed;
@@ -858,31 +885,249 @@
                 flex: 1 1 100%;
             }
         }
-    </style>
 
-<style>
-/* layout fix: vertical upload cards on left; result on right */
-.work-area{
-  display:grid;
-  grid-template-columns:500px 1fr;
-  gap:1.5rem;
-  align-items:start;
-}
-.work-area .upload-section{
-  display:flex !important;
-  flex-direction:column !important;
-  gap:1.5rem;
-  margin-bottom:0;
-}
-.work-area .result-section .result-canvas{
-  width:100%;
-  max-width:500px;
-  height:auto;
-}
-@media (max-width:1024px){
-  .work-area{ grid-template-columns:1fr; }
-}
-</style>
+        /* 업로드 영역 + 결과 레이아웃 */
+        .work-area {
+            display: grid;
+            grid-template-columns: minmax(300px, 420px) 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        .work-area .upload-section {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1.5rem;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .work-area { grid-template-columns: 1fr; }
+        }
+
+        /* 이미지 추가 필요 시 카드 강조 */
+        .upload-card.needs-image {
+            border: 2px solid var(--warning-color);
+        }
+
+        .upload-card.needs-image::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: inherit;
+            border: 3px solid var(--warning-color);
+            opacity: 0;
+            animation: pulse-border 1.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .upload-card.needs-image .drop-text {
+            color: var(--warning-color);
+            font-weight: 600;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.4; }
+        }
+
+        /* 슬라이더 화살표 버튼 */
+        .slider-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(99, 102, 241, 0.25);
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--primary-color);
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            -webkit-user-select: none;
+            user-select: none;
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .slider-btn:hover {
+            background: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+        }
+
+        .slider-btn:active {
+            transform: scale(0.88);
+        }
+
+        /* 슬라이더 레이아웃 */
+        .blend-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 72px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .blend-label span {
+            color: var(--a-600);
+            font-weight: 700;
+        }
+
+        /* ══ Fixed Control Panel ══ */
+        .ctrl-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 284px;
+            height: 100vh;
+            background: var(--white, #fff);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 50;          /* nav sidebar=2000, hamburger=2100 — 아래에 위치 */
+        }
+
+        /* 섹션 묶음을 세로 가운데 정렬 */
+        .ctrl-panel-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .ctrl-panel::-webkit-scrollbar { width: 4px; }
+        .ctrl-panel::-webkit-scrollbar-track { background: transparent; }
+        .ctrl-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 9999px; }
+
+        /* 햄버거(left:1rem, top:1rem, ~44px) 공간 확보 */
+        .ctrl-panel-head {
+            height: 52px;
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 1rem 0 3.25rem;  /* 왼쪽: 햄버거 너비 확보 */
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            gap: 0.375rem;
+        }
+
+        .ctrl-panel-head::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            background: var(--p-500);
+            border-radius: 2px;
+        }
+
+        .ctrl-section {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .ctrl-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 0.625rem;
+        }
+
+        /* 컨트롤 패널 내 업로드 카드 오버라이드 */
+        .ctrl-panel .upload-card {
+            padding: 0.75rem;
+        }
+
+        .ctrl-panel .upload-card + .upload-card {
+            margin-top: 0.5rem;
+        }
+
+        .ctrl-panel .preview-container {
+            height: 130px;
+            margin-bottom: 0.625rem;
+        }
+
+        .ctrl-panel .upload-title {
+            font-size: 0.78rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .ctrl-panel .custom-file-upload-button {
+            padding: 0.45rem 1rem;
+            font-size: 0.78rem;
+        }
+
+        /* 슬라이더 컨테이너 — 2행 레이아웃 */
+        .ctrl-panel .slider-container {
+            margin-top: 0;
+            padding: 0.4rem 0.5rem;
+            gap: 0.3rem;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-items: stretch;
+        }
+
+        .blend-row-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.25rem 0.25rem 0;
+        }
+
+        .blend-label--right { text-align: right; }
+
+        .blend-row-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .blend-row-controls .slider {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+
+        /* 크기 조절 — 패널 너비에 맞게 */
+        .ctrl-panel .input-group {
+            margin: 0;
+            max-width: 100%;
+            min-width: 0;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: center;
+        }
+
+        .ctrl-panel #resizeButton {
+            width: 100%;
+            margin-top: 1.25rem;
+        }
+
+        /* 메인 컨텐츠 영역 — 패널 너비만큼 밀기 */
+        .main-container {
+            margin-left: 284px !important;
+            max-width: none !important;
+        }
+
+        /* work-area — 업로드 없으니 단일 컬럼 */
+        .work-area {
+            grid-template-columns: 1fr !important;
+        }
+
+        @media (max-width: 860px) {
+            .ctrl-panel { position: static; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .main-container { margin-left: 0 !important; }
+        }
+    </style>
 </head>
 
 <body>
@@ -915,24 +1160,18 @@
         </nav>
     </aside>
 
-    <div class="main-container">
-        <div class="header-section">
-            <h1>이미지 블렌딩 행렬 시각화</h1>
-            <p class="subtitle">두 이미지를 업로드하여 동일한 사이즈로 렌더링한 후, 그레이스케일로 변환하여 합성합니다.<br>슬라이더를 조절하며 행렬 데이터가 어떻게 변화하는지
-                탐구해보세요.</p>
-        </div>
-        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
-            <div class="loading-content">
-                <div class="spinner"></div>
-                <p id="loadingMessage">이미지 처리 중...</p>
-            </div>
-        </div>
-        <div class="work-area">
-<div class="upload-section">
+    <!-- ── Fixed Control Panel ── -->
+    <aside class="ctrl-panel">
+        <div class="ctrl-panel-head">컨트롤</div>
+
+        <div class="ctrl-panel-body">
+        <!-- 업로드 -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">이미지 업로드</div>
             <div class="upload-card">
                 <h3 class="upload-title">이미지 1</h3>
                 <div class="preview-container" id="preview1">
-                    <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
+                    <p class="drop-text">이미지를 드래그하거나 선택하세요</p>
                     <img class="preview-image" id="previewImage1" alt="업로드된 이미지 1 미리보기">
                 </div>
                 <label for="imageInput1" class="custom-file-upload-button">파일 선택</label>
@@ -941,34 +1180,62 @@
             <div class="upload-card">
                 <h3 class="upload-title">이미지 2</h3>
                 <div class="preview-container" id="preview2">
-                    <p class="drop-text">이미지를 여기에 드래그하거나 선택하세요</p>
+                    <p class="drop-text">이미지를 드래그하거나 선택하세요</p>
                     <img class="preview-image" id="previewImage2" alt="업로드된 이미지 2 미리보기">
                 </div>
                 <label for="imageInput2" class="custom-file-upload-button">파일 선택</label>
                 <input type="file" id="imageInput2" accept="image/*">
             </div>
         </div>
-        <div class="result-section">
-            <h3 class="section-title">결과 이미지</h3>
-            <canvas id="resultCanvas" class="result-canvas"></canvas>
-            <div class="controls-grid">
-                <div class="control-row">
-                    <div class="input-group">
-                        <label for="widthInput">너비</label>
-                        <input type="number" id="widthInput" class="size-input" value="100" min="5" max="100">
-                        <label for="heightInput">높이</label>
-                        <input type="number" id="heightInput" class="size-input" value="100" min="5" max="100">
-                        <button id="resizeButton" class="btn btn-success">크기 적용</button>
-                    </div>
+
+        <!-- 혼합 비율 -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">혼합 비율</div>
+            <div class="slider-container">
+                <div class="blend-row-controls">
+                    <button type="button" class="slider-btn" id="sliderDec" title="이미지1 비율 증가">&#9664;</button>
+                    <input type="range" id="blendSlider" class="slider" min="0" max="100" value="50" step="5" title="혼합 비율 슬라이더" aria-label="혼합 비율">
+                    <button type="button" class="slider-btn" id="sliderInc" title="이미지2 비율 증가">&#9654;</button>
                 </div>
-                <div class="slider-container">
-                    <label for="blendSlider">혼합 비율</label>
-                    <span id="sliderValue" class="slider-value">50%</span>
-                    <input type="range" id="blendSlider" class="slider" min="0" max="100" value="50" step="5">
+                <div class="blend-row-labels">
+                    <span class="blend-label">이미지1 <span id="blend1Value">50</span>%</span>
+                    <span class="blend-label blend-label--right">이미지2 <span id="blend2Value">50</span>%</span>
                 </div>
             </div>
         </div>
-</div>
+
+        <!-- 출력 크기 -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">출력 크기</div>
+            <div class="input-group">
+                <label for="widthInput">너비</label>
+                <input type="number" id="widthInput" class="size-input" value="100" min="5" max="100">
+                <label for="heightInput">높이</label>
+                <input type="number" id="heightInput" class="size-input" value="100" min="5" max="100">
+                <button type="button" id="resizeButton" class="btn btn-accent">적용</button>
+            </div>
+        </div>
+        </div><!-- /.ctrl-panel-body -->
+    </aside>
+
+    <div class="main-container">
+        <div class="header-section">
+            <h1>이미지 블렌딩 행렬 시각화</h1>
+            <p class="subtitle">두 이미지를 업로드하여 동일한 사이즈로 렌더링한 후, 그레이스케일로 변환하여 합성합니다.<br>슬라이더를 조절하며 행렬 데이터가 어떻게 변화하는지
+                탐구해보세요.</p>
+        </div>
+        <div id="loadingIndicator" class="loading-indicator loading-indicator--hidden">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loadingMessage">이미지 처리 중...</p>
+            </div>
+        </div>
+        <div class="work-area">
+            <div class="result-section">
+                <h3 class="section-title">결과 이미지</h3>
+                <canvas id="resultCanvas" class="result-canvas"></canvas>
+            </div>
+        </div>
         <div class="matrix-section">
             <div class="matrix-header">
                 <span class="matrix-title">픽셀 밝기값 행렬</span>
@@ -979,23 +1246,17 @@
                         <button id="mixedMode" class="mode-button active">혼합 모드</button>
                     </div>
                     <div class="control-group-inline">
-                        <button id="zoomOut" class="btn btn-warning">-</button>
-                        <span id="zoomValue">100%</span>
-                        <button id="zoomIn" class="btn btn-info">+</button>
-                    </div>
-                    <div class="control-group-inline">
-                        <button id="decreaseSize" class="btn btn-warning">-</button>
+                        <button id="decreaseSize" class="btn btn-ghost">−</button>
                         <span>셀 크기: <span id="cellSizeValue">24</span>px</span>
-                        <button id="increaseSize" class="btn btn-info">+</button>
+                        <button id="increaseSize" class="btn btn-ghost">+</button>
                     </div>
-                    <button id="downloadCSV" class="btn btn-primary"><i class="fa fa-download"></i> CSV 다운로드</button>
-                    <button id="copyToExcel" class="btn btn-success"><i class="fa fa-copy"></i> Excel 복사</button>
+                    <button id="downloadCSV" class="btn btn-accent"><i class="fa fa-download"></i> CSV 다운로드</button>
+                    <button id="copyToExcel" class="btn btn-secondary"><i class="fa fa-copy"></i> Excel 복사</button>
                 </div>
             </div>
             <div class="matrix-wrapper" id="matrixWrapper">
-                <div class="matrix-container" id="matrixContainer">
-                    <table id="matrixTable" class="matrix-table"></table>
-                </div>
+                <div id="matrixSpacer"></div>
+                <div id="matrixCells"></div>
             </div>
             <div id="pixelInfo" class="pixel-info">픽셀을 클릭하면 좌표와 밝기값이 표시됩니다.</div>
         </div>
@@ -1007,12 +1268,12 @@
                 <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
                 <div class="creator-info">
                     Designed & Developed by <span>황성현</span><br>
-                    Contact : <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="55213f3132202664646764153b342330277b363a38">[email&#160;protected]</a>
+                    Contact : <a href="mailto:tjdgus1121@naver.com">tjdgus1121@naver.com</a>
                 </div>
             </div>
 
             <div class="social-links">
-                <a href="/cdn-cgi/l/email-protection#f2869896958781c3c3c0c3b29c93849780dc919d9f" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
                 <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
                     <img src="naver.png" alt="메일 보내기"
                         style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"

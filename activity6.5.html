@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="두 이미지를 블렌딩하고 픽셀 행렬의 원리를 탐구하는 스튜디오">
+    <meta name="author" content="황성현">
+    <meta name="theme-color" content="#6366f1">
+    <title>블렌딩 스튜디오 | 인공지능 수학</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+          integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="stylefooter.css">
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js"></script>
+
+    <style>
+        /* ── Design Tokens ── */
+        :root {
+            --indigo:        #6366f1;
+            --indigo-dark:   #4f46e5;
+            --indigo-darker: #4338ca;
+            --indigo-50:     #eef2ff;
+            --indigo-100:    #e0e7ff;
+            --indigo-200:    #c7d2fe;
+            --teal:          #14b8a6;
+            --teal-dark:     #0d9488;
+            --teal-50:       #f0fdfa;
+            --teal-100:      #ccfbf1;
+            --teal-200:      #99f6e4;
+            --text:          #111827;
+            --text-sub:      #6b7280;
+            --text-hint:     #9ca3af;
+            --border:        #e5e7eb;
+            --border-strong: #d1d5db;
+            --bg:            #f7f8fc;
+            --white:         #ffffff;
+            --r-sm:          6px;
+            --r:             10px;
+            --r-lg:          14px;
+            --shadow-sm:     0 1px 2px rgba(0,0,0,0.06);
+            --shadow:        0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md:     0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.04);
+            --tr:            0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Studio Layout ── */
+        .studio-root {
+            display: grid;
+            grid-template-columns: 292px 1fr;
+            min-height: 100vh;
+        }
+
+        /* ── Control Panel (Left) ── */
+        .ctrl-panel {
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .ctrl-panel::-webkit-scrollbar { width: 5px; }
+        .ctrl-panel::-webkit-scrollbar-track { background: transparent; }
+        .ctrl-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+
+        .ctrl-header {
+            padding: 1.5rem 1.25rem 1.125rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ctrl-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.375rem;
+        }
+
+        .ctrl-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--indigo);
+            border-radius: var(--r-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .ctrl-logo-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .ctrl-desc {
+            font-size: 0.775rem;
+            color: var(--text-hint);
+            line-height: 1.55;
+        }
+
+        .ctrl-section {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ctrl-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-hint);
+            margin-bottom: 0.625rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .ctrl-label::before {
+            content: '';
+            width: 3px;
+            height: 10px;
+            background: var(--indigo);
+            border-radius: 2px;
+        }
+
+        /* ── Upload Cards ── */
+        .upload-card {
+            border: 1.5px dashed var(--border-strong);
+            border-radius: var(--r);
+            overflow: hidden;
+            background: var(--white);
+            transition: border-color var(--tr);
+            position: relative;
+        }
+
+        .upload-card + .upload-card { margin-top: 0.5rem; }
+
+        .upload-card:hover { border-color: var(--indigo-200); }
+
+        .upload-card.needs-image { border-color: #f59e0b; }
+        .upload-card.needs-image::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: calc(var(--r) + 2px);
+            border: 2px solid #f59e0b;
+            opacity: 0;
+            animation: pulse-ring 1.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes pulse-ring { 0%,100%{opacity:0} 50%{opacity:.4} }
+
+        .upload-card-title-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.625rem;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .upload-card-badge {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--indigo);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .upload-card-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        .preview-container {
+            position: relative;
+            height: 148px;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .upload-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.375rem;
+            color: var(--text-hint);
+            pointer-events: none;
+        }
+
+        .upload-placeholder i { font-size: 1.375rem; }
+
+        .drop-text {
+            font-size: 0.73rem;
+            text-align: center;
+            line-height: 1.5;
+            color: var(--text-hint);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        input[type="file"] { display: none; }
+
+        .upload-btn-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            width: 100%;
+            padding: 0.45rem;
+            background: var(--teal-50);
+            color: var(--teal-dark);
+            font-size: 0.775rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-top: 1px solid var(--teal-100);
+            transition: background var(--tr), color var(--tr);
+            letter-spacing: 0.01em;
+        }
+
+        .upload-btn-label:hover {
+            background: var(--teal);
+            color: white;
+        }
+
+        /* ── Blend Slider ── */
+        .blend-vals {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .blend-val {
+            font-size: 0.775rem;
+            color: var(--text-sub);
+            font-weight: 500;
+        }
+
+        .blend-val b {
+            color: var(--teal-dark);
+            font-weight: 700;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .arrow-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1.5px solid var(--indigo-200);
+            background: var(--indigo-50);
+            color: var(--indigo);
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: var(--tr);
+            -webkit-user-select: none;
+            user-select: none;
+            padding: 0;
+        }
+
+        .arrow-btn:hover { background: var(--indigo); color: white; border-color: var(--indigo); }
+        .arrow-btn:active { transform: scale(0.88); }
+
+        .blend-slider {
+            flex: 1;
+            height: 4px;
+            border-radius: 9999px;
+            background: var(--indigo-100);
+            outline: none;
+            cursor: pointer;
+            accent-color: var(--indigo);
+        }
+
+        .blend-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--indigo);
+            border-radius: 50%;
+            border: 2.5px solid white;
+            box-shadow: 0 1px 4px rgba(99,102,241,0.35);
+            cursor: pointer;
+            transition: transform var(--tr);
+        }
+
+        .blend-slider::-webkit-slider-thumb:hover { transform: scale(1.18); }
+
+        /* ── Size Controls ── */
+        .size-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .size-input {
+            width: 62px;
+            padding: 0.4rem 0.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            text-align: center;
+            transition: border-color var(--tr), box-shadow var(--tr);
+            background: var(--white);
+        }
+
+        .size-input:focus {
+            outline: none;
+            border-color: var(--indigo);
+            box-shadow: 0 0 0 3px var(--indigo-100);
+        }
+
+        .size-sep { color: var(--text-hint); font-weight: 600; font-size: 0.9rem; }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.825rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--tr);
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+        }
+
+        .btn:active { transform: scale(0.96); }
+
+        .btn-teal { background: var(--teal); color: white; box-shadow: 0 1px 3px rgba(20,184,166,0.25); }
+        .btn-teal:hover { background: var(--teal-dark); }
+
+        .btn-indigo { background: var(--indigo); color: white; box-shadow: 0 1px 3px rgba(99,102,241,0.25); }
+        .btn-indigo:hover { background: var(--indigo-dark); }
+
+        .btn-outline { background: var(--white); color: var(--text-sub); border: 1.5px solid var(--border); }
+        .btn-outline:hover { background: var(--bg); border-color: var(--indigo-200); color: var(--indigo); }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-sub);
+            border: 1.5px solid var(--border);
+            padding: 0.3rem 0.6rem;
+            min-width: 30px;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .btn-ghost:hover { background: var(--bg); border-color: var(--indigo-200); color: var(--indigo); }
+
+        /* ── Workspace (Right) ── */
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 1.125rem;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .workspace-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .workspace-title {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .workspace-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-hint);
+            margin-top: 0.2rem;
+        }
+
+        /* ── Panel Card ── */
+        .panel {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            flex-wrap: wrap;
+            gap: 0.625rem;
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .panel-body { padding: 1.25rem; }
+
+        /* ── Result Canvas ── */
+        .result-canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+            border-radius: var(--r-sm);
+            background: var(--bg);
+        }
+
+        .result-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            height: 160px;
+            color: var(--text-hint);
+            font-size: 0.85rem;
+        }
+
+        .result-empty i { font-size: 2rem; opacity: 0.4; }
+
+        /* ── Matrix Toolbar ── */
+        .matrix-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 18px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        /* Mode chips */
+        .chip {
+            padding: 0.28rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.775rem;
+            font-weight: 600;
+            border: 1.5px solid var(--indigo-200);
+            background: var(--indigo-50);
+            color: var(--indigo);
+            cursor: pointer;
+            transition: var(--tr);
+            letter-spacing: 0.01em;
+        }
+
+        .chip:hover:not(.active) { background: var(--indigo-100); }
+
+        .chip.active {
+            background: var(--indigo);
+            color: white;
+            border-color: var(--indigo);
+        }
+
+        /* Cell size */
+        .cell-size-ctrl {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.78rem;
+            color: var(--text-sub);
+        }
+
+        .cell-size-val {
+            font-weight: 600;
+            color: var(--text);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        /* Matrix wrapper */
+        .matrix-wrapper {
+            position: relative;
+            overflow: auto;
+            max-height: 520px;
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg);
+            margin-top: 0.75rem;
+        }
+
+        #matrixSpacer { position: relative; }
+
+        #matrixCells {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: grid;
+        }
+
+        .vcell {
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            box-sizing: border-box;
+            overflow: hidden;
+            cursor: pointer;
+            transition: none;
+        }
+
+        .vcell:hover {
+            outline: 2px solid var(--indigo);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Pixel info */
+        .pixel-info {
+            margin-top: 0.625rem;
+            padding: 0.45rem 1rem;
+            background: var(--indigo-50);
+            border: 1px solid var(--indigo-100);
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* ── Loading Overlay ── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-content {
+            background: var(--white);
+            border-radius: var(--r-lg);
+            padding: 2rem 2.5rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.14);
+            min-width: 200px;
+        }
+
+        .loading-content p {
+            font-size: 0.875rem;
+            color: var(--text-sub);
+            margin-top: 0.75rem;
+            font-weight: 500;
+        }
+
+        .spinner {
+            width: 38px;
+            height: 38px;
+            margin: 0 auto;
+            border: 3px solid var(--indigo-100);
+            border-top-color: var(--indigo);
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Responsive ── */
+        @media (max-width: 860px) {
+            .studio-root { grid-template-columns: 1fr; }
+            .ctrl-panel { height: auto; position: static; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Site nav (overlay) -->
+<div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+    <i class="fas fa-bars"></i>
+</div>
+<aside class="sidebar">
+    <nav>
+        <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+        <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+        <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+        <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+        <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+        <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+        <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+        <a href="activity6.5.html" class="active"><i class="fa fa-layer-group"></i><span>블렌딩 스튜디오</span></a>
+        <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+        <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+        <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+        <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+        <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+        <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+        <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+        <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+        <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+        <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의 신경망 변환</span></a>
+        <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+    </nav>
+</aside>
+
+<!-- Loading -->
+<div id="loadingIndicator" class="loading-overlay" style="display:none">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <p>이미지 처리 중... <span id="loadingProgress">0</span>%</p>
+    </div>
+</div>
+
+<!-- Studio App -->
+<div class="studio-root">
+
+    <!-- ── Left: Control Panel ── -->
+    <aside class="ctrl-panel">
+
+        <!-- Logo / Title -->
+        <div class="ctrl-header">
+            <div class="ctrl-logo">
+                <div class="ctrl-logo-icon"><i class="fa fa-layer-group"></i></div>
+                <span class="ctrl-logo-text">블렌딩 스튜디오</span>
+            </div>
+            <div class="ctrl-desc">두 이미지를 합성하고 픽셀 밝기값<br>행렬의 수학적 원리를 탐구하세요.</div>
+        </div>
+
+        <!-- Upload -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">이미지 업로드</div>
+
+            <div class="upload-card">
+                <div class="upload-card-title-bar">
+                    <div class="upload-card-badge">1</div>
+                    <span class="upload-card-name">이미지 1</span>
+                </div>
+                <div class="preview-container" id="preview1">
+                    <div class="upload-placeholder">
+                        <i class="fa fa-image"></i>
+                        <span class="drop-text">드래그하거나 아래 버튼을<br>클릭해 업로드하세요</span>
+                    </div>
+                    <img class="preview-image" id="previewImage1" alt="이미지 1 미리보기">
+                </div>
+                <label for="imageInput1" class="upload-btn-label">
+                    <i class="fa fa-folder-open"></i> 파일 선택
+                </label>
+                <input type="file" id="imageInput1" accept="image/*">
+            </div>
+
+            <div class="upload-card">
+                <div class="upload-card-title-bar">
+                    <div class="upload-card-badge" style="background:var(--teal)">2</div>
+                    <span class="upload-card-name">이미지 2</span>
+                </div>
+                <div class="preview-container" id="preview2">
+                    <div class="upload-placeholder">
+                        <i class="fa fa-image"></i>
+                        <span class="drop-text">드래그하거나 아래 버튼을<br>클릭해 업로드하세요</span>
+                    </div>
+                    <img class="preview-image" id="previewImage2" alt="이미지 2 미리보기">
+                </div>
+                <label for="imageInput2" class="upload-btn-label">
+                    <i class="fa fa-folder-open"></i> 파일 선택
+                </label>
+                <input type="file" id="imageInput2" accept="image/*">
+            </div>
+        </div>
+
+        <!-- Blend Slider -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">혼합 비율</div>
+            <div class="blend-vals">
+                <span class="blend-val">이미지1&nbsp;<b id="blend1Value">50</b>%</span>
+                <span class="blend-val">이미지2&nbsp;<b id="blend2Value">50</b>%</span>
+            </div>
+            <div class="slider-row">
+                <button type="button" class="arrow-btn" id="sliderDec" title="이미지1 비율 증가">&#9664;</button>
+                <input type="range" id="blendSlider" class="blend-slider" min="0" max="100" value="50" step="5">
+                <button type="button" class="arrow-btn" id="sliderInc" title="이미지2 비율 증가">&#9654;</button>
+            </div>
+        </div>
+
+        <!-- Output Size -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">출력 크기 (px)</div>
+            <div class="size-row">
+                <input type="number" id="widthInput" class="size-input" value="100" min="5" max="100">
+                <span class="size-sep">×</span>
+                <input type="number" id="heightInput" class="size-input" value="100" min="5" max="100">
+                <button id="resizeButton" class="btn btn-teal" style="flex:1; justify-content:center">
+                    <i class="fa fa-check"></i> 적용
+                </button>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- ── Right: Workspace ── -->
+    <main class="workspace">
+
+        <!-- Top bar -->
+        <div class="workspace-topbar">
+            <div>
+                <div class="workspace-title">이미지 블렌딩 행렬 시각화</div>
+                <div class="workspace-subtitle">슬라이더를 조절하며 행렬 데이터가 어떻게 변화하는지 탐구해보세요.</div>
+            </div>
+        </div>
+
+        <!-- Result Image -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <span class="panel-title-dot" style="background:var(--teal)"></span>
+                    결과 이미지
+                </span>
+            </div>
+            <div class="panel-body" style="text-align:center">
+                <canvas id="resultCanvas" class="result-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Matrix -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <span class="panel-title-dot" style="background:var(--indigo)"></span>
+                    픽셀 밝기값 행렬
+                </span>
+                <div class="matrix-toolbar">
+                    <!-- Mode -->
+                    <div style="display:flex; gap:0.25rem">
+                        <button id="numberMode" class="chip">숫자</button>
+                        <button id="colorMode" class="chip">색상</button>
+                        <button id="mixedMode" class="chip active">혼합</button>
+                    </div>
+
+                    <div class="toolbar-divider"></div>
+
+                    <!-- Cell size -->
+                    <div class="cell-size-ctrl">
+                        <button id="decreaseSize" class="btn btn-ghost">−</button>
+                        <span class="cell-size-val"><span id="cellSizeValue">24</span>px</span>
+                        <button id="increaseSize" class="btn btn-ghost">+</button>
+                    </div>
+
+                    <div class="toolbar-divider"></div>
+
+                    <!-- Export -->
+                    <button id="downloadCSV" class="btn btn-teal">
+                        <i class="fa fa-download"></i> CSV
+                    </button>
+                    <button id="copyToExcel" class="btn btn-outline">
+                        <i class="fa fa-copy"></i> Excel
+                    </button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="matrix-wrapper" id="matrixWrapper">
+                    <div id="matrixSpacer"></div>
+                    <div id="matrixCells"></div>
+                </div>
+                <div id="pixelInfo" class="pixel-info">픽셀을 클릭하면 좌표와 밝기값이 표시됩니다.</div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Footer -->
+<footer class="footer" style="width:100%">
+    <div class="footer-content">
+        <div>
+            <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+            <div class="creator-info">
+                Designed &amp; Developed by <span>황성현</span><br>
+                Contact : <a href="mailto:tjdgus1121@naver.com">tjdgus1121@naver.com</a>
+            </div>
+        </div>
+        <div class="social-links">
+            <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+            <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                <img src="naver.png" alt="메일 보내기"
+                     style="height:25px; filter:grayscale(100%); transition:filter 0.3s"
+                     onmouseover="this.style.filter='grayscale(0%)'"
+                     onmouseout="this.style.filter='grayscale(100%)'">
+            </a>
+        </div>
+        <div class="copyright">
+            이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+            다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+        </div>
+    </div>
+</footer>
+
+<script src="activity6_script.js" defer></script>
+</body>
+</html>

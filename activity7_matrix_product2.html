@@ -26,7 +26,7 @@
     <meta name="learning-objectives" content="행렬 곱셈 이해, 변환 행렬 개념 학습, 행과 열 연산의 차이 파악">
     
     <title>행렬 변환 시각화 - 이미지로 배우는 선형대수</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="stylefooter.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -63,9 +63,17 @@
             color: var(--text-dark);
         }
 
-        .container {
-            max-width: 1600px;
+        .page-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            max-width: 1800px;
             margin: 0 auto;
+        }
+
+        .container {
+            flex: 1;
+            min-width: 0;
             background: var(--bg-white);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -208,61 +216,54 @@
             border-radius: 2px;
         }
 
-        .switch-container {
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-            margin-bottom: 20px;
-            align-items: center;
-        }
+        /* (구) shuffle-action-group 제거됨 */
 
-        .switch-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .switch-label {
+        .btn-shuffle-row {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 10px;
             font-weight: 700;
-            color: var(--text-dark);
             font-size: 1rem;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 60px;
-            height: 30px;
-            background: var(--border);
-            border-radius: 15px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(231,76,60,0.3);
         }
 
-        .toggle-switch.active {
-            background: var(--primary);
-            box-shadow: 0 0 10px rgba(74, 144, 226, 0.4);
+        .btn-shuffle-row:hover:not(:disabled) {
+            background: #c0392b;
+            transform: translateY(-2px);
         }
 
-        .toggle-switch .slider {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 24px;
-            height: 24px;
-            background: white;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        .btn-shuffle-col {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(142,68,173,0.3);
         }
 
-        .toggle-switch.active .slider {
-            left: 33px;
+        .btn-shuffle-col:hover:not(:disabled) {
+            background: #7d3c98;
+            transform: translateY(-2px);
         }
 
-        .toggle-switch:hover {
-            transform: scale(1.05);
+        .btn-shuffle-row:disabled,
+        .btn-shuffle-col:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .shuffle-sub {
+            font-size: 0.75em;
+            opacity: 0.85;
+            display: block;
         }
 
         .operation-label {
@@ -271,7 +272,7 @@
             color: var(--primary);
             font-weight: 900;
             margin: 20px 0;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'IBM Plex Mono', monospace;
         }
 
         .image-display {
@@ -301,7 +302,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'IBM Plex Mono', monospace;
             font-size: 0.75rem;
             font-weight: 700;
             color: rgba(0, 0, 0, 0.6);
@@ -338,7 +339,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'IBM Plex Mono', monospace;
             font-size: 1.1rem;
             font-weight: 700;
             background: white;
@@ -386,7 +387,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'IBM Plex Mono', monospace;
             font-weight: 700;
             font-size: 0.9rem;
             color: #1565c0;
@@ -492,38 +493,134 @@
             transform: none !important;
         }
 
-        .operation-section {
-            background: var(--bg-light);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            align-items: start;
-        }
-
-        .operation-section .panel-title {
-            grid-column: 1 / -1;
-        }
-
-        .operation-controls {
+        /* ── 우측 컨트롤 패널 (container 바로 옆 sticky) ── */
+        .ctrl-aside {
+            position: sticky;
+            top: 50vh;
+            transform: translateY(-50%);
+            width: 190px;
+            flex-shrink: 0;
+            background: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            padding: 18px 14px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 10px;
+            align-self: flex-start;
         }
 
-        .operation-info {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .ctrl-aside.hidden { display: none; }
+
+        .ctrl-aside-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 4px;
         }
+
+        .ctrl-aside .operation-label {
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--primary);
+            font-weight: 900;
+            font-family: 'IBM Plex Mono', monospace;
+            margin: 4px 0;
+        }
+
+        .ctrl-aside .btn {
+            width: 100%;
+            padding: 10px 8px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .auto-inline-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.25);
+            border-radius: 5px;
+            padding: 2px 6px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .auto-inline-toggle input[type=checkbox] {
+            accent-color: white;
+            width: 13px;
+            height: 13px;
+            cursor: pointer;
+        }
+
+        .ctrl-aside .auto-compute-toggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: #f0f4ff;
+            border: 1.5px solid #bfcfff;
+            border-radius: 8px;
+            padding: 7px 8px;
+            white-space: nowrap;
+        }
+
+        .ctrl-aside .auto-compute-toggle input[type=checkbox] {
+            accent-color: var(--primary);
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        .ctrl-aside-info {
+            margin-top: 8px;
+            font-size: 1rem;
+            background: #fff9e6;
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-dark);
+            display: none;
+            line-height: 1.9;
+            text-align: center;
+        }
+
+        .ctrl-aside-info.visible { display: block; }
+
+        .ctrl-aside-info strong {
+            font-size: 1rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .ctrl-aside-info .swap-item {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--danger);
+            display: block;
+            text-align: center;
+        }
+
+        /* 구 operation-section 제거 */
+        .operation-section { display: none; }
 
         .operation-buttons {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
+            gap: 10px;
+            flex-wrap: nowrap;
         }
 
         .matrix-presets {
@@ -674,6 +771,16 @@
             gap: 10px;
             align-items: center;
             justify-content: center;
+            min-height: 44px;
+            margin-bottom: 15px;
+        }
+
+        /* 패널 T의 label-text도 같은 높이 확보 */
+        .matrix-container > .label-text {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 15px;
         }
 
@@ -701,6 +808,9 @@
 
         .pixel-cell.no-number {
             color: transparent !important;
+            text-shadow: none !important;
+            -webkit-text-stroke: 0 !important;
+            font-size: 0 !important;
         }
 
         .hidden {
@@ -770,6 +880,25 @@
                     변환</span></a>
             <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
         </nav>
+    </aside>
+
+    <div class="page-layout">
+
+    <!-- 우측 컨트롤 패널 -->
+    <aside class="ctrl-aside hidden" id="ctrlAside">
+        <div class="ctrl-aside-title">🎮 조작</div>
+        <div class="operation-label" id="operationLabel">A</div>
+        <button type="button" class="btn btn-shuffle-row" id="shuffleRowBtn" onclick="doRowShuffle()" disabled>🔀 행 섞기</button>
+        <button type="button" class="btn btn-shuffle-col" id="shuffleColBtn" onclick="doColShuffle()" disabled>🔀 열 섞기</button>
+        <button type="button" class="btn btn-success" id="applyBtn" onclick="applyTransform()" disabled>
+            ▶️ 연산 실행
+            <label class="auto-inline-toggle" title="T 행렬 변경 시 자동으로 결과를 계산합니다" onclick="event.stopPropagation()">
+                <input type="checkbox" id="autoComputeCheck" onchange="onAutoComputeChange()">
+                <span>자동</span>
+            </label>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="resetAll()">🔄 초기화</button>
+        <div class="ctrl-aside-info" id="ctrlAsideInfo"></div>
     </aside>
 
     <div class="container">
@@ -851,55 +980,17 @@
                             <button class="toggle-btn active" onclick="toggleResultDisplay('both')">숫자+그림</button>
                             <button class="toggle-btn" onclick="toggleResultDisplay('image')">그림만</button>
                         </div>
-                        <div class="label-text" id="resultLabel">연산 전</div>
                         <div id="resultPixelGrid" class="pixel-grid"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 조작 메뉴 (2열 레이아웃) -->
-            <div class="operation-section">
-                <div class="panel-title">🎮 조작 메뉴</div>
-                
-                <!-- 왼쪽 컬럼: 컨트롤 -->
-                <div class="operation-controls">
-                    <div class="switch-container">
-                        <div class="switch-wrapper">
-                            <div class="switch-label">행 섞기</div>
-                            <div class="toggle-switch" id="rowShuffleSwitch" onclick="selectShuffleMode('row')">
-                                <div class="slider"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="switch-wrapper">
-                            <div class="switch-label">열 섞기</div>
-                            <div class="toggle-switch" id="colShuffleSwitch" onclick="selectShuffleMode('col')">
-                                <div class="slider"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="operation-label" id="operationLabel">A</div>
-                    
-                    <div class="operation-buttons">
-                        <button class="btn btn-danger" onclick="shuffleImage()" id="shuffleBtn" disabled>🔀 이미지 섞기</button>
-                        <button class="btn btn-success" onclick="applyTransform()" id="applyBtn" disabled>▶️ 행렬 연산 실행</button>
-                        <button class="btn btn-secondary" onclick="resetAll()">🔄 초기화</button>
-                    </div>
-                </div>
-                
-                <!-- 오른쪽 컬럼: 정보 표시 -->
-                <div class="operation-info">
-                    <div id="shuffleInfo" class="shuffle-info hidden">
-                        <!-- 섞기 정보가 여기에 표시됩니다 -->
-                    </div>
-                    <div id="infoPlaceholder" class="info-placeholder">
-                        섞기 모드를 선택하고<br>"이미지 섞기"를 실행하세요
-                    </div>
-                </div>
-            </div>
+                    <!-- 섞기 정보 (JS에서 업데이트됨) -->
+            <div id="shuffleInfo" class="shuffle-info hidden"></div>
+            <div id="infoPlaceholder" class="hidden"></div>
         </div>
-    </div>
+    </div><!-- /.container -->
+    </div><!-- /.page-layout -->
 
     <canvas id="canvas"></canvas>
 
@@ -971,6 +1062,7 @@
                 img.onload = () => {
                     pixelizeImage(img);
                     mainWorkspace.classList.remove('hidden');
+                    document.getElementById('ctrlAside').classList.remove('hidden');
                 };
                 img.src = e.target.result;
             };
@@ -1022,66 +1114,62 @@
             renderPixelGrid(originalImageData, pixelColors, 'originalPixelGrid');
             renderTransformMatrix();
             renderPixelGrid(currentImageData, pixelColors, 'resultPixelGrid');
+
+            // 이미지 로드 완료 → 열 섞기 기본 선택
+            document.getElementById('shuffleRowBtn').disabled = false;
+            document.getElementById('shuffleColBtn').disabled = false;
+            selectShuffleMode('col');
         }
 
-        // 섞기 모드 선택 (즉시 섞지 않음)
+        // 섞기 모드 설정 (내부용)
         function selectShuffleMode(mode) {
-            const rowSwitch = document.getElementById('rowShuffleSwitch');
-            const colSwitch = document.getElementById('colShuffleSwitch');
             const operationLabel = document.getElementById('operationLabel');
             const workspace = document.getElementById('workspace');
-            const shuffleBtn = document.getElementById('shuffleBtn');
             const applyBtn = document.getElementById('applyBtn');
-            const placeholder = document.getElementById('infoPlaceholder');
-            
-            if (shuffleMode === mode) {
-                // 같은 스위치 다시 클릭 시 OFF
-                shuffleMode = null;
-                rowSwitch.classList.remove('active');
-                colSwitch.classList.remove('active');
-                operationLabel.textContent = 'A';
-                workspace.classList.remove('row-mode', 'col-mode');
-                shuffleBtn.disabled = true;
-                applyBtn.disabled = true;
-                
-                // 이미 섞여있었다면 원상복구
-                if (isShuffled) {
-                    currentImageData = JSON.parse(JSON.stringify(originalImageData));
-                    pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
-                    renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
-                    isShuffled = false;
-                    document.getElementById('shuffleInfo').classList.add('hidden');
-                    placeholder.style.display = 'flex';
-                }
+
+            shuffleMode = mode;
+            applyBtn.disabled = false;
+
+            if (mode === 'row') {
+                operationLabel.textContent = 'T × A';
+                workspace.classList.add('row-mode');
+                workspace.classList.remove('col-mode');
             } else {
-                // 다른 모드 선택
-                shuffleMode = mode;
-                shuffleBtn.disabled = false;
-                applyBtn.disabled = false; // 섞기 전에도 연산 가능
-                
-                if (mode === 'row') {
-                    rowSwitch.classList.add('active');
-                    colSwitch.classList.remove('active');
-                    operationLabel.textContent = 'T × A';
-                    workspace.classList.add('row-mode');
-                    workspace.classList.remove('col-mode');
-                } else {
-                    colSwitch.classList.add('active');
-                    rowSwitch.classList.remove('active');
-                    operationLabel.textContent = 'A × T';
-                    workspace.classList.add('col-mode');
-                    workspace.classList.remove('row-mode');
-                }
-                
-                // 이미 섞여있었다면 원상복구
-                if (isShuffled) {
-                    currentImageData = JSON.parse(JSON.stringify(originalImageData));
-                    pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
-                    renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
-                    isShuffled = false;
-                    document.getElementById('shuffleInfo').classList.add('hidden');
-                    placeholder.style.display = 'flex';
-                }
+                operationLabel.textContent = 'A × T';
+                workspace.classList.add('col-mode');
+                workspace.classList.remove('row-mode');
+            }
+
+            // 이미 섞여있었다면 원상복구
+            if (isShuffled) {
+                currentImageData = JSON.parse(JSON.stringify(originalImageData));
+                pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
+                renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
+                isShuffled = false;
+                const infoEl = document.getElementById('ctrlAsideInfo');
+                infoEl.innerHTML = '';
+                infoEl.classList.remove('visible');
+            }
+        }
+
+        // 행 섞기 직접 실행
+        function doRowShuffle() {
+            selectShuffleMode('row');
+            shuffleImage();
+            if (document.getElementById('autoComputeCheck').checked) applyTransform();
+        }
+
+        // 열 섞기 직접 실행
+        function doColShuffle() {
+            selectShuffleMode('col');
+            shuffleImage();
+            if (document.getElementById('autoComputeCheck').checked) applyTransform();
+        }
+
+        // 자동 연산 체크박스 변경 시
+        function onAutoComputeChange() {
+            if (document.getElementById('autoComputeCheck').checked && shuffleMode) {
+                applyTransform();
             }
         }
 
@@ -1173,14 +1261,18 @@
                         // 클릭으로 0↔1 토글
                         cell.addEventListener('click', function() {
                             transformMatrix[actualRow][actualCol] = transformMatrix[actualRow][actualCol] === 1 ? 0 : 1;
-                            
-                            // 셀 업데이트
+
                             this.textContent = transformMatrix[actualRow][actualCol];
                             this.classList.remove('value-0', 'value-1');
                             if (transformMatrix[actualRow][actualCol] === 1) {
                                 this.classList.add('value-1');
                             } else {
                                 this.classList.add('value-0');
+                            }
+
+                            // 자동 연산
+                            if (document.getElementById('autoComputeCheck').checked && shuffleMode) {
+                                applyTransform();
                             }
                         });
                         
@@ -1224,24 +1316,12 @@
             
             lastShuffleInfo = swapInfo;
             renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
-            
-            // 섞기 정보 표시 (박스 형태)
-            const shuffleInfoDiv = document.getElementById('shuffleInfo');
-            const placeholder = document.getElementById('infoPlaceholder');
-            
-            let boxesHTML = swapInfo.map(swap => `
-                <div class="swap-box">
-                    <div class="swap-row">${swap.row1}행<br>↕<br>${swap.row2}행</div>
-                    <div class="swap-text">교환됨</div>
-                </div>
-            `).join('');
-            
-            shuffleInfoDiv.innerHTML = `
-                <div class="shuffle-title">🔀 행 섞기 완료!</div>
-                <div class="swap-boxes">${boxesHTML}</div>
-            `;
-            shuffleInfoDiv.classList.remove('hidden');
-            placeholder.style.display = 'none';
+
+            // 우측 패널 섞기 정보 표시
+            const infoEl = document.getElementById('ctrlAsideInfo');
+            infoEl.innerHTML = '<strong>🔀 행 섞기</strong><br>' +
+                swapInfo.map(s => `<span class="swap-item">${s.row1}행↕${s.row2}행</span>`).join('<br>');
+            infoEl.classList.add('visible');
         }
 
         function shuffleCols() {
@@ -1273,24 +1353,12 @@
             
             lastShuffleInfo = swapInfo;
             renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
-            
-            // 섞기 정보 표시 (박스 형태)
-            const shuffleInfoDiv = document.getElementById('shuffleInfo');
-            const placeholder = document.getElementById('infoPlaceholder');
-            
-            let boxesHTML = swapInfo.map(swap => `
-                <div class="swap-box">
-                    <div class="swap-row">${swap.col1}열<br>↕<br>${swap.col2}열</div>
-                    <div class="swap-text">교환됨</div>
-                </div>
-            `).join('');
-            
-            shuffleInfoDiv.innerHTML = `
-                <div class="shuffle-title">🔀 열 섞기 완료!</div>
-                <div class="swap-boxes">${boxesHTML}</div>
-            `;
-            shuffleInfoDiv.classList.remove('hidden');
-            placeholder.style.display = 'none';
+
+            // 우측 패널 섞기 정보 표시
+            const infoEl = document.getElementById('ctrlAsideInfo');
+            infoEl.innerHTML = '<strong>🔀 열 섞기</strong><br>' +
+                swapInfo.map(s => `<span class="swap-item">${s.col1}열↕${s.col2}열</span>`).join('<br>');
+            infoEl.classList.add('visible');
         }
 
         function applyTransform() {
@@ -1357,7 +1425,6 @@
             }
             
             renderPixelGrid(result, resultColors, 'resultPixelGrid');
-            document.getElementById('resultLabel').textContent = shuffleMode === 'row' ? 'T × A 결과' : 'A × T 결과';
         }
 
         function setIdentityMatrix() {
@@ -1384,21 +1451,18 @@
             // 모든 상태 초기화
             shuffleMode = null;
             isShuffled = false;
-            document.getElementById('rowShuffleSwitch').classList.remove('active');
-            document.getElementById('colShuffleSwitch').classList.remove('active');
             document.getElementById('operationLabel').textContent = 'A';
             document.getElementById('workspace').classList.remove('row-mode', 'col-mode');
-            document.getElementById('shuffleBtn').disabled = true;
             document.getElementById('applyBtn').disabled = true;
             
             renderPixelGrid(originalImageData, originalPixelColors, 'originalPixelGrid');
             renderTransformMatrix();
             renderPixelGrid(originalImageData, originalPixelColors, 'resultPixelGrid');
             
-            // 섞기 정보 숨기기, placeholder 표시
-            document.getElementById('shuffleInfo').classList.add('hidden');
-            document.getElementById('infoPlaceholder').style.display = 'flex';
-            document.getElementById('resultLabel').textContent = '연산 전';
+            // 우측 패널 섞기 정보 초기화
+            const infoEl = document.getElementById('ctrlAsideInfo');
+            infoEl.innerHTML = '';
+            infoEl.classList.remove('visible');
             
             alert('모든 값이 초기화되었습니다!');
         }
@@ -1450,18 +1514,19 @@
 
         // 샘플 이미지 불러오기
         function loadSampleImage() {
-            const randomNum = Math.floor(Math.random() * 10); // 0-9
+            const randomNum = Math.floor(Math.random() * 12); // 0-11
             const sampleNum = String(randomNum).padStart(2, '0');
             const sampleUrl = `image/sampleimage${sampleNum}.png`;
-            
+
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = () => {
                 pixelizeImage(img);
                 mainWorkspace.classList.remove('hidden');
+                document.getElementById('ctrlAside').classList.remove('hidden');
             };
             img.onerror = () => {
-                alert(`샘플 이미지를 불러올 수 없습니다.\n파일명: ${sampleUrl}\n\nimage 폴더에 sampleimage00.png ~ sampleimage09.png 파일이 있는지 확인하세요.`);
+                alert(`샘플 이미지를 불러올 수 없습니다.\n파일명: ${sampleUrl}\n\nimage 폴더에 sampleimage00.png ~ sampleimage11.png 파일이 있는지 확인하세요.`);
             };
             img.src = sampleUrl;
         }

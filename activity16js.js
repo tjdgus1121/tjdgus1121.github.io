@@ -1,222 +1,239 @@
-(async () => {
-  const statusEl = document.getElementById('status');
-  const runBtn = document.getElementById('runBtn');
-  const buttonText = document.getElementById('buttonText');
-  const contentImg = document.getElementById('contentImg');
-  const styleImg = document.getElementById('styleImg');
-  const contentPreview = document.getElementById('contentPreview');
-  const stylePreview = document.getElementById('stylePreview');
-  const canvas = document.getElementById('canvas');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const contentInputWrapper = document.getElementById('contentInputWrapper');
-  const styleInputWrapper = document.getElementById('styleInputWrapper');
+// ===== DOM References =====
+const statusEl          = document.getElementById('status');
+const runBtn            = document.getElementById('runBtn');
+const buttonText        = document.getElementById('buttonText');
+const contentImgInput   = document.getElementById('contentImg');
+const styleImgInput     = document.getElementById('styleImg');
+const contentPreview    = document.getElementById('contentPreview');
+const stylePreview      = document.getElementById('stylePreview');
+const canvas            = document.getElementById('canvas');
+const downloadBtn       = document.getElementById('downloadBtn');
+const contentInputWrapper = document.getElementById('contentInputWrapper');
+const styleInputWrapper   = document.getElementById('styleInputWrapper');
+// ===== State =====
+let currentModel   = 'magenta'; // 'magenta' | 'onnx'
+let magentaModel   = null;      // mi.ArbitraryStyleTransferNetwork instance
+let onnxSession    = null;
 
-  let session = null;
-  let originalImageDimensions = null; // 원본 이미지 크기 저장
+// ===== Utilities =====
+function setStatus(message, type = '') {
+  statusEl.innerHTML = type === 'loading'
+    ? `<div class="loading-spinner"></div>${message}`
+    : message;
+  statusEl.className = `status ${type}`;
+}
 
-  // 상태 표시 함수
-  function setStatus(message, type = 'info') {
-    statusEl.innerHTML = type === 'loading' ? 
-      `<div class="loading-spinner"></div>${message}` : message;
-    statusEl.className = `status ${type}`;
-    console.log(`Status: ${message}`);
+function updateRunButton() {
+  const hasContent = contentImgInput.files.length > 0;
+  const hasStyle   = styleImgInput.files.length > 0;
+  const modelReady = currentModel === 'magenta' ? magentaModel !== null : onnxSession !== null;
+  runBtn.disabled  = !(hasContent && hasStyle && modelReady);
+}
+
+// ===== Script loader helper =====
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error(`스크립트 로드 실패: ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+// ===== Image → Canvas helper =====
+function imageToCanvas(imgEl, maxSize) {
+  let w = imgEl.naturalWidth  || imgEl.width;
+  let h = imgEl.naturalHeight || imgEl.height;
+  if (maxSize && (w > maxSize || h > maxSize)) {
+    const s = Math.min(maxSize / w, maxSize / h);
+    w = Math.round(w * s); h = Math.round(h * s);
   }
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+  return c;
+}
 
-  // ONNX 세션 초기화
-  async function initializeSession() {
-    try {
-      setStatus('AI 모델을 불러오는 중...', 'loading');
-      const modelPath = "model/style_dynamic.onnx";
-      session = await ort.InferenceSession.create(modelPath, {
-        executionProviders: ['wasm']
-      });
-      setStatus('🚀 AI 모델 준비 완료! 이미지를 업로드하여 시작하세요.', 'success');
-      console.log('Model loaded successfully:', session);
-    } catch (error) {
-      console.error('Model loading error:', error);
-      setStatus(`❌ AI 모델 로딩 실패: ${error.message}`, 'error');
-    }
+// ===== Model: Magenta (@magenta/image) =====
+// Uses storage.googleapis.com/magentadata/ — separate from TFHub/Kaggle, CORS 허용
+async function loadMagenta() {
+  if (magentaModel) {
+    setStatus('✅ Magenta 모델 준비 완료!', 'success');
+    return;
   }
+  setStatus('🧠 TF.js 3.x 로드 중...', 'loading');
+  await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0/dist/tf.min.js');
 
-  // 이미지 미리보기 및 원본 크기 저장 함수
-  function previewImage(file, imgElement, placeholderElement, wrapperElement, isContentImage = false) {
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        imgElement.src = e.target.result;
-        imgElement.style.display = 'block';
-        placeholderElement.style.display = 'none';
-        wrapperElement.classList.add('has-file');
-        // 원본 이미지인 경우 크기 정보 저장
-        if (isContentImage) {
-          const img = new Image();
-          img.onload = () => {
-            originalImageDimensions = {
-              width: img.width,
-              height: img.height
-            };
-            console.log('Original image dimensions:', originalImageDimensions);
-          };
-          img.src = e.target.result;
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  setStatus('🧠 @magenta/image 라이브러리 로드 중...', 'loading');
+  await loadScript('https://cdn.jsdelivr.net/npm/@magenta/image@0.2.1/dist/magentaimage.min.js');
+
+  setStatus('🧠 Magenta 모델 다운로드 중... (최초 1회, 약 30MB)', 'loading');
+  // mi = window.mi (UMD global from @magenta/image)
+  magentaModel = new mi.ArbitraryStyleTransferNetwork();
+  await magentaModel.initialize();
+  setStatus('✅ Magenta 모델 준비 완료!', 'success');
+}
+
+async function runMagenta() {
+  const contentCanvas = imageToCanvas(contentPreview, 512);
+  const styleCanvas   = imageToCanvas(stylePreview,   256);
+
+  // stylize() returns ImageData with same dims as contentCanvas
+  const resultData = await magentaModel.stylize(contentCanvas, styleCanvas);
+
+  canvas.width  = contentCanvas.width;
+  canvas.height = contentCanvas.height;
+  canvas.getContext('2d').putImageData(resultData, 0, 0);
+}
+
+// ===== Model: ONNX =====
+async function loadOnnx() {
+  if (onnxSession) {
+    setStatus('✅ ONNX 모델 준비 완료!', 'success');
+    return;
   }
+  setStatus('⚙️ ONNX 모델 로드 중...', 'loading');
+  onnxSession = await ort.InferenceSession.create('model/style_dynamic.onnx', {
+    executionProviders: ['wasm'],
+  });
+  setStatus('✅ ONNX 모델 준비 완료!', 'success');
+}
 
-  // 이미지를 텐서로 변환 (원본 비율 유지하면서 최대 1024까지 스케일링)
-  async function imageToTensor(file, maxSize = 1024) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          // 원본 비율을 유지하면서 최대 크기에 맞게 조정
-          let targetWidth = img.width;
-          let targetHeight = img.height;
-          if (targetWidth > maxSize || targetHeight > maxSize) {
-            const scale = Math.min(maxSize / targetWidth, maxSize / targetHeight);
-            targetWidth = Math.round(targetWidth * scale);
-            targetHeight = Math.round(targetHeight * scale);
-          }
-          // 캔버스 생성
-          const canvas = document.createElement('canvas');
-          canvas.width = targetWidth;
-          canvas.height = targetHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-          const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
-          const data = imageData.data;
-          // RGBA를 RGB로 변환하고 0-1로 정규화
-          const pixelCount = targetWidth * targetHeight;
-          const floatData = new Float32Array(pixelCount * 3);
-          for (let i = 0; i < pixelCount; i++) {
-            floatData[i * 3 + 0] = data[i * 4 + 0] / 255.0; // R
-            floatData[i * 3 + 1] = data[i * 4 + 1] / 255.0; // G
-            floatData[i * 3 + 2] = data[i * 4 + 2] / 255.0; // B
-          }
-          // 텐서 생성 [1, height, width, 3]
-          const tensor = new ort.Tensor('float32', floatData, [1, targetHeight, targetWidth, 3]);
-          console.log(`Tensor created: ${img.width}x${img.height} → ${targetWidth}x${targetHeight} (원본 비율 유지)`, tensor.dims);
-          resolve(tensor);
-        } catch (error) {
-          console.error('Tensor creation error:', error);
-          reject(error);
-        }
-      };
-      img.onerror = () => reject(new Error('이미지를 불러올 수 없습니다'));
-      img.src = URL.createObjectURL(file);
-    });
-  }
-
-  // 텐서를 캔버스에 렌더링 (원본 비율 유지)
-  function renderToCanvas(tensor, canvas) {
-    try {
-      const ctx = canvas.getContext('2d');
-      const [batch, height, width, channels] = tensor.dims;
-      canvas.width = width;
-      canvas.height = height;
-      console.log('Rendering tensor with dims:', tensor.dims);
-      const imageData = ctx.createImageData(width, height);
-      const data = imageData.data;
-      for (let i = 0; i < height * width; i++) {
-        const r = Math.max(0, Math.min(255, tensor.data[i * 3 + 0] * 255));
-        const g = Math.max(0, Math.min(255, tensor.data[i * 3 + 1] * 255));
-        const b = Math.max(0, Math.min(255, tensor.data[i * 3 + 2] * 255));
-        data[i * 4 + 0] = r; // R
-        data[i * 4 + 1] = g; // G
-        data[i * 4 + 2] = b; // B
-        data[i * 4 + 3] = 255; // A
+function fileToTensor(file, maxSize = 1024) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxSize || h > maxSize) {
+        const s = Math.min(maxSize / w, maxSize / h);
+        w = Math.round(w * s); h = Math.round(h * s);
       }
-      ctx.putImageData(imageData, 0, 0);
-      console.log(`렌더링 완료: ${width}x${height}`);
-      downloadBtn.style.display = 'inline-block';
-    } catch (error) {
-      console.error('Rendering error:', error);
-      throw error;
-    }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      const d = c.getContext('2d').getImageData(0, 0, w, h).data;
+      const f = new Float32Array(w * h * 3);
+      for (let i = 0; i < w * h; i++) {
+        f[i * 3]     = d[i * 4]     / 255;
+        f[i * 3 + 1] = d[i * 4 + 1] / 255;
+        f[i * 3 + 2] = d[i * 4 + 2] / 255;
+      }
+      resolve(new ort.Tensor('float32', f, [1, h, w, 3]));
+    };
+    img.onerror = () => reject(new Error('이미지 로드 실패'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function runOnnx() {
+  const [cTensor, sTensor] = await Promise.all([
+    fileToTensor(contentImgInput.files[0]),
+    fileToTensor(styleImgInput.files[0]),
+  ]);
+  const feeds = {};
+  feeds[onnxSession.inputNames[0]] = cTensor;
+  feeds[onnxSession.inputNames[1]] = sTensor;
+  const results = await onnxSession.run(feeds);
+  const out = results[onnxSession.outputNames[0]];
+
+  const [, h, w] = out.dims;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.createImageData(w, h);
+  for (let i = 0; i < h * w; i++) {
+    imgData.data[i * 4]     = Math.max(0, Math.min(255, out.data[i * 3]     * 255));
+    imgData.data[i * 4 + 1] = Math.max(0, Math.min(255, out.data[i * 3 + 1] * 255));
+    imgData.data[i * 4 + 2] = Math.max(0, Math.min(255, out.data[i * 3 + 2] * 255));
+    imgData.data[i * 4 + 3] = 255;
   }
+  ctx.putImageData(imgData, 0, 0);
+}
 
-  // 버튼 상태 업데이트
-  function updateButtonState() {
-    const hasContent = contentImg.files.length > 0;
-    const hasStyle = styleImg.files.length > 0;
-    const hasSession = session !== null;
-    runBtn.disabled = !(hasContent && hasStyle && hasSession);
+// ===== Model Selection =====
+async function selectModel(model) {
+  currentModel = model;
+  document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`btn-${model}`).classList.add('active');
+  updateRunButton();
+  await initCurrentModel();
+}
+
+async function initCurrentModel() {
+  try {
+    if (currentModel === 'magenta') {
+      await loadMagenta();
+    } else {
+      await loadOnnx();
+    }
+    updateRunButton();
+  } catch (e) {
+    setStatus(`❌ 모델 로드 실패: ${e.message}`, 'error');
   }
+}
 
-  // 다운로드 기능
-  downloadBtn.addEventListener('click', () => {
-    const link = document.createElement('a');
-    link.download = 'stylized-image.png';
-    link.href = canvas.toDataURL();
-    link.click();
-  });
+// ===== Run =====
+runBtn.addEventListener('click', async () => {
+  try {
+    runBtn.disabled = true;
+    buttonText.textContent = '🔄 처리 중...';
 
-  // 이벤트 리스너
-  contentImg.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      previewImage(file, contentPreview, document.getElementById('contentPlaceholder'), contentInputWrapper, true);
+    if (currentModel === 'magenta') {
+      setStatus('🎨 Magenta로 스타일 변환 중...', 'loading');
+      await runMagenta();
+      setStatus(`✨ Magenta 변환 완료! (${canvas.width}×${canvas.height}px)`, 'success');
+    } else {
+      setStatus('⚙️ ONNX 모델로 변환 중...', 'loading');
+      await runOnnx();
+      setStatus(`✨ ONNX 변환 완료! (${canvas.width}×${canvas.height}px)`, 'success');
     }
-    updateButtonState();
-  });
 
-  styleImg.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      previewImage(file, stylePreview, document.getElementById('stylePlaceholder'), styleInputWrapper);
-    }
-    updateButtonState();
-  });
+    downloadBtn.style.display = 'block';
+  } catch (e) {
+    console.error(e);
+    setStatus(`❌ 오류: ${e.message}`, 'error');
+  } finally {
+    buttonText.textContent = '✨ 스타일 변환하기';
+    updateRunButton();
+  }
+});
 
-  // 스타일 적용 버튼 클릭
-  runBtn.addEventListener('click', async () => {
-    const contentFile = contentImg.files[0];
-    const styleFile = styleImg.files[0];
-    if (!contentFile || !styleFile || !session) {
-      setStatus('❌ 두 이미지를 모두 선택하고 AI 모델이 로드되었는지 확인하세요.', 'error');
-      return;
-    }
-    try {
-      runBtn.disabled = true;
-      buttonText.textContent = '🔄 처리 중...';
-      setStatus('🎨 AI가 이미지를 분석하고 스타일을 적용하는 중...', 'loading');
-      // 텐서 생성 (원본 비율 유지)
-      console.log('원본 비율을 유지하여 텐서로 변환 중...');
-      const [contentTensor, styleTensor] = await Promise.all([
-        imageToTensor(contentFile, 1024),
-        imageToTensor(styleFile, 1024)
-      ]);
-      console.log('Content tensor:', contentTensor.dims);
-      console.log('Style tensor:', styleTensor.dims);
-      // 추론 실행
-      setStatus('🧠 AI가 예술적 걸작을 만들어내는 중...', 'loading');
-      const feeds = {};
-      feeds[session.inputNames[0]] = contentTensor;
-      feeds[session.inputNames[1]] = styleTensor;
-      console.log('Running inference with feeds:', Object.keys(feeds));
-      const results = await session.run(feeds);
-      console.log('Inference completed, output keys:', Object.keys(results));
-      const outputTensor = results[session.outputNames[0]];
-      console.log('Output tensor:', outputTensor.dims);
-      // 결과 렌더링
-      renderToCanvas(outputTensor, canvas);
-      const outputWidth = outputTensor.dims[2];
-      const outputHeight = outputTensor.dims[1];
-      setStatus(`✨ 스타일 변환 완료! 결과 해상도: ${outputWidth}×${outputHeight}px (원본 비율 유지)`, 'success');
-    } catch (error) {
-      console.error('Processing error:', error);
-      setStatus(`❌ 처리 실패: ${error.message}`, 'error');
-    } finally {
-      buttonText.textContent = '✨ 스타일 변환하기';
-      updateButtonState();
-    }
-  });
+// ===== Image Preview =====
+function previewImage(file, imgEl, placeholderEl, wrapperEl) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgEl.src = e.target.result;
+    imgEl.style.display = 'block';
+    placeholderEl.style.display = 'none';
+    wrapperEl.classList.add('has-file');
+  };
+  reader.readAsDataURL(file);
+}
 
-  // 초기화
-  setStatus('🔄 AI 모델 초기화 중...', 'loading');
-  await initializeSession();
-  updateButtonState();
-})(); 
+contentImgInput.addEventListener('change', e => {
+  previewImage(e.target.files[0], contentPreview,
+    document.getElementById('contentPlaceholder'), contentInputWrapper);
+  updateRunButton();
+});
+
+styleImgInput.addEventListener('change', e => {
+  previewImage(e.target.files[0], stylePreview,
+    document.getElementById('stylePlaceholder'), styleInputWrapper);
+  updateRunButton();
+});
+
+stylePromptInput.addEventListener('input', updateRunButton);
+
+// ===== Download =====
+downloadBtn.addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = `stylized-${currentModel}.png`;
+  link.href = canvas.toDataURL();
+  link.click();
+});
+
+// ===== Init =====
+setStatus('🔄 초기화 중...', 'loading');
+initCurrentModel();

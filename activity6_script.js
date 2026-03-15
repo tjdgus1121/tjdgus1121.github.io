@@ -9,9 +9,17 @@ const state = {
     height: 100,
     mode: 'mixed', // 'number', 'color', 'mixed'
     blendRatio: 0.5,
-    cellSize: 24, // 셀 크기 기본값 (픽셀)
-    zoomLevel: 1 // 확대/축소 수준 (1 = 100%)
+    cellSize: 24,
+    zoomLevel: 1
 };
+
+// 가상 스크롤 상태
+let matrixViewState = { firstRow: -1, lastRow: -1, firstCol: -1, lastCol: -1 };
+const MATRIX_OVERSCAN = 3;
+
+function getEffCellSize() {
+    return Math.round(state.cellSize * state.zoomLevel);
+}
 
 // DOM 요소 초기화
 document.addEventListener('DOMContentLoaded', function () {
@@ -35,9 +43,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 결과 관련 요소
     const resultCanvas = document.getElementById('resultCanvas');
-    const matrixTable = document.getElementById('matrixTable');
-    const matrixContainer = document.getElementById('matrixContainer');
-    const pixelInfo = document.getElementById('pixelInfo');
     const downloadCSV = document.getElementById('downloadCSV');
     const copyToExcel = document.getElementById('copyToExcel');
 
@@ -45,11 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const increaseSize = document.getElementById('increaseSize');
     const decreaseSize = document.getElementById('decreaseSize');
     const cellSizeValue = document.getElementById('cellSizeValue');
-
-    // 확대/축소 조절 요소
-    const zoomIn = document.getElementById('zoomIn');
-    const zoomOut = document.getElementById('zoomOut');
-    const zoomValue = document.getElementById('zoomValue');
 
     // 이벤트 리스너 등록
     imageInput1.addEventListener('change', (e) => handleImageUpload(e, 1));
@@ -67,59 +67,65 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 셀 크기 조절 이벤트
     increaseSize.addEventListener('click', () => {
-        showLoading(); // 로딩 시작
         if (state.cellSize < 100) {
             state.cellSize += 4;
             cellSizeValue.textContent = state.cellSize;
-            // updateMatrixDisplay 함수 내에서 진행률 업데이트
-            requestAnimationFrame(() => {
-                updateMatrixDisplay(0, 100); // 전체 범위 (0-100) 사용
-            });
+            updateCellSizeButtonStates();
+            updateMatrixDisplay();
         }
-        updateCellSizeButtonStates(); // 버튼 상태 업데이트
-        setTimeout(hideLoading, 1500); // 1.5초 후 로딩 숨김
     });
 
     decreaseSize.addEventListener('click', () => {
-        showLoading(); // 로딩 시작
         if (state.cellSize > 12) {
             state.cellSize -= 4;
             cellSizeValue.textContent = state.cellSize;
-            // updateMatrixDisplay 함수 내에서 진행률 업데이트
-            requestAnimationFrame(() => {
-                updateMatrixDisplay(0, 100); // 전체 범위 (0-100) 사용
-            });
+            updateCellSizeButtonStates();
+            updateMatrixDisplay();
         }
-        updateCellSizeButtonStates(); // 버튼 상태 업데이트
-        setTimeout(hideLoading, 1500); // 1.5초 후 로딩 숨김
     });
 
-    // 확대/축소 이벤트
-    zoomIn.addEventListener('click', () => {
-        showLoading(); // 로딩 시작
-        if (state.zoomLevel < 2) {
-            state.zoomLevel += 0.1;
-            updateZoom(); // updateZoom은 DOM 조작이 크지 않음
-            // updateMatrixDisplay 함수 내에서 진행률 업데이트
-            requestAnimationFrame(() => {
-                updateMatrixDisplay(0, 100); // 전체 범위 (0-100) 사용
-            });
-        }
-        setTimeout(hideLoading, 1500); // 1.5초 후 로딩 숨김
+    // 가상 스크롤 이벤트
+    document.getElementById('matrixWrapper').addEventListener('scroll', renderVisibleMatrix);
+
+    // 셀 클릭 이벤트 위임
+    document.getElementById('matrixWrapper').addEventListener('click', function (e) {
+        const cell = e.target.closest('.vcell');
+        if (!cell) return;
+        document.getElementById('pixelInfo').textContent =
+            `좌표: (${cell.dataset.x}, ${cell.dataset.y}), 밝기값: ${cell.dataset.value}`;
     });
 
-    zoomOut.addEventListener('click', () => {
-        showLoading(); // 로딩 시작
-        if (state.zoomLevel > 0.1) {
-            state.zoomLevel -= 0.1;
-            updateZoom(); // updateZoom은 DOM 조작이 크지 않음
-            // updateMatrixDisplay 함수 내에서 진행률 업데이트
-            requestAnimationFrame(() => {
-                updateMatrixDisplay(0, 100); // 전체 범위 (0-100) 사용
-            });
+    // 슬라이더 화살표 버튼 (클릭 + long press)
+    let sliderHoldTimer = null;
+
+    function stepSlider(dir) {
+        const next = Math.min(100, Math.max(0, parseInt(blendSlider.value) + dir * parseInt(blendSlider.step)));
+        if (next !== parseInt(blendSlider.value)) {
+            blendSlider.value = next;
+            blendSlider.dispatchEvent(new Event('input'));
         }
-        setTimeout(hideLoading, 1500); // 1.5초 후 로딩 숨김
-    });
+    }
+
+    function startHold(dir) {
+        stepSlider(dir);
+        sliderHoldTimer = setInterval(() => stepSlider(dir), 110);
+    }
+
+    function stopHold() {
+        clearInterval(sliderHoldTimer);
+        sliderHoldTimer = null;
+    }
+
+    const sliderDec = document.getElementById('sliderDec');
+    const sliderInc = document.getElementById('sliderInc');
+
+    sliderDec.addEventListener('mousedown', () => startHold(-1));
+    sliderInc.addEventListener('mousedown', () => startHold(1));
+    document.addEventListener('mouseup', stopHold);
+
+    sliderDec.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(-1); }, { passive: false });
+    sliderInc.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(1); }, { passive: false });
+    document.addEventListener('touchend', stopHold);
 
     // 드래그 앤 드롭 이벤트 설정
     setupDragDrop('preview1', 1);
@@ -154,14 +160,7 @@ function updateCellSizeButtonStates() {
     }
 }
 
-// 확대/축소 업데이트 함수
-function updateZoom() {
-    const matrixContainer = document.getElementById('matrixContainer');
-    const zoomValue = document.getElementById('zoomValue');
-
-    matrixContainer.style.transform = `scale(${state.zoomLevel})`;
-    zoomValue.textContent = `${Math.round(state.zoomLevel * 100)}%`;
-}
+// (zoom은 핸들러에서 직접 처리, 별도 함수 불필요)
 
 // 드래그 앤 드롭 설정 함수
 function setupDragDrop(previewId, imageNumber) {
@@ -187,11 +186,6 @@ function setupDragDrop(previewId, imageNumber) {
 
                 const reader = new FileReader();
 
-                reader.onloadstart = function() {
-                };
-
-                reader.onprogress = function(e) {
-                };
 
                 reader.onload = function (e) {
                     const img = new Image();
@@ -213,26 +207,27 @@ function setupDragDrop(previewId, imageNumber) {
 
                         // 두 이미지가 모두 선택되었을 때만 처리
                         if (state.image1 && state.image2) {
+                            document.querySelectorAll('.upload-card').forEach(c => c.classList.remove('needs-image'));
                             processImages();
                         } else {
-                             // 이미지가 하나만 업로드된 경우 메시지 표시 후 숨김
+                            const otherNum = imageNumber === 1 ? 2 : 1;
+                            const otherCard = document.getElementById(`preview${otherNum}`).closest('.upload-card');
+                            otherCard.classList.add('needs-image');
                             updateLoadingMessage('이미지를 하나 더 선택해주세요.');
-                            setTimeout(hideLoading, 2000); // 메시지 확인을 위해 2초 후 숨김
+                            setTimeout(hideLoading, 2000);
                         }
                     };
                     img.onerror = function() {
-                        console.error('이미지 로드 중 오류 발생');
                         updateLoadingMessage('이미지 로드 중 오류 발생!');
-                         setTimeout(hideLoading, 2000); // 오류 메시지 확인을 위해 2초 후 숨김
-                         alert('이미지 로드 중 오류가 발생했습니다. 파일 형식을 확인하거나 다른 이미지를 시도해주세요.');
+                        setTimeout(hideLoading, 2000);
+                        alert('이미지 로드 중 오류가 발생했습니다. 파일 형식을 확인하거나 다른 이미지를 시도해주세요.');
                     };
                     img.src = e.target.result;
                 };
                 reader.onerror = function() {
-                    console.error('파일 읽기 중 오류 발생');
                     updateLoadingMessage('파일 읽기 중 오류 발생!');
-                     setTimeout(hideLoading, 2000); // 오류 메시지 확인을 위해 2초 후 숨김
-                     alert('파일 읽기 중 오류가 발생했습니다. 파일을 다시 선택해주세요.');
+                    setTimeout(hideLoading, 2000);
+                    alert('파일 읽기 중 오류가 발생했습니다. 파일을 다시 선택해주세요.');
                 };
                 reader.readAsDataURL(file);
             }
@@ -249,11 +244,6 @@ function handleImageUpload(event, imageNumber) {
 
     const reader = new FileReader();
 
-    reader.onloadstart = function() {
-    };
-
-    reader.onprogress = function(e) {
-    };
 
     reader.onload = function (e) {
         const img = new Image();
@@ -280,28 +270,29 @@ function handleImageUpload(event, imageNumber) {
 
             // 두 이미지가 모두 선택되었을 때만 처리
             if (state.image1 && state.image2) {
+                document.querySelectorAll('.upload-card').forEach(c => c.classList.remove('needs-image'));
                 processImages();
             } else {
-                 // 이미지가 하나만 업로드된 경우 메시지 표시 후 숨김
-                 updateLoadingMessage('두 이미지를 모두 선택해주세요.');
-                 updateLoadingProgress(0); // 진행률 초기화
-                 setTimeout(hideLoading, 2000); // 메시지 확인을 위해 2초 후 숨김
+                const otherNum = imageNumber === 1 ? 2 : 1;
+                const otherCard = document.getElementById(`preview${otherNum}`).closest('.upload-card');
+                otherCard.classList.add('needs-image');
+                updateLoadingMessage('두 이미지를 모두 선택해주세요.');
+                updateLoadingProgress(0);
+                setTimeout(hideLoading, 2000);
             }
         };
-         img.onerror = function() {
-             console.error('이미지 로드 중 오류 발생');
-             updateLoadingMessage('이미지 로드 중 오류 발생!');
-             updateLoadingProgress(0); // 진행률 초기화
-             setTimeout(hideLoading, 2000); // 오류 메시지 확인을 위해 2초 후 숨김
-             alert('이미지 로드 중 오류가 발생했습니다. 파일 형식을 확인하거나 다른 이미지를 시도해주세요.');
-         };
+        img.onerror = function() {
+            updateLoadingMessage('이미지 로드 중 오류 발생!');
+            updateLoadingProgress(0);
+            setTimeout(hideLoading, 2000);
+            alert('이미지 로드 중 오류가 발생했습니다. 파일 형식을 확인하거나 다른 이미지를 시도해주세요.');
+        };
         img.src = e.target.result;
     };
     reader.onerror = function() {
-        console.error('파일 읽기 중 오류 발생');
         updateLoadingMessage('파일 읽기 중 오류 발생!');
-        updateLoadingProgress(0); // 진행률 초기화
-        setTimeout(hideLoading, 2000); // 오류 메시지 확인을 위해 2초 후 숨김
+        updateLoadingProgress(0);
+        setTimeout(hideLoading, 2000);
         alert('파일 읽기 중 오류가 발생했습니다. 파일을 다시 선택해주세요.');
     };
     reader.readAsDataURL(file);
@@ -341,9 +332,8 @@ function updateLoadingMessage(message) {
 function handleSliderChange(event) {
     const value = event.target.value;
     state.blendRatio = value / 100;
-
-    // 슬라이더 값 표시 업데이트
-    document.getElementById('sliderValue').textContent = value + '%';
+    document.getElementById('blend1Value').textContent = value;
+    document.getElementById('blend2Value').textContent = 100 - value;
 
     showLoading();
 
@@ -382,16 +372,12 @@ function applyResize() {
 // 디스플레이 모드 설정 함수
 function setDisplayMode(mode) {
     state.mode = mode;
-
-    // 모드 버튼 활성화 상태 업데이트
     document.getElementById('numberMode').classList.remove('active');
     document.getElementById('colorMode').classList.remove('active');
     document.getElementById('mixedMode').classList.remove('active');
-
     document.getElementById(`${mode}Mode`).classList.add('active');
-
-    // 행렬 표시 업데이트
-    updateMatrixDisplay();
+    matrixViewState.firstRow = matrixViewState.lastRow = matrixViewState.firstCol = matrixViewState.lastCol = -1;
+    renderVisibleMatrix();
 }
 
 // 캔버스 초기화 함수
@@ -409,10 +395,8 @@ function initializeCanvas() {
 
 // 이미지 처리 메인 함수
 function processImages() {
-    console.log('processImages 시작');
     // 두 이미지가 모두 선택되었는지 확인
     if (!state.image1 || !state.image2) {
-        console.log('processImages 중단: 두 이미지를 모두 선택해주세요.');
         updateLoadingMessage('두 이미지를 모두 선택해주세요.'); // 메시지 업데이트
         updateLoadingProgress(0); // 진행률 초기화
         setTimeout(hideLoading, 2000); // 메시지 확인을 위해 2초 후 숨김
@@ -421,39 +405,27 @@ function processImages() {
 
     // 이미지 처리가 시작될 때 메시지 다시 설정
     updateLoadingMessage('이미지 처리 중...');
-    console.log('이미지 처리 시작');
 
     // 비동기 처리를 위해 Promise 사용
     Promise.resolve().then(async () => {
         try {
-            console.log('Promise 실행 시작');
             // 파일 읽기 및 이미지 로딩 (0% - 40%)는 handleImageUpload/setupDragDrop에서 처리
 
             // 그레이스케일 변환 시작 (40%부터 시작)
-            console.log('첫 번째 이미지 그레이스케일 변환 시작 (40%)');
             state.grayImage1 = await convertToGrayscale(state.image1, 40, 65); // 40% -> 65%
-            console.log('첫 번째 이미지 그레이스케일 변환 완료 (65%)');
 
-            console.log('두 번째 이미지 그레이스케일 변환 시작 (65%)');
             state.grayImage2 = await convertToGrayscale(state.image2, 65, 80); // 65% -> 80%
-            console.log('두 번째 이미지 그레이스케일 변환 완료 (80%)');
 
             // 이미지 혼합 시작 (80%부터 시작)
-            console.log('이미지 혼합 시작 (80%)');
             await blendImages(80, 95); // 80% -> 95%
-            console.log('이미지 혼합 완료 (95%)');
-            console.log('state.resultImage populated:', state.resultImage.length > 0);
 
             // 결과 표시 업데이트 (95%부터 시작)
-            console.log('결과 표시 업데이트 시작 (95%)');
             await updateResultsDisplay(95, 100); // 95% -> 100%
-            console.log('결과 표시 업데이트 완료 (100%)');
 
             updateLoadingMessage('처리 완료!');
 
             // 진행률과 완료 메시지를 볼 수 있도록 약간의 지연 후 로딩 인디케이터 숨김
             setTimeout(hideLoading, 1000);
-            console.log('처리 완료, 로딩 숨김 타이머 시작');
         } catch (error) {
             console.error('이미지 처리 중 오류 발생:', error);
             updateLoadingMessage('처리 중 오류 발생!');
@@ -465,27 +437,22 @@ function processImages() {
 
 // 그레이스케일 변환 함수 - 진행률 범위 인자 추가
 function convertToGrayscale(image, startProgress, endProgress) {
-    console.log(`convertToGrayscale 시작 for image: ${image.src.substring(0, 30)}...`);
     return new Promise((resolve, reject) => {
         try {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            console.log('그레이스케일: 캔버스 생성 및 크기 설정');
             // 캔버스 크기 설정
             canvas.width = state.width;
             canvas.height = state.height;
 
-            console.log('그레이스케일: 이미지 그리기');
             // 이미지를 캔버스 크기에 맞게 그리기
             ctx.drawImage(image, 0, 0, state.width, state.height);
 
-            console.log('그레이스케일: 픽셀 데이터 가져오기');
             // 픽셀 데이터 가져오기
             const imageData = ctx.getImageData(0, 0, state.width, state.height);
             const pixels = imageData.data;
 
-            console.log('그레이스케일: 행렬 생성 및 픽셀 변환 시작');
             // 그레이스케일 행렬 생성
             const grayMatrix = Array(state.height).fill().map(() => Array(state.width).fill(0));
 
@@ -528,7 +495,6 @@ function convertToGrayscale(image, startProgress, endProgress) {
              // 픽셀 처리 완료 후 남은 범위까지 진행률 업데이트
             updateLoadingProgress(endProgress); // 그레이스케일 변환 완료 시점
 
-            console.log(`convertToGrayscale 완료, 행렬 크기: ${grayMatrix.length}x${grayMatrix[0].length}`);
             resolve(grayMatrix);
         } catch (error) {
             console.error('그레이스케일 변환 중 오류 발생:', error);
@@ -539,10 +505,8 @@ function convertToGrayscale(image, startProgress, endProgress) {
 
 // 이미지 혼합 함수 - 진행률 범위 인자 추가
 function blendImages(startProgress, endProgress) {
-    console.log('blendImages 시작');
     return new Promise((resolve, reject) => {
         if (!state.grayImage1.length || !state.grayImage2.length) {
-             console.log('blendImages 중단: grayImage1 또는 grayImage2가 비어 있습니다.');
             resolve();
             return;
         }
@@ -561,7 +525,6 @@ function blendImages(startProgress, endProgress) {
         // 결과 행렬 초기화
         state.resultImage = Array(state.height).fill().map(() => Array(state.width).fill(0));
 
-        console.log('blendImages: 픽셀 혼합 시작');
         // 픽셀 단위로 혼합
         for (let y = 0; y < state.height; y++) {
             for (let x = 0; x < state.width; x++) {
@@ -586,14 +549,12 @@ function blendImages(startProgress, endProgress) {
          // 픽셀 처리 완료 후 남은 범위까지 진행률 업데이트
          updateLoadingProgress(endProgress); // 혼합 완료 시점
 
-        console.log('blendImages 완료');
         resolve();
     });
 }
 
 // 결과 표시 업데이트 함수 - 진행률 범위 인자 추가
 function updateResultsDisplay(startProgress, endProgress) {
-    console.log('updateResultsDisplay 시작');
      return new Promise((resolve) => {
         // 결과 이미지 캔버스에 그리기
         const resultCanvas = document.getElementById('resultCanvas');
@@ -611,20 +572,14 @@ function updateResultsDisplay(startProgress, endProgress) {
              return;
          }
 
-        console.log('updateResultsDisplay: 캔버스 크기 설정');
-        // 캔버스 크기 설정 (범위의 10%)
         updateLoadingProgress(startProgress + (endProgress - startProgress) * 0.1);
         resultCanvas.width = state.width;
         resultCanvas.height = state.height;
 
-        console.log('updateResultsDisplay: 이미지 데이터 생성');
-        // 이미지 데이터 생성 (범위의 20%)
         updateLoadingProgress(startProgress + (endProgress - startProgress) * 0.2);
         const imageData = ctx.createImageData(state.width, state.height);
         const pixels = imageData.data;
 
-        console.log('updateResultsDisplay: 픽셀 데이터 설정');
-        // 픽셀 데이터 설정 (범위의 60%)
         updateLoadingProgress(startProgress + (endProgress - startProgress) * 0.6);
         for (let y = 0; y < state.height; y++) {
             for (let x = 0; x < state.width; x++) {
@@ -635,143 +590,80 @@ function updateResultsDisplay(startProgress, endProgress) {
             }
         }
 
-        console.log('updateResultsDisplay: 이미지 데이터를 캔버스에 그리기');
-        // 이미지 데이터를 캔버스에 그리기 (범위의 90%)
         updateLoadingProgress(startProgress + (endProgress - startProgress) * 0.9);
         ctx.putImageData(imageData, 0, 0);
 
-        console.log('updateResultsDisplay: 행렬 표시 업데이트 시작');
-        // 행렬 표시 업데이트 (범위의 100%)
         updateLoadingProgress(endProgress);
-        updateMatrixDisplay(0, 100); // 행렬 자체 업데이트는 0-100% 범위로
-
-        console.log('updateResultsDisplay 완료');
+        updateMatrixDisplay();
         resolve();
     });
 }
 
-// 행렬 표시 업데이트 함수
-function updateMatrixDisplay(startProgress = 0, endProgress = 100) {
-    console.log('updateMatrixDisplay 시작');
-    if (!state.resultImage || !state.resultImage.length || !state.resultImage[0] || !state.resultImage[0].length) {
-        console.error('updateMatrixDisplay 중단: resultImage 데이터가 유효하지 않습니다.', state.resultImage);
-        return;
-    }
-
-    try {
-        const matrixTable = document.getElementById('matrixTable');
-        if (!matrixTable) {
-            console.error('updateMatrixDisplay 오류: 행렬 테이블 요소를 찾을 수 없습니다.');
-            return;
-        }
-
-        const matrixContainer = document.getElementById('matrixContainer');
-         if (!matrixContainer) {
-             console.error('updateMatrixDisplay 오류: 행렬 컨테이너 요소를 찾을 수 없습니다.');
-             return;
-         }
-
-        console.log('updateMatrixDisplay: 테이블 초기화');
-        // 테이블 초기화
-        matrixTable.innerHTML = '';
-        console.log('updateMatrixDisplay: 테이블 초기화 완료');
-
-        // 컨테이너 최소 크기 설정 (테이블이 공간을 확보하도록)
-         matrixContainer.style.minWidth = `${state.width * state.cellSize}px`;
-         matrixContainer.style.minHeight = `${state.height * state.cellSize}px`;
-         matrixContainer.style.display = 'block'; // 혹시 모를 display 설정 문제 방지
-        console.log(`updateMatrixDisplay: matrixContainer 최소 크기 설정 - minWidth: ${matrixContainer.style.minWidth}, minHeight: ${matrixContainer.style.minHeight}`);
-
-
-        console.log('updateMatrixDisplay: 행렬 데이터로 테이블 생성 시작');
-        // 행렬 데이터로 테이블 생성
-        const totalCells = state.width * state.height;
-        let processedCells = 0;
-        const updateInterval = Math.max(1, Math.floor(totalCells / 100)); // 최소 100단계로 나누어 업데이트 시도
-
-        for (let y = 0; y < state.height; y++) {
-            const row = document.createElement('tr');
-
-            for (let x = 0; x < state.width; x++) {
-                const cell = document.createElement('td');
-                const gray = state.resultImage[y][x];
-
-                // 셀 크기 설정
-                cell.style.width = `${state.cellSize}px`;
-                cell.style.height = `${state.cellSize}px`;
-
-                // 셀 내용 설정 (모드에 따라)
-                if (state.mode === 'number' || state.mode === 'mixed') {
-                    cell.textContent = gray;
-                }
-
-                // 셀 배경색 설정 (모드에 따라)
-                if (state.mode === 'color' || state.mode === 'mixed') {
-                    cell.style.backgroundColor = `rgb(${gray}, ${gray}, ${gray})`;
-
-                    // 밝기에 따라 텍스트 색상 조정 (가독성 향상)
-                    if (gray < 128) {
-                        cell.style.color = 'white';
-                    } else {
-                        cell.style.color = 'black';
-                    }
-                }
-
-                // 폰트 크기 조정 (셀 크기에 비례)
-                const fontSize = Math.max(10, Math.min(16, state.cellSize / 3));
-                cell.style.fontSize = `${fontSize}px`;
-
-                // 셀 클릭 이벤트 추가
-                cell.dataset.x = x;
-                cell.dataset.y = y;
-                cell.dataset.value = gray;
-                cell.addEventListener('click', showPixelInfo);
-
-                row.appendChild(cell);
-
-                // !!! 디버깅 로그 추가 !!!
-                if (x === 0 && y === 0) { // 첫 번째 셀 정보만 출력하여 너무 많은 로그가 찍히는 것을 방지
-                    console.log(`updateMatrixDisplay: 첫 번째 셀 (0,0) 생성 및 스타일 적용됨`);
-                    console.log(`  - 설정된 크기: width=${cell.style.width}, height=${cell.style.height}`);
-                    // DOM에 추가되기 전이라 offsetWidth/Height는 0일 수 있습니다.
-                    // console.log(`  - 계산된 크기: offsetWidth=${cell.offsetWidth}, offsetHeight=${cell.offsetHeight}`);
-                    console.log(`  - display 스타일: ${cell.style.display}`); // 비어 있거나 'table-cell'이 예상됨
-                    console.log(`  - textContent: ${cell.textContent}`);
-                    console.log(`  - backgroundColor: ${cell.style.backgroundColor}`);
-                }
-
-
-                // 진행률 업데이트
-                processedCells++;
-                if (processedCells % updateInterval === 0) {
-                     const progress = startProgress + (processedCells / totalCells) * (endProgress - startProgress);
-                     // updateLoadingProgress(progress); // updateMatrixDisplay 자체는 로딩과 별개로 진행
-                }
-            }
-            // 각 행이 끝날 때마다도 진행률 업데이트 (작은 매트릭스에서 빠르게 진행되므로 빈번하게 업데이트)
-            const progress = startProgress + (processedCells / totalCells) * (endProgress - startProgress);
-            // updateLoadingProgress(progress); // updateMatrixDisplay 자체는 로딩과 별개로 진행
-            matrixTable.appendChild(row); // 행이 완성될 때마다 테이블에 추가
-        }
-         // 최종 완료 후 진행률 100% (주어진 범위의 endProgress)로 업데이트
-        // updateLoadingProgress(endProgress); // updateMatrixDisplay 자체는 로딩과 별개로 진행
-
-        console.log('updateMatrixDisplay 완료');
-
-    } catch (error) {
-        console.error('행렬 표시 업데이트 중 오류 발생:', error);
-    }
+// 행렬 표시 업데이트 — 스페이서 크기 갱신 후 가상 스크롤 렌더링
+function updateMatrixDisplay() {
+    if (!state.resultImage || !state.resultImage.length) return;
+    const cs = getEffCellSize();
+    const spacer = document.getElementById('matrixSpacer');
+    spacer.style.width  = (state.width  * cs) + 'px';
+    spacer.style.height = (state.height * cs) + 'px';
+    matrixViewState.firstRow = matrixViewState.lastRow = matrixViewState.firstCol = matrixViewState.lastCol = -1;
+    renderVisibleMatrix();
 }
 
-// 픽셀 정보 표시 함수
-function showPixelInfo(event) {
-    const cell = event.target;
-    const x = cell.dataset.x;
-    const y = cell.dataset.y;
-    const value = cell.dataset.value;
+// 가상 스크롤 렌더러 — 보이는 셀만 생성
+function renderVisibleMatrix() {
+    if (!state.resultImage || !state.resultImage.length) return;
+    const wrapper = document.getElementById('matrixWrapper');
+    const cells   = document.getElementById('matrixCells');
+    const cs = getEffCellSize();
 
-    const pixelInfo = document.getElementById('pixelInfo');
-    pixelInfo.textContent = `좌표: (${x}, ${y}), 밝기값: ${value}`;
+    const scrollTop  = wrapper.scrollTop;
+    const scrollLeft = wrapper.scrollLeft;
+    const vw = wrapper.clientWidth;
+    const vh = wrapper.clientHeight;
+
+    const firstRow = Math.max(0, Math.floor(scrollTop  / cs) - MATRIX_OVERSCAN);
+    const lastRow  = Math.min(state.height, Math.ceil((scrollTop  + vh) / cs) + MATRIX_OVERSCAN);
+    const firstCol = Math.max(0, Math.floor(scrollLeft / cs) - MATRIX_OVERSCAN);
+    const lastCol  = Math.min(state.width,  Math.ceil((scrollLeft + vw) / cs) + MATRIX_OVERSCAN);
+
+    if (matrixViewState.firstRow === firstRow && matrixViewState.lastRow === lastRow &&
+        matrixViewState.firstCol === firstCol && matrixViewState.lastCol === lastCol) return;
+
+    matrixViewState = { firstRow, lastRow, firstCol, lastCol };
+
+    const cols = lastCol - firstCol;
+    cells.style.top  = (firstRow * cs) + 'px';
+    cells.style.left = (firstCol * cs) + 'px';
+    cells.style.gridTemplateColumns = `repeat(${cols}, ${cs}px)`;
+    cells.style.gridAutoRows = cs + 'px';
+
+    const frag = document.createDocumentFragment();
+    const fontSize = Math.max(8, Math.min(16, cs * 0.4));
+
+    for (let r = firstRow; r < lastRow; r++) {
+        for (let c = firstCol; c < lastCol; c++) {
+            const div = document.createElement('div');
+            div.className = 'vcell';
+            div.style.fontSize = fontSize + 'px';
+            const gray = state.resultImage[r][c];
+
+            if (state.mode === 'color' || state.mode === 'mixed') {
+                div.style.backgroundColor = `rgb(${gray},${gray},${gray})`;
+                div.style.color = gray < 128 ? '#fff' : '#000';
+            }
+            if (state.mode === 'number' || state.mode === 'mixed') {
+                div.textContent = gray;
+            }
+
+            div.dataset.x = c;
+            div.dataset.y = r;
+            div.dataset.value = gray;
+            frag.appendChild(div);
+        }
+    }
+    cells.innerHTML = '';
+    cells.appendChild(frag);
 }
 
 // CSV 다운로드 함수

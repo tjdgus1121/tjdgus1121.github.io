@@ -231,6 +231,41 @@
         .slider:focus::-ms-thumb {
             border: 2.5px solid #bfcfff;
         }
+        .auto-play-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .auto-play-btn {
+            padding: 8px 26px;
+            border-radius: 24px;
+            border: none;
+            background: #6c8cff;
+            color: #fff;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.2);
+        }
+        .auto-play-btn:hover { background: #4b5fc9; transform: translateY(-1px); }
+        .auto-play-btn.playing { background: #ffb6b9; box-shadow: 0 2px 8px rgba(255,140,158,0.25); }
+        .auto-play-btn.playing:hover { background: #ff8a9e; }
+        .speed-select {
+            padding: 7px 14px;
+            border-radius: 16px;
+            border: 1.5px solid #bfcfff;
+            color: #6c8cff;
+            font-size: 0.92em;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            background: #f6f7ff;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .speed-select:focus { border-color: #6c8cff; }
         .info-display {
             margin-top: 10px;
             font-size: 1.1em;
@@ -393,6 +428,14 @@
             </div>
             <div class="formula">
                 최종색상 = 이미지1 × (1 − α) + 이미지2 × α, 여기서 α = <span id="alphaValue">0.5</span>
+            </div>
+            <div class="auto-play-row">
+                <button id="autoPlayBtn" class="auto-play-btn" type="button">▶ 자동 재생</button>
+                <select id="speedSelect" class="speed-select" title="재생 속도">
+                    <option value="20">느리게</option>
+                    <option value="50" selected>보통</option>
+                    <option value="120">빠르게</option>
+                </select>
             </div>
         </div>
         
@@ -575,6 +618,44 @@
             renderBlendedImages();
         });
         
+        // 자동 재생
+        const autoPlayBtn = document.getElementById('autoPlayBtn');
+        const speedSelect = document.getElementById('speedSelect');
+        let autoPlayId = null;
+        let autoDirection = 1;
+        let lastTimestamp = null;
+
+        function autoPlayStep(ts) {
+            if (!lastTimestamp) lastTimestamp = ts;
+            const elapsed = ts - lastTimestamp;
+            lastTimestamp = ts;
+
+            const speed = parseFloat(speedSelect.value); // % per second
+            let val = parseFloat(blendSlider.value) + autoDirection * speed * elapsed / 1000;
+
+            if (val >= 100) { val = 100; autoDirection = -1; }
+            if (val <= 0)   { val = 0;   autoDirection = 1; }
+
+            blendSlider.value = val;
+            blendSlider.dispatchEvent(new Event('input'));
+            autoPlayId = requestAnimationFrame(autoPlayStep);
+        }
+
+        autoPlayBtn.addEventListener('click', () => {
+            if (autoPlayId) {
+                cancelAnimationFrame(autoPlayId);
+                autoPlayId = null;
+                lastTimestamp = null;
+                autoPlayBtn.textContent = '▶ 자동 재생';
+                autoPlayBtn.classList.remove('playing');
+            } else {
+                lastTimestamp = null;
+                autoPlayId = requestAnimationFrame(autoPlayStep);
+                autoPlayBtn.textContent = '⏸ 정지';
+                autoPlayBtn.classList.add('playing');
+            }
+        });
+
         // 창 크기 조정 핸들러
         window.addEventListener('resize', resizeCanvas);
         

@@ -534,7 +534,6 @@
                 <button class="btn alt" id="copyS">📋 Excel 복사</button>
               </div>
             </div>
-            <p class="info-text" style="color:red; font-weight:700"> 검은색 칸만 있을 경우, 마우스 휠을 드래그하시면 작동합니다. </p>
             <div class="size-control">
               <label for="cellSize">셀 크기:</label>
               <input
@@ -591,6 +590,14 @@
       var CELL = 22;
       var OVERSCAN = 4;
       var CHANNELS = ["R", "G", "B"];
+
+      // ===== Worker (extract / rebuild 전용으로 분리) =====
+      var extractWorker = (function () {
+        try { return new Worker("activity4_rgb_channels2_worker.js"); } catch (e) { return null; }
+      })();
+      var rebuildWorker = (function () {
+        try { return new Worker("activity4_rgb_channels2_worker.js"); } catch (e) { return null; }
+      })();
 
       // ===== 상태 =====
       var data = { R: [], G: [], B: [] };
@@ -761,58 +768,111 @@
         img.src = url;
       }
 
+      // 2D 배열 ↔ flat Uint8Array 변환 헬퍼
+      function flatToData(R, G, B) {
+        var n = SIZE * SIZE, y, x, i;
+        for (y = 0; y < SIZE; y++) {
+          for (x = 0; x < SIZE; x++) {
+            i = y * SIZE + x;
+            data.R[y][x] = R[i];
+            data.G[y][x] = G[i];
+            data.B[y][x] = B[i];
+          }
+        }
+      }
+
+      function dataToFlat() {
+        var n = SIZE * SIZE;
+        var R = new Uint8Array(n), G = new Uint8Array(n), B = new Uint8Array(n);
+        var y, x, i;
+        for (y = 0; y < SIZE; y++) {
+          for (x = 0; x < SIZE; x++) {
+            i = y * SIZE + x;
+            R[i] = data.R[y][x];
+            G[i] = data.G[y][x];
+            B[i] = data.B[y][x];
+          }
+        }
+        return { R: R, G: G, B: B };
+      }
+
       function extractFromCurrentCanvas() {
         initArrays();
         var id = octx.getImageData(0, 0, SIZE, SIZE);
-        var a = id.data;
-        var p = 0,
-          y,
-          x,
-          rRow,
-          gRow,
-          bRow;
-        for (y = 0; y < SIZE; y++) {
-          rRow = data.R[y];
-          gRow = data.G[y];
-          bRow = data.B[y];
-          for (x = 0; x < SIZE; x++) {
-            rRow[x] = a[p++];
-            gRow[x] = a[p++];
-            bRow[x] = a[p++];
-            p++; // skip alpha
+        var buf = id.data.buffer.slice(0); // copy for transfer
+
+        if (extractWorker) {
+          extractWorker.onmessage = function (e) {
+            var d = e.data;
+            if (d.type !== "extracted") return;
+            flatToData(new Uint8Array(d.R), new Uint8Array(d.G), new Uint8Array(d.B));
+            main.style.display = "grid";
+            setupVirtualGridOnce();
+            redrawFromData();
+            imageLoaded = true;
+            requestAnimationFrame(function () {
+              viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
+              updateGrid(currentCh);
+            });
+          };
+          extractWorker.postMessage({ type: "extract", buffer: buf, size: SIZE }, [buf]);
+        } else {
+          // fallback: 워커 없을 때 동기 처리
+          var a = id.data;
+          var p = 0, y, x;
+          for (y = 0; y < SIZE; y++) {
+            for (x = 0; x < SIZE; x++) {
+              data.R[y][x] = a[p++];
+              data.G[y][x] = a[p++];
+              data.B[y][x] = a[p++];
+              p++;
+            }
           }
+          main.style.display = "grid";
+          setupVirtualGridOnce();
+          redrawFromData();
+          imageLoaded = true;
+          requestAnimationFrame(function () {
+            viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
+            updateGrid(currentCh);
+          });
         }
-        setupVirtualGridOnce();
-        updateGrid(currentCh);
-        redrawFromData();
-        main.style.display = "grid";
-        imageLoaded = true;
       }
 
       function redrawFromData() {
-        var id = octx.createImageData(SIZE, SIZE);
-        var a = id.data;
-        var p = 0,
-          y,
-          x,
-          rRow,
-          gRow,
-          bRow;
-        for (y = 0; y < SIZE; y++) {
-          rRow = data.R[y];
-          gRow = data.G[y];
-          bRow = data.B[y];
-          for (x = 0; x < SIZE; x++) {
-            a[p++] = rRow[x];
-            a[p++] = gRow[x];
-            a[p++] = bRow[x];
-            a[p++] = 255;
+        if (rebuildWorker) {
+          var flat = dataToFlat();
+          var rBuf = flat.R.buffer.slice(0);
+          var gBuf = flat.G.buffer.slice(0);
+          var bBuf = flat.B.buffer.slice(0);
+          rebuildWorker.onmessage = function (e) {
+            var d = e.data;
+            if (d.type !== "rebuilt") return;
+            var id = octx.createImageData(SIZE, SIZE);
+            id.data.set(new Uint8Array(d.buffer));
+            octx.putImageData(id, 0, 0);
+            zctx.imageSmoothingEnabled = false;
+            zctx.clearRect(0, 0, zoom.width, zoom.height);
+            zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
+          };
+          rebuildWorker.postMessage({ type: "rebuild", R: rBuf, G: gBuf, B: bBuf, size: SIZE }, [rBuf, gBuf, bBuf]);
+        } else {
+          // fallback
+          var id = octx.createImageData(SIZE, SIZE);
+          var a = id.data, p = 0, y, x;
+          for (y = 0; y < SIZE; y++) {
+            for (x = 0; x < SIZE; x++) {
+              a[p++] = data.R[y][x];
+              a[p++] = data.G[y][x];
+              a[p++] = data.B[y][x];
+              a[p++] = 255;
+            }
           }
+          octx.putImageData(id, 0, 0);
+          zctx.imageSmoothingEnabled = false;
+          zctx.clearRect(0, 0, zoom.width, zoom.height);
+          zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
         }
-        octx.putImageData(id, 0, 0);
-        zctx.imageSmoothingEnabled = false;
-        zctx.clearRect(0, 0, zoom.width, zoom.height);
-        zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
       }
 
       // ===== 가상 스크롤 =====
@@ -1057,10 +1117,11 @@
           return;
         }
         currentCh = ch;
-        showAlert(ch + " 채널을 적용했습니다. 마우스 휠을 움직여 확인하세요", true, 800);
+        showAlert(ch + " 채널을 적용했습니다.", true, 800);
         btnR.style.opacity = ch === "R" ? "1" : "0.6";
         btnG.style.opacity = ch === "G" ? "1" : "0.6";
         btnB.style.opacity = ch === "B" ? "1" : "0.6";
+        viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
         updateGrid(currentCh);
       }
       btnR.onclick = function () {

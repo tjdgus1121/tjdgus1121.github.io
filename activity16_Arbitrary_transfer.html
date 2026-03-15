@@ -668,6 +668,151 @@
       outline: 2px solid var(--primary-500);
       outline-offset: 2px;
     }
+
+    /* ===== Model Selector ===== */
+    .model-selector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-2xl);
+      padding: var(--spacing-md) var(--spacing-xl);
+      background: rgba(14, 165, 233, 0.05);
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(14, 165, 233, 0.15);
+    }
+    .model-selector-label {
+      font-weight: 700;
+      font-size: var(--font-sm);
+      color: var(--neutral-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .model-btns {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-md);
+      flex-wrap: wrap;
+    }
+    .model-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--spacing-md) var(--spacing-xl);
+      background: white;
+      border: 2px solid var(--neutral-200);
+      border-radius: var(--radius-xl);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      min-width: 120px;
+      gap: 4px;
+    }
+    .model-btn:hover {
+      border-color: var(--primary-500);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .model-btn.active {
+      border-color: var(--primary-500);
+      background: var(--primary-50);
+      box-shadow: var(--shadow-md);
+    }
+    .mbtn-icon { font-size: 1.5rem; }
+    .mbtn-name { font-weight: 700; font-size: var(--font-sm); color: var(--neutral-800); }
+    .mbtn-sub  { font-size: var(--font-xs); color: var(--neutral-500); }
+    .model-btn.active .mbtn-name { color: var(--primary-700); }
+
+    /* ===== Pollinations prompt ===== */
+    #stylePromptGroup textarea {
+      width: 100%;
+      min-height: 90px;
+      padding: var(--spacing-md);
+      border: 2px solid var(--neutral-300);
+      border-radius: var(--radius-xl);
+      font-family: inherit;
+      font-size: var(--font-base);
+      resize: vertical;
+      transition: border-color var(--transition-base);
+      background: var(--neutral-50);
+      line-height: 1.6;
+    }
+    #stylePromptGroup textarea:focus {
+      outline: none;
+      border-color: var(--primary-500);
+      background: white;
+    }
+    .prompt-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+      margin-top: var(--spacing-md);
+    }
+    .preset-btn {
+      padding: 4px var(--spacing-md);
+      background: var(--neutral-100);
+      border: 1px solid var(--neutral-300);
+      border-radius: var(--radius-full);
+      font-size: var(--font-xs);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .preset-btn:hover {
+      background: var(--primary-50);
+      border-color: var(--primary-500);
+      color: var(--primary-700);
+    }
+    .pollinations-size-row {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-md);
+    }
+    .pollinations-size-row select {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--neutral-300);
+      border-radius: var(--radius-md);
+      font-size: var(--font-sm);
+      background: white;
+      cursor: pointer;
+    }
+    .size-label {
+      font-size: var(--font-sm);
+      color: var(--neutral-600);
+      font-weight: 600;
+    }
+    .hidden { display: none; }
+    .api-key-row {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-md);
+    }
+    .api-key-row input {
+      flex: 1;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--neutral-300);
+      border-radius: var(--radius-md);
+      font-size: var(--font-sm);
+      font-family: 'Courier New', monospace;
+      background: var(--neutral-50);
+    }
+    .api-key-row input:focus {
+      outline: none;
+      border-color: var(--primary-500);
+    }
+    .key-link {
+      white-space: nowrap;
+      font-size: var(--font-xs);
+      font-weight: 600;
+      color: var(--primary-600);
+      text-decoration: none;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--primary-300);
+      border-radius: var(--radius-md);
+      background: var(--primary-50);
+      transition: all var(--transition-fast);
+    }
+    .key-link:hover { background: var(--primary-100); }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -707,6 +852,21 @@
         <p>AI 기반 스타일 변환으로 원본 이미지의 비율을 유지하며 예술적으로 변환</p>
       </div>
 
+      <!-- Model Selector -->
+      <div class="model-selector">
+        <span class="model-selector-label">모델 선택</span>
+        <div class="model-btns">
+          <button type="button" class="model-btn active" id="btn-magenta" onclick="selectModel('magenta')">
+            <div class="mbtn-icon">🧠</div>
+            <div class="mbtn-name">Magenta</div>
+          </button>
+          <button type="button" class="model-btn" id="btn-onnx" onclick="selectModel('onnx')">
+            <div class="mbtn-icon">⚙️</div>
+            <div class="mbtn-name">ONNX</div>
+          </button>
+        </div>
+      </div>
+
       <div class="controls">
         <div class="input-group">
           <label for="contentImg">📷 원본 이미지</label>
@@ -719,7 +879,8 @@
           </div>
         </div>
 
-        <div class="input-group">
+        <!-- Style image (Magenta / ONNX) -->
+        <div id="styleFileGroup" class="input-group">
           <label for="styleImg">🎭 스타일 이미지</label>
           <div class="file-input" id="styleInputWrapper">
             <input type="file" id="styleImg" accept="image/*" />
@@ -730,7 +891,8 @@
           </div>
         </div>
 
-        <button class="run-button" id="runBtn" disabled>
+
+        <button type="button" class="run-button" id="runBtn" disabled>
           <span id="buttonText">✨ 스타일 변환하기</span>
         </button>
       </div>
