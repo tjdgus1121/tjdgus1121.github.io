@@ -838,38 +838,67 @@
         .legend-perc-xonly     { background: #fca5a5; }
         .compare-grid-14-sm {
             display: inline-grid;
-            grid-template-columns: repeat(14, 22px);
-            width: 308px;
-            height: 308px;
+            grid-template-columns: repeat(14, 26px);
+            width: 364px;
+            height: 364px;
             border: 2px solid var(--border);
             border-radius: 8px;
             overflow: hidden;
             background: #fff;
         }
-        .cg-blend-both   { background: #3b82f6; }
+        .cg-blend-both   { background: #3b82f6; display: flex; align-items: center; justify-content: center; }
         .cg-blend-diff   { background: #ef4444; }
         .cg-blend-empty  { background: #f0f4ff; }
         /* 퍼셉트론 전용: A=1 X=0 (분모만) / A=0 X=1 (관계없음) */
         .cg-blend-a-only { background: #f59e0b; }  /* 주황: 분모 포함, 분자 미포함 */
         .cg-blend-x-only { background: #fca5a5; }  /* 연분홍: 퍼셉트론 계산과 무관 */
 
-        /* ── 분수 시각화 스트립 ── */
+        /* 블렌드 셀 내 분수 */
+        .blend-cell-frac {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+            color: #fff;
+            gap: 0;
+            pointer-events: none;
+        }
+        .blend-cell-frac .bcf-num {
+            font-size: 9px;
+            font-weight: 800;
+            border-bottom: 1px solid rgba(255,255,255,0.85);
+            padding: 0 2px 0.5px;
+            line-height: 1.1;
+        }
+        .blend-cell-frac .bcf-den {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 0.5px 2px 0;
+            line-height: 1.1;
+            opacity: 0.9;
+        }
+
+        /* ── 분수 시각화 (오른쪽 패널) ── */
+        .compare-right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            align-items: center;
+        }
         .frac-viz {
-            margin-top: 8px;
             background: #f8faff;
-            border-radius: 10px;
-            padding: 10px 12px;
-            width: 308px;
+            border-radius: 12px;
+            padding: 14px 16px;
+            width: 240px;
             box-sizing: border-box;
-            /* 블렌딩 전엔 숨김, 블렌딩 후 fade-in */
             opacity: 0;
             max-height: 0;
             overflow: hidden;
-            transition: opacity 0.4s ease, max-height 0.4s ease;
+            transition: opacity 0.4s ease, max-height 0.5s ease;
         }
         .frac-viz.frac-visible {
             opacity: 1;
-            max-height: 300px;
+            max-height: 500px;
         }
         .frac-viz-title {
             font-size: 0.8em;
@@ -2492,8 +2521,10 @@
                     xv === 1 && rv === 0 ? 'cg-blend-x-only' :
                                            'cg-blend-empty'
                 );
-                if (xv === 1 && rv === 1) c.title = `X=1, A=1 → +1/${sumRef} 기여 ✓`;
-                else if (xv === 0 && rv === 1) c.title = `X=0, A=1 → 분모(${sumRef}) 포함, 분자 미포함`;
+                if (xv === 1 && rv === 1) {
+                    c.title = `X=1, A=1 → +1/${sumRef} 기여 ✓`;
+                    c.innerHTML = `<span class="blend-cell-frac"><span class="bcf-num">1</span><span class="bcf-den">${sumRef}</span></span>`;
+                } else if (xv === 0 && rv === 1) c.title = `X=0, A=1 → 분모(${sumRef}) 포함, 분자 미포함`;
                 else if (xv === 1 && rv === 0) c.title = `X=1, A=0 → 퍼셉트론 계산과 무관`;
                 else c.title = 'X=0, A=0 → 해당 없음';
             }
@@ -2568,60 +2599,74 @@
         btnReset.innerHTML = '<i class="fa fa-rotate-left"></i> 초기화';
         btnReset.disabled = true;
 
-        let t1 = null, t2 = null, t3 = null, tRejoin = null;
+        const peekKey     = rank === 0 ? 'A' : 'B';
+        const peekKeyCode = rank === 0 ? 'KeyA' : 'KeyB';
+
+        const btnPeek = document.createElement('button');
+        btnPeek.type = 'button';
+        btnPeek.className = 'compare-btn';
+        btnPeek.innerHTML = `<i class="fa fa-eye"></i> 원본 보기 <kbd>${peekKey}</kbd>`;
+        btnPeek.disabled = true;
+
+        let t1 = null, t2 = null, t3 = null;
         let blended = false;
-        let hovering = false;
+        let peeking = false;
         let savedXDelta = 0, savedRDelta = 0;
 
         function resetView() {
-            clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(tRejoin);
-            blended = false; hovering = false;
+            clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+            blended = false; peeking = false;
             xPanel.style.transition  = refPanel.style.transition  = 'none';
             xPanel.style.transform   = refPanel.style.transform   = '';
             xPanel.style.opacity     = refPanel.style.opacity     = '1';
             xPanel.style.visibility  = refPanel.style.visibility  = '';
             blendPanel.classList.remove('visible');
-            blendPanel.style.opacity = '0';
+            blendPanel.style.opacity = '';
+            blendPanel.style.transition = '';
             if (fracViz) fracViz.classList.remove('frac-visible');
             btnBlend.disabled = false;
             btnBlend.innerHTML = '<i class="fa fa-layer-group"></i> 블렌딩 애니메이션';
             btnReset.disabled = true;
+            btnPeek.disabled = true;
+            btnPeek.innerHTML = `<i class="fa fa-eye"></i> 원본 보기 <kbd>${peekKey}</kbd>`;
         }
 
-        // hover → 찢기
+        // 버튼/단축키 → 찢기
         function splitView() {
-            if (!blended || hovering) return;
-            clearTimeout(tRejoin);
-            hovering = true;
-            blendPanel.style.transition = 'opacity 0.25s ease';
+            if (!blended || peeking) return;
+            peeking = true;
+            btnPeek.innerHTML = `<i class="fa fa-eye-slash"></i> 블렌딩으로 <kbd>${peekKey}</kbd>`;
+            blendPanel.style.transition = 'opacity 0.2s ease';
             blendPanel.classList.remove('visible');
+            blendPanel.style.opacity = '';
             if (fracViz) fracViz.classList.remove('frac-visible');
             xPanel.style.transition = refPanel.style.transition = 'none';
             xPanel.style.visibility = refPanel.style.visibility = '';
             xPanel.style.opacity    = refPanel.style.opacity    = '0';
             requestAnimationFrame(() => requestAnimationFrame(() => {
                 xPanel.style.transition = refPanel.style.transition =
-                    'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease';
+                    'transform 0.55s cubic-bezier(0.4,0,0.2,1), opacity 0.45s ease';
                 xPanel.style.transform  = refPanel.style.transform  = '';
                 xPanel.style.opacity    = refPanel.style.opacity    = '1';
             }));
         }
 
-        // 마우스 떼면 → 다시 붙이기
+        // 버튼/단축키 → 다시 붙이기
         function rejoinView() {
-            if (!hovering) return;
-            hovering = false;
+            if (!peeking) return;
+            peeking = false;
+            btnPeek.innerHTML = `<i class="fa fa-eye"></i> 원본 보기 <kbd>${peekKey}</kbd>`;
             xPanel.style.transition = refPanel.style.transition =
-                'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease';
+                'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.6s ease';
             xPanel.style.transform   = `translateX(${savedXDelta}px)`;
             refPanel.style.transform = `translateX(${savedRDelta}px)`;
             xPanel.style.opacity = refPanel.style.opacity = '0.5';
-
-            tRejoin = setTimeout(() => {
+            t2 = setTimeout(() => {
                 xPanel.style.transition = refPanel.style.transition = 'opacity 0.22s ease';
                 xPanel.style.opacity    = refPanel.style.opacity    = '0';
                 setTimeout(() => {
                     xPanel.style.visibility = refPanel.style.visibility = 'hidden';
+                    blendPanel.style.opacity = '';
                     blendPanel.style.transition = 'opacity 0.4s ease';
                     blendPanel.classList.add('visible');
                     if (fracViz) fracViz.classList.add('frac-visible');
@@ -2629,8 +2674,15 @@
             }, 650);
         }
 
-        blendPanel.addEventListener('mouseenter', splitView);
-        blendInner.addEventListener('mouseleave', rejoinView);
+        // 키보드 A/B → peek 토글
+        function onKeyPeek(e) {
+            if (e.code === peekKeyCode && blended) {
+                e.preventDefault();
+                peeking ? rejoinView() : splitView();
+            }
+        }
+        wrapper.addEventListener('keydown', onKeyPeek);
+        wrapper.setAttribute('tabindex', '0');
 
         btnBlend.addEventListener('click', () => {
             btnBlend.disabled = true;
@@ -2657,12 +2709,14 @@
 
                     t2 = setTimeout(() => {
                         xPanel.style.visibility = refPanel.style.visibility = 'hidden';
+                        blendPanel.style.opacity = '';
                         blendPanel.style.transition = 'opacity 0.45s ease';
                         blendPanel.classList.add('visible');
                         if (fracViz) fracViz.classList.add('frac-visible');
                         t3 = setTimeout(() => {
                             blended = true;
                             btnBlend.innerHTML = '<i class="fa fa-check"></i> 블렌딩 완료';
+                            btnPeek.disabled = false;
                         }, 500);
                     }, 280);
                 }, 950);
@@ -2670,8 +2724,10 @@
         });
 
         btnReset.addEventListener('click', resetView);
+        btnPeek.addEventListener('click', () => peeking ? rejoinView() : splitView());
         btnRow.appendChild(btnBlend);
         btnRow.appendChild(btnReset);
+        btnRow.appendChild(btnPeek);
 
         // ── 결과 박스 ─────────────────────────────────────────────
         const hBox = document.createElement('div');
@@ -2692,13 +2748,16 @@
         const blendStageDiv = document.createElement('div');
         blendStageDiv.className = 'blend-stage';
         blendStageDiv.appendChild(blendInner);
-        // fracViz는 blend-inner 아래 정상 흐름으로 배치 (absolute 밖)
-        if (fracViz) blendStageDiv.appendChild(fracViz);
+
+        const rightCol = document.createElement('div');
+        rightCol.className = 'compare-right-col';
+        rightCol.appendChild(hBox);
+        if (fracViz) rightCol.appendChild(fracViz);
 
         const mainRow = document.createElement('div');
         mainRow.className = 'compare-main';
         mainRow.appendChild(blendStageDiv);
-        mainRow.appendChild(hBox);
+        mainRow.appendChild(rightCol);
 
         wrapper.appendChild(mainRow);
         wrapper.appendChild(btnRow);
