@@ -224,7 +224,6 @@ styleImgInput.addEventListener('change', e => {
   updateRunButton();
 });
 
-stylePromptInput.addEventListener('input', updateRunButton);
 
 // ===== Download =====
 downloadBtn.addEventListener('click', () => {

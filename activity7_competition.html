@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>행렬 곱셈 경쟁모드</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Do+Hyeon&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="stylefooter.css">
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg:       #f0f2f7;
+            --surface:  #ffffff;
+            --border:   #e2e6ed;
+            --text:     #1e293b;
+            --muted:    #7c8db0;
+            --accent:   #3b5bdb;
+            --accent2:  #2f4ac0;
+            --ok:       #1a7f5a;
+            --ok-bg:    #e6f7f1;
+            --err:      #c0392b;
+            --err-bg:   #fdf0ee;
+            --amber:    #b45309;
+            --amber-bg: #fef3c7;
+            --warn-border: #fcd34d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            min-height: 100vh;
+            background: var(--bg);
+            background-image:
+                linear-gradient(rgba(255,255,255,.55) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.55) 1px, transparent 1px);
+            background-size: 22px 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 36px 20px 72px;
+        }
+
+        /* ── 공통 카드 ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 2px 12px rgba(30,41,59,.07);
+        }
+
+        /* ── 헤더 ── */
+        .page-header { text-align: center; margin-bottom: 28px; }
+        .page-header h1 {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 2.5rem;
+            color: var(--text);
+            letter-spacing: .04em;
+        }
+        .page-header p { color: var(--muted); font-size: .9rem; margin-top: 5px; }
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--muted); text-decoration: none; font-size: .85rem;
+            margin-bottom: 12px; transition: color .18s;
+        }
+        .back-btn:hover { color: var(--accent); }
+
+        /* ── 화면 전환 ── */
+        .screen { display: none; width: 100%; max-width: 980px; }
+        .screen.active { display: block; }
+
+        /* ════════════════════════════════
+           SCREEN 1 : 메인 메뉴
+        ════════════════════════════════ */
+        #screen-menu {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+        }
+        #screen-menu.active { display: flex; }
+
+        /* 크기 탭 */
+        .seg-ctrl {
+            display: flex;
+            background: var(--border);
+            border-radius: 12px;
+            padding: 3px;
+            gap: 3px;
+        }
+        .seg-btn {
+            padding: 9px 30px;
+            border: none; border-radius: 9px;
+            background: transparent; color: var(--muted);
+            font-size: 1rem; font-weight: 700;
+            font-family: 'Noto Sans KR', sans-serif;
+            cursor: pointer; transition: all .18s;
+        }
+        .seg-btn.active {
+            background: var(--surface); color: var(--accent);
+            box-shadow: 0 1px 5px rgba(30,41,59,.1);
+        }
+
+        /* 모드 카드 2개 */
+        .mode-row {
+            display: flex;
+            gap: 18px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .mode-card {
+            flex: 1;
+            padding: 30px 20px;
+            border-radius: 16px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            box-shadow: 0 2px 8px rgba(30,41,59,.06);
+        }
+        .mode-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(59,91,219,.13);
+        }
+        .mode-card .mode-icon {
+            font-size: 2.4rem;
+            margin-bottom: 12px;
+        }
+        .mode-card h3 {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1.3rem;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .mode-card p { color: var(--muted); font-size: .82rem; line-height: 1.5; }
+
+        /* 랭킹 미리보기 */
+        .rank-preview {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px 22px;
+        }
+        .rank-preview-title {
+            display: flex; align-items: center; gap: 8px;
+            font-family: 'Do Hyeon', sans-serif; font-size: 1.1rem;
+            color: var(--text); margin-bottom: 14px;
+        }
+        .rank-preview-title i { color: var(--amber); }
+        .rank-seg { display: flex; gap: 5px; margin-bottom: 12px; }
+        .rank-seg-btn {
+            padding: 4px 16px; border: 1.5px solid var(--border);
+            border-radius: 20px; background: transparent;
+            color: var(--muted); font-size: .82rem; font-weight: 700;
+            cursor: pointer; transition: all .15s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .rank-seg-btn.active { border-color: var(--accent); color: var(--accent); background: #eff3ff; }
+        .rank-table { width: 100%; border-collapse: collapse; }
+        .rank-table th {
+            color: var(--muted); font-size: .72rem; font-weight: 700;
+            padding: 5px 8px; text-align: left;
+            border-bottom: 1.5px solid var(--border);
+            letter-spacing: .05em; text-transform: uppercase;
+        }
+        .rank-table td {
+            padding: 8px 8px; font-size: .86rem; color: var(--text);
+            border-bottom: 1px solid var(--border);
+        }
+        .rank-table tr:first-child td { color: var(--amber); font-weight: 700; }
+        .rank-table tr:nth-child(2) td { color: #52525b; font-weight: 600; }
+        .rank-table tr:nth-child(3) td { color: #78350f; }
+        .rank-time-col { font-family: 'Do Hyeon', sans-serif; color: var(--accent) !important; font-size: .9rem; }
+        .rank-empty { color: var(--muted); font-size: .84rem; text-align: center; padding: 18px 0; }
+        .rank-loading { color: var(--muted); font-size: .84rem; text-align: center; padding: 14px 0; }
+
+        /* ════════════════════════════════
+           SCREEN 2 : 방 설정 (닉네임 + 방 코드)
+        ════════════════════════════════ */
+        #screen-room {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        #screen-room.active { display: flex; }
+        .room-card {
+            width: 100%;
+            max-width: 680px;
+            padding: 28px 32px;
+        }
+        .room-card h2 {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1.4rem; color: var(--text);
+            margin-bottom: 18px; text-align: center;
+        }
+        .room-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 4px;
+        }
+        .room-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            background: #fafbfd;
+        }
+        .room-col-title {
+            font-size: .78rem; font-weight: 700; color: var(--muted);
+            letter-spacing: .06em; text-transform: uppercase;
+        }
+        @media (max-width: 540px) {
+            .room-two-col { grid-template-columns: 1fr; }
+        }
+        .form-label {
+            display: block; font-size: .8rem; font-weight: 700;
+            color: var(--muted); letter-spacing: .05em;
+            text-transform: uppercase; margin-bottom: 6px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: .95rem;
+            font-family: 'Noto Sans KR', sans-serif;
+            color: var(--text);
+            background: var(--surface);
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            margin-bottom: 16px;
+        }
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,91,219,.1);
+        }
+        .divider {
+            display: flex; align-items: center; gap: 10px;
+            margin: 20px 0; color: var(--muted); font-size: .82rem;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1;
+            height: 1px; background: var(--border);
+        }
+        .join-row { display: flex; gap: 8px; }
+        .join-row .form-input { margin-bottom: 0; width: 100%; font-family: monospace; letter-spacing: .12em; text-transform: uppercase; }
+
+        /* ── 공통 버튼 ── */
+        .btn {
+            padding: 11px 22px; border: 1.5px solid transparent;
+            border-radius: 10px; font-size: .9rem; font-weight: 700;
+            cursor: pointer; transition: all .18s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+        .btn-primary:disabled { opacity: .4; cursor: default; }
+        .btn-outline { background: var(--surface); color: var(--text); border-color: var(--border); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
+        .btn-ghost:hover { color: var(--text); }
+        .btn-danger { background: var(--err); color: #fff; border-color: var(--err); }
+        .btn-danger:hover { filter: brightness(1.08); }
+        .btn-full { width: 100%; }
+        .btn-amber { background: var(--amber); color: #fff; border-color: var(--amber); }
+        .btn-amber:hover { filter: brightness(1.08); }
+
+        /* ════════════════════════════════
+           SCREEN 3 : 대기실
+        ════════════════════════════════ */
+        #screen-lobby {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        #screen-lobby.active { display: flex; }
+        .lobby-card {
+            width: 100%;
+            max-width: 520px;
+            padding: 30px;
+        }
+        .lobby-top {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        .lobby-title {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1rem; color: var(--muted);
+            letter-spacing: .08em; text-transform: uppercase;
+            margin-bottom: 14px;
+            display: block;
+        }
+        .room-code-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #eff3ff;
+            border: 2px solid #c5d2fb;
+            border-radius: 16px;
+            padding: 16px 36px;
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 2.8rem;
+            color: var(--accent);
+            letter-spacing: .22em;
+            cursor: pointer;
+            -webkit-user-select: all;
+            user-select: all;
+            transition: background .18s, border-color .18s, transform .15s;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .room-code-badge:hover {
+            background: #e4eaff;
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .room-code-copy-hint {
+            display: block;
+            font-size: .78rem;
+            color: var(--muted);
+            margin-top: 2px;
+            letter-spacing: .02em;
+        }
+        .room-code-badge.copied {
+            background: var(--ok-bg);
+            border-color: var(--ok);
+            color: var(--ok);
+        }
+        .room-code-icon { font-size: 1.6rem; opacity: .4; }
+
+        .player-list {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .player-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: .9rem;
+        }
+        .player-item:last-child { border-bottom: none; }
+        .player-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .85rem; font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .player-name { flex: 1; color: var(--text); font-weight: 600; }
+        .player-badge {
+            font-size: .72rem; font-weight: 700;
+            padding: 2px 8px; border-radius: 20px;
+            background: #eff3ff; color: var(--accent);
+        }
+        .lobby-size-row {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 18px;
+        }
+        .lobby-size-label { font-size: .82rem; color: var(--muted); font-weight: 700; }
+        .lobby-actions { display: flex; gap: 10px; justify-content: center; }
+
+        /* ════════════════════════════════
+           SCREEN 4 : 게임
+        ════════════════════════════════ */
+        #screen-game {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+        #screen-game.active { display: flex; }
+        .game-layout { display: flex; gap: 20px; width: 100%; align-items: flex-start; flex-wrap: wrap; }
+        .game-main { flex: 1; min-width: 340px; padding: 26px; }
+        .game-side { width: 260px; padding: 20px; }
+
+        /* 타이머 바 */
+        .timer-bar {
+            display: flex; align-items: center; gap: 16px;
+            padding: 14px 18px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        #timer-display {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 2.6rem; color: var(--text);
+            min-width: 110px; letter-spacing: .04em;
+            transition: color .25s;
+        }
+        #timer-display.running { color: var(--err); }
+        #timer-display.done    { color: var(--ok); }
+        .status-msg {
+            font-size: .88rem; font-weight: 600;
+            color: var(--muted); line-height: 1.5;
+        }
+        .status-msg.success { color: var(--ok); }
+        .status-msg.hint    { color: var(--amber); }
+
+        /* 문제 */
+        .problem-area {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .mat-label {
+            color: var(--muted); font-size: .72rem; font-weight: 700;
+            text-align: center; margin-bottom: 5px;
+            letter-spacing: .07em; text-transform: uppercase;
+        }
+        .mat-wrap {
+            display: inline-block;
+            border: 1.5px solid var(--border);
+            border-radius: 10px; background: #f8f9fc; padding: 10px;
+        }
+        .mat-row { display: flex; gap: 4px; margin-bottom: 4px; }
+        .mat-row:last-child { margin-bottom: 0; }
+        .mat-cell {
+            width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; font-weight: 700; color: var(--text);
+            border: 1px solid var(--border); border-radius: 7px;
+            background: var(--surface);
+        }
+        .mat-sym {
+            font-size: 1.7rem; font-weight: 300;
+            color: var(--muted); padding: 0 6px; align-self: center;
+        }
+        .ans-wrap { border-color: #c7d4ff; background: #f0f3ff; }
+        .ans-cell {
+            width: 52px; height: 52px;
+            border: 1.5px solid #c7d4ff; border-radius: 7px;
+            background: var(--surface); color: var(--text);
+            font-size: 1.1rem; font-weight: 700; text-align: center;
+            outline: none; transition: border-color .15s, background .15s, box-shadow .15s;
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        .ans-cell::-webkit-inner-spin-button,
+        .ans-cell::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .ans-cell:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,91,219,.12); }
+        .ans-cell.correct { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); box-shadow: none; }
+        .ans-cell.wrong   { border-color: var(--err); background: var(--err-bg); }
+
+        .game-btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+
+        /* 저장 행 */
+        .save-row {
+            display: flex; gap: 8px; align-items: center;
+            padding: 13px 15px;
+            background: var(--amber-bg); border: 1px solid var(--warn-border); border-radius: 12px;
+        }
+        .save-row.hidden { display: none; }
+        #nickname-save-input {
+            flex: 1; padding: 9px 13px;
+            border: 1.5px solid var(--warn-border); border-radius: 9px;
+            background: var(--surface); color: var(--text); font-size: .9rem;
+            outline: none; transition: border-color .15s, box-shadow .15s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        #nickname-save-input::placeholder { color: #b9a575; }
+        #nickname-save-input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(180,83,9,.1); }
+
+        /* 풀이 */
+        .solution-area { margin-top: 14px; display: none; }
+        .solution-area.visible { display: block; }
+        .solution-title { color: var(--amber); font-size: .82rem; font-weight: 700; margin-bottom: 6px; }
+        .sol-steps { display: flex; flex-direction: column; gap: 3px; }
+        .sol-step {
+            color: var(--muted); font-size: .8rem; background: #f8f9fc;
+            border: 1px solid var(--border); padding: 5px 12px; border-radius: 7px;
+        }
+        .sol-step .ans-val { color: var(--ok); font-weight: 700; }
+
+        /* 상대방 진행 상황 (사이드) */
+        .side-title {
+            font-size: .78rem; font-weight: 700; color: var(--muted);
+            letter-spacing: .06em; text-transform: uppercase; margin-bottom: 12px;
+        }
+        .rival-list { display: flex; flex-direction: column; gap: 8px; }
+        .rival-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px;
+            background: var(--bg); border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .rival-avatar {
+            width: 26px; height: 26px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .75rem; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .rival-name { flex: 1; font-size: .86rem; color: var(--text); font-weight: 600; }
+        .rival-status {
+            font-size: .78rem; font-weight: 700;
+            padding: 2px 8px; border-radius: 20px;
+        }
+        .rival-status.done     { background: var(--ok-bg); color: var(--ok); }
+        .rival-status.playing  { background: #eff3ff; color: var(--accent); }
+        .rival-status.waiting  { background: var(--bg); color: var(--muted); }
+
+        /* ════════════════════════════════
+           SCREEN 5 : 결과
+        ════════════════════════════════ */
+        #screen-result {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        #screen-result.active { display: flex; }
+        .result-card {
+            width: 100%; max-width: 520px; padding: 32px; text-align: center;
+        }
+        .result-title {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1.8rem; color: var(--text); margin-bottom: 6px;
+        }
+        .result-subtitle { color: var(--muted); font-size: .88rem; margin-bottom: 24px; }
+        .result-list { text-align: left; margin-bottom: 24px; }
+        .result-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 14px; border-radius: 12px;
+            margin-bottom: 6px; border: 1px solid var(--border);
+        }
+        .result-item.me { background: #eff3ff; border-color: #c5d2fb; }
+        .result-rank { font-size: 1.3rem; width: 30px; text-align: center; flex-shrink: 0; }
+        .result-name { flex: 1; font-weight: 700; color: var(--text); }
+        .result-time { font-family: 'Do Hyeon', sans-serif; font-size: 1rem; color: var(--accent); }
+        .result-dnf  { color: var(--muted); font-size: .85rem; }
+        .result-actions { display: flex; gap: 10px; justify-content: center; }
+
+        /* ── Firebase 경고 ── */
+        .firebase-notice {
+            background: var(--err-bg); border: 1px solid #f5c2be; border-radius: 10px;
+            padding: 10px 16px; margin-bottom: 18px; color: var(--err);
+            font-size: .82rem; display: none; max-width: 980px; width: 100%;
+        }
+        .firebase-notice.visible { display: block; }
+
+        /* ── 토스트 ── */
+        #toast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1e293b; color: #fff; padding: 10px 22px;
+            border-radius: 30px; font-size: .88rem; font-weight: 600;
+            opacity: 0; transition: all .28s; pointer-events: none; z-index: 9999;
+            white-space: nowrap;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── 아바타 색상 팔레트 ── */
+        .av0  { background: #3b5bdb; } .av1  { background: #c0392b; }
+        .av2  { background: #1a7f5a; } .av3  { background: #b45309; }
+        .av4  { background: #6d28d9; } .av5  { background: #0e7490; }
+        .av6  { background: #be185d; } .av7  { background: #166534; }
+
+        /* 인라인 스타일 대체 클래스 */
+        .hidden-btn { display: none; }
+        .back-btn-wrap { margin-top: 16px; }
+        .screen-back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: none; border: none; padding: 4px 2px 12px;
+            color: var(--muted); font-size: .85rem; cursor: pointer;
+            font-family: inherit; transition: color .15s;
+        }
+        .screen-back-btn:hover { color: var(--primary); }
+
+        /* ── 10초 경고 흔들림 ── */
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            15%      { transform: translateX(-6px); }
+            30%      { transform: translateX( 6px); }
+            45%      { transform: translateX(-4px); }
+            60%      { transform: translateX( 4px); }
+            75%      { transform: translateX(-2px); }
+            90%      { transform: translateX( 2px); }
+        }
+        @keyframes danger-pulse {
+            0%,100% { background: var(--surface); }
+            50%      { background: #ffe4e4; }
+        }
+        .danger-shake { will-change: transform; animation: shake .45s ease; }
+        .danger-bg    { animation: danger-pulse .5s ease infinite; }
+        #timer-display.danger { color: #e53935; font-weight: 800; }
+        .game-side-hidden { display: none; }
+
+        /* ── 시간 선택 ── */
+        .menu-time-row {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+        }
+        .menu-row-label {
+            font-size: .78rem; font-weight: 700; color: var(--muted);
+            letter-spacing: .06em; text-transform: uppercase;
+        }
+
+        /* ── 타이머 바 (카운트다운 + 점수) ── */
+        .timer-bar {
+            display: flex; align-items: stretch;
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: 14px; overflow: hidden; margin-bottom: 10px;
+        }
+        .timer-half {
+            flex: 1; padding: 14px 18px; text-align: center;
+        }
+        .timer-half + .timer-half { border-left: 1px solid var(--border); }
+        .timer-half-label {
+            font-size: .72rem; font-weight: 700; color: var(--muted);
+            letter-spacing: .07em; text-transform: uppercase; margin-bottom: 4px;
+        }
+        #timer-display {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 2.6rem; color: var(--text);
+            letter-spacing: .04em; transition: color .25s;
+            line-height: 1;
+        }
+        #timer-display.urgent { color: var(--err); }
+        #timer-display.done   { color: var(--muted); }
+        #score-display {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 2.6rem; color: var(--accent);
+            line-height: 1;
+        }
+
+        /* 진행 바 */
+        .timer-progress-wrap {
+            height: 5px; background: var(--border);
+            border-radius: 99px; overflow: hidden; margin-bottom: 20px;
+        }
+        #timer-progress {
+            height: 100%; width: 100%;
+            background: var(--accent);
+            transition: width .25s linear, background .5s;
+            border-radius: 99px;
+        }
+        #timer-progress.urgent { background: var(--err); }
+
+        /* 답 보기 후 다음 문제 카운트 */
+        .skip-notice {
+            font-size: .82rem; color: var(--amber); font-weight: 600;
+            text-align: center; padding: 6px 0; display: none;
+        }
+        .skip-notice.visible { display: block; }
+
+        /* 결과 점수 강조 */
+        .result-score-big {
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 4rem; color: var(--accent);
+            text-align: center; margin: 12px 0 4px;
+            line-height: 1;
+        }
+        .result-score-sub {
+            text-align: center; color: var(--muted);
+            font-size: .88rem; margin-bottom: 22px;
+        }
+
+        @media (max-width: 680px) {
+            .game-layout { flex-direction: column; }
+            .game-side { width: 100%; }
+            .mode-row { flex-direction: column; max-width: 320px; }
+        }
+    </style>
+</head>
+
+<div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0"><i class="fas fa-bars"></i></div>
+<aside class="sidebar">
+    <nav>
+        <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+        <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+        <a href="activity7_competition.html" class="active"><i class="fa fa-trophy"></i><span>행렬 경쟁모드</span></a>
+    </nav>
+</aside>
+
+<body>
+    <div id="toast"></div>
+
+    <div class="page-header">
+        <a href="activity7_matrix_product.html" class="back-btn">
+            <i class="fa fa-arrow-left"></i> 행렬 곱셈 시각화로 돌아가기
+        </a>
+        <h1>행렬 곱셈 경쟁모드</h1>
+        <p>빠르게 계산하고 랭킹에 도전하세요</p>
+    </div>
+
+    <div id="firebase-notice" class="firebase-notice">
+        ⚠️ Firebase 미설정 — 파일 하단 <code>FIREBASE_CONFIG</code>에 본인 프로젝트 정보를 입력하면 멀티플레이어·랭킹이 활성화됩니다.
+    </div>
+
+    <!-- ════ SCREEN 1: 메인 메뉴 ════ -->
+    <div id="screen-menu" class="screen">
+        <div class="menu-time-row">
+            <span class="menu-row-label">행렬 크기</span>
+            <div class="seg-ctrl" id="menu-size-ctrl">
+                <button type="button" class="seg-btn active" data-size="2">2 × 2</button>
+                <button type="button" class="seg-btn" data-size="3">3 × 3</button>
+            </div>
+        </div>
+        <div class="menu-time-row">
+            <span class="menu-row-label">제한 시간</span>
+            <div class="seg-ctrl" id="menu-time-ctrl">
+                <button type="button" class="seg-btn" data-time="30">30초</button>
+                <button type="button" class="seg-btn active" data-time="60">60초</button>
+                <button type="button" class="seg-btn" data-time="120">120초</button>
+            </div>
+        </div>
+
+        <div class="mode-row">
+            <div class="mode-card" id="card-solo">
+                <div class="mode-icon">🧮</div>
+                <h3>혼자 하기</h3>
+                <p>타임 어택으로 혼자 풀고<br>개인 랭킹에 기록을 남겨요</p>
+            </div>
+            <div class="mode-card" id="card-multi">
+                <div class="mode-icon">⚔️</div>
+                <h3>같이 하기</h3>
+                <p>방을 만들거나 코드로 참여해<br>친구와 실시간으로 대결해요</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ════ SCREEN 2: 방 설정 ════ -->
+    <div id="screen-room" class="screen">
+        <div class="card room-card">
+            <h2>같이 하기</h2>
+
+            <label class="form-label">닉네임</label>
+            <input id="nickname-input" class="form-input" type="text"
+                   placeholder="사용할 닉네임을 입력하세요" maxlength="10" autocomplete="off">
+
+            <div class="room-two-col">
+                <!-- 왼쪽: 방 만들기 -->
+                <div class="room-col">
+                    <span class="room-col-title">새 방 만들기</span>
+                    <button type="button" class="btn btn-primary btn-full" id="btn-create-room">
+                        <i class="fa fa-plus"></i> 방 만들기
+                    </button>
+                </div>
+
+                <!-- 오른쪽: 방 참여 -->
+                <div class="room-col">
+                    <span class="room-col-title">코드로 참여하기</span>
+                    <div class="join-row">
+                        <input id="room-code-input" class="form-input" type="text"
+                               placeholder="XXXXXX" maxlength="6" autocomplete="off">
+                    </div>
+                    <button type="button" class="btn btn-outline btn-full" id="btn-join-room">
+                        <i class="fa fa-sign-in-alt"></i> 참여하기
+                    </button>
+                </div>
+            </div>
+
+            <div class="back-btn-wrap">
+                <button type="button" class="btn btn-ghost btn-full" id="btn-back-to-menu">
+                    <i class="fa fa-arrow-left"></i> 돌아가기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ SCREEN 3: 대기실 ════ -->
+    <div id="screen-lobby" class="screen">
+        <div class="card lobby-card">
+            <button type="button" class="screen-back-btn" id="btn-lobby-back">
+                <i class="fa fa-arrow-left"></i> 뒤로
+            </button>
+            <div class="lobby-top">
+                <span class="lobby-title">대기실 — 방 코드</span>
+                <div class="room-code-badge" id="lobby-code-badge" title="클릭하여 복사">
+                    <i class="fa fa-copy room-code-icon"></i>
+                    <span id="lobby-code-text"></span>
+                </div>
+                <span class="room-code-copy-hint">클릭하면 코드가 복사됩니다</span>
+            </div>
+
+            <div class="lobby-size-row" id="lobby-size-row">
+                <span class="lobby-size-label">행렬 크기</span>
+                <div class="seg-ctrl" id="lobby-size-ctrl">
+                    <button type="button" class="seg-btn active" data-size="2">2 × 2</button>
+                    <button type="button" class="seg-btn" data-size="3">3 × 3</button>
+                </div>
+            </div>
+
+            <div class="player-list" id="lobby-player-list"></div>
+
+            <div class="lobby-actions">
+                <button type="button" class="btn btn-primary hidden-btn" id="btn-start-game">
+                    <i class="fa fa-play"></i> 게임 시작
+                </button>
+                <button type="button" class="btn btn-outline" id="btn-leave-lobby">나가기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ SCREEN 4: 게임 ════ -->
+    <div id="screen-game" class="screen">
+        <div class="game-layout">
+            <div class="card game-main">
+                <button type="button" class="screen-back-btn" id="btn-game-back">
+                    <i class="fa fa-arrow-left"></i> 나가기
+                </button>
+                <div class="timer-bar">
+                    <div class="timer-half">
+                        <div class="timer-half-label">남은 시간</div>
+                        <div id="timer-display">60</div>
+                    </div>
+                    <div class="timer-half">
+                        <div class="timer-half-label">맞춘 개수</div>
+                        <div id="score-display">0</div>
+                    </div>
+                </div>
+                <div class="timer-progress-wrap">
+                    <div id="timer-progress"></div>
+                </div>
+
+                <div class="problem-area" id="problem-area"></div>
+
+                <div class="skip-notice" id="skip-notice">답 보기 — 다음 문제로 넘어갑니다...</div>
+
+                <div class="solution-area" id="solution-area">
+                    <div class="solution-title">풀이 과정</div>
+                    <div class="sol-steps" id="sol-steps"></div>
+                </div>
+
+                <div class="game-btn-row">
+                    <button type="button" class="btn btn-outline" id="btn-give">💡 답 보기</button>
+                </div>
+            </div>
+
+            <div class="card game-side" id="game-side">
+                <div class="side-title">참가자 현황</div>
+                <div class="rival-list" id="rival-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ SCREEN 5: 결과 ════ -->
+    <div id="screen-result" class="screen">
+        <div class="card result-card">
+            <div class="result-title" id="result-title">결과</div>
+            <div class="result-score-big" id="result-score-big"></div>
+            <div class="result-score-sub" id="result-subtitle"></div>
+            <div class="save-row hidden" id="save-row">
+                <div id="save-score-msg" class="save-score-text"></div>
+                <input type="text" id="nickname-save-input"
+                       placeholder="닉네임 입력 후 랭킹 저장" maxlength="10">
+                <button type="button" class="btn btn-amber" id="btn-save">저장</button>
+            </div>
+            <div class="result-actions">
+                <button type="button" class="btn btn-primary" id="btn-play-again">다시 하기</button>
+                <button type="button" class="btn btn-outline" id="btn-to-menu">메뉴로</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+// ════════════════════════════════════════════════
+// Firebase 설정 — 본인 프로젝트 값으로 교체하세요
+// console.firebase.google.com → 프로젝트 설정 → 앱 추가 → Config
+// ════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyCWaRFzjBK6a6mEHocpB2DBPIa_L_0Eol0",
+    authDomain:        "rgbguess.firebaseapp.com",
+    databaseURL:       "https://rgbguess-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "rgbguess",
+    storageBucket:     "rgbguess.firebasestorage.app",
+    messagingSenderId: "640906203572",
+    appId:             "1:640906203572:web:871cdc8f8f8d7e5e7b5a7e"
+};
+
+// ════════════════════════════════════════════════
+// Firebase 초기화
+// ════════════════════════════════════════════════
+let db = null, firebaseOK = false;
+try {
+    if (FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.database();
+        firebaseOK = true;
+    } else {
+        document.getElementById('firebase-notice').classList.add('visible');
+    }
+} catch(e) {
+    document.getElementById('firebase-notice').classList.add('visible');
+}
+
+// ════════════════════════════════════════════════
+// 상태
+// ════════════════════════════════════════════════
+let myUid        = sessionStorage.getItem('matComp_uid') || genUid();
+let myName       = '';
+let currentMode  = 'solo';   // 'solo' | 'multi'
+let currentSize  = 2;
+let currentTimeSec = 60;     // 제한 시간 (초)
+let rankViewSize = 2;
+
+// 게임 상태
+let matA = [], matB = [], matAns = [];
+let countdownInterval = null;
+let remainMs = 0, totalMs = 0;
+let score = 0;
+let gameActive = false;
+let skipTimeout = null;
+let dangerTriggered = false;
+
+// 멀티 상태
+let roomId   = null;
+let isHost   = false;
+let roomRef  = null;
+let roomSub  = null;   // Firebase 리스너 unsubscribe 함수들
+let playerSub= null;
+
+sessionStorage.setItem('matComp_uid', myUid);
+
+// ════════════════════════════════════════════════
+// 유틸
+// ════════════════════════════════════════════════
+function genUid() {
+    return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+function genRoomId() {
+    const ch = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({length:6}, () => ch[Math.floor(Math.random()*ch.length)]).join('');
+}
+function randInt(min, max) {
+    return Math.floor(Math.random()*(max-min+1))+min;
+}
+function multiplyMat(A, B, n) {
+    return Array.from({length:n}, (_,i) =>
+        Array.from({length:n}, (_,j) =>
+            Array.from({length:n}, (_,k) => A[i][k]*B[k][j]).reduce((a,b)=>a+b,0)
+        )
+    );
+}
+function fmtTime(ms) {
+    if (!ms && ms !== 0) return '--';
+    const s = Math.floor(ms/1000), cs = Math.floor((ms%1000)/10);
+    return `${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+}
+function avatarClass(idx) { return 'av'+(idx%8); }
+function avatarLetter(name) { return name ? name[0].toUpperCase() : '?'; }
+function medals(i) { return ['🥇','🥈','🥉'][i] ?? `${i+1}`; }
+
+function showToast(msg, ms=2200) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+// ════════════════════════════════════════════════
+// 화면 전환
+// ════════════════════════════════════════════════
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════════════
+// 랭킹 불러오기 (점수 내림차순)
+// 경로: rankings_timed/{size}x{size}_{sec}s
+// ════════════════════════════════════════════════
+function rankPath(size, sec) {
+    return `rankings_timed/${size}x${size}_${sec}s`;
+}
+
+async function loadRanking(size, sec) {
+    sec = sec ?? currentTimeSec;
+    const body = document.getElementById('rank-body');
+    body.innerHTML = '<div class="rank-loading">불러오는 중...</div>';
+    if (!firebaseOK) { body.innerHTML = '<div class="rank-empty">Firebase 미설정</div>'; return; }
+    try {
+        const snap = await db.ref(rankPath(size, sec))
+            .orderByChild('score').limitToLast(10).get();
+        if (!snap.exists()) { body.innerHTML = '<div class="rank-empty">아직 기록이 없습니다</div>'; return; }
+        const entries = [];
+        snap.forEach(c => entries.push(c.val()));
+        entries.sort((a,b) => b.score - a.score);
+        const table = document.createElement('table');
+        table.className = 'rank-table';
+        table.innerHTML = `<thead><tr><th>순위</th><th>이름</th><th>개수</th></tr></thead>`;
+        const tbody = document.createElement('tbody');
+        entries.forEach((e,i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${medals(i)}</td><td>${e.name}</td><td class="rank-time-col">${e.score}개</td>`;
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        body.innerHTML = '';
+        body.appendChild(table);
+    } catch(e) {
+        body.innerHTML = `<div class="rank-empty">오류: ${e.message}</div>`;
+    }
+}
+
+// ════════════════════════════════════════════════
+// 카운트다운 타이머
+// ════════════════════════════════════════════════
+function startCountdown(totalSec) {
+    stopCountdown();
+    totalMs = totalSec * 1000;
+    remainMs = totalMs;
+    updateTimerUI();
+    countdownInterval = setInterval(() => {
+        remainMs -= 100;
+        if (remainMs <= 0) { remainMs = 0; updateTimerUI(); onTimeUp(); }
+        else updateTimerUI();
+    }, 100);
+}
+
+function stopCountdown() {
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+}
+
+function updateTimerUI() {
+    const sec = Math.ceil(remainMs / 1000);
+    const disp = document.getElementById('timer-display');
+    disp.textContent = sec;
+    const pct = totalMs > 0 ? (remainMs / totalMs) * 100 : 0;
+    const bar = document.getElementById('timer-progress');
+    bar.style.width = pct + '%';
+    const urgent = remainMs <= 10000 && remainMs > 0;
+    disp.className = urgent ? 'danger' : '';
+    bar.className   = urgent ? 'urgent' : '';
+
+    // 10초 진입 시 한 번만 흔들림 + 배경 펄스
+    if (urgent && !dangerTriggered) {
+        dangerTriggered = true;
+        const gameMain = document.querySelector('#screen-game .game-main');
+        if (gameMain) {
+            gameMain.classList.add('danger-bg');
+            gameMain.classList.add('danger-shake');
+            gameMain.addEventListener('animationend', () => {
+                gameMain.classList.remove('danger-shake');
+            }, { once: true });
+        }
+    }
+    if (!urgent) dangerTriggered = false;
+}
+
+function onTimeUp() {
+    stopCountdown();
+    gameActive = false;
+    dangerTriggered = false;
+    if (skipTimeout) { clearTimeout(skipTimeout); skipTimeout = null; }
+    document.querySelector('#screen-game .game-main')?.classList.remove('danger-bg', 'danger-shake');
+    document.getElementById('timer-display').className = 'done';
+    document.getElementById('timer-display').textContent = '0';
+    document.getElementById('timer-progress').style.width = '0%';
+    showSoloResult();
+}
+
+// ════════════════════════════════════════════════
+// 문제 생성
+// ════════════════════════════════════════════════
+function generateProblem(n) {
+    const rnd = () => { let v; do { v = randInt(-5,5); } while(v===0); return v; };
+    matA = Array.from({length:n}, ()=>Array.from({length:n},rnd));
+    matB = Array.from({length:n}, ()=>Array.from({length:n},rnd));
+    matAns = multiplyMat(matA, matB, n);
+}
+
+function renderProblem(n) {
+    const area = document.getElementById('problem-area');
+    area.innerHTML = '';
+    area.appendChild(buildMat(matA, n, 'A', false));
+    area.appendChild(Object.assign(document.createElement('div'), {className:'mat-sym', textContent:'×'}));
+    area.appendChild(buildMat(matB, n, 'B', false));
+    area.appendChild(Object.assign(document.createElement('div'), {className:'mat-sym', textContent:'='}));
+    area.appendChild(buildMat(null, n, '?', true));
+    document.querySelector('.ans-cell')?.focus();
+}
+
+function buildMat(data, n, label, isInput) {
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(Object.assign(document.createElement('div'), {className:'mat-label', textContent:label}));
+    const wrap = document.createElement('div');
+    wrap.className = 'mat-wrap' + (isInput ? ' ans-wrap' : '');
+    for (let i=0;i<n;i++) {
+        const row = document.createElement('div');
+        row.className = 'mat-row';
+        for (let j=0;j<n;j++) {
+            if (isInput) {
+                const inp = document.createElement('input');
+                inp.type='text'; inp.className='ans-cell';
+                inp.dataset.row=i; inp.dataset.col=j;
+                inp.setAttribute('inputmode','numeric');
+                inp.setAttribute('autocomplete','off');
+                inp.addEventListener('keydown', e => {
+                    const allow = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter','-'];
+                    if (allow.includes(e.key)||/^[0-9]$/.test(e.key)) return;
+                    e.preventDefault();
+                });
+                inp.addEventListener('input', onAnswerInput);
+                row.appendChild(inp);
+            } else {
+                row.appendChild(Object.assign(document.createElement('div'), {className:'mat-cell', textContent:data[i][j]}));
+            }
+        }
+        wrap.appendChild(row);
+    }
+    wrapper.appendChild(wrap);
+    return wrapper;
+}
+
+// ════════════════════════════════════════════════
+// 정답 입력 처리
+// ════════════════════════════════════════════════
+function onAnswerInput() {
+    if (!gameActive) return;
+    checkAnswers();
+}
+
+function checkAnswers() {
+    if (!gameActive) return;
+    const inputs = document.querySelectorAll('.ans-cell');
+    let allCorrect = true;
+    inputs.forEach(inp => {
+        if (!inp.value.trim()) { inp.classList.remove('correct','wrong'); allCorrect = false; return; }
+        const correct = parseInt(inp.value) === matAns[+inp.dataset.row][+inp.dataset.col];
+        inp.classList.toggle('correct', correct);
+        inp.classList.toggle('wrong', !correct);
+        if (!correct) allCorrect = false;
+    });
+    if (allCorrect && Array.from(inputs).every(i => i.value.trim() !== '')) onCorrect();
+}
+
+function onCorrect() {
+    score++;
+    document.getElementById('score-display').textContent = score;
+    // 짧은 플래시 후 다음 문제
+    document.querySelectorAll('.ans-cell').forEach(i => i.disabled = true);
+    setTimeout(() => nextProblem(), 350);
+}
+
+function nextProblem() {
+    if (!gameActive) return;
+    document.getElementById('solution-area').classList.remove('visible');
+    document.getElementById('skip-notice').classList.remove('visible');
+    document.getElementById('btn-give').disabled = false;
+    generateProblem(currentSize);
+    renderProblem(currentSize);
+}
+
+// ════════════════════════════════════════════════
+// 솔로 모드 시작
+// ════════════════════════════════════════════════
+function startSolo() {
+    currentMode = 'solo';
+    score = 0;
+    gameActive = true;
+    document.getElementById('score-display').textContent = '0';
+    document.getElementById('solution-area').classList.remove('visible');
+    document.getElementById('skip-notice').classList.remove('visible');
+    document.getElementById('save-row').classList.add('hidden');
+    document.getElementById('btn-give').disabled = false;
+    document.getElementById('game-side').classList.add('game-side-hidden');
+    generateProblem(currentSize);
+    renderProblem(currentSize);
+    startCountdown(currentTimeSec);
+    showScreen('screen-game');
+}
+
+// 답 보기 — 정답 보여주되 점수 미부여, 1.5초 후 다음 문제
+function showSolution() {
+    if (!gameActive) return;
+    document.getElementById('btn-give').disabled = true;
+    // 정답 채우기 (점수 X)
+    const n = currentSize;
+    document.getElementById('solution-area').classList.add('visible');
+    const steps = document.getElementById('sol-steps');
+    steps.innerHTML = '';
+    for (let i=0;i<n;i++) for (let j=0;j<n;j++) {
+        const terms = Array.from({length:n},(_,k)=>`${matA[i][k]}×${matB[k][j]}`).join('+');
+        const d = document.createElement('div');
+        d.className='sol-step';
+        d.innerHTML=`R[${i+1}][${j+1}] = ${terms} = <span class="ans-val">${matAns[i][j]}</span>`;
+        steps.appendChild(d);
+    }
+    document.querySelectorAll('.ans-cell').forEach(inp => {
+        inp.value = matAns[+inp.dataset.row][+inp.dataset.col];
+        inp.classList.add('correct'); inp.classList.remove('wrong');
+        inp.disabled = true;
+    });
+    document.getElementById('skip-notice').classList.add('visible');
+    skipTimeout = setTimeout(() => { if (gameActive) nextProblem(); }, 1500);
+}
+
+// 시간 종료 후 결과 표시
+function showSoloResult() {
+    const n = currentSize, sec = currentTimeSec;
+    document.getElementById('result-title').textContent = '시간 종료!';
+    document.getElementById('result-score-big').textContent = score + '개';
+    document.getElementById('result-subtitle').textContent =
+        `${n}×${n} 행렬 · ${sec}초 제한`;
+    document.getElementById('result-list').innerHTML = '';
+    // 저장 UI를 결과 화면이 아닌 게임 화면에 남김
+    document.getElementById('save-score-msg').textContent = `${score}개 정답 — 랭킹에 기록하려면 닉네임을 입력하세요`;
+    document.getElementById('save-row').classList.remove('hidden');
+    document.getElementById('nickname-save-input').value = '';
+    document.getElementById('nickname-save-input').focus();
+    showScreen('screen-result');
+}
+
+// ════════════════════════════════════════════════
+// 랭킹 저장 (솔로)
+// ════════════════════════════════════════════════
+document.getElementById('btn-save').addEventListener('click', async function() {
+    const name = document.getElementById('nickname-save-input').value.trim();
+    if (!name) { showToast('닉네임을 입력해주세요'); return; }
+    if (!firebaseOK) { showToast('Firebase 미설정'); return; }
+    this.disabled = true; this.textContent = '저장 중...';
+    try {
+        await db.ref(rankPath(currentSize, currentTimeSec)).push({
+            name, score,
+            date: new Date().toLocaleDateString('ko-KR')
+        });
+        showToast('🎉 랭킹에 저장되었습니다!');
+        document.getElementById('save-row').classList.add('hidden');
+        this.disabled = false; this.textContent = '저장';
+    } catch(e) {
+        this.disabled = false; this.textContent = '저장';
+        showToast('저장 실패: '+e.message);
+    }
+});
+
+// ════════════════════════════════════════════════
+// 멀티플레이어 — 방 만들기
+// ════════════════════════════════════════════════
+async function createRoom() {
+    const name = document.getElementById('nickname-input').value.trim();
+    if (!name) { showToast('닉네임을 입력해주세요'); return; }
+    if (!firebaseOK) { showToast('Firebase가 설정되어야 멀티 모드를 사용할 수 있습니다'); return; }
+    myName = name;
+    roomId = genRoomId();
+    isHost = true;
+    roomRef = db.ref(`matrix_rooms/${roomId}`);
+
+    await roomRef.set({
+        host: myUid,
+        size: currentSize,
+        status: 'waiting',
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        matA: null, matB: null,
+        players: {
+            [myUid]: { name: myName, ready: true, finished: false, time_ms: null, joinedAt: Date.now() }
+        }
+    });
+
+    // 방 삭제 예약 (30분)
+    setTimeout(async () => {
+        try { await roomRef.remove(); } catch(e) {}
+    }, 30*60*1000);
+
+    enterLobby();
+}
+
+// ════════════════════════════════════════════════
+// 멀티플레이어 — 방 참여
+// ════════════════════════════════════════════════
+async function joinRoom() {
+    const name = document.getElementById('nickname-input').value.trim();
+    const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (!name) { showToast('닉네임을 입력해주세요'); return; }
+    if (code.length !== 6) { showToast('방 코드는 6자리입니다'); return; }
+    if (!firebaseOK) { showToast('Firebase가 설정되어야 멀티 모드를 사용할 수 있습니다'); return; }
+    myName = name;
+    roomId = code;
+    roomRef = db.ref(`matrix_rooms/${roomId}`);
+
+    const snap = await roomRef.once('value');
+    if (!snap.exists()) { showToast('방을 찾을 수 없습니다'); return; }
+    const room = snap.val();
+    if (room.status === 'playing') { showToast('이미 게임이 진행 중입니다'); return; }
+    if (room.status === 'finished') { showToast('이미 종료된 방입니다'); return; }
+
+    const players = room.players || {};
+    if (Object.keys(players).length >= 8) { showToast('방이 꽉 찼습니다 (최대 8명)'); return; }
+
+    isHost = false;
+    currentSize = room.size || 2;
+
+    await roomRef.child(`players/${myUid}`).set({
+        name: myName, ready: true, finished: false, time_ms: null, joinedAt: Date.now()
+    });
+
+    enterLobby();
+}
+
+// ════════════════════════════════════════════════
+// 대기실
+// ════════════════════════════════════════════════
+function enterLobby() {
+    showScreen('screen-lobby');
+    document.getElementById('lobby-code-text').textContent = roomId;
+
+    // 방장만 크기 조절 보이기
+    const sizeRow = document.getElementById('lobby-size-row');
+    sizeRow.classList.toggle('game-side-hidden', !isHost);
+
+    // 방장만 시작 버튼
+    document.getElementById('btn-start-game').classList.toggle('hidden-btn', !isHost);
+
+    // 크기 탭 동기화
+    document.querySelectorAll('#lobby-size-ctrl .seg-btn').forEach(b => {
+        b.classList.toggle('active', +b.dataset.size === currentSize);
+    });
+
+    // 실시간 플레이어 목록 구독
+    if (playerSub) playerSub();
+    const playersRef = roomRef.child('players');
+    const onPlayers = playersRef.on('value', snap => {
+        renderLobbyPlayers(snap.val() || {});
+    });
+    playerSub = () => playersRef.off('value', onPlayers);
+
+    // 방 상태 변경 구독 (호스트가 시작하면 게임으로 전환)
+    if (roomSub) roomSub();
+    const onRoom = roomRef.on('value', snap => {
+        if (!snap.exists()) { showToast('방이 사라졌습니다'); leaveLobby(); return; }
+        const room = snap.val();
+        // 크기 동기화 (비호스트)
+        if (!isHost) {
+            currentSize = room.size;
+            document.querySelectorAll('#lobby-size-ctrl .seg-btn').forEach(b => {
+                b.classList.toggle('active', +b.dataset.size === currentSize);
+            });
+        }
+        if (room.status === 'playing') {
+            // matA/matB가 채워지면 게임 시작
+            if (room.matA) {
+                matA = room.matA; matB = room.matB;
+                matAns = multiplyMat(matA, matB, currentSize);
+                startMultiGame(room.startTime);
+            }
+        }
+    });
+    roomSub = () => roomRef.off('value', onRoom);
+}
+
+function renderLobbyPlayers(players) {
+    const list = document.getElementById('lobby-player-list');
+    list.innerHTML = '';
+    const entries = Object.entries(players).sort((a,b) => a[1].joinedAt - b[1].joinedAt);
+    entries.forEach(([uid, p], idx) => {
+        const div = document.createElement('div');
+        div.className = 'player-item';
+        div.innerHTML = `
+            <div class="player-avatar ${avatarClass(idx)}">${avatarLetter(p.name)}</div>
+            <span class="player-name">${p.name}${uid===myUid?' (나)':''}</span>
+            ${uid===roomRef?.key?.split('/')[0] ? '' : ''}
+        `;
+        // 방장 표시
+        roomRef.once('value').then(s => {
+            if (s.val()?.host === uid) {
+                const badge = document.createElement('span');
+                badge.className = 'player-badge'; badge.textContent = '방장';
+                div.appendChild(badge);
+            }
+        });
+        list.appendChild(div);
+    });
+}
+
+function leaveLobby() {
+    if (roomSub) { roomSub(); roomSub = null; }
+    if (playerSub) { playerSub(); playerSub = null; }
+    if (roomRef) {
+        roomRef.child(`players/${myUid}`).remove();
+        // 호스트가 나가면 방 삭제
+        if (isHost) roomRef.remove();
+    }
+    roomId = null; roomRef = null; isHost = false;
+    showScreen('screen-room');
+}
+
+// ════════════════════════════════════════════════
+// 게임 시작 (방장)
+// ════════════════════════════════════════════════
+async function hostStartGame() {
+    if (!isHost) return;
+    const n = currentSize;
+    generateProblem(n);
+    await roomRef.update({
+        status: 'playing',
+        size: n,
+        matA, matB,
+        startTime: firebase.database.ServerValue.TIMESTAMP
+    });
+    // reset all players' finished state
+    const snap = await roomRef.child('players').once('value');
+    const updates = {};
+    snap.forEach(c => { updates[`players/${c.key}/finished`] = false; updates[`players/${c.key}/time_ms`] = null; });
+    await roomRef.update(updates);
+}
+
+// ════════════════════════════════════════════════
+// 멀티 게임 진행
+// ════════════════════════════════════════════════
+function startMultiGame(serverStartTime) {
+    currentMode = 'multi';
+    if (roomSub) { roomSub(); roomSub = null; }
+    if (playerSub) { playerSub(); playerSub = null; }
+
+    gameActive = true; solved = false; timerStarted = false;
+    document.getElementById('solution-area').classList.remove('visible');
+    document.getElementById('save-row').classList.add('hidden');
+    document.getElementById('btn-give').disabled = false;
+    document.getElementById('game-side').classList.remove('game-side-hidden');
+
+    // (setStatus removed — timer-attack UI has no status bar)
+    renderProblem(currentSize);
+
+    // 서버 시간 기준 타이머 (경과 시간 반영)
+    const now = Date.now();
+    const serverDelta = now - (serverStartTime || now);
+    score = 0;
+    document.getElementById('score-display').textContent = '0';
+    startCountdown(currentTimeSec);
+    remainMs = Math.max(0, remainMs - serverDelta);
+    updateTimerUI();
+    timerStarted = true;
+
+    // 상대방 현황 구독
+    const playersRef = roomRef.child('players');
+    const onP = playersRef.on('value', snap => {
+        renderRivals(snap.val() || {});
+        checkAllFinished(snap.val() || {});
+    });
+    playerSub = () => playersRef.off('value', onP);
+
+    showScreen('screen-game');
+    document.querySelector('.ans-cell')?.focus();
+}
+
+async function updatePlayerFinished(ms) {
+    if (!roomRef) return;
+    await roomRef.child(`players/${myUid}`).update({ finished: true, time_ms: ms });
+}
+
+function renderRivals(players) {
+    const list = document.getElementById('rival-list');
+    list.innerHTML = '';
+    const entries = Object.entries(players).sort((a,b)=>(a[1].joinedAt||0)-(b[1].joinedAt||0));
+    entries.forEach(([uid, p], idx) => {
+        const div = document.createElement('div');
+        div.className = 'rival-item';
+        let statusHtml, statusCls;
+        if (p.finished) {
+            statusHtml = fmtTime(p.time_ms);
+            statusCls = 'done';
+        } else if (uid === myUid && gameActive) {
+            statusHtml = '풀이 중';
+            statusCls = 'playing';
+        } else {
+            statusHtml = '대기';
+            statusCls = 'waiting';
+        }
+        div.innerHTML = `
+            <div class="rival-avatar ${avatarClass(idx)}">${avatarLetter(p.name)}</div>
+            <span class="rival-name">${p.name}${uid===myUid?' ✦':''}</span>
+            <span class="rival-status ${statusCls}">${statusHtml}</span>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function checkAllFinished(players) {
+    const all = Object.values(players);
+    if (all.length > 0 && all.every(p => p.finished)) {
+        setTimeout(() => showMultiResult(players), 800);
+    }
+}
+
+function showMultiResult(players) {
+    if (playerSub) { playerSub(); playerSub = null; }
+    stopTimer();
+    gameActive = false;
+
+    const entries = Object.entries(players)
+        .map(([uid, p]) => ({ uid, ...p }))
+        .filter(p => p.finished && p.time_ms != null)
+        .sort((a,b) => a.time_ms - b.time_ms);
+
+    const list = document.getElementById('result-list');
+    list.innerHTML = '';
+    entries.forEach((p, i) => {
+        const div = document.createElement('div');
+        div.className = 'result-item' + (p.uid===myUid ? ' me' : '');
+        div.innerHTML = `
+            <span class="result-rank">${medals(i)}</span>
+            <span class="result-name">${p.name}</span>
+            <span class="result-time">${fmtTime(p.time_ms)}</span>
+        `;
+        list.appendChild(div);
+    });
+
+    const myEntry = entries.find(e=>e.uid===myUid);
+    const myRank = myEntry ? entries.indexOf(myEntry)+1 : null;
+    document.getElementById('result-title').textContent = myRank===1 ? '🏆 우승!' : '게임 결과';
+    document.getElementById('result-subtitle').textContent =
+        myEntry ? `내 기록: ${fmtTime(myEntry.time_ms)} (${myRank}위)` : '';
+
+    // 방 종료
+    if (isHost) roomRef?.update({status:'finished'});
+
+    showScreen('screen-result');
+}
+
+// ════════════════════════════════════════════════
+// 이벤트 바인딩
+// ════════════════════════════════════════════════
+
+// 메뉴 크기 탭
+document.querySelectorAll('#menu-size-ctrl .seg-btn').forEach(b => {
+    b.addEventListener('click', function() {
+        document.querySelectorAll('#menu-size-ctrl .seg-btn').forEach(x=>x.classList.remove('active'));
+        this.classList.add('active');
+        currentSize = +this.dataset.size;
+    });
+});
+
+// 메뉴 시간 탭
+document.querySelectorAll('#menu-time-ctrl .seg-btn').forEach(b => {
+    b.addEventListener('click', function() {
+        document.querySelectorAll('#menu-time-ctrl .seg-btn').forEach(x=>x.classList.remove('active'));
+        this.classList.add('active');
+        currentTimeSec = +this.dataset.time;
+    });
+});
+
+
+// 모드 카드
+document.getElementById('card-solo').addEventListener('click', () => startSolo());
+document.getElementById('card-multi').addEventListener('click', () => {
+    document.getElementById('nickname-input').value = myName;
+    showScreen('screen-room');
+});
+
+// 방 화면
+document.getElementById('btn-create-room').addEventListener('click', createRoom);
+document.getElementById('btn-join-room').addEventListener('click', joinRoom);
+document.getElementById('btn-back-to-menu').addEventListener('click', () => showScreen('screen-menu'));
+document.getElementById('room-code-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') joinRoom();
+});
+
+// 방 코드 복사
+document.getElementById('lobby-code-badge').addEventListener('click', function() {
+    navigator.clipboard.writeText(roomId).then(() => {
+        this.classList.add('copied');
+        showToast(`방 코드 ${roomId} 복사됨`);
+        setTimeout(() => this.classList.remove('copied'), 2000);
+    });
+});
+
+// 대기실 뒤로가기
+document.getElementById('btn-lobby-back').addEventListener('click', () => {
+    if (confirm('방에서 나가시겠습니까?')) leaveLobby();
+});
+
+// 대기실
+document.getElementById('btn-start-game').addEventListener('click', hostStartGame);
+document.getElementById('btn-leave-lobby').addEventListener('click', () => {
+    if (confirm('방에서 나가시겠습니까?')) leaveLobby();
+});
+
+// 대기실 크기 탭 (방장만)
+document.querySelectorAll('#lobby-size-ctrl .seg-btn').forEach(b => {
+    b.addEventListener('click', async function() {
+        if (!isHost) return;
+        document.querySelectorAll('#lobby-size-ctrl .seg-btn').forEach(x=>x.classList.remove('active'));
+        this.classList.add('active');
+        currentSize = +this.dataset.size;
+        await roomRef?.update({size: currentSize});
+    });
+});
+
+// 게임 나가기
+document.getElementById('btn-game-back').addEventListener('click', () => {
+    if (confirm('게임을 포기하고 나가시겠습니까?')) {
+        stopCountdown();
+        if (currentMode === 'multi') leaveLobby();
+        else { showScreen('screen-menu'); }
+    }
+});
+
+// 게임 화면
+document.getElementById('btn-give').addEventListener('click', function() {
+    if (!this.disabled) showSolution();
+});
+
+// Enter키 → 다음 셀
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const cells = Array.from(document.querySelectorAll('.ans-cell'));
+        const idx = cells.indexOf(document.activeElement);
+        if (idx !== -1 && idx < cells.length-1) { cells[idx+1].focus(); e.preventDefault(); }
+    }
+});
+
+// 결과 화면
+document.getElementById('btn-play-again').addEventListener('click', () => {
+    if (currentMode === 'solo') startSolo();
+    else { roomId=null; roomRef=null; isHost=false; showScreen('screen-menu'); }
+});
+document.getElementById('btn-to-menu').addEventListener('click', () => {
+    stopCountdown();
+    roomId=null; roomRef=null; isHost=false;
+    showScreen('screen-menu');
+});
+
+// ════════════════════════════════════════════════
+// 초기화
+// ════════════════════════════════════════════════
+showScreen('screen-menu');
+</script>
+</html>
