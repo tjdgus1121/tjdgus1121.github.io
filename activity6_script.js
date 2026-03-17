@@ -10,12 +10,22 @@ const state = {
     mode: 'mixed', // 'number', 'color', 'mixed'
     blendRatio: 0.5,
     cellSize: 24,
-    zoomLevel: 1
+    zoomLevel: 1,
+    fillMode: false,
+    fillCellW: 0,
+    fillCellH: 0,
 };
 
 // 가상 스크롤 상태
 let matrixViewState = { firstRow: -1, lastRow: -1, firstCol: -1, lastCol: -1 };
 const MATRIX_OVERSCAN = 3;
+
+// 슬라이더 debounce 타이머
+let sliderDebounceTimer = null;
+// renderVisibleMatrix rAF 플래그
+let rafPending = false;
+// 가득 모드 셀 계산 함수 (DOMContentLoaded 내에서 할당)
+let calcFillCells = () => ({ cw: 0, ch: 0 });
 
 function getEffCellSize() {
     return Math.round(state.cellSize * state.zoomLevel);
@@ -65,6 +75,68 @@ document.addEventListener('DOMContentLoaded', function () {
     downloadCSV.addEventListener('click', downloadMatrixAsCSV);
     copyToExcel.addEventListener('click', copyMatrixToExcel);
 
+    // 행렬 크게 보기
+    const expandBtn = document.getElementById('expandMatrix');
+    let savedCellSize = null;
+
+    const fitFullBtn = document.getElementById('fitFull');
+    const CTRL_W = 284, SIDEBAR_W = 240, MARGIN = 4;
+
+    calcFillCells = function() {
+        const availW = window.innerWidth  - CTRL_W - SIDEBAR_W - MARGIN;
+        const availH = window.innerHeight - MARGIN;
+        return {
+            cw: Math.max(2, availW / state.width),
+            ch: Math.max(2, availH / state.height),
+        };
+    };
+
+    function applyFillMode(on) {
+        state.fillMode = on;
+        if (on) {
+            const { cw, ch } = calcFillCells();
+            state.fillCellW = cw;
+            state.fillCellH = ch;
+        }
+        fitFullBtn.classList.toggle('active', on);
+        updateMatrixDisplay();
+    }
+
+    function enterExpand() {
+        savedCellSize = state.cellSize;
+        document.body.classList.add('matrix-expand-mode');
+        expandBtn.innerHTML = '<i class="fa fa-compress"></i> 원래 보기';
+        applyFillMode(false);
+        scheduleMatrixRender();
+    }
+
+    function exitExpand() {
+        document.body.classList.remove('matrix-expand-mode');
+        expandBtn.innerHTML = '<i class="fa fa-expand"></i> 크게 보기';
+        state.fillMode = false;
+        fitFullBtn.classList.remove('active');
+        if (savedCellSize !== null) {
+            state.cellSize = savedCellSize;
+            cellSizeValue.textContent = savedCellSize;
+            updateCellSizeButtonStates();
+            savedCellSize = null;
+        }
+        matrixViewState = { firstRow: -1, lastRow: -1, firstCol: -1, lastCol: -1 };
+        scheduleMatrixRender();
+    }
+
+    expandBtn.addEventListener('click', () => {
+        document.body.classList.contains('matrix-expand-mode') ? exitExpand() : enterExpand();
+    });
+
+    fitFullBtn.addEventListener('click', () => {
+        applyFillMode(!state.fillMode);
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.body.classList.contains('matrix-expand-mode')) exitExpand();
+    });
+
     // 셀 크기 조절 이벤트
     increaseSize.addEventListener('click', () => {
         if (state.cellSize < 100) {
@@ -85,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // 가상 스크롤 이벤트
-    document.getElementById('matrixWrapper').addEventListener('scroll', renderVisibleMatrix);
+    document.getElementById('matrixWrapper').addEventListener('scroll', scheduleMatrixRender);
 
     // 셀 클릭 이벤트 위임
     document.getElementById('matrixWrapper').addEventListener('click', function (e) {
@@ -335,16 +407,12 @@ function handleSliderChange(event) {
     document.getElementById('blend1Value').textContent = value;
     document.getElementById('blend2Value').textContent = 100 - value;
 
-    showLoading();
-
-    // 비동기 처리를 위해 setTimeout 사용
-    setTimeout(() => {
-        // 이미지 처리
-        blendImages();
+    clearTimeout(sliderDebounceTimer);
+    sliderDebounceTimer = setTimeout(() => {
+        blendImagesSync();          // 진행률 DOM 업데이트 없이 순수 계산만
         updateResultsDisplay();
-
-        hideLoading();
-    }, 0);
+        scheduleMatrixRender();     // rAF 로 한 프레임만 렌더
+    }, 60);
 }
 
 // 리사이즈 적용 함수
@@ -504,6 +572,35 @@ function convertToGrayscale(image, startProgress, endProgress) {
 }
 
 // 이미지 혼합 함수 - 진행률 범위 인자 추가
+// 슬라이더용 — DOM 업데이트 없이 순수 계산만
+function blendImagesSync() {
+    if (!state.grayImage1.length || !state.grayImage2.length) return;
+    const alpha = state.blendRatio;
+    const h = state.height, w = state.width;
+    if (!state.resultImage.length) {
+        state.resultImage = Array.from({length: h}, () => new Int16Array(w));
+    }
+    for (let y = 0; y < h; y++) {
+        const row1 = state.grayImage1[y];
+        const row2 = state.grayImage2[y];
+        const out  = state.resultImage[y];
+        for (let x = 0; x < w; x++) {
+            out[x] = Math.round(alpha * row1[x] + (1 - alpha) * row2[x]);
+        }
+    }
+    matrixViewState = { firstRow: -1, lastRow: -1, firstCol: -1, lastCol: -1 };
+}
+
+// rAF 기반 행렬 렌더 예약
+function scheduleMatrixRender() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+        rafPending = false;
+        renderVisibleMatrix();
+    });
+}
+
 function blendImages(startProgress, endProgress) {
     return new Promise((resolve, reject) => {
         if (!state.grayImage1.length || !state.grayImage2.length) {
@@ -602,10 +699,16 @@ function updateResultsDisplay(startProgress, endProgress) {
 // 행렬 표시 업데이트 — 스페이서 크기 갱신 후 가상 스크롤 렌더링
 function updateMatrixDisplay() {
     if (!state.resultImage || !state.resultImage.length) return;
-    const cs = getEffCellSize();
+    if (state.fillMode) {
+        const { cw, ch } = calcFillCells();
+        state.fillCellW = cw;
+        state.fillCellH = ch;
+    }
+    const cw = state.fillMode ? state.fillCellW : getEffCellSize();
+    const ch = state.fillMode ? state.fillCellH : getEffCellSize();
     const spacer = document.getElementById('matrixSpacer');
-    spacer.style.width  = (state.width  * cs) + 'px';
-    spacer.style.height = (state.height * cs) + 'px';
+    spacer.style.width  = (state.width  * cw) + 'px';
+    spacer.style.height = (state.height * ch) + 'px';
     matrixViewState.firstRow = matrixViewState.lastRow = matrixViewState.firstCol = matrixViewState.lastCol = -1;
     renderVisibleMatrix();
 }
@@ -615,17 +718,18 @@ function renderVisibleMatrix() {
     if (!state.resultImage || !state.resultImage.length) return;
     const wrapper = document.getElementById('matrixWrapper');
     const cells   = document.getElementById('matrixCells');
-    const cs = getEffCellSize();
+    const cw = state.fillMode ? state.fillCellW : getEffCellSize();
+    const ch = state.fillMode ? state.fillCellH : getEffCellSize();
 
     const scrollTop  = wrapper.scrollTop;
     const scrollLeft = wrapper.scrollLeft;
     const vw = wrapper.clientWidth;
     const vh = wrapper.clientHeight;
 
-    const firstRow = Math.max(0, Math.floor(scrollTop  / cs) - MATRIX_OVERSCAN);
-    const lastRow  = Math.min(state.height, Math.ceil((scrollTop  + vh) / cs) + MATRIX_OVERSCAN);
-    const firstCol = Math.max(0, Math.floor(scrollLeft / cs) - MATRIX_OVERSCAN);
-    const lastCol  = Math.min(state.width,  Math.ceil((scrollLeft + vw) / cs) + MATRIX_OVERSCAN);
+    const firstRow = Math.max(0, Math.floor(scrollTop  / ch) - MATRIX_OVERSCAN);
+    const lastRow  = Math.min(state.height, Math.ceil((scrollTop  + vh) / ch) + MATRIX_OVERSCAN);
+    const firstCol = Math.max(0, Math.floor(scrollLeft / cw) - MATRIX_OVERSCAN);
+    const lastCol  = Math.min(state.width,  Math.ceil((scrollLeft + vw) / cw) + MATRIX_OVERSCAN);
 
     if (matrixViewState.firstRow === firstRow && matrixViewState.lastRow === lastRow &&
         matrixViewState.firstCol === firstCol && matrixViewState.lastCol === lastCol) return;
@@ -633,13 +737,13 @@ function renderVisibleMatrix() {
     matrixViewState = { firstRow, lastRow, firstCol, lastCol };
 
     const cols = lastCol - firstCol;
-    cells.style.top  = (firstRow * cs) + 'px';
-    cells.style.left = (firstCol * cs) + 'px';
-    cells.style.gridTemplateColumns = `repeat(${cols}, ${cs}px)`;
-    cells.style.gridAutoRows = cs + 'px';
+    cells.style.top  = (firstRow * ch) + 'px';
+    cells.style.left = (firstCol * cw) + 'px';
+    cells.style.gridTemplateColumns = `repeat(${cols}, ${cw}px)`;
+    cells.style.gridAutoRows = ch + 'px';
 
     const frag = document.createDocumentFragment();
-    const fontSize = Math.max(8, Math.min(16, cs * 0.4));
+    const fontSize = Math.max(8, Math.min(16, Math.min(cw, ch) * 0.4));
 
     for (let r = firstRow; r < lastRow; r++) {
         for (let c = firstCol; c < lastCol; c++) {
@@ -650,7 +754,20 @@ function renderVisibleMatrix() {
 
             if (state.mode === 'color' || state.mode === 'mixed') {
                 div.style.backgroundColor = `rgb(${gray},${gray},${gray})`;
-                div.style.color = gray < 128 ? '#fff' : '#000';
+                // 3존 가독성 색상:
+                // 0~105   어두운 배경 → 밝은 글씨 + 어두운 그림자
+                // 106~155 중간 배경  → 흰 글씨 + 강한 그림자 보조
+                // 156~255 밝은 배경  → 어두운 글씨 + 밝은 그림자
+                if (gray <= 105) {
+                    div.style.color = '#f0f0f0';
+                    div.style.textShadow = '0 0 3px rgba(0,0,0,0.9)';
+                } else if (gray <= 155) {
+                    div.style.color = '#ffffff';
+                    div.style.textShadow = '0 0 4px #000, 0 0 4px #000';
+                } else {
+                    div.style.color = '#111111';
+                    div.style.textShadow = '0 0 3px rgba(255,255,255,0.9)';
+                }
             }
             if (state.mode === 'number' || state.mode === 'mixed') {
                 div.textContent = gray;
