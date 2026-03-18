@@ -285,6 +285,7 @@
             background-color: #e63462;
         }
 
+        .matrix-btn-row { display: flex; gap: 10px; }
         .random-btn {
             background-color: #9b59b6;
             margin-top: 10px;
@@ -537,9 +538,9 @@
                 <h2 id="left-title">입력 행렬 A</h2>
                 <h2>값에 0~9의 값을 입력해보세요.</h2>
                 <div class="matrix" id="matrix-a"></div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button id="random-a-btn" class="random-btn">🎲 랜덤 값 생성</button>
-                    <button id="transpose-a-btn" class="transpose-btn">🔄 전치행렬</button>
+                <div class="matrix-btn-row">
+                    <button type="button" id="random-a-btn" class="random-btn">🎲 랜덤 값 생성</button>
+                    <button type="button" id="transpose-a-btn" class="transpose-btn">🔄 전치행렬</button>
                 </div>
             </div>
 
@@ -562,6 +563,9 @@
                     <label for="binary-only">0과 1만 입력 가능</label>
                 </div>
                 <div class="matrix" id="matrix-t"></div>
+                <div class="matrix-btn-row">
+                    <button type="button" id="random-t-btn" class="random-btn">🎲 랜덤 값 생성</button>
+                </div>
             </div>
 
             <div class="equals-symbol">=</div>
@@ -1295,6 +1299,21 @@
                 });
             } else {
                 console.error('전치 버튼을 찾을 수 없음');
+            }
+
+            // 변환행렬 T 랜덤 버튼
+            const randomTBtn = document.getElementById('random-t-btn');
+            if (randomTBtn) {
+                randomTBtn.addEventListener('click', function() {
+                    const binaryOnly = document.getElementById('binary-only').checked;
+                    const inputs = document.querySelectorAll('#matrix-t input');
+                    inputs.forEach(input => {
+                        input.value = binaryOnly
+                            ? Math.round(Math.random())          // 0 또는 1
+                            : Math.floor(Math.random() * 9) + 1; // 1~9
+                    });
+                    calculateMatrixMultiplication();
+                });
             }
 
             // 초기 라벨 설정

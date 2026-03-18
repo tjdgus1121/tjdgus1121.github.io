@@ -624,19 +624,20 @@
         let autoPlayId = null;
         let autoDirection = 1;
         let lastTimestamp = null;
+        let currentBlendVal = parseFloat(blendSlider.value); // float 별도 추적 (step 반올림 방지)
 
         function autoPlayStep(ts) {
             if (!lastTimestamp) lastTimestamp = ts;
-            const elapsed = ts - lastTimestamp;
+            const elapsed = Math.min(ts - lastTimestamp, 100); // 탭 전환 후 튀는 현상 방지
             lastTimestamp = ts;
 
             const speed = parseFloat(speedSelect.value); // % per second
-            let val = parseFloat(blendSlider.value) + autoDirection * speed * elapsed / 1000;
+            currentBlendVal += autoDirection * speed * elapsed / 1000;
 
-            if (val >= 100) { val = 100; autoDirection = -1; }
-            if (val <= 0)   { val = 0;   autoDirection = 1; }
+            if (currentBlendVal >= 100) { currentBlendVal = 100; autoDirection = -1; }
+            if (currentBlendVal <= 0)   { currentBlendVal = 0;   autoDirection = 1; }
 
-            blendSlider.value = val;
+            blendSlider.value = currentBlendVal;
             blendSlider.dispatchEvent(new Event('input'));
             autoPlayId = requestAnimationFrame(autoPlayStep);
         }
@@ -649,6 +650,7 @@
                 autoPlayBtn.textContent = '▶ 자동 재생';
                 autoPlayBtn.classList.remove('playing');
             } else {
+                currentBlendVal = parseFloat(blendSlider.value);
                 lastTimestamp = null;
                 autoPlayId = requestAnimationFrame(autoPlayStep);
                 autoPlayBtn.textContent = '⏸ 정지';
