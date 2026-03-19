@@ -787,6 +787,14 @@
                     <button type="button" class="seg-btn" data-size="3">3 × 3</button>
                 </div>
             </div>
+            <div class="lobby-size-row" id="lobby-time-row">
+                <span class="lobby-size-label">제한 시간</span>
+                <div class="seg-ctrl" id="lobby-time-ctrl">
+                    <button type="button" class="seg-btn" data-time="30">30초</button>
+                    <button type="button" class="seg-btn active" data-time="60">60초</button>
+                    <button type="button" class="seg-btn" data-time="120">120초</button>
+                </div>
+            </div>
 
             <div class="player-list" id="lobby-player-list"></div>
 
@@ -1246,6 +1254,7 @@ async function createRoom() {
     await roomRef.set({
         host: myUid,
         size: currentSize,
+        timeSec: currentTimeSec,
         status: 'waiting',
         createdAt: firebase.database.ServerValue.TIMESTAMP,
         matA: null, matB: null,
@@ -1281,11 +1290,9 @@ async function joinRoom() {
     if (room.status === 'playing') { showToast('이미 게임이 진행 중입니다'); return; }
     if (room.status === 'finished') { showToast('이미 종료된 방입니다'); return; }
 
-    const players = room.players || {};
-    if (Object.keys(players).length >= 8) { showToast('방이 꽉 찼습니다 (최대 8명)'); return; }
-
     isHost = false;
     currentSize = room.size || 2;
+    currentTimeSec = room.timeSec || 60;
 
     await roomRef.child(`players/${myUid}`).set({
         name: myName, ready: true, finished: false, time_ms: null, joinedAt: Date.now()
@@ -1301,16 +1308,19 @@ function enterLobby() {
     showScreen('screen-lobby');
     document.getElementById('lobby-code-text').textContent = roomId;
 
-    // 방장만 크기 조절 보이기
-    const sizeRow = document.getElementById('lobby-size-row');
-    sizeRow.classList.toggle('game-side-hidden', !isHost);
+    // 방장만 크기·시간 조절 보이기
+    document.getElementById('lobby-size-row').classList.toggle('game-side-hidden', !isHost);
+    document.getElementById('lobby-time-row').classList.toggle('game-side-hidden', !isHost);
 
     // 방장만 시작 버튼
     document.getElementById('btn-start-game').classList.toggle('hidden-btn', !isHost);
 
-    // 크기 탭 동기화
+    // 크기·시간 탭 동기화
     document.querySelectorAll('#lobby-size-ctrl .seg-btn').forEach(b => {
         b.classList.toggle('active', +b.dataset.size === currentSize);
+    });
+    document.querySelectorAll('#lobby-time-ctrl .seg-btn').forEach(b => {
+        b.classList.toggle('active', +b.dataset.time === currentTimeSec);
     });
 
     // 실시간 플레이어 목록 구독
@@ -1326,11 +1336,15 @@ function enterLobby() {
     const onRoom = roomRef.on('value', snap => {
         if (!snap.exists()) { showToast('방이 사라졌습니다'); leaveLobby(); return; }
         const room = snap.val();
-        // 크기 동기화 (비호스트)
+        // 크기·시간 동기화 (비호스트)
         if (!isHost) {
             currentSize = room.size;
+            currentTimeSec = room.timeSec || 60;
             document.querySelectorAll('#lobby-size-ctrl .seg-btn').forEach(b => {
                 b.classList.toggle('active', +b.dataset.size === currentSize);
+            });
+            document.querySelectorAll('#lobby-time-ctrl .seg-btn').forEach(b => {
+                b.classList.toggle('active', +b.dataset.time === currentTimeSec);
             });
         }
         if (room.status === 'playing') {
@@ -1338,6 +1352,7 @@ function enterLobby() {
             if (room.matA) {
                 matA = room.matA; matB = room.matB;
                 matAns = multiplyMat(matA, matB, currentSize);
+                currentTimeSec = room.timeSec || currentTimeSec;
                 startMultiGame(room.startTime);
             }
         }
@@ -1391,6 +1406,7 @@ async function hostStartGame() {
     await roomRef.update({
         status: 'playing',
         size: n,
+        timeSec: currentTimeSec,
         matA, matB,
         startTime: firebase.database.ServerValue.TIMESTAMP
     });
@@ -1580,6 +1596,16 @@ document.querySelectorAll('#lobby-size-ctrl .seg-btn').forEach(b => {
         this.classList.add('active');
         currentSize = +this.dataset.size;
         await roomRef?.update({size: currentSize});
+    });
+});
+
+document.querySelectorAll('#lobby-time-ctrl .seg-btn').forEach(b => {
+    b.addEventListener('click', async function() {
+        if (!isHost) return;
+        document.querySelectorAll('#lobby-time-ctrl .seg-btn').forEach(x=>x.classList.remove('active'));
+        this.classList.add('active');
+        currentTimeSec = +this.dataset.time;
+        await roomRef?.update({timeSec: currentTimeSec});
     });
 });
 

@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>배경 제거의 원리 — CNN·U-Net 시각화 학습</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Gowun+Dodum&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080808;
+  --s1: #111111;
+  --s2: #191919;
+  --s3: #222222;
+  --border: rgba(255,255,255,0.07);
+  --bhi: rgba(255,255,255,0.13);
+  --accent: #b8ff57;
+  --blue: #57c8ff;
+  --purple: #c57bff;
+  --coral: #ff7c57;
+  --text: #e8e8e8;
+  --muted: #666;
+  --faint: #2a2a2a;
+  --mono: 'JetBrains Mono', 'Space Mono', monospace;
+  --body: 'Noto Sans KR', 'Gowun Dodum', sans-serif;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--body); overflow: hidden; }
+
+/* ── UPLOAD ── */
+#uploadScreen {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+}
+.up-title { text-align: center; }
+.up-title h1 { font-family: var(--body); font-size: clamp(22px,4vw,40px); font-weight: 700; letter-spacing: -0.01em; line-height: 1.35; }
+.up-title h1 em { color: var(--accent); font-style: normal; }
+.up-title p { margin-top: 14px; font-size: 14px; color: var(--muted); line-height: 2.0; max-width: 440px; }
+.dropzone {
+  width: min(340px,88vw); aspect-ratio: 4/3;
+  border: 1.5px dashed rgba(255,255,255,0.14); border-radius: 20px;
+  background: var(--s1); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px; cursor: pointer;
+  transition: border-color .25s, background .25s, box-shadow .25s;
+}
+.dropzone:hover, .dropzone.over {
+  border-color: var(--accent); background: rgba(184,255,87,0.04);
+  box-shadow: 0 0 32px rgba(184,255,87,0.06);
+}
+.dropzone svg { opacity: 0.22; }
+.dropzone p { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; letter-spacing: .08em; line-height: 2.2; }
+#fileInput { display: none; }
+
+/* ── MAIN ── */
+#mainScreen { display: none; position: fixed; inset: 0; flex-direction: column; }
+#mainScreen.show { display: flex; }
+
+/* top bar */
+.topbar {
+  height: 52px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; border-bottom: 1px solid var(--border);
+  background: rgba(8,8,8,0.95);
+}
+.topbar-logo { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+.topbar-right { display: flex; gap: 10px; align-items: center; }
+.tbtn {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .05em;
+  padding: 5px 12px; border: 1px solid var(--bhi); border-radius: 6px;
+  background: transparent; color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.tbtn:hover { color: var(--accent); border-color: var(--accent); }
+.tbtn:disabled { opacity: .3; pointer-events: none; }
+
+/* step indicator */
+.steps-bar {
+  height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  padding: 0 24px; gap: 0; border-bottom: 1px solid var(--border);
+  background: var(--s1);
+}
+.step-item {
+  display: flex; align-items: center; gap: 10px; padding: 0 18px; height: 100%;
+  border-bottom: 2px solid transparent; cursor: pointer;
+  transition: border-color .2s, background .15s;
+}
+.step-item.active { border-bottom-color: var(--step-color, var(--accent)); }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  background: var(--faint); color: var(--muted); transition: all .2s; flex-shrink: 0;
+}
+.step-item.active .step-num { background: var(--step-color,var(--accent)); color: #000; }
+.step-item.done .step-num { background: var(--step-color,var(--accent)); color: #000; opacity: .55; }
+.step-label { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; color: var(--muted); transition: color .2s; white-space: nowrap; }
+.step-item.active .step-label { color: var(--text); }
+.step-sep { width: 32px; height: 1px; background: var(--border); flex-shrink: 0; }
+
+/* content area */
+.content {
+  flex: 1; display: grid; grid-template-columns: 1fr 360px;
+  overflow: hidden; min-height: 0;
+}
+
+/* canvas area */
+.canvas-area {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+#mainCanvas { display: block; max-width: 100%; max-height: 100%; }
+
+/* overlay canvas for animations */
+#overlayCanvas { position: absolute; inset: 0; pointer-events: none; }
+
+/* right panel */
+.panel {
+  border-left: 1px solid var(--border); background: var(--s1);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.panel-top { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.panel-step-tag { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; margin-bottom: 5px; }
+.panel-title { font-family: var(--mono); font-size: 18px; font-weight: 700; line-height: 1.3; }
+.panel-desc { font-size: 14px; color: var(--muted); margin-top: 6px; line-height: 1.9; }
+.panel-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.panel-body::-webkit-scrollbar { width: 3px; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--bhi); border-radius: 2px; }
+
+/* sub-canvases grid (filter results) */
+.filter-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.filter-item { display: flex; flex-direction: column; gap: 0; cursor: pointer; }
+.filter-item-inner { position: relative; border-radius: 5px; overflow: hidden; border: 1.5px solid var(--border); transition: border-color .15s; }
+.filter-item:hover .filter-item-inner { border-color: var(--bhi); }
+.filter-item.sel .filter-item-inner { border-color: var(--blue); }
+.filter-item canvas { display: block; width: 100%; }
+.filter-item-lbl {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 5px 4px 4px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.82));
+  font-family: var(--body); font-size: 10px; font-weight: 500;
+  text-align: center; line-height: 1.3;
+  letter-spacing: 0;
+}
+
+/* layer stack viz */
+.layer-stack { display: flex; flex-direction: column; gap: 4px; }
+.layer-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--s2); border-radius: 7px; border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .15s;
+}
+.layer-row:hover { border-color: var(--bhi); }
+.layer-row.active { border-color: var(--purple); background: rgba(197,123,255,.07); }
+.layer-bar-wrap { flex: 1; height: 6px; background: var(--s3); border-radius: 3px; overflow: hidden; }
+.layer-bar { height: 100%; border-radius: 3px; transition: width .5s ease; }
+.layer-name { font-family: var(--mono); font-size: 10px; color: var(--muted); width: 76px; flex-shrink: 0; letter-spacing: .04em; }
+.layer-val { font-family: var(--mono); font-size: 10px; color: var(--muted); width: 28px; text-align: right; flex-shrink: 0; }
+
+/* heatmap legend */
+.heatmap-legend { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.hm-bar { flex: 1; height: 8px; border-radius: 4px; background: linear-gradient(to right, #1a3a6b, #7F77DD, #ff7c57, #ffdd00); }
+.hm-label { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+/* nukki progress */
+.nukki-progress { display: flex; flex-direction: column; gap: 8px; }
+.np-stage { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--s2); border-radius: 7px; border: 1px solid var(--border); }
+.np-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex-shrink: 0; transition: background .3s; }
+.np-dot.done { background: var(--accent); }
+.np-dot.active { background: var(--accent); animation: npPulse .9s ease-in-out infinite; }
+@keyframes npPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.np-label { font-family: var(--mono); font-size: 11px; color: var(--muted); flex: 1; letter-spacing: .04em; }
+.np-label.done { color: var(--text); }
+.np-pct { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+
+/* section label */
+.sec-lbl { font-family: var(--mono); font-size: 10px; letter-spacing: .10em; color: var(--muted); margin-bottom: 6px; }
+
+/* bottom controls */
+.controls {
+  height: 54px; flex-shrink: 0; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 20px;
+  border-top: 1px solid var(--border); background: var(--s1);
+}
+.ctrl-info { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.ctrl-btns { display: flex; gap: 8px; }
+.cbtn {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  padding: 8px 18px; border-radius: 7px; cursor: pointer; transition: all .15s;
+  border: 1px solid var(--bhi); background: transparent; color: var(--muted);
+}
+.cbtn:hover { color: var(--text); border-color: rgba(255,255,255,.25); }
+.cbtn.primary { background: var(--accent); border-color: var(--accent); color: #000; }
+.cbtn.primary:hover { background: #c8ff70; }
+.cbtn:disabled { opacity: .25; pointer-events: none; }
+
+/* result download strip */
+.dl-strip {
+  display: none; align-items: center; justify-content: center; gap: 12px;
+  padding: 10px 20px; background: rgba(184,255,87,0.06); border-top: 1px solid rgba(184,255,87,.12);
+}
+.dl-strip.show { display: flex; }
+.dl-btn {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  padding: 8px 20px; background: var(--accent); color: #000;
+  border: none; border-radius: 7px; cursor: pointer; transition: background .15s;
+}
+.dl-btn:hover { background: #c8ff70; }
+.dl-txt { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: .08em; }
+
+/* grain */
+.grain {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 200px; opacity: 0.5;
+}
+
+/* ── 공유 패널 컴포넌트 ── */
+.ptoggle-wrap { display: flex; gap: 6px; }
+.ptoggle {
+  flex: 1; padding: 7px 6px; font-family: var(--mono); font-size: 10px;
+  border-radius: 6px; border: 1px solid var(--bhi); cursor: pointer;
+  transition: all .15s; background: transparent; color: var(--muted);
+}
+.ptoggle.on {
+  background: color-mix(in srgb, var(--ptc, #fff) 13%, transparent);
+  border-color: var(--ptc, #fff); color: var(--ptc, #fff);
+}
+.panel-note {
+  font-size: 13px; color: var(--muted); line-height: 1.9;
+  padding: 10px 14px; background: var(--s2); border-radius: 7px;
+  border-left: 2px solid var(--note-accent, var(--bhi));
+}
+.legend-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; color: var(--muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; display: inline-block; }
+.thresh-wrap {
+  display: none; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; background: rgba(255,124,87,0.06);
+  border-radius: 8px; border: 1px solid rgba(255,124,87,0.15);
+}
+.thresh-wrap.show { display: flex; }
+.thresh-label { font-family: var(--mono); font-size: 10px; color: #ff7c57; white-space: nowrap; }
+.thresh-val   { font-family: var(--mono); font-size: 11px; font-weight: 700; color: #ff7c57; min-width: 34px; text-align: right; }
+.thresh-desc  { font-size: 10px; color: var(--muted); font-family: var(--mono); width: 100%; margin-top: 4px; }
+.mask-status  { font-family: var(--mono); font-size: 11px; margin-top: 10px; padding: 7px 12px; border-radius: 6px; }
+.mask-status.ready   { color: #b8ff57; background: rgba(184,255,87,0.08); border: 1px solid rgba(184,255,87,0.2); }
+.mask-status.waiting { color: #ff9c57; background: rgba(255,156,87,0.08); border: 1px solid rgba(255,156,87,0.2); }
+
+/* ── 스텝 바 클릭 가능 ── */
+.step-item { cursor: pointer; }
+.step-item:hover:not(.active) { background: rgba(255,255,255,.04); }
+
+/* ── topbar 이미지 변경 버튼 ── */
+.tbtn-img {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .05em;
+  padding: 5px 12px; border: 1px solid rgba(184,255,87,.35); border-radius: 6px;
+  background: transparent; color: var(--accent); cursor: pointer; transition: all .15s;
+}
+.tbtn-img:hover { border-color: var(--accent); background: rgba(184,255,87,.07); }
+
+/* ── dl-strip 추가 버튼 ── */
+.dl-btn-jpg {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  padding: 7px 14px; background: transparent; color: var(--accent);
+  border: 1px solid rgba(184,255,87,.35); border-radius: 7px; cursor: pointer; transition: all .15s;
+}
+.dl-btn-jpg:hover { background: rgba(184,255,87,.1); border-color: var(--accent); }
+
+/* ── 모바일 반응형 ── */
+@media (max-width: 768px) {
+  html, body { overflow: auto; }
+  #mainScreen { position: static; min-height: 100vh; }
+  .content { flex-direction: column; height: auto; }
+  .canvas-area { height: 56vw; min-height: 180px; flex-shrink: 0; }
+  .content { grid-template-columns: 1fr; }
+  .panel { width: 100% !important; border-left: none; border-top: 1px solid var(--border); max-height: 60vh; }
+  .steps-bar { overflow-x: auto; flex-wrap: nowrap; gap: 0; }
+  .step-sep { flex-shrink: 0; }
+  .topbar { padding: 0 12px; gap: 6px; }
+  .topbar-right { gap: 6px; }
+  .tbtn, .tbtn-img { font-size: 9px; padding: 4px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<!-- UPLOAD -->
+<div id="uploadScreen">
+  <div class="up-title">
+    <h1>이미지를 올리면<br><em>배경 제거가 만들어지는 과정</em>을 봐요</h1>
+    <p>CNN 필터 수집 → 레이어 판단 → U-Net 마스크 → 배경 제거<br>4단계가 눈앞에서 펼쳐집니다.</p>
+  </div>
+  <div class="dropzone" id="dropzone">
+    <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
+      <rect x="6" y="10" width="36" height="28" rx="4" stroke="white" stroke-width="2"/>
+      <circle cx="18" cy="20" r="4" stroke="white" stroke-width="2"/>
+      <path d="M6 32l10-8 8 6 6-5 12 9" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+    </svg>
+    <p>이미지를 드래그하거나 클릭<br>JPG · PNG · WEBP</p>
+  </div>
+  <input type="file" id="fileInput" accept="image/*">
+</div>
+
+<!-- MAIN -->
+<div id="mainScreen">
+  <div class="topbar">
+    <div class="topbar-logo">CNN → 배경 제거 파이프라인</div>
+    <div class="topbar-right">
+      <button class="tbtn-img" id="changeImgBtn">↑ 이미지 변경</button>
+      <button class="tbtn" id="resetBtn">← 다시 시작</button>
+    </div>
+  </div>
+
+  <!-- step indicator -->
+  <div class="steps-bar" id="stepsBar">
+    <div class="step-item active" data-step="1" style="--step-color:#57c8ff">
+      <div class="step-num">1</div>
+      <div class="step-label">필터 수집</div>
+    </div>
+    <div class="step-sep"></div>
+    <div class="step-item" data-step="2" style="--step-color:#c57bff">
+      <div class="step-num">2</div>
+      <div class="step-label">레이어 판단</div>
+    </div>
+    <div class="step-sep"></div>
+    <div class="step-item" data-step="3" style="--step-color:#ff7c57">
+      <div class="step-num">3</div>
+      <div class="step-label">피사체 / 배경</div>
+    </div>
+    <div class="step-sep"></div>
+    <div class="step-item" data-step="4" style="--step-color:#b8ff57">
+      <div class="step-num">4</div>
+      <div class="step-label">U-Net 배경 제거</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="canvas-area" id="canvasArea">
+      <canvas id="mainCanvas"></canvas>
+      <canvas id="overlayCanvas"></canvas>
+    </div>
+    <div class="panel" id="sidePanel">
+      <div class="panel-top">
+        <div class="panel-step-tag" id="panelTag"></div>
+        <div class="panel-title" id="panelTitle"></div>
+        <div class="panel-desc" id="panelDesc"></div>
+      </div>
+      <div class="panel-body" id="panelBody"></div>
+      <div class="controls">
+        <div class="ctrl-info" id="ctrlInfo"></div>
+        <div class="ctrl-btns">
+          <button class="cbtn" id="prevBtn" disabled>← 이전</button>
+          <button class="cbtn primary" id="nextBtn">다음 단계 →</button>
+        </div>
+      </div>
+      <div class="dl-strip" id="dlStrip">
+        <div class="dl-txt">배경 제거 완성!</div>
+        <button class="dl-btn" id="dlBtn">PNG 저장</button>
+        <button class="dl-btn-jpg" id="dlJpgBtn">JPG (흰 배경)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.4.5';
+
+// ── FILTERS ──
+const FILTERS = [
+  { name:'수평 엣지',   k:[-1,-2,-1,0,0,0,1,2,1],     color:'#57c8ff', type:'edge',   learned:false },
+  { name:'수직 엣지',   k:[-1,0,1,-2,0,2,-1,0,1],      color:'#57c8ff', type:'edge',   learned:false },
+  { name:'전방향 엣지', k:[-1,-1,-1,-1,8,-1,-1,-1,-1], color:'#57c8ff', type:'edge',   learned:false },
+  { name:'대각 엣지',   k:[-2,-1,0,-1,0,1,0,1,2],      color:'#57aeff', type:'edge',   learned:false },
+  { name:'가우시안',    k:[1,2,1,2,4,2,1,2,1],          color:'#aaa',    type:'smooth', learned:false },
+  { name:'샤프닝',      k:[0,-1,0,-1,5,-1,0,-1,0],      color:'#b8ff57', type:'edge',   learned:false },
+  { name:'릴리프',      k:[-2,-1,0,-1,1,1,0,1,2],       color:'#ff9c57', type:'emboss', learned:false },
+  { name:'강한 엣지',   k:[1,1,1,1,-8,1,1,1,1],         color:'#ff6b6b', type:'edge',   learned:false },
+  { name:'수직 확산',   k:[0,1,0,0,0,0,0,-1,0],         color:'#57c8ff', type:'edge',   learned:false },
+  { name:'학습 필터 A', k:[ 3,-1, 2,-4, 0, 1, 2,-3, 1], color:'#ff79c6', type:'edge',   learned:true },
+  { name:'학습 필터 B', k:[-2, 4,-1, 0, 3,-2, 1,-1, 3], color:'#ff79c6', type:'edge',   learned:true },
+  { name:'학습 필터 C', k:[ 1, 2,-3, 3,-2, 0,-1, 4,-2], color:'#ff79c6', type:'edge',   learned:true },
+  { name:'모션 블러',   k:[0,0,0,1,1,1,0,0,0],           color:'#aaa',    type:'smooth', learned:false },
+  { name:'언샤프 마스크', k:[-1,-1,-1,-1,9,-1,-1,-1,-1], color:'#b8ff57', type:'edge',   learned:false },
+  { name:'학습 필터 D', k:[ 2,-3, 1, 0, 4,-2,-1, 2,-3], color:'#ff79c6', type:'edge',   learned:true },
+];
+
+const LAYERS = [
+  {
+    name: '1층 — 선만 봐요',
+    color: '#57c8ff',
+    what: '엣지 (경계선)',
+    plain: '이미지에서 선과 경계만 뽑아내요. 사람인지 배경인지는 전혀 몰라요. 그냥 "여기 밝기가 바뀌네"만 알아요.',
+    mode: 'edge',
+    filterIdx: [0, 1],
+  },
+  {
+    name: '2층 — 덩어리가 보여요',
+    color: '#7F77DD',
+    what: '형태·윤곽',
+    plain: '선들이 모여 덩어리가 생겨요. 여러 방향의 엣지를 합쳐서 피사체의 전체 윤곽이 두껍게 드러나요. 아직 사람인지는 몰라요.',
+    mode: 'shape',
+    filterIdx: [0, 1, 2, 3],
+  },
+  {
+    name: '3층 — 피사체 실루엣이 보여요',
+    color: '#c57bff',
+    what: '실루엣 추출',
+    plain: '윤곽선 안쪽을 채워서 피사체의 실루엣(흰 덩어리)을 만들어요. 배경은 검게, 피사체는 밝게 드러나요. 아직 경계가 거칠어요.',
+    mode: 'silhouette',
+    filterIdx: null,
+  },
+  {
+    name: '4층 — 대략 추정해요',
+    color: '#ff9c57',
+    what: '확률 초안',
+    plain: '각 픽셀이 피사체일 가능성을 0~1로 처음 추정해요. 완벽하진 않지만 어디가 피사체고 어디가 배경인지 대략 보여요. U-Net이 다음 단계에서 이걸 정밀하게 다듬어요.',
+    mode: 'rough',
+    filterIdx: null,
+  },
+  {
+    name: '5층 — U-Net이 정밀화해요',
+    color: '#b8ff57',
+    what: 'U-Net 정밀 마스크',
+    plain: '인코더가 특징을 압축하고 디코더가 픽셀 단위로 복원해요. 머리카락처럼 세밀한 경계도 잡아내요. 이게 진짜 배경 제거의 근거예요.',
+    mode: 'semantic',
+    filterIdx: null,
+  },
+  {
+    name: '6층 — 확률로 출력해요',
+    color: '#ff6b6b',
+    what: '최종 확률맵 (0~1)',
+    plain: '최종적으로 각 픽셀에 "피사체일 확률" 숫자를 붙여요. 흰색(1.0) = 확실히 피사체, 검정(0.0) = 확실히 배경이에요.',
+    mode: 'prob',
+    filterIdx: null,
+  },
+];
+
+const NUKKI_STAGES = [
+  { label:'모델 초기화', key:'init' },
+  { label:'인코더 (특징 압축)', key:'enc' },
+  { label:'병목 (의미 추출)', key:'bot' },
+  { label:'디코더 (마스크 복원)', key:'dec' },
+  { label:'알파 마스크 생성', key:'mask' },
+  { label:'배경 제거 완료', key:'done' },
+];
+
+// ── STATE ──
+let srcImg = null, srcW = 0, srcH = 0, srcData = null;
+let origFile = null;
+let filterResults = [];
+let currentStep = 1;
+let selectedFilter = 0;
+let selectedLayer = 0;
+let nukkiBlobUrl = null;
+let nukkiDone = false;
+let nukkiRunning = false;
+let scanAnimId = null;
+let scanX = 0;
+let heatmapData = null;
+let maskData = null;       // U-Net 알파 마스크 Float32Array (0~1, 피사체=1)
+let maskThreshold = 0.5;   // 사용자 조절 임계값
+let maskReady = false;     // 마스크 준비 완료 여부
+let maskReadyCallbacks = []; // 마스크 완성 후 실행할 콜백 목록
+
+const mainCanvas = document.getElementById('mainCanvas');
+const overlayCanvas = document.getElementById('overlayCanvas');
+const mainCtx = mainCanvas.getContext('2d');
+const overlayCtx = overlayCanvas.getContext('2d');
+
+// ── UPLOAD ──
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('fileInput');
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) startLoad(f);
+});
+fi.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  // 메인 화면이 열려있으면 상태 초기화 후 재로드
+  if (document.getElementById('mainScreen').classList.contains('show')) {
+    if (scanAnimId) cancelAnimationFrame(scanAnimId);
+    currentStep = 1; selectedFilter = 0; selectedLayer = 0;
+    nukkiDone = false; nukkiRunning = false; filterResults = [];
+    maskData = null; maskReady = false; maskReadyCallbacks = []; maskThreshold = 0.5;
+    if (nukkiBlobUrl) { URL.revokeObjectURL(nukkiBlobUrl); nukkiBlobUrl = null; }
+    document.getElementById('dlStrip').classList.remove('show');
+  }
+  startLoad(file);
+  fi.value = '';
+});
+document.getElementById('resetBtn').addEventListener('click', doReset);
+document.getElementById('changeImgBtn').addEventListener('click', () => fi.click());
+document.getElementById('nextBtn').addEventListener('click', goNext);
+document.getElementById('prevBtn').addEventListener('click', goPrev);
+document.getElementById('dlBtn').addEventListener('click', () => {
+  if (!nukkiBlobUrl) return;
+  const a = document.createElement('a'); a.href = nukkiBlobUrl; a.download = 'nukki.png'; a.click();
+});
+document.getElementById('dlJpgBtn').addEventListener('click', () => {
+  if (!nukkiBlobUrl) return;
+  const img2 = new Image(); img2.src = nukkiBlobUrl;
+  img2.onload = () => {
+    const c = document.createElement('canvas'); c.width = srcW; c.height = srcH;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, srcW, srcH);
+    ctx.drawImage(img2, 0, 0, srcW, srcH);
+    c.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'nukki.jpg'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/jpeg', 0.92);
+  };
+});
+
+function doReset() {
+  if (scanAnimId) cancelAnimationFrame(scanAnimId);
+  currentStep = 1; selectedFilter = 0; selectedLayer = 0;
+  nukkiDone = false; nukkiRunning = false; filterResults = [];
+  maskData = null; maskReady = false; maskReadyCallbacks = []; maskThreshold = 0.5;
+  if (nukkiBlobUrl) { URL.revokeObjectURL(nukkiBlobUrl); nukkiBlobUrl = null; }
+  document.getElementById('dlStrip').classList.remove('show');
+  document.getElementById('mainScreen').classList.remove('show');
+  document.getElementById('uploadScreen').style.display = 'flex';
+  fi.value = '';
+}
+
+// ── WEB WORKER (인라인 blob) ──
+const _workerSrc = `
+self.onmessage = function(e) {
+  const { pixels, w, h, filters } = e.data;
+  const N = w * h;
+
+  // applyKernel (12개 필터)
+  const filterResults = filters.map(({ k, type }) => {
+    const src = pixels, out = new Uint8ClampedArray(N * 4);
+    let pos = 0, neg = 0;
+    k.forEach(v => v > 0 ? pos += v : neg -= v);
+    const div = Math.max(pos, neg, 1);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      let r = 0, g = 0, b = 0;
+      for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) {
+        const ny = Math.min(Math.max(y+ky,0),h-1), nx = Math.min(Math.max(x+kx,0),w-1);
+        const pi = (ny*w+nx)*4, kv = k[(ky+1)*3+(kx+1)];
+        r += src[pi]*kv; g += src[pi+1]*kv; b += src[pi+2]*kv;
+      }
+      const oi = (y*w+x)*4;
+      if (type === 'edge') {
+        out[oi]=Math.min(255,Math.abs(Math.round(r/div))*3);
+        out[oi+1]=Math.min(255,Math.abs(Math.round(g/div))*3);
+        out[oi+2]=Math.min(255,Math.abs(Math.round(b/div))*3);
+      } else if (type === 'emboss') {
+        out[oi]=Math.min(255,Math.max(0,Math.round(r/div+128)));
+        out[oi+1]=Math.min(255,Math.max(0,Math.round(g/div+128)));
+        out[oi+2]=Math.min(255,Math.max(0,Math.round(b/div+128)));
+      } else {
+        out[oi]=Math.min(255,Math.max(0,Math.round(r/div)));
+        out[oi+1]=Math.min(255,Math.max(0,Math.round(g/div)));
+        out[oi+2]=Math.min(255,Math.max(0,Math.round(b/div)));
+      }
+      out[oi+3] = 255;
+    }
+    return out;
+  });
+
+  // buildHeatmap
+  const edgeScore = new Float32Array(N);
+  for (let fi = 0; fi < 4; fi++) {
+    const d = filterResults[fi];
+    for (let i = 0; i < N; i++) edgeScore[i] += d[i*4] / 255;
+  }
+  const sm = new Float32Array(N), R = 5;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let s = 0, c = 0;
+    for (let ky = -R; ky <= R; ky++) for (let kx = -R; kx <= R; kx++) {
+      const ny = Math.min(Math.max(y+ky,0),h-1), nx = Math.min(Math.max(x+kx,0),w-1);
+      s += edgeScore[ny*w+nx]; c++;
+    }
+    sm[y*w+x] = s/c;
+  }
+  let mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < N; i++) { if(sm[i]<mn)mn=sm[i]; if(sm[i]>mx)mx=sm[i]; }
+  const range = mx - mn || 1;
+  const heatmap = new Float32Array(N);
+  for (let i = 0; i < N; i++) heatmap[i] = 1 - (sm[i]-mn)/range;
+
+  self.postMessage({ filterResults, heatmap }, filterResults.map(f => f.buffer).concat([heatmap.buffer]));
+};
+`;
+const _workerBlob = new Blob([_workerSrc], { type: 'application/javascript' });
+const _workerUrl  = URL.createObjectURL(_workerBlob);
+
+function startLoad(file) {
+  origFile = file;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    // compute dimensions
+    const aw = Math.max(window.innerWidth - 340, 400);
+    const ah = Math.max(window.innerHeight - 110, 300);
+    const scale = Math.min((aw * 0.82) / img.width, (ah * 0.82) / img.height, 1);
+    srcW = Math.round(img.width * scale);
+    srcH = Math.round(img.height * scale);
+
+    // build srcData
+    const off = document.createElement('canvas'); off.width = srcW; off.height = srcH;
+    const oc = off.getContext('2d'); oc.drawImage(img, 0, 0, srcW, srcH);
+    srcData = oc.getImageData(0, 0, srcW, srcH);
+    srcImg = img;
+
+    // setup canvases 먼저 (Worker 대기 중에도 화면 전환)
+    mainCanvas.width = srcW; mainCanvas.height = srcH;
+    overlayCanvas.width = aw; overlayCanvas.height = ah;
+    mainCanvas.style.width = srcW + 'px'; mainCanvas.style.height = srcH + 'px';
+    overlayCanvas.style.width = '100%'; overlayCanvas.style.height = '100%';
+    document.getElementById('uploadScreen').style.display = 'none';
+    document.getElementById('mainScreen').classList.add('show');
+
+    // Web Worker로 무거운 연산 오프로드
+    const worker = new Worker(_workerUrl);
+    const pixelsCopy = new Uint8ClampedArray(srcData.data); // transferable copy
+    worker.postMessage(
+      { pixels: pixelsCopy, w: srcW, h: srcH, filters: FILTERS.map(f => ({ k: f.k, type: f.type })) },
+      [pixelsCopy.buffer]
+    );
+    worker.onmessage = e => {
+      const { filterResults: fr, heatmap } = e.data;
+      filterResults = FILTERS.map((_, i) => ({ data: fr[i], w: srcW, h: srcH }));
+      heatmapData = heatmap;
+      worker.terminate();
+      showStep(1);
+      startBackgroundNukki();
+    };
+  };
+  img.src = url;
+}
+
+// 백그라운드 배경 제거 — UI 없이 조용히 실행
+async function startBackgroundNukki() {
+  if (nukkiRunning) return;
+  nukkiRunning = true;
+  try {
+    const blob = await removeBackground(origFile);
+    if (nukkiBlobUrl) URL.revokeObjectURL(nukkiBlobUrl);
+    nukkiBlobUrl = URL.createObjectURL(blob);
+
+    // 알파 마스크를 Float32Array로 추출 (0~1, 피사체=1)
+    const blobImg = new Image();
+    blobImg.src = nukkiBlobUrl;
+    await new Promise(r => { blobImg.onload = r; });
+
+    const mc = document.createElement('canvas');
+    mc.width = srcW; mc.height = srcH;
+    const mCtx = mc.getContext('2d');
+    mCtx.drawImage(blobImg, 0, 0, srcW, srcH);
+    const imgData = mCtx.getImageData(0, 0, srcW, srcH);
+
+    maskData = new Float32Array(srcW * srcH);
+    for (let i = 0; i < srcW * srcH; i++) {
+      maskData[i] = imgData.data[i * 4 + 3] / 255; // 알파 채널 = 피사체 확률
+    }
+    maskReady = true;
+    nukkiDone = true;
+
+    // 대기 중인 콜백 실행 (4단계가 이미 열려있으면 즉시 표시)
+    maskReadyCallbacks.forEach(cb => cb());
+    maskReadyCallbacks = [];
+
+    // 4단계 열려있으면 완료 UI 갱신
+    if (currentStep === 4) {
+      document.getElementById('nextBtn').disabled = false;
+      document.getElementById('dlStrip').classList.add('show');
+      showNukkiResult();
+    }
+  } catch(e) {
+    nukkiRunning = false;
+    console.warn('Background nukki failed:', e);
+  }
+}
+
+// ── CONVOLUTION ──
+function applyKernel(imgData, w, h, k, type) {
+  const src = imgData.data, out = new Uint8ClampedArray(w * h * 4);
+  let pos = 0, neg = 0;
+  k.forEach(v => v > 0 ? pos += v : neg -= v);
+  const div = Math.max(pos, neg, 1);
+
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let r = 0, g = 0, b = 0;
+    for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) {
+      const ny = Math.min(Math.max(y + ky, 0), h - 1);
+      const nx = Math.min(Math.max(x + kx, 0), w - 1);
+      const pi = (ny * w + nx) * 4, kv = k[(ky + 1) * 3 + (kx + 1)];
+      r += src[pi] * kv; g += src[pi + 1] * kv; b += src[pi + 2] * kv;
+    }
+    const oi = (y * w + x) * 4;
+
+    if (type === 'edge') {
+      // 엣지 필터: 절댓값 → 검정 배경에 밝은 선
+      const vr = Math.min(255, Math.abs(Math.round(r / div)) * 3);
+      const vg = Math.min(255, Math.abs(Math.round(g / div)) * 3);
+      const vb = Math.min(255, Math.abs(Math.round(b / div)) * 3);
+      out[oi] = vr; out[oi+1] = vg; out[oi+2] = vb;
+    } else if (type === 'emboss') {
+      // 릴리프: +128 오프셋 (양음 모두 표현)
+      out[oi]   = Math.min(255, Math.max(0, Math.round(r / div + 128)));
+      out[oi+1] = Math.min(255, Math.max(0, Math.round(g / div + 128)));
+      out[oi+2] = Math.min(255, Math.max(0, Math.round(b / div + 128)));
+    } else {
+      // smooth/기타: 정규화 후 원본 범위 유지
+      const nr = Math.min(255, Math.max(0, Math.round(r / div)));
+      const ng = Math.min(255, Math.max(0, Math.round(g / div)));
+      const nb = Math.min(255, Math.max(0, Math.round(b / div)));
+      out[oi] = nr; out[oi+1] = ng; out[oi+2] = nb;
+    }
+    out[oi + 3] = 255;
+  }
+  return { data: out, w, h };
+}
+
+// ── HEATMAP (pseudo confidence map) ──
+function buildHeatmap() {
+  // "foreground probability" — 엣지가 적은 내부 = 피사체 후보(1.0), 엣지가 많은 경계/배경 = 낮음(0.0)
+  const N = srcW * srcH;
+  const edgeScore = new Float32Array(N);
+
+  // 4가지 엣지 필터 응답 합산 (엣지 필터는 이미 절댓값 기반 0~255)
+  for (let fi = 0; fi < 4; fi++) {
+    const d = filterResults[fi].data;
+    for (let i = 0; i < N; i++) {
+      edgeScore[i] += d[i * 4] / 255;
+    }
+  }
+
+  // 넓은 범위로 스무딩 (반경 5픽셀)
+  const sm = new Float32Array(N);
+  const R = 5;
+  for (let y = 0; y < srcH; y++) for (let x = 0; x < srcW; x++) {
+    let s = 0, c = 0;
+    for (let ky = -R; ky <= R; ky++) for (let kx = -R; kx <= R; kx++) {
+      const ny = Math.min(Math.max(y + ky, 0), srcH - 1);
+      const nx = Math.min(Math.max(x + kx, 0), srcW - 1);
+      s += edgeScore[ny * srcW + nx]; c++;
+    }
+    sm[y * srcW + x] = s / c;
+  }
+
+  // 정규화
+  let mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < N; i++) { if (sm[i] < mn) mn = sm[i]; if (sm[i] > mx) mx = sm[i]; }
+  const range = mx - mn || 1;
+
+  // 반전: 엣지 적음(내부) → 1.0(피사체), 엣지 많음(경계) → 0.0(배경)
+  const out = new Float32Array(N);
+  for (let i = 0; i < N; i++) out[i] = 1 - (sm[i] - mn) / range;
+  return out;
+}
+
+function heatColor(t) {
+  // cool(blue) → purple → warm(orange) → yellow
+  const stops = [
+    [0.08, 0.20, 0.44],  // deep blue (background)
+    [0.48, 0.34, 0.80],  // purple
+    [1.00, 0.46, 0.28],  // coral (foreground)
+    [1.00, 0.90, 0.22],  // yellow (high confidence)
+  ];
+  const seg = t * (stops.length - 1);
+  const i = Math.min(Math.floor(seg), stops.length - 2);
+  const f = seg - i;
+  const a = stops[i], b = stops[i + 1];
+  return [
+    Math.round((a[0] + (b[0] - a[0]) * f) * 255),
+    Math.round((a[1] + (b[1] - a[1]) * f) * 255),
+    Math.round((a[2] + (b[2] - a[2]) * f) * 255),
+  ];
+}
+
+// ── DRAW HELPERS ──
+function drawSrc() {
+  const id = new ImageData(srcData.data, srcW, srcH);
+  mainCtx.putImageData(id, 0, 0);
+}
+
+function drawFilterResult(fi) {
+  const r = filterResults[fi];
+  mainCtx.putImageData(new ImageData(r.data, r.w, r.h), 0, 0);
+}
+
+function drawHeatmap(opacity = 1) {
+  // 원본을 어둡게 깔고 히트맵을 강하게 오버레이
+  mainCtx.clearRect(0, 0, srcW, srcH);
+  // 1) 원본 어둡게
+  drawSrc();
+  mainCtx.fillStyle = `rgba(0,0,0,${opacity * 0.45})`;
+  mainCtx.fillRect(0, 0, srcW, srcH);
+
+  // 2) 히트맵 강하게
+  const id = mainCtx.createImageData(srcW, srcH);
+  for (let i = 0; i < srcW * srcH; i++) {
+    const t = heatmapData[i];
+    const [r, g, b] = heatColor(t);
+    id.data[i * 4] = r; id.data[i * 4 + 1] = g; id.data[i * 4 + 2] = b;
+    id.data[i * 4 + 3] = Math.round(opacity * 230);
+  }
+  const tmp = document.createElement('canvas'); tmp.width = srcW; tmp.height = srcH;
+  const tc = tmp.getContext('2d'); tc.putImageData(id, 0, 0);
+  mainCtx.drawImage(tmp, 0, 0);
+}
+
+function drawSegmentation() {
+  // 실제 maskData 있으면 사용, 없으면 heatmapData 폴백
+  const src = maskReady ? maskData : heatmapData;
+  const THRESH = maskReady ? 0.5 : 0.45;
+  const fg = srcData.data;
+  const out = new Uint8ClampedArray(srcW * srcH * 4);
+  for (let i = 0; i < srcW * srcH; i++) {
+    const t = src[i];
+    const pi = i * 4;
+    if (t >= THRESH) {
+      // 피사체 — 원본 그대로 + 살짝 밝게
+      out[pi]   = Math.min(255, Math.round(fg[pi]   * 1.05));
+      out[pi+1] = Math.min(255, Math.round(fg[pi+1] * 1.05));
+      out[pi+2] = Math.min(255, Math.round(fg[pi+2] * 1.05));
+      out[pi+3] = 255;
+    } else {
+      // 배경 — 파란 단색, 경계 부드럽게
+      const edge = Math.min(t / THRESH, 1);
+      out[pi]   = Math.round(fg[pi]   * edge * 0.25 + 15);
+      out[pi+1] = Math.round(fg[pi+1] * edge * 0.25 + 35);
+      out[pi+2] = Math.round(fg[pi+2] * edge * 0.25 + 155);
+      out[pi+3] = 255;
+    }
+  }
+  mainCtx.putImageData(new ImageData(out, srcW, srcH), 0, 0);
+
+  // 레이블 + 마스크 출처 표시
+  mainCtx.font = 'bold 12px "Space Mono", monospace';
+  mainCtx.textBaseline = 'top';
+  mainCtx.fillStyle = 'rgba(255,220,80,0.95)';
+  mainCtx.fillText('피사체', 10, 10);
+  mainCtx.fillStyle = 'rgba(80,140,255,0.95)';
+  mainCtx.fillText('배경', srcW - 40, 10);
+  mainCtx.font = '9px "Space Mono"';
+  mainCtx.fillStyle = maskReady ? 'rgba(184,255,87,0.8)' : 'rgba(255,160,50,0.7)';
+  mainCtx.fillText(maskReady ? '✓ U-Net 마스크 기반' : '⏳ 근사치 (모델 준비 중)', 10, srcH - 14);
+}
+
+// ── SCAN ANIMATION (step 1) ──
+function startScanAnim() {
+  if (scanAnimId) cancelAnimationFrame(scanAnimId);
+  scanX = 0;
+  const KS = 3; // kernel size
+  const step = Math.max(1, Math.round(srcW / 80));
+  const fi_idx = selectedFilter;
+
+  function frame() {
+    // draw current filter result up to scanX
+    const result = filterResults[fi_idx];
+    mainCtx.clearRect(0, 0, srcW, srcH);
+
+    // left of scanX: filtered
+    if (scanX > 0) {
+      const tmp = document.createElement('canvas'); tmp.width = srcW; tmp.height = srcH;
+      const tc = tmp.getContext('2d');
+      tc.putImageData(new ImageData(result.data, result.w, result.h), 0, 0);
+      mainCtx.drawImage(tmp, 0, 0, scanX, srcH, 0, 0, scanX, srcH);
+    }
+    // right: original
+    const origTmp = document.createElement('canvas'); origTmp.width = srcW; origTmp.height = srcH;
+    const oc2 = origTmp.getContext('2d');
+    oc2.putImageData(new ImageData(srcData.data, srcW, srcH), 0, 0);
+    mainCtx.drawImage(origTmp, scanX, 0, srcW - scanX, srcH, scanX, 0, srcW - scanX, srcH);
+
+    // scan line
+    mainCtx.strokeStyle = FILTERS[fi_idx].color;
+    mainCtx.lineWidth = 2;
+    mainCtx.beginPath(); mainCtx.moveTo(scanX, 0); mainCtx.lineTo(scanX, srcH);
+    mainCtx.stroke();
+
+    // kernel box highlight
+    const ky = Math.round(srcH / 2) - 1;
+    if (scanX > 0 && scanX < srcW - KS) {
+      mainCtx.strokeStyle = 'rgba(255,255,255,0.8)';
+      mainCtx.lineWidth = 1.5;
+      mainCtx.strokeRect(scanX - KS, ky, KS * 2 + 1, KS * 2 + 1);
+    }
+
+    // overlay label
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    const caEl = document.getElementById('canvasArea');
+    const ox = (caEl.offsetWidth || aw) / 2 - srcW / 2;
+    const oy = (caEl.offsetHeight || ah) / 2 - srcH / 2;
+
+    overlayCtx.font = '10px "Space Mono", monospace';
+    overlayCtx.fillStyle = 'rgba(255,255,255,0.5)';
+    overlayCtx.fillText('원본', ox + srcW - 36, oy + srcH - 14);
+    overlayCtx.fillStyle = FILTERS[fi_idx].color;
+    overlayCtx.fillText(FILTERS[fi_idx].name, ox + 6, oy + srcH - 14);
+
+    scanX += step;
+    if (scanX < srcW) {
+      scanAnimId = requestAnimationFrame(frame);
+    } else {
+      drawFilterResult(fi_idx);
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    }
+  }
+  scanAnimId = requestAnimationFrame(frame);
+}
+
+// ── SHOW STEP ──
+function showStep(n) {
+  currentStep = n;
+  // 스텝 이동 시 미완료 콜백 초기화 (누수 방지)
+  if (!maskReady) maskReadyCallbacks = [];
+  updateStepBar();
+  updateNav();
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  if (scanAnimId) { cancelAnimationFrame(scanAnimId); scanAnimId = null; }
+
+  if (n === 1) showStep1();
+  else if (n === 2) showStep2();
+  else if (n === 3) showStep3();
+  else if (n === 4) showStep4();
+}
+
+function updateStepBar() {
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.toggle('active', s === currentStep);
+    el.classList.toggle('done', s < currentStep);
+  });
+}
+
+// 스텝 바 클릭 이동
+document.querySelectorAll('.step-item').forEach(el => {
+  el.addEventListener('click', () => showStep(parseInt(el.dataset.step)));
+});
+function updateNav() {
+  document.getElementById('prevBtn').disabled = currentStep <= 1;
+  const nb = document.getElementById('nextBtn');
+  if (currentStep === 4) {
+    nb.textContent = '완료';
+    nb.disabled = !nukkiDone;
+  } else {
+    nb.textContent = '다음 단계 →';
+    nb.disabled = false;
+  }
+}
+function goNext() { if (currentStep < 4) showStep(currentStep + 1); }
+function goPrev() { if (currentStep > 1) showStep(currentStep - 1); }
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('mainScreen').classList.contains('show')) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+  }
+});
+
+// ── STEP 1: 필터 수집 ──
+function showStep1() {
+  setPanelHeader('#57c8ff', 'STEP 1', '필터 수집', 'CNN의 각 필터가 이미지 위를 슬라이딩하며 단서를 수집해요. 필터를 선택하면 스캔 애니메이션이 시작됩니다.');
+  document.getElementById('ctrlInfo').textContent = `${FILTERS.length}개 필터 (${FILTERS.filter(f=>f.learned).length}개 CNN학습)`;
+
+  const body = document.getElementById('panelBody');
+  body.innerHTML = '';
+
+  // ── 교육 설명 블록 ──
+  const eduNote = document.createElement('div');
+  eduNote.className = 'panel-note';
+  eduNote.style.cssText = '--note-accent:#57c8ff;margin-bottom:12px;';
+  eduNote.innerHTML = `
+    <span style="color:#57c8ff;font-family:var(--mono);font-size:9px;display:block;margin-bottom:6px;">// 필터(커널)란 무엇인가?</span>
+    <p style="margin-bottom:8px;line-height:1.8;">필터는 <strong style="color:var(--text)">3×3 숫자 격자</strong>예요. 이 격자가 이미지 위를 한 칸씩 이동하면서(슬라이딩 윈도우), 해당 위치의 픽셀 9개와 곱해 하나의 숫자로 합산해요. 이 과정을 <strong style="color:var(--text)">합성곱(Convolution)</strong>이라 해요.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;font-size:11px;line-height:1.7;">
+      <div style="background:rgba(87,200,255,0.07);border:1px solid rgba(87,200,255,0.18);border-radius:6px;padding:7px 9px;">
+        <span style="color:#57c8ff;font-family:var(--mono);font-size:9px;">엣지 필터</span><br>
+        중앙값이 크고 주변이 음수 → 밝기 변화가 큰 <strong style="color:var(--text)">경계선</strong>을 강조해요.
+      </div>
+      <div style="background:rgba(184,255,87,0.07);border:1px solid rgba(184,255,87,0.18);border-radius:6px;padding:7px 9px;">
+        <span style="color:#b8ff57;font-family:var(--mono);font-size:9px;">블러·샤프닝</span><br>
+        이웃 픽셀을 고르게 섞거나 차이를 증폭해 <strong style="color:var(--text)">노이즈 제거·선명화</strong>를 해요.
+      </div>
+    </div>
+    <p style="line-height:1.8;color:var(--muted);font-size:12px;">배경 제거에선 엣지 필터가 피사체 윤곽을 찾는 핵심 단서가 됩니다. 아래에서 필터를 골라 실제 이미지에 어떻게 적용되는지 확인해보세요.</p>
+  `;
+  body.appendChild(eduNote);
+
+  const lbl = document.createElement('div'); lbl.className = 'sec-lbl'; lbl.textContent = '// 필터 선택 → 스캔 애니메이션';
+  body.appendChild(lbl);
+
+  const grid = document.createElement('div'); grid.className = 'filter-grid';
+  FILTERS.forEach((f, i) => {
+    const item = document.createElement('div'); item.className = 'filter-item' + (i === selectedFilter ? ' sel' : '');
+    const cnv = document.createElement('canvas');
+    const th = Math.round(80 * srcH / srcW);
+    cnv.width = 80; cnv.height = th;
+    const ctx = cnv.getContext('2d');
+    const off = document.createElement('canvas'); off.width = srcW; off.height = srcH;
+    const oc = off.getContext('2d');
+    oc.putImageData(new ImageData(filterResults[i].data, srcW, srcH), 0, 0);
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, 80, th);
+    const lbl2 = document.createElement('div'); lbl2.className = 'filter-item-lbl'; lbl2.style.color = f.color;
+    if (f.learned) {
+      lbl2.innerHTML = f.name + ' <span style="font-size:6px;background:#ff79c622;color:#ff79c6;border:1px solid #ff79c644;border-radius:3px;padding:1px 3px;vertical-align:middle;">CNN</span>';
+    } else { lbl2.textContent = f.name; }
+    const inner = document.createElement('div'); inner.className = 'filter-item-inner';
+    inner.appendChild(cnv); inner.appendChild(lbl2);
+    item.appendChild(inner);
+    item.addEventListener('click', () => {
+      selectedFilter = i;
+      document.querySelectorAll('.filter-item').forEach((el, idx) => el.classList.toggle('sel', idx === i));
+      // 커널 행렬 업데이트
+      const existing = document.getElementById('kernelGrid');
+      if (existing) {
+        const fresh = buildKernelEl(FILTERS[i].k, FILTERS[i].color);
+        fresh.id = 'kernelGrid';
+        existing.replaceWith(fresh);
+      }
+      startScanAnim();
+    });
+    grid.appendChild(item);
+  });
+  body.appendChild(grid);
+
+  // kernel display
+  const kLbl = document.createElement('div'); kLbl.className = 'sec-lbl'; kLbl.style.marginTop = '10px'; kLbl.textContent = '// 현재 필터의 3×3 행렬';
+  body.appendChild(kLbl);
+  const kGrid = buildKernelEl(FILTERS[selectedFilter].k, FILTERS[selectedFilter].color);
+  kGrid.id = 'kernelGrid';
+  body.appendChild(kGrid);
+
+  // 학습 필터 설명
+  const learnNote = document.createElement('div');
+  learnNote.className = 'panel-note'; learnNote.style.cssText = '--note-accent:#ff79c6;margin-top:12px;';
+  learnNote.innerHTML = '<span style="color:#ff79c6;font-family:var(--mono);font-size:9px;display:block;margin-bottom:4px;">// 분홍색 = CNN이 스스로 만든 필터</span>사람이 설계한 게 아니에요. CNN이 수천 장의 이미지를 보며 <strong style="color:var(--text)">역전파</strong>로 스스로 찾아낸 숫자예요. 결과가 이상해 보여도, 이런 필터들이 쌓여서 배경 제거를 만들어내요.';
+  body.appendChild(learnNote);
+
+  drawFilterResult(selectedFilter);
+  startScanAnim();
+}
+
+function buildKernelEl(k, color) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:4px;';
+  const maxA = Math.max(...k.map(Math.abs), 1);
+  k.forEach((v, idx) => {
+    const cell = document.createElement('div');
+    const intensity = 0.45 + 0.55 * (Math.abs(v) / maxA); // 최소 45% 밝기 보장
+    cell.style.cssText = `height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:700;border:1px solid;transition:all .2s;`;
+    if (v > 0) {
+      // 양수: 필터 고유색 배경 + 밝은 텍스트
+      cell.style.background = color + Math.round(intensity * 40).toString(16).padStart(2,'0');
+      cell.style.borderColor = color + '88';
+      cell.style.color = color;
+      cell.style.textShadow = `0 0 8px ${color}99`;
+    } else if (v < 0) {
+      // 음수: 빨간 계열 배경 + 밝은 빨간 텍스트
+      cell.style.background = '#ff4f3b' + Math.round(intensity * 38).toString(16).padStart(2,'0');
+      cell.style.borderColor = '#ff4f3b88';
+      cell.style.color = '#ff8070';
+      cell.style.textShadow = '0 0 8px #ff4f3b99';
+    } else {
+      // 0: 어두운 회색 배경 + 뚜렷한 회색 텍스트
+      cell.style.background = '#2a2a2a';
+      cell.style.borderColor = '#3a3a3a';
+      cell.style.color = '#555';
+    }
+    if (idx === 4) {
+      // 중심값 강조
+      cell.style.outline = '2px solid rgba(255,255,255,0.3)';
+      cell.style.outlineOffset = '1px';
+    }
+    cell.textContent = v;
+    wrap.appendChild(cell);
+  });
+  return wrap;
+}
+
+// ── STEP 2: 레이어 판단 ──
+let step2Mode = 'slider';
+
+function showStep2() {
+  setPanelHeader('#c57bff', 'STEP 2', '레이어 판단', '필터가 수집한 단서들이 레이어를 거치며 점점 쌓여요. 두 가지 방식으로 살펴볼 수 있어요.');
+  document.getElementById('ctrlInfo').textContent = '6개 레이어';
+  selectedLayer = 0;
+  renderStep2Panel();
+}
+
+function renderStep2Panel() {
+  const body = document.getElementById('panelBody');
+  body.innerHTML = '';
+
+  // 모드 토글
+  const modeWrap = document.createElement('div');
+  modeWrap.className = 'ptoggle-wrap'; modeWrap.style.marginBottom = '14px';
+  const btnSlider = document.createElement('button');
+  btnSlider.textContent = '깊이 슬라이더'; btnSlider.className = 'ptoggle';
+  btnSlider.style.setProperty('--ptc', '#c57bff');
+  const btnMap = document.createElement('button');
+  btnMap.textContent = '활성화 맵'; btnMap.className = 'ptoggle';
+  btnMap.style.setProperty('--ptc', '#c57bff');
+
+  function applyToggleStyle() {
+    btnSlider.classList.toggle('on', step2Mode === 'slider');
+    btnMap.classList.toggle('on', step2Mode === 'activationmap');
+  }
+  btnSlider.onclick = () => { step2Mode='slider'; renderStep2Panel(); };
+  btnMap.onclick    = () => { step2Mode='activationmap'; renderStep2Panel(); };
+  modeWrap.appendChild(btnSlider); modeWrap.appendChild(btnMap);
+  body.appendChild(modeWrap);
+  applyToggleStyle();
+
+  if (step2Mode === 'slider') renderSliderMode(body);
+  else renderActivationMapMode(body);
+}
+
+function renderSliderMode(body) {
+  const note = document.createElement('div');
+  note.className = 'panel-note'; note.style.cssText = '--note-accent:#c57bff;margin-bottom:14px;';
+  note.innerHTML = '슬라이더를 드래그하면 레이어가 깊어질수록 이미지가 어떻게 변하는지 볼 수 있어요. 실제로 모든 레이어는 <strong style="color:var(--text)">한 번에 동시에</strong> 통과해요.';
+  body.appendChild(note);
+
+  const slWrap = document.createElement('div');
+  slWrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;';
+  const slL = document.createElement('div'); slL.className='sec-lbl'; slL.style.margin='0'; slL.textContent='1층';
+  const slider = document.createElement('input'); slider.type='range'; slider.min=0; slider.max=5; slider.value=0; slider.step=1; slider.style.flex='1';
+  const slV = document.createElement('div'); slV.style.cssText='font-family:var(--mono);font-size:11px;font-weight:700;color:#c57bff;white-space:nowrap;min-width:28px;'; slV.textContent='1층';
+  slWrap.appendChild(slL); slWrap.appendChild(slider); slWrap.appendChild(slV);
+  body.appendChild(slWrap);
+
+  const descCard = document.createElement('div'); descCard.id='slDesc';
+  descCard.className='panel-note'; descCard.style.cssText='--note-accent:#c57bff;margin-bottom:12px;min-height:60px;';
+  body.appendChild(descCard);
+
+  const trackWrap = document.createElement('div'); trackWrap.style.cssText='display:flex;flex-direction:column;gap:3px;';
+  LAYERS.forEach((l,i) => {
+    const row=document.createElement('div'); row.id='sltr-'+i;
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;border-left:2px solid transparent;transition:all .2s;';
+    const dot=document.createElement('div'); dot.id='sldt-'+i;
+    dot.style.cssText=`width:8px;height:8px;border-radius:50%;background:${l.color};opacity:0.25;flex-shrink:0;transition:all .2s;`;
+    const nm=document.createElement('div'); nm.id='slnm-'+i;
+    nm.style.cssText='font-family:var(--mono);font-size:9px;color:var(--text-faint);transition:color .2s;';
+    nm.textContent=(i+1)+'층 — '+l.what;
+    row.appendChild(dot); row.appendChild(nm);
+    trackWrap.appendChild(row);
+  });
+  body.appendChild(trackWrap);
+
+  function updateSlider(val) {
+    selectedLayer=val;
+    slV.textContent=(val+1)+'층';
+    const l=LAYERS[val];
+    descCard.style.borderLeftColor=l.color;
+    descCard.innerHTML=`<div style="font-family:var(--mono);font-size:9px;color:${l.color};margin-bottom:4px;">${l.name}</div><div style="font-size:11px;color:var(--muted);line-height:1.7;">${l.plain}</div>`;
+    LAYERS.forEach((_,i)=>{
+      const dot=document.getElementById('sldt-'+i);
+      const nm=document.getElementById('slnm-'+i);
+      const row=document.getElementById('sltr-'+i);
+      if(!dot)return;
+      if(i<=val){dot.style.opacity='1';dot.style.transform='scale(1.3)';nm.style.color='var(--text)';row.style.background=i===val?LAYERS[i].color+'18':'transparent';row.style.borderLeftColor=i===val?LAYERS[i].color:'transparent';}
+      else{dot.style.opacity='0.2';dot.style.transform='scale(1)';nm.style.color='var(--text-faint)';row.style.background='transparent';row.style.borderLeftColor='transparent';}
+    });
+    showLayerActivation(val);
+  }
+  slider.oninput=()=>updateSlider(parseInt(slider.value));
+  updateSlider(0);
+}
+
+function renderActivationMapMode(body) {
+  const note = document.createElement('div');
+  note.style.cssText='font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:12px;';
+  note.innerHTML='실제 CNN은 한 레이어에서 수십~수백 개의 채널이 <strong style="color:var(--text)">동시에</strong> 활성화돼요. 각 채널마다 다른 특징을 담당해요.';
+  body.appendChild(note);
+
+  const tabWrap=document.createElement('div'); tabWrap.id='actTabs'; tabWrap.style.cssText='display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;';
+  LAYERS.forEach((l,i)=>{
+    const tab=document.createElement('button'); tab.id='acttab-'+i;
+    tab.style.cssText=`font-family:var(--mono);font-size:8px;padding:4px 9px;border-radius:5px;border:1px solid ${i===0?l.color:'var(--border)'};cursor:pointer;background:${i===0?l.color+'22':'transparent'};color:${i===0?l.color:'var(--muted)'};`;
+    tab.textContent=(i+1)+'층';
+    tab.onclick=()=>{
+      selectedLayer=i;
+      document.querySelectorAll('#actTabs button').forEach((b,bi)=>{
+        b.style.background=bi===i?LAYERS[bi].color+'22':'transparent';
+        b.style.borderColor=bi===i?LAYERS[bi].color:'var(--border)';
+        b.style.color=bi===i?LAYERS[bi].color:'var(--muted)';
+      });
+      showLayerActivation(i);
+      renderActGrid(i);
+    };
+    tabWrap.appendChild(tab);
+  });
+  body.appendChild(tabWrap);
+
+  const gridEl=document.createElement('div'); gridEl.id='actGrid';
+  gridEl.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:5px;';
+  body.appendChild(gridEl);
+
+  const actDesc=document.createElement('div'); actDesc.id='actDesc';
+  actDesc.style.cssText='font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:8px;line-height:1.7;';
+  body.appendChild(actDesc);
+
+  renderActGrid(0);
+  showLayerActivation(0);
+}
+
+function renderActGrid(layerIdx) {
+  const grid=document.getElementById('actGrid');
+  const desc=document.getElementById('actDesc');
+  if(!grid)return;
+  grid.innerHTML='';
+  const l=LAYERS[layerIdx];
+  const channels=generateChannels(layerIdx);
+  channels.forEach((ch,ci)=>{
+    const wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:2px;';
+    const cnv=document.createElement('canvas');
+    const th=Math.round(52*srcH/srcW);
+    cnv.width=52;cnv.height=th;
+    cnv.style.cssText=`width:52px;height:${th}px;border-radius:4px;border:1px solid ${ci===0?l.color:'var(--border)'};image-rendering:pixelated;display:block;`;
+    const ctx2=cnv.getContext('2d');
+    const off=document.createElement('canvas');off.width=srcW;off.height=srcH;
+    off.getContext('2d').putImageData(new ImageData(ch.data,srcW,srcH),0,0);
+    ctx2.imageSmoothingEnabled=true;ctx2.drawImage(off,0,0,52,th);
+    const clbl=document.createElement('div');
+    clbl.style.cssText=`font-family:var(--mono);font-size:7px;color:${ci===0?l.color:'var(--text-faint)'};`;
+    clbl.textContent='ch.'+(ci+1);
+    wrap.appendChild(cnv);wrap.appendChild(clbl);
+    grid.appendChild(wrap);
+  });
+  if(desc) desc.textContent=`${l.name}: ${channels.length}개 채널이 동시 활성화. 각 채널이 서로 다른 패턴을 감지해요.`;
+}
+
+function generateChannels(layerIdx) {
+  const combos=[
+    [[0],[1],[2],[3],[5],[7],[0,1],[0,2],[1,2],[2,3],[0,1,2],[0,3],[1,3],[2,7],[0,1,2,3],[5,7]],
+    [[0,1],[2,3],[0,2],[1,3],[0,1,2],[2,3,5],[0,5],[1,7],[0,1,3],[2,5,7],[0,2,5],[1,3,7],[0,1,2,3],[2,3,5,7],[0,1,5,7],[0,2,3,5]],
+    [[0,1,2],[1,2,3],[0,2,5],[1,3,7],[0,1,2,3],[2,3,5,7],[0,1,5],[2,3,7],[0,2,3,5],[1,2,5,7],[0,1,2,5],[1,2,3,7],[0,2,5,7],[1,3,5,7],[0,1,3,5],[2,3,5,6]],
+    [[0,1,2,3],[1,2,3,5],[0,2,3,7],[1,3,5,7],[0,1,2,5],[2,3,5,6],[0,1,3,7],[1,2,5,7],[0,2,3,5],[1,3,5,6],[0,1,2,7],[2,3,6,7],[0,1,5,7],[1,2,3,6],[0,3,5,7],[0,1,2,3,5]],
+    [[0,1,2,3,5],[1,2,3,5,7],[0,2,3,5,7],[0,1,3,5,7],[0,1,2,5,7],[1,2,3,6,7],[0,2,3,5,6],[0,1,3,6,7],[0,1,2,3,6],[2,3,5,6,7],[0,1,2,6,7],[1,3,5,6,7],[0,2,5,6,7],[0,1,3,5,6],[1,2,3,5,6],[0,1,2,3,5,7]],
+    [[0],[1],[0,1],[2],[0,1,2],[0,1,2,3],[0,1,2,3,5],[0,1,2,3,5,7],[0,1,2,5],[0,2,3],[1,3,5],[0,1,3,7],[0,2,5,7],[1,2,3,5],[0,1,2,7],[0,3,5,7]],
+  ];
+  const idx=Math.min(layerIdx,combos.length-1);
+  const useColor=layerIdx>=3;
+  return combos[idx].map(fiList=>{
+    const out=new Uint8ClampedArray(srcW*srcH*4);
+    fiList.forEach(fi=>{
+      if(fi>=filterResults.length)return;
+      const d=filterResults[fi].data;
+      for(let i=0;i<srcW*srcH;i++){
+        out[i*4]=Math.min(255,out[i*4]+d[i*4]/fiList.length);
+        out[i*4+1]=Math.min(255,out[i*4+1]+d[i*4+1]/fiList.length);
+        out[i*4+2]=Math.min(255,out[i*4+2]+d[i*4+2]/fiList.length);
+        out[i*4+3]=255;
+      }
+    });
+    if(useColor&&maskReady){
+      for(let i=0;i<srcW*srcH;i++){
+        const t=maskData[i];const pi=i*4;
+        out[pi]=Math.round(out[pi]*0.55+t*110);
+        out[pi+1]=Math.round(out[pi+1]*0.55+t*55);
+        out[pi+2]=Math.round(out[pi+2]*0.55+t*170);
+      }
+    }
+    return {data:out};
+  });
+}
+
+function showLayerActivation(layerIdx) {
+  const l = LAYERS[layerIdx];
+  mainCtx.clearRect(0, 0, srcW, srcH);
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+  if (l.mode === 'edge') {
+    // 흑백 엣지맵 — 선만 보인다
+    // 엣지 필터 결과는 이미 절댓값 기반 — 수평+수직 합산
+    const out = new Uint8ClampedArray(srcW * srcH * 4);
+    const d0 = filterResults[0].data, d1 = filterResults[1].data;
+    for (let i = 0; i < srcW * srcH; i++) {
+      const mag = Math.min(255, d0[i*4] + d1[i*4]);
+      out[i*4] = mag; out[i*4+1] = mag; out[i*4+2] = mag; out[i*4+3] = 255;
+    }
+    mainCtx.putImageData(new ImageData(out, srcW, srcH), 0, 0);
+
+  } else if (l.mode === 'shape') {
+    // 엣지들을 합산 → 원본 위에 윤곽 오버레이
+    drawSrc();
+    const out = new Uint8ClampedArray(srcW * srcH * 4);
+    l.filterIdx.forEach(fi => {
+      const d = filterResults[fi].data;
+      for (let i = 0; i < srcW * srcH; i++) {
+        out[i*4] = Math.min(255, out[i*4] + Math.abs(d[i*4]-128));
+        out[i*4+1] = 0; out[i*4+2] = 0; out[i*4+3] = 180;
+      }
+    });
+    // tint blue for edges on top of original
+    const edgeOut = new Uint8ClampedArray(srcW * srcH * 4);
+    l.filterIdx.forEach(fi => {
+      const d = filterResults[fi].data;
+      for (let i = 0; i < srcW * srcH; i++) {
+        const mag = d[i*4]; // 이미 절댓값 기반
+        edgeOut[i*4] = 0;
+        edgeOut[i*4+1] = Math.min(255, edgeOut[i*4+1] + mag * 0.6);
+        edgeOut[i*4+2] = Math.min(255, edgeOut[i*4+2] + mag * 1.0);
+        edgeOut[i*4+3] = Math.min(240, mag * 2.5);
+      }
+    });
+    const tmp = document.createElement('canvas'); tmp.width = srcW; tmp.height = srcH;
+    tmp.getContext('2d').putImageData(new ImageData(edgeOut, srcW, srcH), 0, 0);
+    mainCtx.drawImage(tmp, 0, 0);
+
+  } else if (l.mode === 'silhouette') {
+    // 3층: U-Net 마스크를 이진화 → 거친 실루엣
+    // "덩어리는 보이지만 경계가 아직 거칠다"는 느낌
+    function drawSilhouette() {
+      if (!maskReady) {
+        drawSrc();
+        mainCtx.fillStyle = 'rgba(0,0,0,0.65)';
+        mainCtx.fillRect(0,0,srcW,srcH);
+        mainCtx.font = 'bold 10px "Space Mono"';
+        mainCtx.fillStyle = 'rgba(197,123,255,0.8)';
+        mainCtx.textAlign = 'center';
+        mainCtx.fillText('U-Net 모델 실행 중...', srcW/2, srcH/2);
+        mainCtx.textAlign = 'start';
+        return;
+      }
+      // 마스크를 1/6 해상도로 다운샘플 후 다시 업샘플 → 블록 픽셀화로 "거친" 느낌
+      const dw = Math.round(srcW/6), dh = Math.round(srcH/6);
+      const low = new Float32Array(dw*dh);
+      for (let y=0;y<dh;y++) for (let x=0;x<dw;x++) {
+        let s=0,c=0;
+        for (let ky=0;ky<6;ky++) for (let kx=0;kx<6;kx++) {
+          const sy=Math.min(y*6+ky,srcH-1), sx=Math.min(x*6+kx,srcW-1);
+          s+=maskData[sy*srcW+sx]; c++;
+        }
+        low[y*dw+x]=s/c;
+      }
+      // 업샘플 (nearest neighbor → 블록)
+      const fg = srcData.data;
+      const out = new Uint8ClampedArray(srcW*srcH*4);
+      for (let y=0;y<srcH;y++) for (let x=0;x<srcW;x++) {
+        const lx=Math.min(Math.round(x/6),dw-1), ly=Math.min(Math.round(y/6),dh-1);
+        const t = low[ly*dw+lx];
+        const pi = (y*srcW+x)*4;
+        const isFg = t > 0.5;
+        if (isFg) {
+          // 피사체 — 원본 + 보라 틴트
+          out[pi]   = Math.min(255, Math.round(fg[pi]*0.7   + 100));
+          out[pi+1] = Math.min(255, Math.round(fg[pi+1]*0.7 + 30));
+          out[pi+2] = Math.min(255, Math.round(fg[pi+2]*0.7 + 180));
+        } else {
+          // 배경 — 어둡게
+          out[pi]=15; out[pi+1]=10; out[pi+2]=25;
+        }
+        out[pi+3]=255;
+      }
+      mainCtx.putImageData(new ImageData(out, srcW, srcH), 0, 0);
+      mainCtx.font = 'bold 10px "Space Mono"';
+      mainCtx.fillStyle = 'rgba(197,123,255,0.95)';
+      mainCtx.fillText('피사체 실루엣 (저해상도)', 8, 16);
+      mainCtx.fillStyle = 'rgba(180,140,255,0.7)';
+      mainCtx.fillText('경계가 블록처럼 거칠어요 → 4층에서 정밀화', 8, srcH-8);
+    }
+    drawSilhouette();
+    if (!maskReady && selectedLayer === 2) {
+      maskReadyCallbacks.push(() => { if(selectedLayer===2) drawSilhouette(); });
+    }
+
+  } else if (l.mode === 'rough') {
+    // 4층: U-Net 마스크를 중간 해상도로 → "정밀화 중간 단계" 느낌
+    // 3층보다 해상도가 높고 5층보다 낮은 중간 단계를 표현
+    function drawRough() {
+      if (!maskReady) {
+        drawSrc();
+        mainCtx.fillStyle = 'rgba(0,0,0,0.65)';
+        mainCtx.fillRect(0,0,srcW,srcH);
+        mainCtx.font = 'bold 10px "Space Mono"';
+        mainCtx.fillStyle = 'rgba(255,156,87,0.8)';
+        mainCtx.textAlign = 'center';
+        mainCtx.fillText('U-Net 모델 실행 중...', srcW/2, srcH/2);
+        mainCtx.textAlign = 'start';
+        return;
+      }
+      // 1/3 해상도 다운샘플 후 업샘플 (3층보다 좋지만 5층보다 거침)
+      const dw = Math.round(srcW/3), dh = Math.round(srcH/3);
+      const low = new Float32Array(dw*dh);
+      for (let y=0;y<dh;y++) for (let x=0;x<dw;x++) {
+        let s=0,c=0;
+        for (let ky=0;ky<3;ky++) for (let kx=0;kx<3;kx++) {
+          const sy=Math.min(y*3+ky,srcH-1), sx=Math.min(x*3+kx,srcW-1);
+          s+=maskData[sy*srcW+sx]; c++;
+        }
+        low[y*dw+x]=s/c;
+      }
+      // bilinear 업샘플
+      const upsampled = new Float32Array(srcW*srcH);
+      for (let y=0;y<srcH;y++) for (let x=0;x<srcW;x++) {
+        const fx=x/3, fy=y/3;
+        const x0=Math.floor(fx), y0=Math.floor(fy);
+        const x1=Math.min(x0+1,dw-1), y1=Math.min(y0+1,dh-1);
+        const tx=fx-x0, ty=fy-y0;
+        upsampled[y*srcW+x] =
+          low[y0*dw+x0]*(1-tx)*(1-ty) +
+          low[y0*dw+x1]*tx*(1-ty) +
+          low[y1*dw+x0]*(1-tx)*ty +
+          low[y1*dw+x1]*tx*ty;
+      }
+      // heatColor로 확률 시각화 (원본과 살짝 혼합)
+      const fg = srcData.data;
+      const out = new Uint8ClampedArray(srcW*srcH*4);
+      for (let i=0;i<srcW*srcH;i++) {
+        const t = upsampled[i];
+        const [cr,cg,cb] = heatColor(t);
+        const pi=i*4;
+        out[pi]   = Math.round(cr*0.7 + fg[pi]*0.3);
+        out[pi+1] = Math.round(cg*0.7 + fg[pi+1]*0.3);
+        out[pi+2] = Math.round(cb*0.7 + fg[pi+2]*0.3);
+        out[pi+3] = 255;
+      }
+      mainCtx.putImageData(new ImageData(out, srcW, srcH), 0, 0);
+      mainCtx.font = 'bold 10px "Space Mono"';
+      mainCtx.fillStyle = 'rgba(255,156,87,0.95)';
+      mainCtx.fillText('확률 추정 (중간 해상도)', 8, 16);
+      mainCtx.fillStyle = 'rgba(255,200,80,0.7)';
+      mainCtx.fillText('3층보다 선명 → 5층에서 완성', 8, srcH-8);
+    }
+    drawRough();
+    if (!maskReady && selectedLayer === 3) {
+      maskReadyCallbacks.push(() => { if(selectedLayer===3) drawRough(); });
+    }
+
+  } else if (l.mode === 'semantic') {
+    // 4층: 실제 U-Net 마스크 기반 히트맵 (준비되면 표시, 아직이면 로딩 표시)
+    function drawSemanticLayer() {
+      const src = maskReady ? maskData : heatmapData;
+      drawSrc();
+      const hmOut = new Uint8ClampedArray(srcW * srcH * 4);
+      for (let i = 0; i < srcW * srcH; i++) {
+        const t = src[i];
+        const [r, g, b] = heatColor(t);
+        hmOut[i*4] = r; hmOut[i*4+1] = g; hmOut[i*4+2] = b;
+        hmOut[i*4+3] = 210;
+      }
+      const tmp3 = document.createElement('canvas'); tmp3.width = srcW; tmp3.height = srcH;
+      tmp3.getContext('2d').putImageData(new ImageData(hmOut, srcW, srcH), 0, 0);
+      mainCtx.drawImage(tmp3, 0, 0);
+
+      // 상태 표시
+      mainCtx.font = 'bold 10px "Space Mono"';
+      mainCtx.fillStyle = maskReady ? 'rgba(184,255,87,0.9)' : 'rgba(255,160,50,0.9)';
+      mainCtx.fillText(maskReady ? '✓ U-Net 마스크' : '⏳ 모델 실행 중...', 8, 16);
+    }
+    drawSemanticLayer();
+    // 아직 준비 안 됐으면 완성되면 다시 그리기
+    if (!maskReady && selectedLayer === 4) {
+      maskReadyCallbacks.push(() => { if (selectedLayer === 3) drawSemanticLayer(); });
+    }
+
+  } else if (l.mode === 'prob') {
+    // 5층: 실제 마스크를 그레이스케일 확률맵으로
+    function drawProbLayer() {
+      const src = maskReady ? maskData : heatmapData;
+      const probOut = new Uint8ClampedArray(srcW * srcH * 4);
+      for (let i = 0; i < srcW * srcH; i++) {
+        const v = Math.round(src[i] * 255);
+        probOut[i*4] = v; probOut[i*4+1] = v; probOut[i*4+2] = v; probOut[i*4+3] = 255;
+      }
+      mainCtx.putImageData(new ImageData(probOut, srcW, srcH), 0, 0);
+      mainCtx.font = 'bold 10px "Space Mono"';
+      mainCtx.fillStyle = 'rgba(255,255,255,0.9)';
+      mainCtx.fillText('1.0 = 피사체', 8, 16);
+      mainCtx.fillStyle = 'rgba(120,120,120,0.9)';
+      mainCtx.fillText('0.0 = 배경', srcW - 72, 16);
+      mainCtx.fillStyle = maskReady ? 'rgba(184,255,87,0.85)' : 'rgba(255,160,50,0.85)';
+      mainCtx.fillText(maskReady ? '✓ U-Net 알파 채널' : '⏳ 모델 실행 중...', 8, srcH - 8);
+    }
+    drawProbLayer();
+    if (!maskReady && selectedLayer === 5) {
+      maskReadyCallbacks.push(() => { if (selectedLayer === 5) drawProbLayer(); });
+    }
+  }
+
+  // overlay label
+  const caEl2 = document.getElementById('canvasArea');
+  const ox = Math.max((caEl2.offsetWidth - srcW) / 2, 0);
+  const oy = Math.max((caEl2.offsetHeight - srcH) / 2, 0);
+  overlayCtx.font = 'bold 10px "Space Mono", monospace';
+  overlayCtx.fillStyle = l.color;
+  overlayCtx.fillText('[ ' + l.what + ' ]', ox + 6, oy + srcH - 10);
+}
+
+// ── STEP 3: 피사체 / 배경 ──
+let step3View = 'heatmap'; // 'heatmap' | 'split'
+
+function showStep3() {
+  step3View = 'heatmap';
+  setPanelHeader('#ff7c57', 'STEP 3', '피사체 / 배경', 'U-Net이 각 픽셀에 "피사체일 확률"을 0~1로 계산해요. 히트맵으로 확인하고 실제 분리 결과도 볼 수 있어요.');
+  document.getElementById('ctrlInfo').textContent = '픽셀별 확률 맵';
+  renderStep3Panel();
+
+  if (maskReady) {
+    drawStep3(step3View);
+  } else {
+    drawStep3Loading();
+    maskReadyCallbacks.push(() => { if (currentStep === 3) drawStep3(step3View); });
+  }
+}
+
+function renderStep3Panel() {
+  const body = document.getElementById('panelBody');
+  body.innerHTML = '';
+
+  // 뷰 토글 버튼
+  const toggleWrap = document.createElement('div');
+  toggleWrap.className = 'ptoggle-wrap'; toggleWrap.style.marginBottom = '14px';
+  const btnHeat = document.createElement('button');
+  btnHeat.textContent = '확률 히트맵'; btnHeat.className = 'ptoggle';
+  btnHeat.style.setProperty('--ptc', '#ff7c57');
+  const btnSplit = document.createElement('button');
+  btnSplit.textContent = '피사체 / 배경 분리'; btnSplit.className = 'ptoggle';
+  btnSplit.style.setProperty('--ptc', '#ff7c57');
+
+  function updateToggle() {
+    btnHeat.classList.toggle('on', step3View === 'heatmap');
+    btnSplit.classList.toggle('on', step3View === 'split');
+  }
+  btnHeat.onclick = () => {
+    step3View = 'heatmap'; updateToggle();
+    document.getElementById('threshWrap')?.classList.remove('show');
+    if(maskReady) drawStep3('heatmap');
+  };
+  btnSplit.onclick = () => {
+    step3View = 'split'; updateToggle();
+    document.getElementById('threshWrap')?.classList.add('show');
+    if(maskReady) drawStep3('split');
+  };
+  updateToggle();
+  toggleWrap.appendChild(btnHeat); toggleWrap.appendChild(btnSplit);
+  body.appendChild(toggleWrap);
+
+  // 임계값 슬라이더 (split 모드에서만 표시)
+  const threshWrap = document.createElement('div');
+  threshWrap.id = 'threshWrap'; threshWrap.className = 'thresh-wrap';
+  const thLabel = document.createElement('div');
+  thLabel.className = 'thresh-label'; thLabel.textContent = '임계값';
+  const thSlider = document.createElement('input');
+  thSlider.type='range'; thSlider.min=10; thSlider.max=90; thSlider.value=50; thSlider.step=5;
+  thSlider.style.flex='1';
+  const thVal = document.createElement('div');
+  thVal.id='threshVal'; thVal.className='thresh-val'; thVal.textContent='0.50';
+  const thDesc = document.createElement('div');
+  thDesc.id='threshDesc'; thDesc.className='thresh-desc'; thDesc.textContent='0.5 = 기본값 (U-Net 권장)';
+  thSlider.oninput = () => {
+    const v = parseInt(thSlider.value)/100;
+    thVal.textContent = v.toFixed(2);
+    maskThreshold = v;
+    if (v < 0.35) thDesc.textContent = '낮음 — 머리카락·반투명도 포함, 배경 일부 포함될 수 있음';
+    else if (v < 0.55) thDesc.textContent = '기본값 — U-Net 권장 임계값 (0.5 근처)';
+    else thDesc.textContent = '높음 — 확실한 피사체만, 경계가 작아질 수 있음';
+    if (maskReady && step3View==='split') drawStep3('split');
+  };
+  threshWrap.appendChild(thLabel); threshWrap.appendChild(thSlider); threshWrap.appendChild(thVal);
+  threshWrap.appendChild(thDesc);
+  body.appendChild(threshWrap);
+
+  // 히트맵 범례
+  const lgWrap = document.createElement('div'); lgWrap.className = 'heatmap-legend';
+  const lgL = document.createElement('div'); lgL.className = 'hm-label'; lgL.textContent = '배경 (0.0)';
+  const lgBar = document.createElement('div'); lgBar.className = 'hm-bar';
+  const lgR = document.createElement('div'); lgR.className = 'hm-label'; lgR.textContent = '피사체 (1.0)';
+  lgWrap.appendChild(lgL); lgWrap.appendChild(lgBar); lgWrap.appendChild(lgR);
+  body.appendChild(lgWrap);
+
+  // 설명
+  const lbl = document.createElement('div'); lbl.className = 'sec-lbl'; lbl.style.marginTop='14px'; lbl.textContent = '// 색상 의미';
+  body.appendChild(lbl);
+  [
+    { c:'#ffee00', t:'노랑 — 피사체 확률 높음 (1.0 근접)' },
+    { c:'#ff7c57', t:'주황 — 피사체 가능성 있음' },
+    { c:'#c57bff', t:'보라 — 경계 영역 (불확실)' },
+    { c:'#1a4d88', t:'파랑 — 배경 확률 높음 (0.0 근접)' },
+  ].forEach(({c,t}) => {
+    const d = document.createElement('div'); d.className = 'legend-row';
+    d.innerHTML = `<span class="legend-dot" style="background:${c}"></span>${t}`;
+    body.appendChild(d);
+  });
+
+  const lbl2 = document.createElement('div'); lbl2.className = 'sec-lbl'; lbl2.style.marginTop='14px'; lbl2.textContent = '// 다음 단계';
+  body.appendChild(lbl2);
+  const note = document.createElement('div');
+  note.className = 'panel-note'; note.style.setProperty('--note-accent', '#ff7c57');
+  note.innerHTML = 'U-Net은 이 확률 맵을 기반으로<br>픽셀 단위 알파 마스크를 생성해요.<br>경계가 흐릿한 부분(보라색)을<br>Skip Connection으로 정밀하게 다듬어요.';
+  body.appendChild(note);
+
+  // 마스크 상태 표시
+  const statusEl = document.createElement('div');
+  statusEl.id = 'step3Status'; statusEl.className = 'mask-status ' + (maskReady ? 'ready' : 'waiting');
+  statusEl.textContent = maskReady ? '✓ U-Net 실제 마스크 기반' : '⏳ U-Net 모델 실행 중...';
+  body.appendChild(statusEl);
+}
+
+function drawStep3Loading() {
+  mainCtx.clearRect(0, 0, srcW, srcH);
+  drawSrc();
+  mainCtx.fillStyle = 'rgba(0,0,0,0.6)';
+  mainCtx.fillRect(0, 0, srcW, srcH);
+  mainCtx.font = 'bold 13px "Space Mono"';
+  mainCtx.fillStyle = 'rgba(255,156,87,0.9)';
+  mainCtx.textBaseline = 'middle';
+  mainCtx.textAlign = 'center';
+  mainCtx.fillText('U-Net 모델 실행 중...', srcW/2, srcH/2 - 10);
+  mainCtx.font = '10px "Space Mono"';
+  mainCtx.fillStyle = 'rgba(255,255,255,0.4)';
+  mainCtx.fillText('완료되면 자동으로 표시됩니다', srcW/2, srcH/2 + 14);
+  mainCtx.textAlign = 'start';
+  mainCtx.textBaseline = 'alphabetic';
+}
+
+function drawStep3(view) {
+  if (!maskReady) { drawStep3Loading(); return; }
+
+  // status 업데이트
+  const statusEl = document.getElementById('step3Status');
+  if (statusEl) {
+    statusEl.className = 'mask-status ready';
+    statusEl.textContent = '✓ U-Net 실제 마스크 기반';
+  }
+
+  if (view === 'heatmap') {
+    // 실제 maskData를 heatColor로 칠함 — 원본 완전히 가리고 확률만 표시
+    const out = new Uint8ClampedArray(srcW * srcH * 4);
+    for (let i = 0; i < srcW * srcH; i++) {
+      const t = maskData[i]; // 0~1, 피사체=1
+      const [r,g,b] = heatColor(t);
+      out[i*4]=r; out[i*4+1]=g; out[i*4+2]=b; out[i*4+3]=255;
+    }
+    // 페이드인
+    let op = 0;
+    const src2 = new ImageData(out, srcW, srcH);
+    const tmp = document.createElement('canvas'); tmp.width=srcW; tmp.height=srcH;
+    tmp.getContext('2d').putImageData(src2, 0, 0);
+    drawSrc();
+    function fadeIn() {
+      op = Math.min(op+0.05, 1);
+      drawSrc();
+      mainCtx.globalAlpha = op;
+      mainCtx.drawImage(tmp, 0, 0);
+      mainCtx.globalAlpha = 1;
+      // 레이블
+      mainCtx.font = 'bold 10px "Space Mono"';
+      mainCtx.fillStyle = 'rgba(255,238,0,0.9)';
+      mainCtx.fillText('피사체 (1.0)', 8, 16);
+      mainCtx.fillStyle = 'rgba(40,80,180,0.9)';
+      mainCtx.fillText('배경 (0.0)', srcW-68, 16);
+      if (op < 1) requestAnimationFrame(fadeIn);
+    }
+    requestAnimationFrame(fadeIn);
+
+  } else {
+    // split: 피사체=원본 선명 / 배경=단색 파랑, 경계=투명하게 블렌딩
+    const fg = srcData.data;
+    const out = new Uint8ClampedArray(srcW * srcH * 4);
+    for (let i = 0; i < srcW * srcH; i++) {
+      const t = maskData[i]; // 0~1
+      const pi = i*4;
+      if (t >= maskThreshold) {
+        // 피사체 — 원본
+        out[pi]=fg[pi]; out[pi+1]=fg[pi+1]; out[pi+2]=fg[pi+2]; out[pi+3]=255;
+      } else if (t >= maskThreshold - 0.3) {
+        // 경계 — 블렌딩
+        const f = (t-(maskThreshold-0.3))/0.3;
+        out[pi]   = Math.round(fg[pi]*f   + 20*(1-f));
+        out[pi+1] = Math.round(fg[pi+1]*f + 50*(1-f));
+        out[pi+2] = Math.round(fg[pi+2]*f + 180*(1-f));
+        out[pi+3] = 255;
+      } else {
+        // 배경 — 파랑
+        out[pi]=20; out[pi+1]=50; out[pi+2]=180; out[pi+3]=255;
+      }
+    }
+    mainCtx.putImageData(new ImageData(out, srcW, srcH), 0, 0);
+    mainCtx.font = 'bold 11px "Space Mono"';
+    mainCtx.fillStyle = 'rgba(255,220,80,0.95)';
+    mainCtx.fillText('피사체', 10, 18);
+    mainCtx.fillStyle = 'rgba(100,160,255,0.95)';
+    mainCtx.fillText('배경', srcW-42, 18);
+  }
+}
+
+// ── STEP 4: U-Net 배경 제거 ──
+function showStep4() {
+  setPanelHeader('#b8ff57', 'STEP 4', 'U-Net 배경 제거', 'U²-Net 모델이 브라우저에서 직접 실행돼요. 인코더가 특징을 압축하고, 디코더가 픽셀 단위 알파 마스크로 복원합니다.');
+  document.getElementById('ctrlInfo').textContent = 'WebAssembly 실행';
+  const nb = document.getElementById('nextBtn');
+  nb.textContent = '완료'; nb.disabled = !nukkiDone;
+
+  const body = document.getElementById('panelBody');
+  body.innerHTML = '';
+
+  const lbl = document.createElement('div'); lbl.className = 'sec-lbl'; lbl.textContent = '// U-Net 처리 단계';
+  body.appendChild(lbl);
+
+  const prog = document.createElement('div'); prog.className = 'nukki-progress'; prog.id = 'nukkiProg';
+  NUKKI_STAGES.forEach(s => {
+    const row = document.createElement('div'); row.className = 'np-stage'; row.id = 'nps-' + s.key;
+    const dot = document.createElement('div'); dot.className = 'np-dot'; dot.id = 'npd-' + s.key;
+    const lbl2 = document.createElement('div'); lbl2.className = 'np-label'; lbl2.id = 'npl-' + s.key; lbl2.textContent = s.label;
+    const pct = document.createElement('div'); pct.className = 'np-pct'; pct.id = 'npp-' + s.key;
+    row.appendChild(dot); row.appendChild(lbl2); row.appendChild(pct);
+    prog.appendChild(row);
+  });
+  body.appendChild(prog);
+
+  const noteLbl = document.createElement('div'); noteLbl.className = 'sec-lbl'; noteLbl.style.marginTop = '12px'; noteLbl.textContent = '// 처리 방식';
+  body.appendChild(noteLbl);
+  const note = document.createElement('div');
+  note.className = 'panel-note'; note.style.setProperty('--note-accent', '#b8ff57');
+  note.innerHTML = '서버 전송 없음 — 100% 브라우저 내 실행<br>WebAssembly + CPU만으로 추론<br>첫 실행 시 모델 파일 약 40MB 다운로드';
+  body.appendChild(note);
+
+  if (nukkiDone) {
+    // 이미 완성 → 바로 표시
+    showNukkiResult();
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('dlStrip').classList.add('show');
+    // 스테이지 모두 완료 표시
+    NUKKI_STAGES.forEach(s => {
+      const dot = document.getElementById('npd-' + s.key);
+      const lbl = document.getElementById('npl-' + s.key);
+      if (dot) dot.className = 'np-dot done';
+      if (lbl) lbl.className = 'np-label done';
+    });
+  } else {
+    drawSegmentation();
+    // 마스크 완성되면 자동 표시
+    maskReadyCallbacks.push(() => {
+      if (currentStep === 4) {
+        showNukkiResult();
+        document.getElementById('nextBtn').disabled = false;
+        document.getElementById('dlStrip').classList.add('show');
+        NUKKI_STAGES.forEach(s => {
+          const dot = document.getElementById('npd-' + s.key);
+          const lbl = document.getElementById('npl-' + s.key);
+          if (dot) dot.className = 'np-dot done';
+          if (lbl) lbl.className = 'np-label done';
+        });
+      }
+    });
+    // 스테이지 순서대로 진행 표시 (시각 효과)
+    animNukkiStages();
+  }
+}
+
+function showNukkiResult() {
+  if (!nukkiBlobUrl) return;
+  const img2 = new Image();
+  img2.src = nukkiBlobUrl;
+  img2.onload = () => {
+    mainCtx.clearRect(0, 0, srcW, srcH);
+    // 체커보드 배경
+    const cSize = 10;
+    for (let y = 0; y < srcH; y += cSize) for (let x = 0; x < srcW; x += cSize) {
+      mainCtx.fillStyle = ((x/cSize + y/cSize) % 2 === 0) ? '#1a1a1a' : '#111';
+      mainCtx.fillRect(x, y, cSize, cSize);
+    }
+    mainCtx.drawImage(img2, 0, 0, srcW, srcH);
+  };
+}
+
+async function animNukkiStages() {
+  const keys = NUKKI_STAGES.map(s => s.key);
+  for (const key of keys.slice(0, -1)) {
+    const dot = document.getElementById('npd-' + key);
+    const lbl = document.getElementById('npl-' + key);
+    if (dot) dot.className = 'np-dot active';
+    if (lbl) lbl.className = 'np-label done';
+    await delay(400);
+    if (dot) dot.className = 'np-dot done';
+  }
+}
+
+
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function setPanelHeader(color, tag, title, desc) {
+  document.getElementById('panelTag').textContent = '// ' + tag;
+  document.getElementById('panelTag').style.color = color;
+  document.getElementById('panelTitle').textContent = title;
+  document.getElementById('panelTitle').style.color = color;
+  document.getElementById('panelDesc').textContent = desc;
+}
+</script>
+</body>
+</html>

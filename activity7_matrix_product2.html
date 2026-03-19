@@ -169,10 +169,11 @@
 
         .workspace {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(3, minmax(min-content, 1fr));
             gap: 20px;
             align-items: start;
             margin-bottom: 30px;
+            overflow-x: auto;
         }
 
         .workspace.row-mode {
@@ -196,6 +197,8 @@
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            min-width: 0;
+            overflow-x: auto;
         }
 
         .panel-title {
@@ -217,6 +220,21 @@
         }
 
         /* (구) shuffle-action-group 제거됨 */
+
+        .btn-transpose {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(142,68,173,0.3);
+        }
+        .btn-transpose:hover:not(:disabled) { background: #6c3483; }
+        .btn-transpose:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-shuffle-row {
             background: #e74c3c;
@@ -283,18 +301,20 @@
         }
 
         .pixel-grid {
-            display: inline-grid;
+            display: grid;
+            width: 100%;
             gap: 2px;
             background: #fff;
             padding: 10px;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 2px solid var(--border);
+            box-sizing: border-box;
         }
 
         .pixel-cell {
-            width: 40px;
-            height: 40px;
+            aspect-ratio: 1;
+            min-width: 0;
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 3px;
             transition: all 0.2s ease;
@@ -303,7 +323,7 @@
             align-items: center;
             justify-content: center;
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.75rem;
+            font-size: clamp(0.5rem, 1.4vw, 0.75rem);
             font-weight: 700;
             color: rgba(0, 0, 0, 0.6);
         }
@@ -332,15 +352,15 @@
         }
 
         .matrix-cell {
-            width: 40px;
-            height: 40px;
+            aspect-ratio: 1;
+            min-width: 0;
             border: 1px solid var(--border);
             border-radius: 3px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.1rem;
+            font-size: clamp(0.5rem, 1.4vw, 1.1rem);
             font-weight: 700;
             background: white;
             transition: all 0.2s ease;
@@ -371,25 +391,27 @@
         }
 
         .matrix-with-labels {
-            display: inline-grid;
-            grid-template-columns: repeat(11, 40px);
+            display: grid;
+            grid-template-columns: repeat(11, minmax(0, 1fr));
+            width: 100%;
             gap: 2px;
             background: #fff;
             padding: 10px;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 2px solid #90caf9;
+            box-sizing: border-box;
         }
 
         .matrix-label {
-            width: 40px;
-            height: 40px;
+            aspect-ratio: 1;
+            min-width: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'IBM Plex Mono', monospace;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: clamp(0.5rem, 1.4vw, 0.9rem);
             color: #1565c0;
             background: #e1f5fe;
             border-radius: 5px;
@@ -397,8 +419,8 @@
         }
 
         .matrix-empty {
-            width: 40px;
-            height: 40px;
+            aspect-ratio: 1;
+            min-width: 0;
         }
 
         .matrix-cell.highlight {
@@ -492,6 +514,17 @@
             cursor: not-allowed;
             transform: none !important;
         }
+        #toast {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            background: rgba(30,30,30,0.96); color: #fff;
+            font-size: 15px; font-weight: 600;
+            padding: 18px 36px; border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            pointer-events: none; opacity: 0;
+            transition: opacity .2s, transform .2s; z-index: 9999; white-space: nowrap;
+        }
+        #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
         /* ── 우측 컨트롤 패널 (container 바로 옆 sticky) ── */
         .ctrl-aside {
@@ -888,6 +921,7 @@
     <aside class="ctrl-aside hidden" id="ctrlAside">
         <div class="ctrl-aside-title">🎮 조작</div>
         <div class="operation-label" id="operationLabel">A</div>
+        <button type="button" class="btn btn-transpose" id="transposeBtn" onclick="transposeMatrix()" disabled>🔁 T 전치 (행↔열)</button>
         <button type="button" class="btn btn-shuffle-row" id="shuffleRowBtn" onclick="doRowShuffle()" disabled>🔀 행 섞기</button>
         <button type="button" class="btn btn-shuffle-col" id="shuffleColBtn" onclick="doColShuffle()" disabled>🔀 열 섞기</button>
         <button type="button" class="btn btn-success" id="applyBtn" onclick="applyTransform()" disabled>
@@ -1116,6 +1150,7 @@
             renderPixelGrid(currentImageData, pixelColors, 'resultPixelGrid');
 
             // 이미지 로드 완료 → 열 섞기 기본 선택
+            document.getElementById('transposeBtn').disabled = false;
             document.getElementById('shuffleRowBtn').disabled = false;
             document.getElementById('shuffleColBtn').disabled = false;
             selectShuffleMode('col');
@@ -1150,6 +1185,21 @@
                 infoEl.innerHTML = '';
                 infoEl.classList.remove('visible');
             }
+        }
+
+        // T 전치 (행↔열 교환)
+        function transposeMatrix() {
+            const n = transformMatrix.length;
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    const tmp = transformMatrix[i][j];
+                    transformMatrix[i][j] = transformMatrix[j][i];
+                    transformMatrix[j][i] = tmp;
+                }
+            }
+            renderTransformMatrix();
+            if (document.getElementById('autoComputeCheck').checked) applyTransform();
+            showToast('T 행렬이 전치되었습니다 (행↔열)');
         }
 
         // 행 섞기 직접 실행
@@ -1430,7 +1480,7 @@
         function setIdentityMatrix() {
             initializeIdentityMatrix();
             renderTransformMatrix();
-            alert('항등 행렬로 설정되었습니다!');
+            showToast('항등 행렬로 설정되었습니다');
         }
 
         function clearMatrix() {
@@ -1440,7 +1490,16 @@
                 }
             }
             renderTransformMatrix();
-            alert('행렬이 0으로 초기화되었습니다!');
+            showToast('행렬이 0으로 초기화되었습니다');
+        }
+
+        let _toastTimer;
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
         }
 
         function resetAll() {
@@ -1453,8 +1512,6 @@
             isShuffled = false;
             document.getElementById('operationLabel').textContent = 'A';
             document.getElementById('workspace').classList.remove('row-mode', 'col-mode');
-            document.getElementById('applyBtn').disabled = true;
-            
             renderPixelGrid(originalImageData, originalPixelColors, 'originalPixelGrid');
             renderTransformMatrix();
             renderPixelGrid(originalImageData, originalPixelColors, 'resultPixelGrid');
@@ -1464,7 +1521,7 @@
             infoEl.innerHTML = '';
             infoEl.classList.remove('visible');
             
-            alert('모든 값이 초기화되었습니다!');
+            showToast('모든 값이 초기화되었습니다');
         }
 
         // 숫자/그림 표시 토글
@@ -1535,5 +1592,6 @@
         document.getElementById('current-year').textContent = new Date().getFullYear();
    
     </script>
+<div id="toast"></div>
 </body>
 </html>
