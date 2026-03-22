@@ -179,6 +179,64 @@
             background-color: white;
         }
 
+        .mode-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: 14px 0 4px 0;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 10px 28px;
+            font-size: 1em;
+            font-weight: 700;
+            border-radius: 10px;
+            border: 2px solid #6c8cff;
+            background: #fff;
+            color: #6c8cff;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s, transform 0.1s;
+        }
+        .mode-btn.active {
+            background: #6c8cff;
+            color: #fff;
+        }
+        .mode-btn:hover:not(.active) {
+            background: #e3eaff;
+        }
+
+        .brush-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .brush-control label {
+            font-weight: 600;
+            color: #1f284a;
+            font-size: 1em;
+        }
+        .brush-control input[type=range] {
+            width: 160px;
+            accent-color: #6c8cff;
+            cursor: pointer;
+        }
+        .brush-preview {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .brush-circle {
+            background: #222;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
         .pixel {
             width: 100%;
             height: 100%;
@@ -208,6 +266,9 @@
             height: 450px;
             max-width: 450px;
             max-height: 450px;
+        }
+        .numeric-matrix.mode-14 {
+            grid-template-columns: repeat(14, 1fr);
         }
 
         .matrix-cell {
@@ -403,6 +464,7 @@
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
             <a href="activity17_Arbitrary_transfer.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+      <a href="activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
         </nav>
     </aside>
     <div class="container">
@@ -416,6 +478,21 @@
                 <li>각 픽셀의 명도값이 0~255 범위의 숫자로 표시됩니다 (검정=0, 흰색=255)</li>
                 <li>MNIST 데이터셋과 동일한 형식으로 변환됩니다</li>
             </ul>
+        </div>
+
+        <div class="mode-controls">
+            <span style="font-weight:700;color:#1f284a;">변환 모드:</span>
+            <button class="mode-btn active" id="mode28Btn">28×28</button>
+            <button class="mode-btn" id="mode14Btn">14×14</button>
+        </div>
+
+        <div class="brush-control">
+            <label for="brushSize">붓 크기:</label>
+            <input type="range" id="brushSize" min="2" max="40" value="15" step="1">
+            <div class="brush-preview">
+                <span class="brush-circle" id="brushCircle" style="width:15px;height:15px;"></span>
+            </div>
+            <span id="brushSizeLabel" style="font-weight:600;color:#6c8cff;min-width:28px;">15px</span>
         </div>
 
         <div class="canvas-section">
@@ -492,13 +569,9 @@
 
     <script>
         // === 상수 정의 ===
-        const MATRIX_SIZE = 28; // MNIST 데이터셋 크기 (가로/세로 픽셀 수)
         const DRAWING_CANVAS_SIZE = 400; // 손글씨 입력 캔버스 크기 (픽셀)
         const VISUAL_MATRIX_SIZE_PX = 450; // 시각적 행렬 표시 크기 (픽셀)
-        const NUMERIC_MATRIX_CELL_SIZE_PX = 12; // 격자형 숫자 행렬 셀 크기 (픽셀)
-        const NUMERIC_MATRIX_FONT_SIZE_PX = 7;  // 격자형 숫자 행렬 폰트 크기 (픽셀)
         const HIGHLIGHT_THRESHOLD = 127; // 숫자 행렬에서 강조 표시할 임계값 (0-255)
-        const PEN_STROKE_WIDTH = 15; // 손글씨 그리기 펜 굵기
         const MAX_PIXEL_VALUE = 255; // 픽셀 명도 최대값 (흰색)
 
         class DigitCanvasConverter {
@@ -506,22 +579,21 @@
                 this.canvas = document.getElementById('drawingCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.isDrawing = false;
+                this.matrixSize = 28; // 현재 변환 모드 (14 또는 28)
+                this.penSize = 15;    // 현재 붓 크기
                 this.setupCanvas();
                 this.setupEventListeners();
-                this.currentMatrix = null; // 변환된 행렬 데이터를 저장할 변수 (다운로드/복사 기능에 사용)
+                this.currentMatrix = null;
             }
 
             // 캔버스 초기 설정 (배경색, 펜 스타일 등)
             setupCanvas() {
-                // 캔버스 배경을 흰색으로 채우기
                 this.ctx.fillStyle = 'white';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-                // 펜 스타일 설정
-                this.ctx.strokeStyle = 'black'; // 펜 색상 검정
-                this.ctx.lineWidth = PEN_STROKE_WIDTH; // 펜 굵기
-                this.ctx.lineCap = 'round'; // 선 끝 모양 둥글게
-                this.ctx.lineJoin = 'round'; // 선 연결 부분 모양 둥글게
+                this.ctx.strokeStyle = 'black';
+                this.ctx.lineWidth = this.penSize;
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
             }
 
             // 이벤트 리스너 설정 (마우스, 터치, 버튼)
@@ -534,43 +606,64 @@
 
                 // 손글씨 그리기 터치 이벤트 (모바일 지원)
                 this.canvas.addEventListener('touchstart', (e) => {
-                    e.preventDefault(); // 기본 터치 액션 방지 (스크롤 등)
+                    e.preventDefault();
                     const touch = e.touches[0];
-                    // 터치 이벤트를 마우스 이벤트로 변환하여 처리
-                    const mouseEvent = new MouseEvent('mousedown', {
-                        clientX: touch.clientX,
-                        clientY: touch.clientY
-                    });
-                    this.canvas.dispatchEvent(mouseEvent); // 변환된 이벤트 발생
+                    this.canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY }));
                 });
-
                 this.canvas.addEventListener('touchmove', (e) => {
-                    e.preventDefault(); // 기본 터치 액션 방지
+                    e.preventDefault();
                     const touch = e.touches[0];
-                    // 터치 이벤트를 마우스 이벤트로 변환하여 처리
-                    const mouseEvent = new MouseEvent('mousemove', {
-                        clientX: touch.clientX,
-                        clientY: touch.clientY
-                    });
-                    this.canvas.dispatchEvent(mouseEvent); // 변환된 이벤트 발생
+                    this.canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY }));
                 });
-
                 this.canvas.addEventListener('touchend', (e) => {
-                    e.preventDefault(); // 기본 터치 액션 방지
-                    // 터치 이벤트를 마우스 이벤트로 변환하여 처리
-                    const mouseEvent = new MouseEvent('mouseup', {});
-                    this.canvas.dispatchEvent(mouseEvent); // 변환된 이벤트 발생
+                    e.preventDefault();
+                    this.canvas.dispatchEvent(new MouseEvent('mouseup', {}));
                 });
 
-                // 변환 및 지우기 버튼 이벤트
+                // 변환 및 지우기 버튼
                 document.getElementById('convertBtn').addEventListener('click', () => this.convertToMatrix());
                 document.getElementById('clearBtn').addEventListener('click', () => this.clearCanvas());
 
-                // 다운로드/복사 버튼 이벤트
+                // 다운로드/복사 버튼
                 document.getElementById('copyExcelBtn').addEventListener('click', () => this.copyToClipboard());
                 document.getElementById('downloadCsvBtn').addEventListener('click', () => this.downloadMatrix());
                 document.getElementById('downloadPng28').addEventListener('click', () => this.downloadPNG());
                 document.getElementById('downloadPng280').addEventListener('click', () => this.downloadPNGLarge());
+
+                // 모드 전환 버튼
+                document.getElementById('mode28Btn').addEventListener('click', () => this.setMode(28));
+                document.getElementById('mode14Btn').addEventListener('click', () => this.setMode(14));
+
+                // 붓 크기 슬라이더
+                const brushSlider = document.getElementById('brushSize');
+                brushSlider.addEventListener('input', () => {
+                    this.penSize = parseInt(brushSlider.value);
+                    this.ctx.lineWidth = this.penSize;
+                    document.getElementById('brushSizeLabel').textContent = this.penSize + 'px';
+                    const circle = document.getElementById('brushCircle');
+                    circle.style.width = this.penSize + 'px';
+                    circle.style.height = this.penSize + 'px';
+                });
+            }
+
+            // 모드 전환 (14 또는 28)
+            setMode(size) {
+                this.matrixSize = size;
+                const btn28 = document.getElementById('mode28Btn');
+                const btn14 = document.getElementById('mode14Btn');
+                const convertBtn = document.getElementById('convertBtn');
+                if (size === 28) {
+                    btn28.classList.add('active');
+                    btn14.classList.remove('active');
+                    convertBtn.textContent = '🔄 28×28 행렬로 변환';
+                } else {
+                    btn14.classList.add('active');
+                    btn28.classList.remove('active');
+                    convertBtn.textContent = '🔄 14×14 행렬로 변환';
+                }
+                // 모드 변경 시 결과 숨기기
+                document.getElementById('outputSection').style.display = 'none';
+                this.currentMatrix = null;
             }
 
             // 마우스/터치 좌표를 캔버스 내 좌표로 변환
@@ -611,96 +704,75 @@
                 this.currentMatrix = null; // 행렬 데이터 초기화
             }
 
-            // 손글씨 이미지를 28x28 행렬로 변환
+            // 손글씨 이미지를 matrixSize x matrixSize 행렬로 변환
             convertToMatrix() {
-                // 임시 캔버스를 생성하여 원본 캔버스 내용을 28x28로 축소
+                const size = this.matrixSize;
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = MATRIX_SIZE;
-                tempCanvas.height = MATRIX_SIZE;
+                tempCanvas.width = size;
+                tempCanvas.height = size;
 
-                // 이미지 리사이징 시 보간 설정
-                tempCtx.imageSmoothingEnabled = true; // 이미지 스무딩 활성화
-                tempCtx.imageSmoothingQuality = 'high'; // 스무딩 품질 높음
+                tempCtx.imageSmoothingEnabled = true;
+                tempCtx.imageSmoothingQuality = 'high';
+                tempCtx.drawImage(this.canvas, 0, 0, size, size);
 
-                // 원본 캔버스 내용을 28x28 임시 캔버스에 그리기 (자동 축소)
-                tempCtx.drawImage(this.canvas, 0, 0, MATRIX_SIZE, MATRIX_SIZE);
+                const imageData = tempCtx.getImageData(0, 0, size, size);
+                const data = imageData.data;
 
-                // 축소된 이미지에서 픽셀 데이터 추출 (28x28)
-                const imageData = tempCtx.getImageData(0, 0, MATRIX_SIZE, MATRIX_SIZE);
-                const data = imageData.data; // 픽셀 데이터 (RGBA 배열)
-
-                // 픽셀 데이터를 28x28 행렬로 변환 (grayscale 값 사용)
                 const matrix = [];
-                for (let y = 0; y < MATRIX_SIZE; y++) {
+                for (let y = 0; y < size; y++) {
                     const row = [];
-                    for (let x = 0; x < MATRIX_SIZE; x++) {
-                        // RGBA 데이터는 한 픽셀당 4개의 값 (R, G, B, A)을 가짐
-                        const index = (y * MATRIX_SIZE + x) * 4;
-                        const r = data[index];
-                        const g = data[index + 1];
-                        const b = data[index + 2];
-                        // const a = data[index + 3]; // 알파값은 사용하지 않음
-
-                        // RGB 값을 표준 공식에 따라 grayscale(명도) 값으로 변환
-                        const grayscale = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-
-                        // MNIST 데이터 형식에 맞춰 값 반전 (원래 MNIST는 검은색 픽셀이 높은 값)
-                        // 캔버스에서 그린 검은색(RGB 작음)을 높은 값(255)으로, 흰색(RGB 큼)을 낮은 값(0)으로 변환
-                        const mnistValue = MAX_PIXEL_VALUE - grayscale;
-
-                        row.push(mnistValue); // 행렬에 변환된 값 추가
+                    for (let x = 0; x < size; x++) {
+                        const index = (y * size + x) * 4;
+                        const grayscale = Math.round(0.299 * data[index] + 0.587 * data[index + 1] + 0.114 * data[index + 2]);
+                        row.push(MAX_PIXEL_VALUE - grayscale);
                     }
-                    matrix.push(row); // 행렬에 행 추가
+                    matrix.push(row);
                 }
 
-                this.currentMatrix = matrix; // 변환된 행렬 데이터를 클래스 멤버 변수에 저장
-                this.displayMatrix(matrix); // 결과 표시 함수 호출
+                this.currentMatrix = matrix;
+                this.displayMatrix(matrix);
             }
 
             // 변환 결과 (시각적 및 숫자 행렬) 표시
             displayMatrix(matrix) {
-                this.displayVisualMatrix(matrix); // 시각적 행렬 표시
-                this.displayNumericMatrix(matrix); // 숫자 행렬 표시
-                document.getElementById('outputSection').style.display = 'block'; // 결과 섹션 보이기
+                const size = this.matrixSize;
+                // 출력 제목 업데이트
+                document.querySelector('.matrix-title').textContent = `시각적 표현 (${size}×${size})`;
+                this.displayVisualMatrix(matrix);
+                this.displayNumericMatrix(matrix);
+                document.getElementById('outputSection').style.display = 'block';
             }
 
-            // 시각적 표현 (28x28 픽셀 그리드) 표시
+            // 시각적 표현 (픽셀 그리드) 표시
             displayVisualMatrix(matrix) {
+                const size = this.matrixSize;
                 const visualMatrix = document.getElementById('visualMatrix');
                 const visualStats = document.getElementById('visualStats');
 
-                visualMatrix.innerHTML = ''; // 이전 내용 지우기
+                visualMatrix.innerHTML = '';
+                visualMatrix.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
 
-                let nonZeroCount = 0; // 0이 아닌 픽셀 수 카운트
-                let minVal = MAX_PIXEL_VALUE, maxVal = 0; // 최소/최대 픽셀 값 추적
+                let nonZeroCount = 0;
+                let minVal = MAX_PIXEL_VALUE, maxVal = 0;
 
-                // 28x28 그리드 생성 및 각 픽셀 표시
-                for (let y = 0; y < MATRIX_SIZE; y++) {
-                    for (let x = 0; x < MATRIX_SIZE; x++) {
-                        const value = matrix[y][x]; // 행렬에서 픽셀 값 가져오기
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const value = matrix[y][x];
                         const pixel = document.createElement('div');
                         pixel.className = 'pixel';
-
-                        // 픽셀 값에 따라 배경색 설정 (grayscale). 값이 높을수록(어두울수록) 배경도 어둡게
-                        // MNIST 값(검정=255)을 RGB(검정=0)로 변환해야 하므로 255에서 빼줌
                         const displayGray = MAX_PIXEL_VALUE - value;
                         pixel.style.backgroundColor = `rgb(${displayGray}, ${displayGray}, ${displayGray})`;
-
-                        // 툴팁에 픽셀 위치와 값 표시
                         pixel.title = `(${x},${y}): ${value}`;
-
                         visualMatrix.appendChild(pixel);
 
-                        // 통계 계산에 필요한 값 업데이트
                         if (value > 0) nonZeroCount++;
                         if (value > maxVal) maxVal = value;
                         if (value < minVal) minVal = value;
                     }
                 }
 
-                // 시각적 행렬 통계 표시
-                const totalPixels = MATRIX_SIZE * MATRIX_SIZE; // 전체 픽셀 수 (28*28=784)
+                const totalPixels = size * size;
                 visualStats.innerHTML = `
                     활성 픽셀: ${nonZeroCount}/${totalPixels} (${(nonZeroCount / totalPixels * 100).toFixed(1)}%)<br>
                     값 범위: ${minVal} ~ ${maxVal}
@@ -709,38 +781,41 @@
 
             // 숫자 행렬 (격자형) 표시
             displayNumericMatrix(matrix) {
+                const size = this.matrixSize;
                 const numericMatrix = document.getElementById('numericMatrix');
                 const numericStats = document.getElementById('numericStats');
 
-                numericMatrix.innerHTML = ''; // 이전 내용 지우기
+                numericMatrix.innerHTML = '';
+                numericMatrix.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+                // 14x14 모드에서는 셀을 더 크게
+                const cellSize = size === 14 ? 24 : 12;
+                const fontSize = size === 14 ? 10 : 7;
 
-                // 28x28 격자형으로 각 셀에 숫자 값 표시
-                for (let y = 0; y < MATRIX_SIZE; y++) {
-                    for (let x = 0; x < MATRIX_SIZE; x++) {
-                        const value = matrix[y][x]; // 행렬에서 픽셀 값 가져오기
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const value = matrix[y][x];
                         const cell = document.createElement('div');
                         cell.className = 'matrix-cell';
-                        cell.textContent = value; // 셀에 숫자 값 표시
-                        cell.title = `위치: (${x}, ${y}), 값: ${value}`; // 툴팁
-
-                        // 특정 임계값(예: 127)보다 큰 값(어두운 픽셀)을 하이라이트
+                        cell.style.width = cellSize + 'px';
+                        cell.style.height = cellSize + 'px';
+                        cell.style.fontSize = fontSize + 'px';
+                        cell.textContent = value;
+                        cell.title = `위치: (${x}, ${y}), 값: ${value}`;
                         if (value > HIGHLIGHT_THRESHOLD) {
                             cell.classList.add('highlight');
                         }
-
-                        numericMatrix.appendChild(cell); // 격자에 셀 추가
+                        numericMatrix.appendChild(cell);
                     }
                 }
 
-                // 숫자 행렬 통계 계산 및 표시
-                const flatMatrix = matrix.flat(); // 2차원 배열을 1차원 배열로 변환
-                const sum = flatMatrix.reduce((a, b) => a + b, 0); // 모든 값의 합계
-                const avg = (sum / flatMatrix.length).toFixed(1); // 평균 값
-                const nonZeros = flatMatrix.filter(v => v > 0).length; // 0이 아닌 값의 개수
+                const flatMatrix = matrix.flat();
+                const sum = flatMatrix.reduce((a, b) => a + b, 0);
+                const avg = (sum / flatMatrix.length).toFixed(1);
+                const nonZeros = flatMatrix.filter(v => v > 0).length;
 
                 numericStats.innerHTML = `
                     전체 평균: ${avg}<br>
-                    0이 아닌 값: ${nonZeros}/${MATRIX_SIZE * MATRIX_SIZE}<br>
+                    0이 아닌 값: ${nonZeros}/${size * size}<br>
                 `;
             }
 
@@ -785,7 +860,7 @@
                     // 다운로드 링크 생성 및 클릭
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'digit_matrix_28x28.csv'; // 다운로드될 파일 이름
+                    a.download = `digit_matrix_${this.matrixSize}x${this.matrixSize}.csv`;
                     document.body.appendChild(a);
                     a.click();
 
@@ -801,135 +876,67 @@
                 }
             }
 
-            // 28x28 크기의 PNG 이미지 파일로 다운로드
+            // 원본 크기 PNG 다운로드
             downloadPNG() {
-                // currentMatrix 데이터가 없을 경우 종료
-                if (!this.currentMatrix) {
-                    console.warn('행렬 데이터가 없습니다.');
-                    alert('변환된 행렬 데이터가 없습니다.');
-                    return;
-                }
-
-                // 메모리에 28x28 캔버스 생성
+                if (!this.currentMatrix) { alert('변환된 행렬 데이터가 없습니다.'); return; }
+                const size = this.matrixSize;
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-
-                if (!ctx) {
-                    console.error('캔버스 컨텍스트를 가져올 수 없습니다.');
-                    alert('이미지 처리에 필요한 캔버스를 생성할 수 없습니다.');
-                    return;
-                }
-
-                canvas.width = MATRIX_SIZE;
-                canvas.height = MATRIX_SIZE;
-
-                // 이미지 데이터 객체 생성
-                const imageData = ctx.createImageData(MATRIX_SIZE, MATRIX_SIZE);
-                const data = imageData.data; // 픽셀 데이터 배열
-
-                // 행렬 데이터를 이미지 데이터의 RGBA 값으로 변환
-                for (let y = 0; y < MATRIX_SIZE; y++) {
-                    for (let x = 0; x < MATRIX_SIZE; x++) {
-                        const index = (y * MATRIX_SIZE + x) * 4; // 픽셀의 RGBA 데이터 시작 인덱스
-                        const value = this.currentMatrix[y][x]; // 행렬에서 픽셀 값 (0-255)
-
-                        // MNIST 값(0-255, 검정=255)을 그레이스케일 RGB 값(0-255, 검정=0)으로 변환
-                        const grayValue = MAX_PIXEL_VALUE - value; // 값 반전
-
-                        data[index] = grayValue;     // Red 채널
-                        data[index + 1] = grayValue; // Green 채널
-                        data[index + 2] = grayValue; // Blue 채널
-                        data[index + 3] = MAX_PIXEL_VALUE;       // Alpha 채널 (불투명)
+                canvas.width = size;
+                canvas.height = size;
+                const imageData = ctx.createImageData(size, size);
+                const data = imageData.data;
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const index = (y * size + x) * 4;
+                        const grayValue = MAX_PIXEL_VALUE - this.currentMatrix[y][x];
+                        data[index] = grayValue;
+                        data[index + 1] = grayValue;
+                        data[index + 2] = grayValue;
+                        data[index + 3] = MAX_PIXEL_VALUE;
                     }
                 }
-
-                // 이미지 데이터를 캔버스에 그리기
                 ctx.putImageData(imageData, 0, 0);
-
-                // 캔버스 내용을 PNG Blob으로 변환 후 다운로드
                 canvas.toBlob((blob) => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'digit_28x28.png';
-                        document.body.appendChild(a);
-                        a.click();
-
-                        // 사용 후 Blob URL 해제 (비동기적으로 실행될 수 있으므로 setTimeout 사용)
-                        setTimeout(() => {
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
-                        }, 100);
-                    } else {
-                        console.error('캔버스를 Blob으로 변환 실패');
-                        alert('이미지 다운로드에 실패했습니다.');
-                    }
-                }, 'image/png'); // PNG 형식 지정
+                    if (!blob) { alert('이미지 다운로드에 실패했습니다.'); return; }
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `digit_${size}x${size}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                }, 'image/png');
             }
 
-            // 280x280 크기의 PNG 이미지 파일로 다운로드 (10배 확대)
+            // 10배 확대 PNG 다운로드
             downloadPNGLarge() {
-                // currentMatrix 데이터가 없을 경우 종료
-                if (!this.currentMatrix) {
-                    console.warn('행렬 데이터가 없습니다.');
-                    alert('변환된 행렬 데이터가 없습니다.');
-                    return;
-                }
-
-                const scaleFactor = 10; // 확대 배율
-                const largeSize = MATRIX_SIZE * scaleFactor; // 확대된 크기 (280)
-
-                // 메모리에 확대된 크기의 캔버스 생성
+                if (!this.currentMatrix) { alert('변환된 행렬 데이터가 없습니다.'); return; }
+                const size = this.matrixSize;
+                const scaleFactor = 10;
+                const largeSize = size * scaleFactor;
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-
-                if (!ctx) {
-                    console.error('캔버스 컨텍스트를 가져올 수 없습니다.');
-                    alert('이미지 처리에 필요한 캔버스를 생성할 수 없습니다.');
-                    return;
-                }
-
                 canvas.width = largeSize;
                 canvas.height = largeSize;
-
-                // 이미지 스무딩 비활성화 (픽셀이 깨지지 않도록)
                 ctx.imageSmoothingEnabled = false;
-
-                // 픽셀 단위로 그리기 (각 행렬 값을 scaleFactor * scaleFactor 크기의 사각형으로 채움)
-                for (let y = 0; y < MATRIX_SIZE; y++) {
-                    for (let x = 0; x < MATRIX_SIZE; x++) {
-                        const value = this.currentMatrix[y][x]; // 행렬에서 픽셀 값
-                        const grayValue = MAX_PIXEL_VALUE - value; // 값 반전 (표시용)
-
-                        // 해당 픽셀의 그레이스케일 색상으로 채우기 스타일 설정
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const grayValue = MAX_PIXEL_VALUE - this.currentMatrix[y][x];
                         ctx.fillStyle = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
-
-                        // 확대된 픽셀 위치에 사각형 그리기
                         ctx.fillRect(x * scaleFactor, y * scaleFactor, scaleFactor, scaleFactor);
                     }
                 }
-
-                // 캔버스 내용을 PNG Blob으로 변환 후 다운로드
                 canvas.toBlob((blob) => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'digit_280x280.png';
-                        document.body.appendChild(a);
-                        a.click();
-
-                        // 사용 후 Blob URL 해제 (비동기적으로 실행될 수 있으므로 setTimeout 사용)
-                        setTimeout(() => {
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
-                        }, 100);
-                    } else {
-                        console.error('캔버스를 Blob으로 변환 실패');
-                        alert('이미지 다운로드에 실패했습니다.');
-                    }
-                }, 'image/png'); // PNG 형식 지정
+                    if (!blob) { alert('이미지 다운로드에 실패했습니다.'); return; }
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `digit_${largeSize}x${largeSize}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                }, 'image/png');
             }
         }
 

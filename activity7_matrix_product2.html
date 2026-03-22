@@ -912,6 +912,7 @@
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
                     변환</span></a>
             <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+      <a href="activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
         </nav>
     </aside>
 
@@ -1412,10 +1413,7 @@
         }
 
         function applyTransform() {
-            if (!shuffleMode) {
-                alert('먼저 행 섞기 또는 열 섞기 모드를 선택하세요!');
-                return;
-            }
+            if (!shuffleMode) shuffleMode = 'col'; // 미선택 시 기본값: 열 섞기 (A × T)
             
             let result = [];
             let resultColors = [];
@@ -1508,13 +1506,13 @@
             initializeIdentityMatrix();
             
             // 모든 상태 초기화
-            shuffleMode = null;
             isShuffled = false;
-            document.getElementById('operationLabel').textContent = 'A';
-            document.getElementById('workspace').classList.remove('row-mode', 'col-mode');
+            shuffleMode = null;
             renderPixelGrid(originalImageData, originalPixelColors, 'originalPixelGrid');
             renderTransformMatrix();
             renderPixelGrid(originalImageData, originalPixelColors, 'resultPixelGrid');
+            // 기본 모드(열 섞기)로 복원 → 연산 실행 버튼 활성 유지
+            selectShuffleMode('col');
             
             // 우측 패널 섞기 정보 초기화
             const infoEl = document.getElementById('ctrlAsideInfo');

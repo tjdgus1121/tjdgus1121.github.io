@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNN 체험 — AI가 이미지를 보는 방법</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Gowun+Dodum&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link rel="stylesheet" href="nav.css">
+<script src="nav.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #080808;
+  --s1:     #111111;
+  --s2:     #191919;
+  --s3:     #222222;
+  --border: rgba(255,255,255,0.07);
+  --bhi:    rgba(255,255,255,0.13);
+  --accent: #b8ff57;
+  --blue:   #57c8ff;
+  --purple: #c57bff;
+  --coral:  #ff7c57;
+  --text:   #e8e8e8;
+  --muted:  #666;
+  --mono:   'JetBrains Mono', 'Space Mono', monospace;
+  --body:   'Noto Sans KR', 'Gowun Dodum', sans-serif;
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+}
+
+/* ── 배경 그리드 ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+
+/* ── 상단 ── */
+.topbar {
+  position: relative; z-index: 10;
+  padding: 20px 40px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.topbar-badge {
+  font-family: var(--mono);
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid rgba(184,255,87,.28);
+  border-radius: 4px;
+  padding: 3px 9px;
+}
+.topbar-title {
+  font-size: 13px; color: var(--muted); font-family: var(--mono);
+}
+
+/* ── 히어로 영역 ── */
+.hero {
+  position: relative; z-index: 10;
+  max-width: 860px; margin: 0 auto;
+  padding: 72px 24px 56px;
+  text-align: center;
+}
+.hero-label {
+  display: inline-block;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 22px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+}
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p {
+  margin-top: 20px;
+  font-size: 15px; color: var(--muted); line-height: 1.9;
+  max-width: 560px; margin-left: auto; margin-right: auto;
+  word-break: keep-all;
+}
+
+/* ── 카드 그리드 ── */
+.card-grid {
+  position: relative; z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  max-width: 860px; margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ── 활동 카드 ── */
+.activity-card {
+  position: relative;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px 32px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex; flex-direction: column; gap: 0;
+  overflow: hidden;
+  transition: border-color .3s, transform .25s, box-shadow .3s;
+}
+.activity-card:hover {
+  transform: translateY(-4px);
+}
+.activity-card.card-green:hover  { border-color: rgba(184,255,87,.35); box-shadow: 0 16px 48px rgba(184,255,87,.08); }
+.activity-card.card-blue:hover   { border-color: rgba(87,200,255,.35); box-shadow: 0 16px 48px rgba(87,200,255,.08); }
+.activity-card.card-purple:hover { border-color: rgba(197,123,255,.35); box-shadow: 0 16px 48px rgba(197,123,255,.08); }
+
+/* 카드 상단 광선 */
+.activity-card::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 60%; height: 1px;
+  border-radius: 99px;
+  opacity: 0; transition: opacity .3s;
+}
+.card-green::before  { background: var(--accent); }
+.card-blue::before   { background: var(--blue); }
+.card-purple::before { background: var(--purple); }
+.activity-card:hover::before { opacity: 1; }
+
+/* 번호 뱃지 */
+.card-num {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; margin-bottom: 20px;
+}
+.card-green  .card-num { color: var(--accent); }
+.card-blue   .card-num { color: var(--blue); }
+.card-purple .card-num { color: var(--purple); }
+
+/* 아이콘 */
+.card-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 22px;
+  flex-shrink: 0;
+}
+.card-green  .card-icon { background: rgba(184,255,87,.1); }
+.card-blue   .card-icon { background: rgba(87,200,255,.1); }
+.card-purple .card-icon { background: rgba(197,123,255,.1); }
+
+/* 제목 */
+.card-title {
+  font-size: 1.25rem; font-weight: 700; line-height: 1.3;
+  margin-bottom: 10px; word-break: keep-all;
+}
+.card-sub {
+  font-size: 13px; color: var(--muted); line-height: 1.75;
+  word-break: keep-all; flex: 1;
+}
+
+/* 태그 */
+.card-tags {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 24px;
+}
+.tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+  padding: 3px 9px; border-radius: 4px; border: 1px solid;
+}
+.card-green  .tag { border-color: rgba(184,255,87,.25); color: rgba(184,255,87,.7); }
+.card-blue   .tag { border-color: rgba(87,200,255,.25); color: rgba(87,200,255,.7); }
+.card-purple .tag { border-color: rgba(197,123,255,.25); color: rgba(197,123,255,.7); }
+
+/* 진입 화살표 */
+.card-arrow {
+  position: absolute; bottom: 28px; right: 28px;
+  font-size: 18px; opacity: 0.18;
+  transition: opacity .25s, transform .25s;
+}
+.activity-card:hover .card-arrow { opacity: 0.7; transform: translate(3px,-3px); }
+
+/* ── CNN 개념 설명 ── */
+.concept-strip {
+  position: relative; z-index: 10;
+  max-width: 860px; margin: 0 auto 0;
+  padding: 0 24px 56px;
+  display: flex; gap: 1px;
+  border-top: 1px solid var(--border);
+  margin-top: -8px;
+  padding-top: 40px;
+}
+.concept-item {
+  flex: 1;
+  padding: 0 18px;
+  border-right: 1px solid var(--border);
+}
+.concept-item:first-child { padding-left: 0; }
+.concept-item:last-child  { border-right: none; }
+.concept-step {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 8px;
+}
+.concept-name {
+  font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text);
+}
+.concept-desc {
+  font-size: 12px; color: var(--muted); line-height: 1.75;
+  word-break: keep-all;
+}
+
+/* ── 푸터 ── */
+footer {
+  position: relative; z-index: 10;
+  border-top: 1px solid var(--border);
+  padding: 20px 40px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  letter-spacing: .06em;
+}
+
+/* ── 애니메이션 ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero        { animation: fadeUp .6s ease both; }
+.card-grid   { animation: fadeUp .6s .15s ease both; }
+.concept-strip { animation: fadeUp .6s .25s ease both; }
+
+@media (max-width: 600px) {
+  .topbar { padding: 16px 20px; }
+  .hero   { padding: 48px 20px 40px; }
+  .card-grid { padding: 0 16px 60px; }
+  .concept-strip { flex-direction: column; gap: 20px; padding: 28px 16px 48px; }
+  .concept-item { border-right: none; border-bottom: 1px solid var(--border); padding: 0 0 20px; }
+  .concept-item:last-child { border-bottom: none; }
+  footer { flex-direction: column; gap: 6px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+  <i class="fas fa-bars"></i>
+</div>
+
+<aside class="sidebar">
+  <nav>
+    <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+    <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+    <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+    <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+    <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+    <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+    <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+    <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+    <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+    <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+    <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+    <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+    <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+    <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+    <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+    <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+    <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의 신경망 변환</span></a>
+    <a href="activity18_home.html" class="active"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+  </nav>
+</aside>
+
+<!-- 상단 바 -->
+<div class="topbar">
+  <span class="topbar-badge">Activity 17</span>
+  <span class="topbar-title">CNN · 합성곱 신경망 체험</span>
+</div>
+
+<!-- 히어로 -->
+<section class="hero">
+  <div class="hero-label">Convolutional Neural Network</div>
+  <h1>AI는 이미지를<br><em>어떻게 이해</em>할까?</h1>
+  <p>
+    CNN(합성곱 신경망)이 사진 속 사물을 인식하고,<br>
+    배경을 분리하는 과정을 직접 체험해 보세요.
+  </p>
+</section>
+
+<!-- 카드 -->
+<div class="card-grid">
+
+  <!-- 카드 1: 사물 인식 -->
+  <a class="activity-card card-green" href="cnn_ex.html">
+    <div class="card-num">Activity 01</div>
+    <div class="card-icon">🔍</div>
+    <div class="card-title">AI의 눈으로 세상 보기<br>— 사물 인식 체험</div>
+    <div class="card-sub">
+      사진을 업로드하면 MobileNet CNN이 실시간으로 사물을 분류합니다.
+      각 층이 어떤 특징을 추출하는지 필터·피처맵과 함께 시각적으로 탐구해 보세요.
+    </div>
+    <div class="card-tags">
+      <span class="tag">MobileNet v1</span>
+      <span class="tag">이미지 분류</span>
+      <span class="tag">피처맵</span>
+      <span class="tag">커널 시각화</span>
+    </div>
+    <div class="card-arrow">↗</div>
+  </a>
+
+  <!-- 카드 2: 배경 제거 -->
+  <a class="activity-card card-blue" href="activity18_nukki.html">
+    <div class="card-num">Activity 02</div>
+    <div class="card-icon">✂️</div>
+    <div class="card-title">AI가 배경을 지우는 법<br>— 배경 제거 체험</div>
+    <div class="card-sub">
+      사진을 업로드하면 U-Net 기반 세그멘테이션 모델이 배경과 사물을 자동으로 분리합니다.
+      픽셀 단위로 물체를 인식하는 원리를 경험해 보세요.
+    </div>
+    <div class="card-tags">
+      <span class="tag">세그멘테이션</span>
+      <span class="tag">U-Net</span>
+      <span class="tag">배경 제거</span>
+      <span class="tag">픽셀 분류</span>
+    </div>
+    <div class="card-arrow">↗</div>
+  </a>
+
+</div>
+
+<!-- CNN 개념 요약 -->
+<div class="concept-strip">
+  <div class="concept-item">
+    <div class="concept-step">Step 01</div>
+    <div class="concept-name">합성곱 (Convolution)</div>
+    <div class="concept-desc">커널(필터)이 이미지 위를 슬라이딩하며 엣지·색상·질감 같은 지역 패턴을 추출합니다.</div>
+  </div>
+  <div class="concept-item">
+    <div class="concept-step">Step 02</div>
+    <div class="concept-name">활성화 (ReLU)</div>
+    <div class="concept-desc">음수 값을 0으로 제거해 비선형성을 추가하고, 의미 있는 특징만 다음 층으로 전달합니다.</div>
+  </div>
+  <div class="concept-item">
+    <div class="concept-step">Step 03</div>
+    <div class="concept-name">피처맵 (Feature Map)</div>
+    <div class="concept-desc">층이 깊어질수록 추상적인 개념(귀, 바퀴, 윤곽선)을 나타내는 고차원 피처로 변환됩니다.</div>
+  </div>
+  <div class="concept-item">
+    <div class="concept-step">Step 04</div>
+    <div class="concept-name">분류 / 분할 (Output)</div>
+    <div class="concept-desc">Softmax로 사물을 확률로 분류하거나, 픽셀마다 레이블을 붙여 배경·전경을 분리합니다.</div>
+  </div>
+</div>
+
+<!-- 푸터 -->
+<footer>
+  <span>CNN Interactive — Activity 17</span>
+  <span>MobileNet v1 · U-Net Segmentation</span>
+</footer>
+
+</body>
+</html>
