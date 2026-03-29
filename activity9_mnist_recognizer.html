@@ -341,93 +341,62 @@
             /* 부모 너비에 맞춤 */
         }
 
+        /* ── 결과: 큰 숫자 + 가로 확률바 ── */
         .mnist-app__prediction-result {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 20px;
+            font-size: 5rem;
+            font-weight: 900;
+            color: #667eea;
+            line-height: 1;
+            margin-bottom: 4px;
+            font-family: 'Do Hyeon', sans-serif;
         }
-
+        .mnist-app__prediction-label {
+            font-size: 0.95rem;
+            color: #888;
+            margin-bottom: 18px;
+        }
         .mnist-app__confidence-bars {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .mnist-app__confidence-item {
             display: flex;
             flex-direction: column;
+            gap: 5px;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+        .mnist-app__confidence-item {
+            display: grid;
+            grid-template-columns: 18px 1fr 46px;
             align-items: center;
+            gap: 8px;
         }
-
         .mnist-app__digit-label {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #555;
+            text-align: right;
         }
-
         .mnist-app__confidence-bar {
-            width: 40px;
-            height: 120px;
+            height: 14px;
             background: #e0e6ed;
-            border-radius: 20px;
-            position: relative;
+            border-radius: 7px;
             overflow: hidden;
         }
-
         .mnist-app__confidence-fill {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            background: linear-gradient(to top, #667eea, #764ba2);
-            border-radius: 20px;
-            transition: height 0.8s ease;
+            height: 100%;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            border-radius: 7px;
+            width: 0%;
+            transition: width 0.6s ease;
         }
-
+        .mnist-app__confidence-fill.highlight {
+            background: linear-gradient(to right, #ff6b6b, #ee5a24);
+        }
         .mnist-app__confidence-text {
-            font-size: 0.9rem;
-            font-weight: 500;
+            font-size: 0.78rem;
             color: #666;
-            margin-top: 5px;
+            text-align: left;
         }
 
-        /* 피드백 영역 스타일 */
-        .mnist-app__feedback-section {
-            margin-top: 30px; /* .mnist-app__results 와의 간격 */
-            padding: 25px;
-            background: linear-gradient(135deg, #f8f9ff, #e6f3ff);
-            border-radius: 15px;
-            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            text-align: center;
-            display: block; /* 기본적으로 표시 */
-        }
-
-        .mnist-app__feedback-section h3 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 1.5rem;
-        }
-
-        .mnist-app__feedback-controls {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .mnist-app__feedback-select {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-        }
-
+        /* 피드백 버튼 (삭제됨 — 참조 방지용 빈 규칙) */
         .mnist-app__feedback-button {
             padding: 8px 15px;
             background: linear-gradient(45deg, #ffc107, #ff9800);
@@ -484,7 +453,7 @@
             background-color: #f44336;
         }
 
-        /* 전처리된 이미지 컨테이너 스타일 */
+        /* 인식 기록 컨테이너 */
         .debug-images-container {
             display: flex;
             flex-direction: row;
@@ -518,12 +487,16 @@
             /* 제목 중앙 정렬 */
         }
 
-        /* 히스토리 초기화 버튼 스타일 */
+        .history-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
         #clearHistoryBtn {
-            margin-bottom: 15px;
-            /* 이미지 항목과의 간격 */
             width: auto;
-            /* 너비 자동 설정 */
+            font-size: 12px;
+            padding: 6px 16px;
         }
 
         .history-item {
@@ -709,114 +682,31 @@
                         </div>
                     </div>
 
-                    <!-- 전처리된 이미지 컨테이너를 여기로 이동 -->
-                    <div id="debugImagesContainer" class="debug-images-container">
-                        <h3>전처리된 이미지 확인 (디버깅용)</h3>
-                        <button id="clearHistoryBtn" class="mnist-app__button mnist-app__button--clear"
-                            style="margin-bottom: 15px; width: auto;">히스토리 초기화</button>
-                        <!-- 히스토리 아이템들은 JavaScript로 여기에 추가됩니다 -->
+                    <!-- 인식 기록 -->
+                    <div class="history-wrap">
+                        <button id="clearHistoryBtn" class="mnist-app__button mnist-app__button--clear">기록 지우기</button>
+                        <div id="debugImagesContainer" class="debug-images-container">
+                            <h3>인식 기록</h3>
+                        </div>
                     </div>
                 </div>
 
-                <div class="mnist-app__feedback-section">
-                    <h3>이 숫자가 맞나요?</h3>
-                    
-                    <div class="mnist-app__feedback-controls">
-                        <select id="correctDigit" class="mnist-app__feedback-select" aria-label="정답 숫자 선택"
-                            title="인공지능 예측이 틀렸을 경우 올바른 숫자를 선택하여 피드백합니다.">
-                            <option value="-1">선택하세요</option>
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                        </select>
-                        <button id="sendFeedbackBtn" class="mnist-app__feedback-button">피드백 보내기</button>
-                    </div>
-                    <div class="mnist-app__feedback-info-text">
-                        잘못된 피드백, 틀린 숫자를 라벨링하는 경우가 있어, <br>매일 숫자데이터는 초기화 됩니다.
-                    </div>
-                </div>
             </div>
 
-            <div class="mnist-app__results" id="results" style="display: none;">
-                <div class="mnist-app__prediction-result" id="predictionResult">예측 결과</div>
+            <div class="mnist-app__results" id="results" style="display:none;">
+                <div class="mnist-app__prediction-result" id="predictionResult">-</div>
+                <div class="mnist-app__prediction-label" id="predictionLabel"></div>
                 <div class="mnist-app__confidence-bars">
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">0</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-0"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-0">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">1</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-1"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-1">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">2</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-2"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-2">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">3</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-3"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-3">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">4</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-4"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-4">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">5</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-5"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-5">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">6</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-6"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-6">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">7</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-7"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-7">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">8</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-8"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-8">0%</div>
-                    </div>
-                    <div class="mnist-app__confidence-item">
-                        <div class="mnist-app__digit-label">9</div>
-                        <div class="mnist-app__confidence-bar">
-                            <div class="mnist-app__confidence-fill" id="conf-9"></div>
-                        </div>
-                        <div class="mnist-app__confidence-text" id="conf-text-9">0%</div>
-                    </div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">0</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-0"></div></div><div class="mnist-app__confidence-text" id="conf-text-0">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">1</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-1"></div></div><div class="mnist-app__confidence-text" id="conf-text-1">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">2</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-2"></div></div><div class="mnist-app__confidence-text" id="conf-text-2">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">3</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-3"></div></div><div class="mnist-app__confidence-text" id="conf-text-3">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">4</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-4"></div></div><div class="mnist-app__confidence-text" id="conf-text-4">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">5</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-5"></div></div><div class="mnist-app__confidence-text" id="conf-text-5">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">6</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-6"></div></div><div class="mnist-app__confidence-text" id="conf-text-6">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">7</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-7"></div></div><div class="mnist-app__confidence-text" id="conf-text-7">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">8</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-8"></div></div><div class="mnist-app__confidence-text" id="conf-text-8">0%</div></div>
+                    <div class="mnist-app__confidence-item"><div class="mnist-app__digit-label">9</div><div class="mnist-app__confidence-bar"><div class="mnist-app__confidence-fill" id="conf-9"></div></div><div class="mnist-app__confidence-text" id="conf-text-9">0%</div></div>
                 </div>
             </div>
         </div>
@@ -858,7 +748,17 @@
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
-        let modelReady = false; // 서버 모델 준비 상태
+        let modelReady = false;
+        let mnistModel = null;
+
+        // ── 브라우저 내장 TF.js 모델 상수 ──
+        const IMG_SIZE = 784;       // 28×28
+        const NUM_CLS  = 10;
+        const NUM_TRAIN = 10000;   // 학습 샘플 수 (줄일수록 빠름, 정확도 소폭 감소)
+        const MODEL_URL   = './models/mnist/model.json';
+        const MODEL_CACHE = 'indexeddb://mnist-cnn-v2';
+        const SPRITE_URL  = 'https://storage.googleapis.com/learnjs-data/model-builder/mnist_images.png';
+        const LABELS_URL  = 'https://storage.googleapis.com/learnjs-data/model-builder/mnist_labels_uint8';
 
         // Canvas 스타일 설정
         ctx.strokeStyle = '#000';
@@ -1213,76 +1113,131 @@
         }
 
 
-        // 모델 초기화 (이제 서버 상태 확인 및 UI 업데이트 역할)
-        async function initServerStatusCheck() {
-            const statusElement = document.getElementById('modelStatus');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const loadingContainer = document.getElementById('loadingContainer');
+        // ── 브라우저 내 모델 초기화 (서버 불필요) ──
+        async function initModel() {
+            const statusEl   = document.getElementById('modelStatus');
+            const fillEl     = document.getElementById('progressFill');
+            const textEl     = document.getElementById('progressText');
+            const loadingEl  = document.getElementById('loadingContainer');
             const predictBtn = document.getElementById('predictBtn');
+            const steps      = document.querySelector('.mnist-app__loading-steps');
+            if (steps) steps.style.display = 'none';
+            if (predictBtn) predictBtn.disabled = true;
 
-            // 초기 상태 설정
-            statusElement.textContent = '서버 연결 중...';
-            statusElement.className = 'mnist-app__status mnist-app__status--loading'; // CSS 클래스에 맞게 수정
-            progressFill.style.width = '0%';
-            progressText.textContent = '서버 응답 대기 중...(약 30초 소요)';
-            const loadingSteps = document.querySelector('.mnist-app__loading-steps');
-            if (loadingSteps) loadingSteps.style.display = 'none';
+            const setP = (msg, pct) => {
+                if (textEl) textEl.textContent = msg;
+                if (fillEl) fillEl.style.width = pct + '%';
+            };
 
-            if (predictBtn) predictBtn.disabled = true; // 서버 준비될 때까지 버튼 비활성화
+            statusEl.textContent = '모델 로딩 중...';
+            statusEl.className = 'mnist-app__status mnist-app__status--loading';
 
-            // 서버 상태 확인을 위한 URL (예측 엔드포인트 사용)
-            const serverStatusUrl = 'https://tjdgus1121-github-io.onrender.com/'; // 서버 기본 경로로 변경
-            let retryCount = 0;
-            const maxRetries = 10; // 최대 재시도 횟수
-            const retryDelay = 3000; // 재시도 간격 (밀리초)
+            const finish = (msg) => {
+                setP(msg, 100);
+                statusEl.textContent = '모델 준비 완료 ✓';
+                statusEl.className = 'mnist-app__status mnist-app__status--ready';
+                if (predictBtn) predictBtn.disabled = false;
+                setTimeout(() => { if (loadingEl) loadingEl.style.display = 'none'; }, 600);
+                modelReady = true;
+            };
 
-            while (retryCount < maxRetries) {
-                try {
-                    console.log(`서버 상태 확인 시도 ${retryCount + 1}/${maxRetries}: ${serverStatusUrl}`);
-                    // 서버 기본 경로에 HEAD 요청 보내기
-                    const response = await fetch(serverStatusUrl, { method: 'HEAD' });
+            // 1) GitHub 사전 학습 모델 로드 (가장 빠름 — 학습 불필요)
+            try {
+                setP('사전 학습 모델 다운로드 중...', 20);
+                mnistModel = await tf.loadLayersModel(MODEL_URL);
+                finish('사전 학습 모델 로드 완료!');
+                return;
+            } catch (_) { /* 파일 없음 → 다음 단계 */ }
 
-                    if (response.ok) { // 200 OK 응답만 성공으로 간주
-                        console.log('서버 예측 엔드포인트 응답 확인.');
-                        statusElement.textContent = '서버 준비 완료! 사용 가능.';
-                        statusElement.className = 'mnist-app__status mnist-app__status--ready'; // CSS 클래스에 맞게 수정
-                        progressFill.style.width = '100%';
-                        progressText.textContent = '모든 기능 사용 가능';
-                        if (predictBtn) predictBtn.disabled = false; // 서버 준비 완료 시 버튼 활성화
+            // 2) IndexedDB 캐시 확인 → 있으면 즉시 로드
+            try {
+                setP('저장된 모델 확인 중...', 10);
+                mnistModel = await tf.loadLayersModel(MODEL_CACHE);
+                finish('저장된 모델 불러오기 완료!');
+                return;
+            } catch (_) { /* 캐시 없음 → 브라우저 학습 */ }
 
-                        // 로딩 컨테이너 숨기기
-                        setTimeout(() => {
-                            if (loadingContainer) loadingContainer.style.display = 'none';
-                        }, 1000);
+            // 2) MNIST 데이터 다운로드
+            try {
+                setP('MNIST 이미지 다운로드 중... (약 10~15 MB)', 15);
+                const imgCanvas = document.createElement('canvas');
+                const imgCtx = imgCanvas.getContext('2d');
+                await new Promise((res, rej) => {
+                    const img = new Image();
+                    img.crossOrigin = '';
+                    img.onload = () => {
+                        imgCanvas.width = img.width;
+                        imgCanvas.height = img.height;
+                        imgCtx.drawImage(img, 0, 0);
+                        res();
+                    };
+                    img.onerror = rej;
+                    img.src = SPRITE_URL;
+                });
 
-                        modelReady = true; // 서버 준비 완료 상태 변수
-                        return; // 성공적으로 연결되면 함수 종료
-                    }
+                // 필요한 샘플만 캔버스에서 읽기 (전체 로드 후 앞 N장만 처리)
+                const numImages = Math.min(imgCanvas.height, NUM_TRAIN);
+                const rawPixels = imgCtx.getImageData(0, 0, imgCanvas.width, numImages).data;
+                const dataImages = new Float32Array(numImages * IMG_SIZE);
 
-                    console.warn(`서버 상태 확인 응답 코드: ${response.status}. 재시도...`);
-
-                } catch (error) {
-                    console.error(`서버 상태 확인 실패: ${error}. 재시도...`);
+                // 청크 단위 처리 → 메인 스레드 블로킹 방지
+                const CHUNK = 5000;
+                for (let base = 0; base < numImages * IMG_SIZE; base += CHUNK) {
+                    const end = Math.min(base + CHUNK, numImages * IMG_SIZE);
+                    for (let i = base; i < end; i++) dataImages[i] = rawPixels[i * 4] / 255.0;
+                    const pct = 30 + Math.round((end / (numImages * IMG_SIZE)) * 15);
+                    setP(`이미지 전처리 중... ${Math.round(end / (numImages * IMG_SIZE) * 100)}%`, pct);
+                    await tf.nextFrame(); // 브라우저에 제어권 반환 → UI 응답 유지
                 }
 
-                retryCount++;
-                if (progressFill) progressFill.style.width = `${(retryCount / maxRetries) * 100}%`;
-                if (progressText) progressText.textContent = `서버 연결 실패. 재시도 중... (${retryCount}/${maxRetries})`;
-                await new Promise(resolve => setTimeout(resolve, retryDelay)); // 지연 후 재시도
-            }
+                setP('레이블 다운로드 중...', 50);
+                const labelsResp = await fetch(LABELS_URL);
+                const dataLabels = new Uint8Array(await labelsResp.arrayBuffer()); // 65000×10 one-hot
 
-            // 최대 재시도 후에도 연결 실패
-            console.error('서버 연결에 실패했습니다. 나중에 다시 시도해주세요.');
-            if (statusElement) {
-                statusElement.textContent = '서버 연결 실패. 나중에 다시 시도하세요.';
-                statusElement.style.color = '#ef4444';
-                statusElement.className = 'mnist-app__status'; // 기본 상태 클래스로 초기화
+                // 3) 모델 정의
+                setP('모델 생성 중...', 60);
+                mnistModel = tf.sequential();
+                mnistModel.add(tf.layers.conv2d({ inputShape: [28,28,1], filters: 8,  kernelSize: 5, activation: 'relu', padding: 'same' }));
+                mnistModel.add(tf.layers.maxPooling2d({ poolSize: 2, strides: 2 }));
+                mnistModel.add(tf.layers.conv2d({ filters: 16, kernelSize: 5, activation: 'relu', padding: 'same' }));
+                mnistModel.add(tf.layers.maxPooling2d({ poolSize: 2, strides: 2 }));
+                mnistModel.add(tf.layers.flatten());
+                mnistModel.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
+                mnistModel.compile({ optimizer: 'adam', loss: 'categoricalCrossentropy', metrics: ['accuracy'] });
+
+                // 4) 학습
+                setP('모델 학습 중... (최초 1회만, 이후 즉시 시작)', 63);
+                const xs = tf.tensor4d(dataImages, [numImages, 28, 28, 1]);
+                const ys = tf.tensor2d(Float32Array.from(dataLabels.slice(0, numImages * NUM_CLS)), [numImages, NUM_CLS]);
+                const EPOCHS = 4;
+                await mnistModel.fit(xs, ys, {
+                    epochs: EPOCHS,
+                    batchSize: 256,
+                    validationSplit: 0.1,
+                    callbacks: {
+                        onEpochEnd: async (epoch, logs) => {
+                            const acc = ((logs.acc ?? logs.accuracy ?? 0) * 100).toFixed(1);
+                            const pct = 63 + Math.round(((epoch + 1) / EPOCHS) * 30);
+                            setP(`학습 중... ${epoch+1}/${EPOCHS}에폭 (정확도 ${acc}%)`, pct);
+                            await tf.nextFrame(); // 에폭마다 UI 업데이트 허용
+                        }
+                    }
+                });
+                xs.dispose(); ys.dispose();
+
+                // 5) IndexedDB 저장 (다음 방문부터 즉시 로드)
+                setP('모델 저장 중...', 95);
+                await mnistModel.save(MODEL_CACHE);
+
+                finish('학습 완료! (다음부터는 즉시 시작)');
+
+            } catch (err) {
+                console.error('모델 초기화 오류:', err);
+                setP('오류: ' + err.message, 100);
+                if (fillEl) fillEl.style.background = '#ef4444';
+                statusEl.textContent = '모델 로드 실패';
+                modelReady = false;
             }
-            if (progressText) progressText.textContent = '서버에 연결할 수 없습니다.';
-            if (progressFill) progressFill.style.background = '#ef4444';
-            if (predictBtn) predictBtn.disabled = true; // 연결 실패 시 버튼 비활성화 유지
-            modelReady = false; // 서버 준비 안 됨 상태
         }
 
         // Canvas 지우기
@@ -1293,117 +1248,50 @@
             if (resultsDiv) resultsDiv.style.display = 'none';
         }
 
-        // 서버로 이미지 전송 및 예측 결과 받기
-        async function predictWithServer() {
-            if (!modelReady) {
-                showSystemMessage('서버가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.', 'error');
+        // ── 브라우저 내 모델로 예측 ──
+        async function predictWithModel() {
+            if (!modelReady || !mnistModel) {
+                showSystemMessage('모델이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.', 'error');
                 return;
             }
 
-            // 빈 캔버스 체크
-            const processedTensor = preprocessCanvas(); // preprocessCanvas에서 null 반환 시 그림 없음
+            const processedTensor = preprocessCanvas();
             if (processedTensor === null) {
                 showSystemMessage('숫자를 그려주세요!', 'error');
                 return;
             }
 
-            let imgArray = null; // try 블록 외부에서 선언하여 finally에서 dispose 가능하게 함
-            let flatArray = null;
-            let grayScalePixels = null;
-            let imgData = null;
             let predictedDigit = null;
             let probabilities = null;
 
             try {
-                imgArray = await processedTensor.array();
+                const predTensor = mnistModel.predict(processedTensor);
+                probabilities = Array.from(await predTensor.data());
+                predTensor.dispose();
+                predictedDigit = probabilities.indexOf(Math.max(...probabilities));
 
-                flatArray = imgArray[0].flat();
-                grayScalePixels = new Uint8ClampedArray(28 * 28 * 4);
-
+                // 히스토리용 그레이스케일 이미지 생성
+                const imgArray = await processedTensor.array();
+                const flat = imgArray[0].flat();
+                const grayPixels = new Uint8ClampedArray(28 * 28 * 4);
                 for (let i = 0; i < 28 * 28; i++) {
-                    const gray = Math.round((1 - flatArray[i]) * 255);
-                    grayScalePixels[i * 4 + 0] = gray;
-                    grayScalePixels[i * 4 + 1] = gray;
-                    grayScalePixels[i * 4 + 2] = gray;
-                    grayScalePixels[i * 4 + 3] = 255;
+                    const g = Math.round((1 - flat[i]) * 255);
+                    grayPixels[i*4]=grayPixels[i*4+1]=grayPixels[i*4+2]=g;
+                    grayPixels[i*4+3] = 255;
                 }
+                historyManager.addImage(new ImageData(grayPixels, 28, 28), predictedDigit, 'prediction');
+                showSystemMessage('예측이 완료되었습니다!', 'success');
 
-                imgData = new ImageData(grayScalePixels, 28, 28);
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 28;
-                tempCanvas.height = 28;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.putImageData(imgData, 0, 0);
-
-                const imgDataUrl = tempCanvas.toDataURL('image/png');
-                let imgBase64 = imgDataUrl.split(',')[1];
-
-                // 예측 요청을 /predict 엔드포인트로 보내도록 URL 수정
-                const serverUrl = 'https://tjdgus1121-github-io.onrender.com/predict';
-
-                const response = await fetch(serverUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    // /predict 엔드포인트는 일반적으로 이미지 데이터만 필요하므로 label 제거
-                    body: JSON.stringify({ image: imgBase64 })
-                });
-
-                if (!response.ok) {
-                    // 서버 응답 상태 코드가 200번대가 아닌 경우
-                    const errorText = await response.text(); // 서버에서 보낸 오류 응답 본문 읽기
-                    throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText}`);
-                }
-
-                const result = await response.json();
-
-                // 서버 응답 유효성 검사: predictedDigit 및 probabilities 필드 확인
-                if (typeof result.result === 'undefined' || !Array.isArray(result.probs) || result.probs.length !== 10) {
-                    console.error('Invalid server response format:', result);
-                    throw new Error('서버 응답 형식이 올바르지 않습니다.'); // 예상치 못한 응답 형식에 대한 오류 throw
-                }
-
-                const imgArrayForHistory = await processedTensor.array(); // 텐서에서 다시 배열 얻기
-                const flatArrayForHistory = imgArrayForHistory[0].flat();
-                const grayScalePixelsForHistory = new Uint8ClampedArray(28 * 28 * 4);
-
-                for (let i = 0; i < 28 * 28; i++) {
-                    const gray = Math.round((1 - flatArrayForHistory[i]) * 255);
-                    grayScalePixelsForHistory[i * 4 + 0] = gray;
-                    grayScalePixelsForHistory[i * 4 + 1] = gray;
-                    grayScalePixelsForHistory[i * 4 + 2] = gray;
-                    grayScalePixelsForHistory[i * 4 + 3] = 255; // 완전 불투명
-                }
-
-                const imgDataForHistory = new ImageData(grayScalePixelsForHistory, 28, 28);
-
-                historyManager.addImage(imgDataForHistory, result.result, 'prediction');
-
-                // 성공 메시지 표시 (화면 상단 메시지 사용)
-                showSystemMessage(result.message || '예측이 성공적으로 완료되었습니다!', 'success');
-
-                predictedDigit = result.result;
-                probabilities = result.probs;
-
-            } catch (error) {
-                console.error('예측 실행 중 오류:', error);
-                // 오류 메시지 표시 (화면 상단 메시지 사용)
-                showSystemMessage(`예측 실행 중 오류가 발생했습니다: ${error.message}. 서버 상태를 확인해주세요.`, 'error');
-
+            } catch (err) {
+                console.error('예측 오류:', err);
+                showSystemMessage('예측 중 오류가 발생했습니다: ' + err.message, 'error');
             } finally {
-                // TensorFlow.js Tensor 메모리 정리
                 if (processedTensor) processedTensor.dispose();
-
-                if (typeof predictedDigit !== 'undefined' && Array.isArray(probabilities) && probabilities.length === 10) {
+                if (typeof predictedDigit === 'number') {
                     showPredictionResult(predictedDigit, probabilities);
-                } else if (typeof predictedDigit !== 'undefined') {
-                    // 확률값은 없지만 예측 숫자는 받은 경우 (서버 오류 등)
-                    showPredictionResult(predictedDigit, new Array(10).fill(0)); // 확률값은 0으로 채워 표시
                 } else {
-                    // 예측 숫자도 받지 못한 경우
-                    showPredictionResult('알 수 없음', new Array(10).fill(0)); // 기본 결과 표시
+                    showPredictionResult('알 수 없음', new Array(10).fill(0));
                 }
-
-                // 예측 버튼 다시 활성화 및 텍스트 복원
                 const predictBtn = document.getElementById('predictBtn');
                 if (predictBtn) {
                     predictBtn.disabled = false;
@@ -1412,39 +1300,34 @@
             }
         }
 
-        // 예측 결과 표시 함수 (유지 - predictWithServer 아래로 이동하여 관련 로직과 가깝게 배치)
         function showPredictionResult(predictedDigit, probabilities) {
             const resultsDiv = document.getElementById('results');
-            const predictionResult = document.getElementById('predictionResult');
-            if (predictionResult) { // null 체크 추가
-                predictionResult.innerHTML = `예측: <strong style="color: #667eea; font-size: 2rem;">${predictedDigit}</strong>`;
+            const predEl   = document.getElementById('predictionResult');
+            const labelEl  = document.getElementById('predictionLabel');
+
+            if (predEl) predEl.textContent = typeof predictedDigit === 'number' ? predictedDigit : '?';
+            if (labelEl) {
+                const conf = typeof predictedDigit === 'number' ? (probabilities[predictedDigit] * 100).toFixed(1) : 0;
+                labelEl.textContent = `신뢰도 ${conf}%`;
             }
 
-            // 신뢰도 막대 업데이트
             for (let i = 0; i < 10; i++) {
-                const fillElement = document.getElementById(`conf-${i}`);
-                const textElement = document.getElementById(`conf-text-${i}`);
-                if (fillElement && textElement) { // null 체크 추가
-                    const percentage = (probabilities[i] * 100).toFixed(1);
-                    fillElement.style.height = `${probabilities[i] * 100}%`;
-                    textElement.textContent = `${percentage}%`;
-                    if (i === predictedDigit) {
-                        fillElement.style.background = 'linear-gradient(to top, #ff6b6b, #ee5a24)';
-                    } else {
-                        fillElement.style.background = 'linear-gradient(to top, #667eea, #764ba2)';
-                    }
-                }
+                const fill = document.getElementById(`conf-${i}`);
+                const txt  = document.getElementById(`conf-text-${i}`);
+                if (!fill || !txt) continue;
+                const pct = (probabilities[i] * 100).toFixed(1);
+                fill.style.width = `${probabilities[i] * 100}%`;   // 가로바
+                txt.textContent  = `${pct}%`;
+                fill.classList.toggle('highlight', i === predictedDigit);
             }
-            if (resultsDiv) {
-                resultsDiv.style.display = 'block';
-            }
+            if (resultsDiv) resultsDiv.style.display = 'block';
         }
 
         // 이벤트 리스너 설정
 
         window.addEventListener('load', async () => {
 
-            await initServerStatusCheck();
+            await initModel();
 
             await historyManager.loadHistory();
 
@@ -1529,7 +1412,7 @@
                         predictBtn.disabled = true;
                         predictBtn.textContent = '인식 중...';
 
-                        await predictWithServer();
+                        await predictWithModel();
                     } catch (error) {
                         console.error('예측 실행 중 오류:', error);
                         // 오류 메시지는 predictWithServer 내부에서 처리
@@ -1538,27 +1421,6 @@
                 });
             }
 
-            const sendFeedbackBtn = document.getElementById('sendFeedbackBtn');
-            if (sendFeedbackBtn) {
-                sendFeedbackBtn.addEventListener('click', async (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    const correctDigitSelect = document.getElementById('correctDigit');
-                    const correctDigit = parseInt(correctDigitSelect.value);
-                    if (correctDigit >= 0 && correctDigit <= 9) {
-                        // 버튼 상태 변경은 sendFeedbackToServer 내부에서 처리
-                        try {
-                            await sendFeedbackToServer(correctDigit);
-                        } catch (error) {
-                            console.error('피드백 전송 중 오류:', error);
-                            // 오류 메시지는 sendFeedbackToServer 내부에서 처리
-                        }
-                    } else {
-                        showSystemMessage('정답 숫자를 선택해주세요.', 'error'); // alert 대신 화면 메시지 사용
-                    }
-                });
-            }
 
             // 히스토리 초기화 버튼 이벤트 리스너 추가
             const clearHistoryBtn = document.getElementById('clearHistoryBtn');
