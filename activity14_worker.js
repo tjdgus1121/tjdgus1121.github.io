@@ -2,6 +2,7 @@ import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transfo
 
 // GitHub Pages 자체 호스팅 모델 사용
 env.allowLocalModels = true;
+env.allowRemoteModels = true;
 env.localModelPath = 'https://tjdgus1121.github.io/models/';
 
 let detector = null;
