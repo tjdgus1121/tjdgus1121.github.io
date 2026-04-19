@@ -1,10 +1,15 @@
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3/dist/transformers.min.js';
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3/dist/transformers.min.js';
+
+// GitHub Pages에서 자체 호스팅된 모델 사용 (HuggingFace CDN 미사용)
+const MODEL_URL = 'https://tjdgus1121.github.io/models/yolos-small/';
+env.allowRemoteModels = false;
+env.allowLocalModels = true;
 
 let detector = null;
 
 (async () => {
     try {
-        detector = await pipeline('object-detection', 'Xenova/yolos-small', { dtype: 'q8' });
+        detector = await pipeline('object-detection', MODEL_URL, { dtype: 'q8' });
         self.postMessage({ type: 'ready' });
     } catch (err) {
         self.postMessage({ type: 'error', message: err.message });
