@@ -356,15 +356,182 @@
             }
         }
         @media (max-width: 500px) {
-            h1 {
-                font-size: 2em;
-            }
-            .slider-container {
-                padding: 16px 6px 10px 6px;
-            }
-            .upload-box {
-                padding: 14px 6px 10px 6px;
-            }
+            h1 { font-size: 2em; }
+            .slider-container { padding: 16px 6px 10px 6px; }
+            .upload-box { padding: 14px 6px 10px 6px; }
+        }
+
+        /* 퀴즈 버튼 */
+        .quiz-btn {
+            display: block;
+            margin: 0 auto 8px;
+            padding: 10px 32px;
+            background: linear-gradient(135deg, #a78bfa, #6c8cff);
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(108,140,255,0.25);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .quiz-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(108,140,255,0.35); }
+
+        /* 퀴즈 팝업 */
+        .quiz-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 4000;
+            justify-content: center;
+            align-items: center;
+        }
+        .quiz-overlay.open { display: flex; }
+        .quiz-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px 30px 24px;
+            max-width: 540px;
+            width: 94vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 48px rgba(108,140,255,0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .quiz-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #6c8cff;
+        }
+        .quiz-progress {
+            font-size: 0.9em;
+            color: #888;
+            font-weight: 600;
+        }
+        .quiz-close {
+            font-size: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #aaa;
+            line-height: 1;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+        .quiz-close:hover { background: #f0f0f0; color: #333; }
+        .quiz-progress-bar-wrap {
+            width: 100%;
+            height: 6px;
+            background: #e9eefa;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .quiz-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #a78bfa, #6c8cff);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .quiz-question {
+            font-size: 1.05em;
+            line-height: 1.7;
+            color: #222;
+            min-height: 60px;
+        }
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .quiz-option {
+            padding: 12px 16px;
+            border: 2px solid #e0e4ff;
+            border-radius: 12px;
+            background: #f8f9ff;
+            cursor: pointer;
+            font-size: 0.97em;
+            text-align: left;
+            transition: border-color 0.15s, background 0.15s;
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.5;
+        }
+        .quiz-option:hover:not(:disabled) { border-color: #6c8cff; background: #eef1ff; }
+        .quiz-option.correct  { border-color: #4caf50; background: #f0fff2; color: #2e7d32; font-weight: 700; }
+        .quiz-option.wrong    { border-color: #e57373; background: #fff0f0; color: #c62828; }
+        .quiz-option:disabled { cursor: default; }
+        .quiz-feedback {
+            font-size: 0.92em;
+            line-height: 1.7;
+            padding: 12px 14px;
+            border-radius: 10px;
+            display: none;
+        }
+        .quiz-feedback.show { display: block; }
+        .quiz-feedback.ok  { background: #f0fff2; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .quiz-feedback.bad { background: #fff0f0; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .quiz-next-btn {
+            align-self: flex-end;
+            padding: 9px 28px;
+            background: #6c8cff;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.97em;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+            transition: background 0.15s;
+        }
+        .quiz-next-btn:hover { background: #4b5fc9; }
+        .quiz-result {
+            display: none;
+            text-align: center;
+            flex-direction: column;
+            gap: 14px;
+            align-items: center;
+        }
+        .quiz-result.show { display: flex; }
+        .quiz-score {
+            font-size: 2.8em;
+            font-weight: 700;
+            color: #6c8cff;
+        }
+        .quiz-score-msg { font-size: 1.05em; color: #555; }
+        .quiz-retry-btn {
+            padding: 10px 32px;
+            background: linear-gradient(135deg, #a78bfa, #6c8cff);
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            font-size: 0.88em;
+            line-height: 1.15;
+            margin: 0 1px;
+        }
+        .frac > span:first-child {
+            border-bottom: 1.5px solid currentColor;
+            padding: 0 3px;
+        }
+        .frac > span:last-child {
+            padding: 0 3px;
         }
     </style>
 </head>
@@ -398,7 +565,8 @@
     </aside>
     <div class="container">
         <h1>이미지 블렌더</h1>
-        
+        <button type="button" class="quiz-btn" id="quiz-open-btn">📝 합성 비율 퀴즈</button>
+
         <div class="upload-container">
             <div class="upload-box">
                 <span class="upload-label">이미지 1</span>
@@ -484,6 +652,31 @@
             </div>
 
     </footer>
+
+    <!-- 퀴즈 팝업 -->
+    <div class="quiz-overlay" id="quiz-overlay">
+      <div class="quiz-box">
+        <div class="quiz-header">
+          <span class="quiz-title">📝 합성 비율 퀴즈</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="quiz-progress" id="quiz-progress">1 / 10</span>
+            <button type="button" class="quiz-close" id="quiz-close-btn" title="닫기">✕</button>
+          </div>
+        </div>
+        <div class="quiz-progress-bar-wrap">
+          <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:10%"></div>
+        </div>
+        <div class="quiz-question" id="quiz-question"></div>
+        <div class="quiz-options" id="quiz-options"></div>
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+        <button type="button" class="quiz-next-btn" id="quiz-next-btn">다음 →</button>
+        <div class="quiz-result" id="quiz-result">
+          <div class="quiz-score" id="quiz-score"></div>
+          <div class="quiz-score-msg" id="quiz-score-msg"></div>
+          <button type="button" class="quiz-retry-btn" id="quiz-retry-btn">다시 풀기</button>
+        </div>
+      </div>
+    </div>
 
     <script>
         // 캔버스 설정
@@ -748,10 +941,263 @@
             // 깨진 이미지 오류를 방지하기 위해 빈 소스 설정
             thumb1.src = '';
             thumb2.src = '';
-            
+
             // 현재 연도 설정
             document.getElementById('current-year').textContent = new Date().getFullYear();
         });
+    </script>
+
+    <script>
+    // ── 합성 비율 퀴즈 ──────────────────────────────────────
+    (function () {
+        const ALL_PAIRS = [[7,3],[6,4],[8,2],[9,1],[3,7],[4,6],[2,8],[1,9]];
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function frac(a, b) {
+            return `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+        }
+
+        // 유형0: 비율 → 올바른 수식 고르기
+        function makeType0(a, b) {
+            const t = a + b;
+            const correct      = `${frac(a,t)}·A + ${frac(b,t)}·B`;
+            const misconception= `${frac(b,t)}·A + ${frac(a,t)}·B`;
+            const other1       = `${frac(a,t)}·A + ${frac(a,t)}·B`;
+            const other2       = `${frac(b,t)}·A + ${frac(b,t)}·B`;
+            const opts = shuffle([...new Set([correct, misconception, other1, other2])].slice(0, 4));
+            return {
+                question: `이미지 A와 이미지 B를 <strong>A : B = ${a} : ${b}</strong>로 합성할 때,<br>올바른 최종 색상 수식은?`,
+                opts,
+                correctIdx: opts.indexOf(correct),
+                explanation: `A의 비율은 <b>${a}/${t}</b>, B의 비율은 <b>${b}/${t}</b>입니다.<br>
+                    따라서 최종 = <b>${a}/${t}·A + ${b}/${t}·B</b><br>
+                    <span style="color:#c62828">⚠ 오개념: "${b}/${t}·A + ${a}/${t}·B"는 A와 B의 계수가 뒤바뀐 오답입니다!</span>`
+            };
+        }
+
+        // 유형1: 수식 → 비율 고르기
+        function makeType1(a, b) {
+            const t = a + b;
+            const correct      = `A : B = ${a} : ${b}`;
+            const misconception= `A : B = ${b} : ${a}`;
+            const pool = [correct, misconception];
+            for (let da = -3; da <= 3; da++) {
+                if (da === 0) continue;
+                const na = a + da, nb = t - na;
+                if (na > 0 && nb > 0) {
+                    const s = `A : B = ${na} : ${nb}`;
+                    if (s !== correct && s !== misconception) pool.push(s);
+                }
+            }
+            const opts = shuffle([...new Set(pool)].slice(0, 4));
+            return {
+                question: `최종색상 = <strong>${frac(a,t)}·A + ${frac(b,t)}·B</strong> 일 때,<br>A : B의 합성 비율은?`,
+                opts,
+                correctIdx: opts.indexOf(correct),
+                explanation: `A의 계수 <b>${a}/${t}</b> → A의 비율 = <b>${a}</b>, B의 계수 <b>${b}/${t}</b> → B의 비율 = <b>${b}</b><br>
+                    따라서 A : B = <b>${a} : ${b}</b><br>
+                    <span style="color:#c62828">⚠ 오개념: 계수를 반대로 읽어 "${b} : ${a}"로 혼동하지 마세요!</span>`
+            };
+        }
+
+        // 유형2: 비율 → A의 계수 고르기
+        function makeType2(a, b) {
+            const t = a + b;
+            const correct      = frac(a, t);
+            const misconception= frac(b, t);
+            const pool = [correct, misconception];
+            for (let da = -3; da <= 3; da++) {
+                if (da === 0) continue;
+                const na = a + da;
+                if (na > 0 && na < t) {
+                    const s = frac(na, t);
+                    if (s !== correct && s !== misconception) pool.push(s);
+                }
+            }
+            const opts = shuffle([...new Set(pool)].slice(0, 4));
+            return {
+                question: `A : B = <strong>${a} : ${b}</strong>로 합성할 때,<br>이미지 A의 계수(가중치)는?`,
+                opts,
+                correctIdx: opts.indexOf(correct),
+                explanation: `A : B = ${a} : ${b}에서 전체 합은 ${t}입니다.<br>
+                    이미지 A의 계수 = A의 비율 / 전체 = <b>${a}/${t}</b><br>
+                    <span style="color:#c62828">⚠ 오개념: B의 계수 ${b}/${t}를 A의 것으로 혼동하지 마세요!</span>`
+            };
+        }
+
+        // 유형3 (마지막): 행렬 픽셀값 직접 계산
+        function makeTypeMatrix() {
+            const MPAIRS = [[7,3],[6,4],[8,2],[3,7],[4,6]];
+            const [a, b] = MPAIRS[Math.floor(Math.random() * MPAIRS.length)];
+            const t = a + b; // always 10
+
+            // 픽셀값: 10의 배수 → a/10 * v 가 항상 정수
+            function rv() { return (Math.floor(Math.random() * 20) + 1) * 10; }
+            const rA = rv(), gA = rv(), bA = rv();
+            const rB = rv(), gB = rv(), bB = rv();
+
+            const rC = a * rA / t + b * rB / t;
+            const gC = a * gA / t + b * gB / t;
+            const bC = a * bA / t + b * bB / t;
+
+            const rM = b * rA / t + a * rB / t;
+            const gM = b * gA / t + a * gB / t;
+            const bM = b * bA / t + a * bB / t;
+
+            const correct      = `[${rC}, ${gC}, ${bC}]`;
+            const misconception= `[${rM}, ${gM}, ${bM}]`;
+            const d1 = 10, d2 = 20;
+            const o1 = `[${rC + d1}, ${gC - d1}, ${bC + d1}]`;
+            const o2 = `[${rC - d2}, ${gC + d2}, ${bC}]`;
+            const opts = shuffle([...new Set([correct, misconception, o1, o2])].slice(0, 4));
+
+            return {
+                question: `이미지 A, B의 픽셀(R, G, B)값이 아래와 같습니다.<br>
+                    <strong>A : B = ${a} : ${b}</strong>로 합성했을 때 최종 픽셀값 [R, G, B]는?<br>
+                    <table style="margin:10px auto;border-collapse:collapse;font-size:0.93em;text-align:center;">
+                        <tr>
+                            <th style="padding:5px 14px;background:#eef1ff;border:1px solid #c8d0ff;"></th>
+                            <th style="padding:5px 14px;background:#eef1ff;border:1px solid #c8d0ff;">R</th>
+                            <th style="padding:5px 14px;background:#eef1ff;border:1px solid #c8d0ff;">G</th>
+                            <th style="padding:5px 14px;background:#eef1ff;border:1px solid #c8d0ff;">B</th>
+                        </tr>
+                        <tr>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;font-weight:700;color:#6c8cff;">A</td>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;">${rA}</td>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;">${gA}</td>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;">${bA}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;font-weight:700;color:#ff8a9e;">B</td>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;">${rB}</td>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;">${gB}</td>
+                            <td style="padding:5px 14px;border:1px solid #c8d0ff;">${bB}</td>
+                        </tr>
+                    </table>`,
+                opts,
+                correctIdx: opts.indexOf(correct),
+                explanation: `최종 = ${frac(a,t)}·A + ${frac(b,t)}·B<br>
+                    R: ${frac(a,t)}×${rA} + ${frac(b,t)}×${rB} = ${a*rA/t} + ${b*rB/t} = <b>${rC}</b><br>
+                    G: ${frac(a,t)}×${gA} + ${frac(b,t)}×${gB} = ${a*gA/t} + ${b*gB/t} = <b>${gC}</b><br>
+                    B: ${frac(a,t)}×${bA} + ${frac(b,t)}×${bB} = ${a*bA/t} + ${b*bB/t} = <b>${bC}</b><br>
+                    <span style="color:#c62828">⚠ 오개념으로 계산하면 [${rM}, ${gM}, ${bM}]이 됩니다!</span>`
+            };
+        }
+
+        function generateQuestions() {
+            const base = shuffle([...ALL_PAIRS]);
+            const pairs = [...base, base[0]]; // 9개 일반 문제용
+            const qs = pairs.slice(0, 9).map(([a, b], i) =>
+                i % 3 === 0 ? makeType0(a, b) : i % 3 === 1 ? makeType1(a, b) : makeType2(a, b)
+            );
+            qs.push(makeTypeMatrix()); // 10번째: 행렬 계산 문제
+            return qs;
+        }
+
+        let questions = [], current = 0, score = 0, answered = false;
+
+        const overlay    = document.getElementById('quiz-overlay');
+        const openBtn    = document.getElementById('quiz-open-btn');
+        const closeBtn   = document.getElementById('quiz-close-btn');
+        const progressEl = document.getElementById('quiz-progress');
+        const progressBar= document.getElementById('quiz-progress-bar');
+        const questionEl = document.getElementById('quiz-question');
+        const optionsEl  = document.getElementById('quiz-options');
+        const feedbackEl = document.getElementById('quiz-feedback');
+        const nextBtn    = document.getElementById('quiz-next-btn');
+        const resultEl   = document.getElementById('quiz-result');
+        const scoreEl    = document.getElementById('quiz-score');
+        const scoreMsgEl = document.getElementById('quiz-score-msg');
+        const retryBtn   = document.getElementById('quiz-retry-btn');
+
+        function startQuiz() {
+            questions = generateQuestions();
+            current = 0; score = 0; answered = false;
+            resultEl.classList.remove('show');
+            questionEl.style.display = '';
+            optionsEl.style.display  = '';
+            feedbackEl.className = 'quiz-feedback';
+            nextBtn.style.display = 'none';
+            showQuestion();
+            overlay.classList.add('open');
+        }
+
+        function showQuestion() {
+            const q = questions[current];
+            answered = false;
+            feedbackEl.className = 'quiz-feedback';
+            feedbackEl.innerHTML = '';
+            nextBtn.style.display = 'none';
+            progressEl.textContent = `${current + 1} / 10`;
+            progressBar.style.width = `${(current + 1) / 10 * 100}%`;
+            questionEl.innerHTML = q.question;
+            optionsEl.innerHTML = '';
+            q.opts.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.type = 'button';
+                btn.innerHTML = opt;
+                btn.addEventListener('click', () => selectOption(i));
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function selectOption(idx) {
+            if (answered) return;
+            answered = true;
+            const q = questions[current];
+            const btns = optionsEl.querySelectorAll('.quiz-option');
+            btns.forEach(b => b.disabled = true);
+            if (idx === q.correctIdx) {
+                btns[idx].classList.add('correct');
+                score++;
+                feedbackEl.className = 'quiz-feedback show ok';
+                feedbackEl.innerHTML = `✅ 정답입니다!<br>${q.explanation}`;
+            } else {
+                btns[idx].classList.add('wrong');
+                if (q.correctIdx >= 0) btns[q.correctIdx].classList.add('correct');
+                feedbackEl.className = 'quiz-feedback show bad';
+                feedbackEl.innerHTML = `❌ 틀렸습니다.<br>${q.explanation}`;
+            }
+            nextBtn.style.display = 'block';
+            nextBtn.textContent = current < 9 ? '다음 →' : '결과 보기';
+        }
+
+        function showResult() {
+            questionEl.style.display = 'none';
+            optionsEl.style.display  = 'none';
+            feedbackEl.className = 'quiz-feedback';
+            nextBtn.style.display = 'none';
+            progressEl.textContent = '완료';
+            progressBar.style.width = '100%';
+            scoreEl.textContent = `${score} / 10`;
+            scoreMsgEl.textContent =
+                score >= 9 ? '완벽합니다! 합성 비율의 달인이에요 🎉' :
+                score >= 7 ? '잘했어요! 조금만 더 연습하면 완벽해질 거예요 👍' :
+                score >= 5 ? '절반 이상 맞혔어요. 오개념을 다시 확인해봐요 💪' :
+                             '더 연습이 필요해요. 비율 개념을 다시 살펴봐요 📚';
+            resultEl.classList.add('show');
+        }
+
+        nextBtn.addEventListener('click', () => {
+            current++;
+            if (current >= 10) showResult();
+            else showQuestion();
+        });
+
+        openBtn.addEventListener('click', startQuiz);
+        closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+        retryBtn.addEventListener('click', startQuiz);
+    })();
     </script>
 </body>
 </html>

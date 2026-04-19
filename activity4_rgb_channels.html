@@ -662,6 +662,183 @@
             }
         }
 
+        /* 밝기 비교 패널 */
+        .brightness-compare-panel {
+            display: none;
+            margin-top: 14px;
+            padding: 12px;
+            background: #f6f8ff;
+            border-radius: 8px;
+            border: 1px solid #dde3ec;
+        }
+        .brightness-compare-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #555;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .brightness-compare-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .brightness-compare-item {
+            text-align: center;
+            flex: 1;
+            min-width: 110px;
+        }
+        .brightness-compare-item-title {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .brightness-compare-item-title.original { color: #888; }
+        .brightness-compare-item-title.additive  { color: #4a90d9; }
+        .brightness-compare-item-title.scale     { color: #e07b3c; }
+        .brightness-compare-canvas {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+        .brightness-compare-canvas.original { border: 1px solid #ddd; }
+        .brightness-compare-canvas.additive  { border: 1px solid #b3d1f7; }
+        .brightness-compare-canvas.scale     { border: 1px solid #f7cba3; }
+        .brightness-compare-canvas.gamma     { border: 1px solid #b3e6b3; }
+        .brightness-compare-label {
+            font-size: 11px;
+            margin-top: 3px;
+        }
+        .brightness-compare-label.additive { color: #4a90d9; }
+        .brightness-compare-label.scale    { color: #e07b3c; }
+        .brightness-compare-label.gamma    { color: #2e9e2e; }
+
+        /* 비교 크게 보기 체크박스 */
+        .brightness-compare-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .brightness-compare-header .brightness-compare-title {
+            margin-bottom: 0;
+        }
+        .compare-expand-all-btn {
+            font-size: 11px;
+            padding: 4px 10px;
+        }
+        .gamma-label { color: #2e9e2e; font-weight: 700; }
+        .compare-expand-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .compare-expand-label input[type=checkbox] {
+            accent-color: #4a90d9;
+            cursor: pointer;
+        }
+
+        /* 비교 팝업 모달 */
+        .compare-popup-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+        }
+        .compare-popup-overlay.open { display: flex; }
+        .compare-popup-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 24px 18px;
+            max-width: 96vw;
+            width: 96vw;
+            max-height: 94vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .compare-popup-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .compare-popup-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+        }
+        .compare-popup-close {
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            color: #888;
+            border: none;
+            background: none;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+        .compare-popup-close:hover { background: #f0f0f0; color: #333; }
+        #compare-popup-canvas {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .compare-popup-canvases {
+            display: flex;
+            gap: 12px;
+            flex-wrap: nowrap;
+            justify-content: center;
+            width: 100%;
+        }
+        @media (max-width: 600px) {
+            .compare-popup-canvases { flex-wrap: wrap; }
+        }
+        .compare-popup-item {
+            text-align: center;
+            flex: 1;
+            min-width: 0;
+        }
+        .compare-popup-item canvas {
+            width: 100%;
+            height: auto;
+            max-height: calc(80vh - 160px);
+            object-fit: contain;
+        }
+        .compare-popup-item-title {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .compare-popup-item-title.original { color: #888; }
+        .compare-popup-item-title.additive  { color: #4a90d9; }
+        .compare-popup-item-title.scale     { color: #e07b3c; }
+        .compare-popup-item-title.gamma     { color: #2e9e2e; }
+        .compare-popup-controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .compare-popup-controls .slider-container label {
+            width: 64px;
+        }
+
         /* 채널 매핑 버튼 그라데이션 */
         #r-to-g, #b-to-g {
             background: #b2fab4;
@@ -767,6 +944,7 @@
                         <button id="invert-btn" class="effect-btn">반전</button>
                         <button id="grayscale-btn" class="effect-btn">그레이스케일</button>
                         <button id="hue-toggle-btn" class="effect-btn hue-toggle">🎨 색조 회전</button>
+                        <button id="brightness-compare-btn" class="effect-btn">⚖ 밝기 비교</button>
                         <button id="reset-btn" class="effect-btn danger">원본으로 되돌리기</button>
                     </div>
 
@@ -777,6 +955,16 @@
                             <span id="brightness-value">0</span>
                         </div>
                         <div class="slider-container">
+                            <label for="brightness-scale">배율</label>
+                            <input type="range" id="brightness-scale" min="0.0" max="2.0" step="0.05" value="1.0">
+                            <span id="brightness-scale-value">×1.00</span>
+                        </div>
+                        <div class="slider-container">
+                            <label for="gamma" class="gamma-label">감마 γ</label>
+                            <input type="range" id="gamma" min="0.2" max="1.8" step="0.05" value="1.0">
+                            <span id="gamma-value">1.00</span>
+                        </div>
+                        <div class="slider-container">
                             <label for="contrast">대비</label>
                             <input type="range" id="contrast" min="-100" max="100" value="0">
                             <span id="contrast-value">0</span>
@@ -785,6 +973,33 @@
                             <label for="saturation">채도</label>
                             <input type="range" id="saturation" min="-100" max="100" value="0">
                             <span id="saturation-value">0</span>
+                        </div>
+                        <div id="brightness-compare-panel" class="brightness-compare-panel">
+                            <div class="brightness-compare-header">
+                                <span class="brightness-compare-title">밝기 조절 방식 비교 (기타 효과 제외)</span>
+                                <button type="button" id="compare-expand-all-btn" class="effect-btn compare-expand-all-btn">🔍 크게 보기</button>
+                            </div>
+                            <div class="brightness-compare-row">
+                                <div class="brightness-compare-item">
+                                    <div class="brightness-compare-item-title original">원본</div>
+                                    <canvas id="compare-original" class="brightness-compare-canvas original"></canvas>
+                                </div>
+                                <div class="brightness-compare-item">
+                                    <div class="brightness-compare-item-title additive">덧셈 밝기만</div>
+                                    <canvas id="compare-additive" class="brightness-compare-canvas additive"></canvas>
+                                    <div class="brightness-compare-label additive" id="compare-additive-label">밝기 0</div>
+                                </div>
+                                <div class="brightness-compare-item">
+                                    <div class="brightness-compare-item-title scale">배율 밝기만</div>
+                                    <canvas id="compare-scale" class="brightness-compare-canvas scale"></canvas>
+                                    <div class="brightness-compare-label scale" id="compare-scale-label">배율 ×1.00</div>
+                                </div>
+                                <div class="brightness-compare-item">
+                                    <div class="brightness-compare-item-title gamma">감마 보정</div>
+                                    <canvas id="compare-gamma" class="brightness-compare-canvas gamma"></canvas>
+                                    <div class="brightness-compare-label gamma" id="compare-gamma-label">γ 1.00</div>
+                                </div>
+                            </div>
                         </div>
                         <div class="hue-panel" id="hue-panel">
                             <div class="hue-wheel-wrap">
@@ -852,6 +1067,51 @@
         </div>
     </div>
 
+    <!-- 밝기 비교 크게 보기 팝업 -->
+    <div id="compare-popup-overlay" class="compare-popup-overlay">
+        <div class="compare-popup-box">
+            <div class="compare-popup-header">
+                <span class="compare-popup-title">밝기 방식 비교</span>
+                <button type="button" class="compare-popup-close" id="compare-popup-close">&#x2715;</button>
+            </div>
+            <div class="compare-popup-canvases">
+                <div class="compare-popup-item">
+                    <div class="compare-popup-item-title original">원본</div>
+                    <canvas id="popup-canvas-original" class="brightness-compare-canvas original"></canvas>
+                </div>
+                <div class="compare-popup-item">
+                    <div class="compare-popup-item-title additive">덧셈 밝기만</div>
+                    <canvas id="popup-canvas-additive" class="brightness-compare-canvas additive"></canvas>
+                </div>
+                <div class="compare-popup-item">
+                    <div class="compare-popup-item-title scale">배율 밝기만</div>
+                    <canvas id="popup-canvas-scale" class="brightness-compare-canvas scale"></canvas>
+                </div>
+                <div class="compare-popup-item">
+                    <div class="compare-popup-item-title gamma">감마 보정</div>
+                    <canvas id="popup-canvas-gamma" class="brightness-compare-canvas gamma"></canvas>
+                </div>
+            </div>
+            <div class="compare-popup-controls">
+                <div class="slider-container">
+                    <label for="popup-brightness">덧셈 밝기</label>
+                    <input type="range" id="popup-brightness" min="-100" max="100" value="0">
+                    <span id="popup-brightness-val">0</span>
+                </div>
+                <div class="slider-container">
+                    <label for="popup-scale">배율</label>
+                    <input type="range" id="popup-scale" min="0.0" max="2.0" step="0.05" value="1.0">
+                    <span id="popup-scale-val">×1.00</span>
+                </div>
+                <div class="slider-container">
+                    <label for="popup-gamma" class="gamma-label">감마 γ</label>
+                    <input type="range" id="popup-gamma" min="0.2" max="1.8" step="0.05" value="1.0">
+                    <span id="popup-gamma-val">1.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <div class="footer-content">
             <div>
@@ -905,9 +1165,13 @@
             const hueWheelCtx = hueWheel.getContext('2d');
 
             const brightnessSlider = document.getElementById('brightness');
+            const brightnessScaleSlider = document.getElementById('brightness-scale');
+            const gammaSlider = document.getElementById('gamma');
             const contrastSlider = document.getElementById('contrast');
             const saturationSlider = document.getElementById('saturation');
             const brightnessValue = document.getElementById('brightness-value');
+            const brightnessScaleValue = document.getElementById('brightness-scale-value');
+            const gammaValue = document.getElementById('gamma-value');
             const contrastValue = document.getElementById('contrast-value');
             const saturationValue = document.getElementById('saturation-value');
 
@@ -945,8 +1209,90 @@
             const colorGCheck = document.getElementById('color-g');
             const colorBCheck = document.getElementById('color-b');
             const undoMappingBtn = document.getElementById('undo-mapping-btn');
+            const brightnessCompareBtn = document.getElementById('brightness-compare-btn');
+            const brightnessComparePanel = document.getElementById('brightness-compare-panel');
+            const compareOriginalCanvas = document.getElementById('compare-original');
+            const compareAdditiveCanvas = document.getElementById('compare-additive');
+            const compareScaleCanvas    = document.getElementById('compare-scale');
+            const compareGammaCanvas    = document.getElementById('compare-gamma');
+
+            const comparePopupOverlay  = document.getElementById('compare-popup-overlay');
+            const comparePopupClose    = document.getElementById('compare-popup-close');
+            const popupCanvasOriginal  = document.getElementById('popup-canvas-original');
+            const popupCanvasAdditive  = document.getElementById('popup-canvas-additive');
+            const popupCanvasScale     = document.getElementById('popup-canvas-scale');
+            const popupCanvasGamma     = document.getElementById('popup-canvas-gamma');
+            const popupBrightnessSlider = document.getElementById('popup-brightness');
+            const popupBrightnessVal    = document.getElementById('popup-brightness-val');
+            const popupScaleSlider      = document.getElementById('popup-scale');
+            const popupScaleVal         = document.getElementById('popup-scale-val');
+            const popupGammaSlider      = document.getElementById('popup-gamma');
+            const popupGammaVal         = document.getElementById('popup-gamma-val');
+
+            function renderAllPopupCanvases() {
+                if (!baseImageData) return;
+                const w = baseImageData.width, h = baseImageData.height;
+                const pb = parseInt(popupBrightnessSlider.value, 10);
+                const ps = parseFloat(popupScaleSlider.value);
+                const pg = parseFloat(popupGammaSlider.value);
+                [popupCanvasOriginal, popupCanvasAdditive, popupCanvasScale, popupCanvasGamma].forEach(c => { c.width = w; c.height = h; });
+
+                popupCanvasOriginal.getContext('2d').putImageData(baseImageData, 0, 0);
+
+                const dAdd = new Uint8ClampedArray(baseImageData.data);
+                for (let i = 0; i < dAdd.length; i += 4) {
+                    dAdd[i]   = Math.max(0, Math.min(255, dAdd[i]   + pb));
+                    dAdd[i+1] = Math.max(0, Math.min(255, dAdd[i+1] + pb));
+                    dAdd[i+2] = Math.max(0, Math.min(255, dAdd[i+2] + pb));
+                }
+                popupCanvasAdditive.getContext('2d').putImageData(new ImageData(dAdd, w, h), 0, 0);
+
+                const dScale = new Uint8ClampedArray(baseImageData.data);
+                for (let i = 0; i < dScale.length; i += 4) {
+                    dScale[i]   = Math.max(0, Math.min(255, dScale[i]   * ps));
+                    dScale[i+1] = Math.max(0, Math.min(255, dScale[i+1] * ps));
+                    dScale[i+2] = Math.max(0, Math.min(255, dScale[i+2] * ps));
+                }
+                popupCanvasScale.getContext('2d').putImageData(new ImageData(dScale, w, h), 0, 0);
+
+                popupCanvasGamma.getContext('2d').putImageData(new ImageData(applyGammaToData(baseImageData.data, pg), w, h), 0, 0);
+            }
+
+            popupBrightnessSlider.addEventListener('input', () => {
+                const v = parseInt(popupBrightnessSlider.value, 10);
+                popupBrightnessVal.textContent = (v >= 0 ? '+' : '') + v;
+                renderAllPopupCanvases();
+            });
+            popupScaleSlider.addEventListener('input', () => {
+                popupScaleVal.textContent = '×' + parseFloat(popupScaleSlider.value).toFixed(2);
+                renderAllPopupCanvases();
+            });
+            popupGammaSlider.addEventListener('input', () => {
+                popupGammaVal.textContent = parseFloat(popupGammaSlider.value).toFixed(2);
+                renderAllPopupCanvases();
+            });
+
+            document.getElementById('compare-expand-all-btn').addEventListener('click', () => {
+                if (!baseImageData) return;
+                popupBrightnessSlider.value = brightnessSlider.value;
+                popupBrightnessVal.textContent = (parseInt(brightnessSlider.value,10) >= 0 ? '+' : '') + brightnessSlider.value;
+                popupScaleSlider.value = brightnessScaleSlider.value;
+                popupScaleVal.textContent = '×' + parseFloat(brightnessScaleSlider.value).toFixed(2);
+                popupGammaSlider.value = gammaSlider.value;
+                popupGammaVal.textContent = parseFloat(gammaSlider.value).toFixed(2);
+                renderAllPopupCanvases();
+                comparePopupOverlay.classList.add('open');
+            });
+
+            function closeComparePopup() {
+                comparePopupOverlay.classList.remove('open');
+            }
+            comparePopupClose.addEventListener('click', closeComparePopup);
+            comparePopupOverlay.addEventListener('click', e => { if (e.target === comparePopupOverlay) closeComparePopup(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeComparePopup(); });
 
             // — 상태 변수 —
+            let brightnessCompareActive = false;
             let baseImageData = null;  // 가공의 기준이 되는 데이터
             let trueOriginalImageData = null;  // 업로드 직후의 진짜 원본
             let currentImageData = null;  // 적용 후 화면에 그려지는 데이터
@@ -976,8 +1322,10 @@
                 hueRotation = 0;
                 undoStack = [];
                 undoMappingBtn.disabled = true;
-                [brightnessSlider.value, contrastSlider.value, saturationSlider.value] = [0, 0, 0];
+                [brightnessSlider.value, brightnessScaleSlider.value, gammaSlider.value, contrastSlider.value, saturationSlider.value] = [0, 1.0, 1.0, 0, 0];
                 brightnessValue.textContent = contrastValue.textContent = saturationValue.textContent = '0';
+                brightnessScaleValue.textContent = '×1.00';
+                gammaValue.textContent = '1.00';
                 [redBtn, greenBtn, blueBtn].forEach(btn => updateButtonState(btn, true));
 
                 loadingSection.style.display = 'block';
@@ -1063,13 +1411,26 @@
 
                 // 밝기, 대비, 채도, 그레이스케일, 반전
                 const brightness = parseInt(brightnessSlider.value, 10);
+                const brightnessScale = parseFloat(brightnessScaleSlider.value);
+                const gamma = parseFloat(gammaSlider.value);
+                // 감마 룩업 테이블 (픽셀마다 pow 호출 회피)
+                const gammaLUT = new Uint8Array(256);
+                for (let g = 0; g < 256; g++) gammaLUT[g] = Math.round(255 * Math.pow(g / 255, gamma));
                 const contrast = parseInt(contrastSlider.value, 10) / 100 + 1;
                 const saturation = parseInt(saturationSlider.value, 10) / 100 + 1;
                 for (let i = 0; i < data.length; i += 4) {
                     let r = data[i], g = data[i + 1], b = data[i + 2];
 
+                    if (brightnessScale !== 1) {
+                        r *= brightnessScale; g *= brightnessScale; b *= brightnessScale;
+                    }
                     if (brightness !== 0) {
                         r += brightness; g += brightness; b += brightness;
+                    }
+                    if (gamma !== 1) {
+                        r = gammaLUT[Math.max(0, Math.min(255, r))];
+                        g = gammaLUT[Math.max(0, Math.min(255, g))];
+                        b = gammaLUT[Math.max(0, Math.min(255, b))];
                     }
                     if (contrast !== 1) {
                         r = (r - 128) * contrast + 128;
@@ -1442,7 +1803,59 @@
                 if (!open) { hueRotation = 0; drawHueWheel(0); updateModifiedImage(); }
             });
 
-            brightnessSlider.addEventListener('input', () => { brightnessValue.textContent = brightnessSlider.value; updateModifiedImage(); });
+            function applyGammaToData(src, gv) {
+                const lut = new Uint8Array(256);
+                for (let i = 0; i < 256; i++) lut[i] = Math.round(255 * Math.pow(i / 255, gv));
+                const d = new Uint8ClampedArray(src);
+                for (let i = 0; i < d.length; i += 4) {
+                    d[i] = lut[d[i]]; d[i+1] = lut[d[i+1]]; d[i+2] = lut[d[i+2]];
+                }
+                return d;
+            }
+
+            function updateCompareCanvases() {
+                if (!baseImageData || !brightnessCompareActive) return;
+                const w = baseImageData.width, h = baseImageData.height;
+                const brightness = parseInt(brightnessSlider.value, 10);
+                const scale = parseFloat(brightnessScaleSlider.value);
+                const gv = parseFloat(gammaSlider.value);
+
+                [compareOriginalCanvas, compareAdditiveCanvas, compareScaleCanvas, compareGammaCanvas].forEach(c => { c.width = w; c.height = h; });
+
+                compareOriginalCanvas.getContext('2d').putImageData(baseImageData, 0, 0);
+
+                const dAdd = new Uint8ClampedArray(baseImageData.data);
+                for (let i = 0; i < dAdd.length; i += 4) {
+                    dAdd[i]   = Math.max(0, Math.min(255, dAdd[i]   + brightness));
+                    dAdd[i+1] = Math.max(0, Math.min(255, dAdd[i+1] + brightness));
+                    dAdd[i+2] = Math.max(0, Math.min(255, dAdd[i+2] + brightness));
+                }
+                compareAdditiveCanvas.getContext('2d').putImageData(new ImageData(dAdd, w, h), 0, 0);
+                document.getElementById('compare-additive-label').textContent = `밝기 ${brightness >= 0 ? '+' : ''}${brightness}`;
+
+                const dScale = new Uint8ClampedArray(baseImageData.data);
+                for (let i = 0; i < dScale.length; i += 4) {
+                    dScale[i]   = Math.max(0, Math.min(255, dScale[i]   * scale));
+                    dScale[i+1] = Math.max(0, Math.min(255, dScale[i+1] * scale));
+                    dScale[i+2] = Math.max(0, Math.min(255, dScale[i+2] * scale));
+                }
+                compareScaleCanvas.getContext('2d').putImageData(new ImageData(dScale, w, h), 0, 0);
+                document.getElementById('compare-scale-label').textContent = `배율 ×${scale.toFixed(2)}`;
+
+                compareGammaCanvas.getContext('2d').putImageData(new ImageData(applyGammaToData(baseImageData.data, gv), w, h), 0, 0);
+                document.getElementById('compare-gamma-label').textContent = `γ ${gv.toFixed(2)}`;
+            }
+
+            brightnessCompareBtn.addEventListener('click', () => {
+                brightnessCompareActive = !brightnessCompareActive;
+                brightnessCompareBtn.classList.toggle('active', brightnessCompareActive);
+                brightnessComparePanel.style.display = brightnessCompareActive ? 'block' : 'none';
+                if (brightnessCompareActive) updateCompareCanvases();
+            });
+
+            brightnessSlider.addEventListener('input', () => { brightnessValue.textContent = brightnessSlider.value; updateModifiedImage(); updateCompareCanvases(); });
+            brightnessScaleSlider.addEventListener('input', () => { brightnessScaleValue.textContent = '×' + parseFloat(brightnessScaleSlider.value).toFixed(2); updateModifiedImage(); updateCompareCanvases(); });
+            gammaSlider.addEventListener('input', () => { gammaValue.textContent = parseFloat(gammaSlider.value).toFixed(2); updateModifiedImage(); updateCompareCanvases(); });
             contrastSlider.addEventListener('input', () => { contrastValue.textContent = contrastSlider.value; updateModifiedImage(); });
             saturationSlider.addEventListener('input', () => { saturationValue.textContent = saturationSlider.value; updateModifiedImage(); });
 
@@ -1462,10 +1875,13 @@
                 hueRotation = 0; drawHueWheel(0);
                 huePanel.classList.remove('open'); hueToggleBtn.classList.remove('active');
                 invertBtn.classList.remove('active'); grayscaleBtn.classList.remove('active');
-                [brightnessSlider.value, contrastSlider.value, saturationSlider.value] = [0, 0, 0];
+                [brightnessSlider.value, brightnessScaleSlider.value, gammaSlider.value, contrastSlider.value, saturationSlider.value] = [0, 1.0, 1.0, 0, 0];
                 brightnessValue.textContent = contrastValue.textContent = saturationValue.textContent = '0';
+                brightnessScaleValue.textContent = '×1.00';
+                gammaValue.textContent = '1.00';
                 [redBtn, greenBtn, blueBtn].forEach(btn => updateButtonState(btn, true));
                 updateModifiedImage();
+                updateCompareCanvases();
             });
 
             // — 매핑 되돌리기 —
