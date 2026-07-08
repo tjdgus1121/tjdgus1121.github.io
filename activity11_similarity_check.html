@@ -589,6 +589,21 @@
         .bp-cell.on  { background: #1f284a; }
         .bp-cell.off { background: #fff; }
 
+        /* 해상도 조절 슬라이더 (canvas 아래) */
+        .res-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; flex-wrap: wrap;
+            margin: 12px auto 2px;
+        }
+        .res-row .res-label { font-weight: 700; color: var(--primary); font-size: 0.92em; }
+        .res-row input[type=range] { width: 160px; max-width: 60vw; accent-color: var(--primary); cursor: pointer; }
+        .res-badge {
+            font-weight: 800; color: var(--primary); background: #e8f0ff;
+            border: 1px solid #d3e0ff; border-radius: 8px;
+            padding: 3px 11px; font-size: 0.9em; min-width: 58px; text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
         /* ── 결과 섹션 ── */
         .result-section { margin-top: 28px; }
 
@@ -1443,6 +1458,11 @@
                 <div class="canvas-box">
                     <h3>✏️ 여기에 숫자를 그려보세요</h3>
                     <canvas id="hamCanvas" width="280" height="280"></canvas>
+                    <div class="res-row">
+                        <span class="res-label">🔳 이진화 해상도</span>
+                        <input type="range" id="hamRes" min="6" max="28" value="14" step="1">
+                        <span class="res-badge"><span id="hamResVal">14</span> × <span id="hamResVal2">14</span></span>
+                    </div>
                     <div class="brush-row">
                         <span class="brush-label">붓 두께</span>
                         <button type="button" class="brush-btn brush-btn-thin" data-canvas="ham" data-size="18" title="가늘게"><span class="dot"></span></button>
@@ -1456,7 +1476,7 @@
                 </div>
                 <div class="draw-arrow">→</div>
                 <div class="preview-box">
-                    <h3>🔲 이진화 결과 (14×14)</h3>
+                    <h3>🔲 이진화 결과 (<span id="hamResDim">14×14</span>)</h3>
                     <div id="hamBinaryPreview" class="binary-preview"></div>
                     <p id="hamBinaryStats" class="binary-stats-text">
                         숫자를 그리고 "이진화 변환"을 클릭하세요
@@ -1584,6 +1604,11 @@
                 <div class="canvas-box">
                     <h3>✏️ 여기에 숫자를 그려보세요</h3>
                     <canvas id="percCanvas" width="280" height="280"></canvas>
+                    <div class="res-row">
+                        <span class="res-label">🔳 이진화 해상도</span>
+                        <input type="range" id="percRes" min="6" max="28" value="14" step="1">
+                        <span class="res-badge"><span id="percResVal">14</span> × <span id="percResVal2">14</span></span>
+                    </div>
                     <div class="brush-row">
                         <span class="brush-label">붓 두께</span>
                         <button type="button" class="brush-btn brush-btn-thin" data-canvas="perc" data-size="18" title="가늘게"><span class="dot"></span></button>
@@ -1597,7 +1622,7 @@
                 </div>
                 <div class="draw-arrow">→</div>
                 <div class="preview-box">
-                    <h3>🔲 이진화 결과 (14×14)</h3>
+                    <h3>🔲 이진화 결과 (<span id="percResDim">14×14</span>)</h3>
                     <div id="percBinaryPreview" class="binary-preview"></div>
                     <p id="percBinaryStats" class="binary-stats-text">
                         숫자를 그리고 "이진화 변환"을 클릭하세요
@@ -1744,6 +1769,29 @@
         let d = 0;
         for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
         return d;
+    }
+
+    // 28×28(784) → N×N 다운샘플 (면적 가중 평균 + 0.5 임계값). srcN은 mat 길이에서 추론.
+    function downsampleTo(mat, dstN) {
+        const srcN = Math.round(Math.sqrt(mat.length)); // 보통 28
+        const out = new Array(dstN * dstN);
+        for (let ty = 0; ty < dstN; ty++) {
+            const y0 = ty * srcN / dstN, y1 = (ty + 1) * srcN / dstN;
+            for (let tx = 0; tx < dstN; tx++) {
+                const x0 = tx * srcN / dstN, x1 = (tx + 1) * srcN / dstN;
+                let sum = 0, area = 0;
+                for (let sy = Math.floor(y0); sy < Math.min(srcN, Math.ceil(y1)); sy++) {
+                    const wy = Math.min(y1, sy + 1) - Math.max(y0, sy);
+                    for (let sx = Math.floor(x0); sx < Math.min(srcN, Math.ceil(x1)); sx++) {
+                        const wx = Math.min(x1, sx + 1) - Math.max(x0, sx);
+                        const w = wy * wx;
+                        sum += mat[sy * srcN + sx] * w; area += w;
+                    }
+                }
+                out[ty * dstN + tx] = (area > 0 && sum / area >= 0.5) ? 1 : 0;
+            }
+        }
+        return out;
     }
 
     // 28×28(784) → 14×14(196) 다운샘플: 2×2 블록 과반수 투표
@@ -2078,10 +2126,12 @@
     // ─────────────────────────────────────────────
     //  체험 활동 — 기준 이미지
     // ─────────────────────────────────────────────
-    let refBinaryData = [];   // [{digit, binary[196]}, ...]  ← 14×14 다운샘플
-    let hamUserBinary = null; // [196] 이진 (14×14) — 해밍 캔버스
-    let percUserBinary = null;// [196] 이진 (14×14) — 퍼셉트론 캔버스
+    let GRID = 14;            // 이진화 해상도 N (슬라이더로 조절, 두 섹션 공유)
+    let refBinaryData = [];   // [{digit, bin784, binary[GRID²]}, ...]  ← N×N 다운샘플
+    let hamUserBinary = null; // [GRID²] 이진 — 해밍 캔버스
+    let percUserBinary = null;// [GRID²] 이진 — 퍼셉트론 캔버스
     let lastResults = null;
+    let liveRecompute = false; // 해상도 슬라이더로 인한 실시간 재계산 중 여부(스크롤 억제용)
 
     function loadReferences() {
         ['hamRefLoading', 'percRefLoading'].forEach(id => document.getElementById(id).classList.remove('hidden'));
@@ -2123,8 +2173,10 @@
     function finishLoadRef(pending) {
         pending.sort((a, b) => a.digit - b.digit);
         refBinaryData = pending.map(p => ({
-            ...p,
-            binary: p.binary.length === 196 ? p.binary : downsample14(p.binary)
+            digit: p.digit,
+            path: p.path,
+            bin784: p.binary,                        // 원본 28×28 유지 (해상도 변경 시 재다운샘플)
+            binary: downsampleTo(p.binary, GRID)     // 현재 해상도 N×N
         }));
         ['hamRefLoading', 'percRefLoading'].forEach(id => document.getElementById(id).classList.add('hidden'));
         renderRefGrid('hamRefGrid', 'h');
@@ -2165,6 +2217,7 @@
 
             const imgGrid = document.createElement('div');
             imgGrid.className = 'ref-img-grid';
+            imgGrid.style.gridTemplateColumns = `repeat(${GRID}, 1fr)`;
             binary.forEach(v => {
                 const px = document.createElement('div');
                 px.className = `ref-pixel ${v === 1 ? 'ref-pixel-on' : 'ref-pixel-off'}`;
@@ -2274,12 +2327,12 @@
 
     function binarizeCanvas(sourceCanvas) {
         const tmp = document.createElement('canvas');
-        tmp.width = 14; tmp.height = 14;
+        tmp.width = GRID; tmp.height = GRID;
         const tCtx = tmp.getContext('2d');
         tCtx.imageSmoothingEnabled = true;
         tCtx.imageSmoothingQuality = 'high';
-        tCtx.drawImage(sourceCanvas, 0, 0, 14, 14);
-        const data = tCtx.getImageData(0, 0, 14, 14).data;
+        tCtx.drawImage(sourceCanvas, 0, 0, GRID, GRID);
+        const data = tCtx.getImageData(0, 0, GRID, GRID).data;
         const bin = [];
         for (let i = 0; i < data.length; i += 4) {
             bin.push((data[i] + data[i+1] + data[i+2]) / 3 < 160 ? 1 : 0);
@@ -2290,14 +2343,16 @@
     function renderBinaryPreview(bin, previewId, statsId) {
         const preview = document.getElementById(previewId);
         preview.innerHTML = '';
+        preview.style.gridTemplateColumns = `repeat(${GRID}, 1fr)`;
         bin.forEach(v => {
             const c = document.createElement('div');
             c.className = `bp-cell ${v === 1 ? 'on' : 'off'}`;
             preview.appendChild(c);
         });
+        const total = GRID * GRID;
         const ones = bin.filter(v => v === 1).length;
         document.getElementById(statsId).textContent =
-            `활성 픽셀: ${ones} / 196 (${(ones/196*100).toFixed(1)}%)`;
+            `활성 픽셀: ${ones} / ${total} (${(ones/total*100).toFixed(1)}%)`;
     }
 
     function convertHamDrawing() {
@@ -2455,6 +2510,7 @@
         xPanel.appendChild(xLbl);
         const xGrid = document.createElement('div');
         xGrid.className = 'compare-grid-14-sm';
+        xGrid.style.gridTemplateColumns = `repeat(${GRID}, 1fr)`;
         xDown.forEach(v => {
             const c = document.createElement('div');
             c.className = `cg-cell ${v === 1 ? 'cg-x-on' : 'cg-x-off'}`;
@@ -2471,6 +2527,7 @@
         refPanel.appendChild(refLbl);
         const refGrid = document.createElement('div');
         refGrid.className = 'compare-grid-14-sm';
+        refGrid.style.gridTemplateColumns = `repeat(${GRID}, 1fr)`;
         refDown.forEach(v => {
             const c = document.createElement('div');
             c.className = `cg-cell ${v === 1 ? 'cg-ref-on' : 'cg-ref-off'}`;
@@ -2502,7 +2559,8 @@
         // 블렌드 그리드 (셀 색상 + 툴팁)
         const blendGrid = document.createElement('div');
         blendGrid.className = 'compare-grid-14-sm';
-        for (let i = 0; i < 196; i++) {
+        blendGrid.style.gridTemplateColumns = `repeat(${GRID}, 1fr)`;
+        for (let i = 0; i < GRID * GRID; i++) {
             const c = document.createElement('div');
             const xv = xDown[i], rv = refDown[i];
             if (isHamming) {
@@ -2558,7 +2616,7 @@
             const fracStrip = document.createElement('div');
             fracStrip.className = 'frac-strip';
             let cellIdx = 0;
-            for (let i = 0; i < 196; i++) {
+            for (let i = 0; i < GRID * GRID; i++) {
                 if (refDown[i] === 1) {
                     const sq = document.createElement('div');
                     const contributes = xDown[i] === 1;
@@ -2845,7 +2903,10 @@
         }
         document.getElementById(step3BadgeId).classList.add('done');
         document.getElementById(resultSectionId).classList.add('open');
-        document.getElementById(resultSectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 해상도 슬라이더로 인한 실시간 재계산 중에는 스크롤 억제 (드래그 중 페이지 튐 방지)
+        if (!liveRecompute) {
+            document.getElementById(resultSectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -2999,12 +3060,66 @@
     // ─────────────────────────────────────────────
     //  초기화
     // ─────────────────────────────────────────────
+    // 이진화 해상도 변경 — 두 섹션 공유, 전체 파이프라인 재계산
+    function setGrid(n) {
+        GRID = n;
+        // 두 슬라이더 & 배지 & 헤더 동기화
+        ['hamRes', 'percRes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = n; });
+        ['hamResVal', 'hamResVal2', 'percResVal', 'percResVal2'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.textContent = n;
+        });
+        ['hamResDim', 'percResDim'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.textContent = `${n}×${n}`;
+        });
+
+        // 결과가 이미 열려 있던 섹션은 새 해상도로 즉시 재계산 (실시간 반영)
+        const hamWasOpen = document.getElementById('hamResultSection').classList.contains('open');
+        const percWasOpen = document.getElementById('percResultSection').classList.contains('open');
+
+        // 참조 이미지: 원본 28×28에서 새 해상도로 다시 다운샘플
+        refBinaryData.forEach(r => { r.binary = downsampleTo(r.bin784, GRID); });
+        if (refBinaryData.length) {
+            renderRefGrid('hamRefGrid', 'h');
+            renderRefGrid('percRefGrid', 'p');
+        }
+
+        // 사용자 그림이 이미 이진화돼 있으면 새 해상도로 재이진화
+        if (hamUserBinary) { hamUserBinary = binarizeCanvas(hamCanvas); renderBinaryPreview(hamUserBinary, 'hamBinaryPreview', 'hamBinaryStats'); }
+        if (percUserBinary) { percUserBinary = binarizeCanvas(percCanvas); renderBinaryPreview(percUserBinary, 'percBinaryPreview', 'percBinaryStats'); }
+
+        updateHamCalcBtn();
+        updatePercCalcBtn();
+
+        // 해밍 섹션: 계산 결과가 있었으면 즉시 다시 계산, 아니면 닫고 재계산 유도
+        liveRecompute = true; // 재계산 중 스크롤 억제
+        if (hamWasOpen && hamUserBinary && refBinaryData.length === 10) {
+            calculateHamming();
+        } else {
+            document.getElementById('hamResultSection').classList.remove('open');
+            document.getElementById('hamStep3Badge').classList.remove('done');
+        }
+        // 퍼셉트론 섹션
+        if (percWasOpen && percUserBinary && refBinaryData.length === 10) {
+            calculatePerc();
+        } else {
+            document.getElementById('percResultSection').classList.remove('open');
+            document.getElementById('percStep3Badge').classList.remove('done');
+        }
+        liveRecompute = false;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         loadConceptExample();
         loadPerceptronExample();
         renderMiniGrids();
         renderPercGrids();
         initCanvas();
+
+        // 해상도 슬라이더 (두 섹션 공유)
+        ['hamRes', 'percRes'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', e => setGrid(parseInt(e.target.value, 10)));
+        });
 
         // 체험 탭 열 때 기준 이미지 자동 로드
         document.querySelector('#tabNavHamming [data-tab="activity"]').addEventListener('click', () => {
