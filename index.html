@@ -681,7 +681,37 @@
             vertical-align: middle;
         }
 
+        .worksheet-download-btn {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            color: #fff;
+            font-size: 0.85rem;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .worksheet-download-btn:hover {
+            background: rgba(102, 126, 234, 0.35);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
         @media (max-width: 768px) {
+            .footer {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px 20px;
+            }
+
             .footer-content {
                 flex-direction: column;
                 gap: 10px;
@@ -698,6 +728,11 @@
 
             .email-link {
                 font-size: 0.8rem;
+            }
+
+            .worksheet-download-btn {
+                position: static;
+                transform: none;
             }
         }
 
@@ -921,6 +956,61 @@
                 align-items: flex-start;
             }
         }
+
+        /* 활동지 받기 팝업 */
+        .worksheet-popup {
+            max-width: 560px;
+            padding: 40px 45px;
+        }
+
+        .worksheet-images {
+            display: flex;
+            gap: 16px;
+        }
+
+        .worksheet-link-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 28px 16px;
+            background: rgba(102, 126, 234, 0.15);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.05rem;
+            font-family: 'Noto Sans KR', sans-serif;
+            text-decoration: none;
+            text-align: center;
+            line-height: 1.5;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .worksheet-link-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .worksheet-link-icon {
+            font-size: 1.8rem;
+        }
+
+        .worksheet-footer {
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 480px) {
+            .worksheet-popup {
+                padding: 25px 22px;
+            }
+            .worksheet-images {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
@@ -940,6 +1030,31 @@
                     일주일간 확인 안하기
                 </label>
                 <button type="button" class="patch-close-btn" id="patchCloseBtn">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 활동지 받기 팝업 -->
+    <div class="patch-overlay hidden" id="worksheetOverlay">
+        <div class="patch-popup worksheet-popup">
+            <div class="patch-header">
+                <span class="patch-badge">활동지</span>
+                <span class="patch-title">활동지 받기</span>
+            </div>
+            <div class="patch-body">
+                <div class="worksheet-images">
+                    <a href="https://naver.me/x52YwUVl" target="_blank" rel="noopener noreferrer" class="worksheet-link-btn">
+                        <span class="worksheet-link-icon">📝</span>
+                        <span>텍스트 활동지<br>다운로드</span>
+                    </a>
+                    <a href="https://naver.me/FvT0f4m2" target="_blank" rel="noopener noreferrer" class="worksheet-link-btn">
+                        <span class="worksheet-link-icon">🖼️</span>
+                        <span>이미지 활동지<br>다운로드</span>
+                    </a>
+                </div>
+            </div>
+            <div class="patch-footer worksheet-footer">
+                <button type="button" class="patch-close-btn" id="worksheetCloseBtn">닫기</button>
             </div>
         </div>
     </div>
@@ -982,6 +1097,9 @@
             </div>
     <!-- Footer -->
     <div class="footer">
+        <a href="#" class="worksheet-download-btn" id="worksheetGetBtn">
+            📄 활동지 받기
+        </a>
         <div class="footer-content">
             <div class="visitor-count">
                 <div class="visitor-item">
@@ -1400,6 +1518,26 @@
                     patchBody.innerHTML = '<div class="patch-loading">내용을 불러올 수 없습니다.</div>';
                     setupPopup('unknown');
                 });
+        })();
+
+        // 활동지 받기 팝업
+        (function() {
+            const getBtn = document.getElementById('worksheetGetBtn');
+            const overlay = document.getElementById('worksheetOverlay');
+            const closeBtn = document.getElementById('worksheetCloseBtn');
+
+            getBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                overlay.classList.remove('hidden');
+            });
+
+            closeBtn.addEventListener('click', function() {
+                overlay.classList.add('hidden');
+            });
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) overlay.classList.add('hidden');
+            });
         })();
 
         // 초기화
