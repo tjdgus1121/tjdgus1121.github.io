@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>이진법 게임 · 십진법 ↔ 이진법</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --indigo: #6366f1;
+        --violet: #8b5cf6;
+        --mint: #10b981;
+        --rose: #f43f5e;
+        --ink: #1e293b;
+        --muted: #64748b;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        background:
+          radial-gradient(1200px 600px at 50% -10%, #c7d2fe 0%, transparent 60%),
+          linear-gradient(160deg, #eef2ff 0%, #ede9fe 45%, #dbeafe 100%);
+        color: var(--ink);
+        min-height: 100vh;
+        padding: 26px 16px 60px;
+        overflow-x: hidden;
+      }
+
+      /* 배경 장식: 떠다니는 0·1 + 로켓 */
+      .bg-deco {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .bg-deco span {
+        position: absolute;
+        font-family: "Orbitron", monospace;
+        font-weight: 900;
+        color: rgba(99, 102, 241, 0.07);
+        font-size: clamp(44px, 8vw, 110px);
+        animation: floaty 9s ease-in-out infinite;
+      }
+      .bg-deco .rocket {
+        font-size: clamp(38px, 6vw, 74px);
+        color: initial;
+        opacity: 0.55;
+        filter: drop-shadow(0 8px 14px rgba(99, 102, 241, 0.2));
+      }
+      @keyframes floaty {
+        0%, 100% { transform: translateY(0) rotate(-4deg); }
+        50% { transform: translateY(-22px) rotate(4deg); }
+      }
+
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 860px;
+        margin: 0 auto;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 22px;
+      }
+      header h1 {
+        font-size: clamp(30px, 6vw, 52px);
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, var(--indigo), var(--violet), #ec4899);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      header p {
+        color: var(--muted);
+        margin-top: 8px;
+        font-size: clamp(13px, 2.5vw, 16px);
+        font-weight: 500;
+      }
+
+      /* segmented controls */
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 22px;
+      }
+      .seg {
+        display: inline-flex;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 7px;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.13);
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .seg button {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-family: inherit;
+        font-weight: 800;
+        font-size: clamp(13px, 2.4vw, 16px);
+        padding: 12px 20px;
+        border-radius: 13px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .seg button.on {
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        box-shadow: 0 5px 16px rgba(99, 102, 241, 0.4);
+      }
+
+      /* stats */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .stats div {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 18px;
+        padding: 16px 8px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 800;
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.08);
+      }
+      .stats b {
+        display: block;
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(26px, 5vw, 38px);
+        color: var(--indigo);
+        margin-top: 4px;
+      }
+
+      /* main card */
+      .card {
+        background: #fff;
+        border-radius: 30px;
+        padding: 30px 26px 30px;
+        box-shadow: 0 20px 60px rgba(99, 102, 241, 0.16);
+        text-align: center;
+      }
+      .q-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        font-weight: 900;
+        font-size: 15px;
+        padding: 7px 22px;
+        border-radius: 999px;
+        letter-spacing: 2px;
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+      }
+      .num-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(8px, 3vw, 26px);
+        margin: 14px 0 6px;
+      }
+      .burst {
+        flex-shrink: 0;
+        width: clamp(28px, 7vw, 54px);
+        height: auto;
+        opacity: 0.9;
+      }
+      .burst.right {
+        transform: scaleX(-1);
+      }
+      .bignum {
+        font-family: "Orbitron", "JetBrains Mono", monospace;
+        font-weight: 900;
+        font-size: clamp(72px, 18vw, 150px);
+        line-height: 1;
+        letter-spacing: 2px;
+        background: linear-gradient(135deg, #1e293b, #4338ca);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        word-break: break-all;
+      }
+      .q-label {
+        font-size: clamp(15px, 3vw, 21px);
+        font-weight: 800;
+        color: var(--violet);
+        margin-bottom: 6px;
+      }
+
+      /* 비트 토글 패널 (십진 → 이진) */
+      .bits-panel {
+        background: linear-gradient(180deg, #f5f7ff, #eef1fb);
+        border: 1.5px solid rgba(99, 102, 241, 0.12);
+        border-radius: 24px;
+        padding: 26px 16px;
+        margin: 20px 0 10px;
+      }
+      .bits {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: clamp(6px, 2vw, 16px);
+        flex-wrap: wrap;
+      }
+      .bit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        --c: var(--indigo);
+      }
+      .place {
+        background: var(--c);
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 800;
+        font-size: clamp(15px, 3vw, 20px);
+        padding: 7px 18px;
+        border-radius: 999px;
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 45%, transparent);
+      }
+      .switch {
+        --w: clamp(70px, 15vw, 92px);
+        --h: clamp(40px, 8.5vw, 50px);
+        width: var(--w);
+        height: var(--h);
+        border: none;
+        border-radius: 999px;
+        background: #d5dbe6;
+        position: relative;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.22s;
+      }
+      .knob {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        width: calc(var(--h) - 10px);
+        height: calc(var(--h) - 10px);
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 3px 9px rgba(0, 0, 0, 0.22);
+        transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.7, 1);
+      }
+      .bit.on .switch {
+        background: var(--c);
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--c) 50%, transparent);
+      }
+      .bit.on .knob {
+        transform: translateX(calc(var(--w) - var(--h)));
+      }
+      .bit .val {
+        font-family: "Orbitron", monospace;
+        font-weight: 900;
+        font-size: clamp(30px, 7vw, 46px);
+        color: #b4bccc;
+        transition: color 0.2s;
+      }
+      .bit.on .val {
+        color: var(--c);
+      }
+      .bit .pow {
+        font-size: 12px;
+        color: #a3adc2;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .bit.ok .switch {
+        outline: 4px solid rgba(16, 185, 129, 0.45);
+        outline-offset: 2px;
+      }
+      .bit.bad .switch {
+        outline: 4px solid rgba(244, 63, 94, 0.5);
+        outline-offset: 2px;
+      }
+      .plus {
+        font-size: clamp(26px, 6vw, 42px);
+        font-weight: 900;
+        color: #c0c7d6;
+        align-self: center;
+        margin-top: clamp(34px, 8vw, 46px);
+      }
+
+      .hint-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 12px;
+        min-height: 34px;
+        flex-wrap: wrap;
+      }
+      .live-sum {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 800;
+        color: var(--indigo);
+        font-size: clamp(15px, 3vw, 19px);
+      }
+
+      /* 십진 입력 (이진 → 십진) */
+      .dec-input-area {
+        margin: 22px 0 10px;
+      }
+      .dec-input-area input {
+        width: min(300px, 82%);
+        text-align: center;
+        font-family: "Orbitron", monospace;
+        font-size: clamp(40px, 9vw, 56px);
+        font-weight: 800;
+        color: var(--ink);
+        padding: 16px 14px;
+        border: 3px solid rgba(99, 102, 241, 0.3);
+        border-radius: 20px;
+        outline: none;
+        background: #f8faff;
+      }
+      .dec-input-area input:focus {
+        border-color: var(--indigo);
+        box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.14);
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+      }
+      button.primary,
+      button.ghost {
+        font-family: inherit;
+        font-weight: 900;
+        font-size: clamp(16px, 3vw, 19px);
+        padding: 16px 40px;
+        border-radius: 16px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: 0.18s;
+      }
+      button.primary {
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        box-shadow: 0 8px 22px rgba(99, 102, 241, 0.38);
+      }
+      button.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(99, 102, 241, 0.45);
+      }
+      button.ghost {
+        background: #fff;
+        color: var(--indigo);
+        border-color: rgba(99, 102, 241, 0.3);
+        font-size: clamp(13px, 2.5vw, 15px);
+        padding: 11px 20px;
+      }
+      button.ghost:hover {
+        background: rgba(99, 102, 241, 0.06);
+      }
+
+      .feedback {
+        margin-top: 20px;
+        min-height: 58px;
+        font-weight: 800;
+        font-size: clamp(15px, 3vw, 18px);
+        border-radius: 18px;
+        padding: 16px 18px;
+        display: none;
+      }
+      .feedback.show {
+        display: block;
+        animation: pop 0.28s ease;
+      }
+      @keyframes pop {
+        from { transform: scale(0.94); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      .feedback.ok {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1.5px solid #6ee7b7;
+      }
+      .feedback.no {
+        background: #fff1f2;
+        color: #9f1239;
+        border: 1.5px solid #fda4af;
+      }
+      .feedback .calc {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 800;
+        margin-top: 8px;
+        font-size: clamp(14px, 2.8vw, 17px);
+        display: block;
+        word-break: break-all;
+      }
+      .footer-note {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 18px;
+        font-weight: 500;
+      }
+      kbd {
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-bottom-width: 2px;
+        border-radius: 6px;
+        padding: 1px 7px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-deco" aria-hidden="true">
+      <span style="top: 10%; left: 5%">1</span>
+      <span style="top: 26%; left: 90%; animation-delay: 1.5s">0</span>
+      <span style="top: 55%; left: 3%; animation-delay: 0.8s">1</span>
+      <span style="top: 70%; left: 92%; animation-delay: 2.2s">0</span>
+      <span style="top: 44%; left: 84%; animation-delay: 3s; font-size: 60px">1</span>
+      <span style="top: 84%; left: 12%; animation-delay: 1.1s; font-size: 56px">0</span>
+      <span class="rocket" style="top: 16%; right: 4%; animation-delay: 0.5s">🚀</span>
+    </div>
+
+    <div class="wrap">
+      <header>
+        <h1>🔢 이진법 게임</h1>
+        <p>큼지막한 숫자를 십진법 ↔ 이진법으로 바꿔보세요!</p>
+      </header>
+
+      <div class="controls">
+        <div class="seg" id="modeSeg">
+          <button data-mode="dec2bin" class="on">십진법 → 이진법</button>
+          <button data-mode="bin2dec">이진법 → 십진법</button>
+          <button data-mode="random">랜덤 섞기</button>
+        </div>
+        <div class="seg" id="bitsSeg">
+          <button data-bits="4" class="on">4비트 · 0~15</button>
+          <button data-bits="6">6비트 · 0~63</button>
+          <button data-bits="8">8비트 · 0~255</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div>점수<b id="score">0</b></div>
+        <div>연속 정답<b id="streak">0</b></div>
+        <div>최고 연속<b id="best">0</b></div>
+        <div>푼 문제<b id="solved">0</b></div>
+      </div>
+
+      <main class="card">
+        <div class="q-badge">문제</div>
+        <div class="num-wrap">
+          <svg class="burst left" viewBox="0 0 46 90" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round">
+            <line x1="10" y1="45" x2="42" y2="45" />
+            <line x1="10" y1="24" x2="38" y2="12" />
+            <line x1="10" y1="66" x2="38" y2="78" />
+          </svg>
+          <div class="bignum" id="bigNum">0</div>
+          <svg class="burst right" viewBox="0 0 46 90" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round">
+            <line x1="10" y1="45" x2="42" y2="45" />
+            <line x1="10" y1="24" x2="38" y2="12" />
+            <line x1="10" y1="66" x2="38" y2="78" />
+          </svg>
+        </div>
+        <div class="q-label" id="qLabel"></div>
+
+        <!-- 십진 → 이진 : 토글 스위치 -->
+        <div class="bits-panel" id="bitsPanel">
+          <div class="bits" id="bitsArea"></div>
+          <div class="hint-row" id="hintRow">
+            <button class="ghost" id="hintBtn">💡 자릿값 합계 보기</button>
+            <span class="live-sum" id="liveSum"></span>
+          </div>
+        </div>
+
+        <!-- 이진 → 십진 : 숫자 입력 -->
+        <div class="dec-input-area" id="decArea" style="display: none">
+          <input id="decInput" type="number" inputmode="numeric" placeholder="?" />
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="submitBtn">제출</button>
+          <button class="ghost" id="nextBtn" style="display: none">다음 문제 ▶</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+      </main>
+
+      <p class="footer-note">
+        <kbd>Enter</kbd> 제출 / 다음 · 스위치를 눌러 <kbd>0</kbd>↔<kbd>1</kbd> 바꾸기
+      </p>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const modeSeg = $("modeSeg"),
+        bitsSeg = $("bitsSeg"),
+        qLabel = $("qLabel"),
+        bigNum = $("bigNum"),
+        bitsPanel = $("bitsPanel"),
+        bitsArea = $("bitsArea"),
+        hintBtn = $("hintBtn"),
+        liveSum = $("liveSum"),
+        decArea = $("decArea"),
+        decInput = $("decInput"),
+        submitBtn = $("submitBtn"),
+        nextBtn = $("nextBtn"),
+        feedback = $("feedback");
+      const scoreEl = $("score"),
+        streakEl = $("streak"),
+        bestEl = $("best"),
+        solvedEl = $("solved");
+
+      // 자릿값(왼쪽부터) 색상 팔레트
+      const BIT_COLORS = [
+        "#8b5cf6", "#3b82f6", "#22c55e", "#f59e0b",
+        "#ec4899", "#06b6d4", "#ef4444", "#a855f7",
+      ];
+
+      // ── 상태 ──
+      let mode = "dec2bin";
+      let bits = 4;
+      let dir = "dec2bin";
+      let target = 0;
+      let bitVals = [];
+      let answered = false;
+      let showHint = false;
+      let score = 0, streak = 0, best = 0, solved = 0;
+
+      const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷" };
+      const superPow = (n) => String(n).split("").map((c) => SUP[c] || c).join("");
+      const spaceBinary = (bin) => bin.replace(/(.{4})(?=.)/g, "$1 ");
+
+      // ── 모드/난이도 선택 ──
+      modeSeg.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        mode = b.dataset.mode;
+        [...modeSeg.children].forEach((c) => c.classList.toggle("on", c === b));
+        newQuestion();
+      });
+      bitsSeg.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        bits = +b.dataset.bits;
+        [...bitsSeg.children].forEach((c) => c.classList.toggle("on", c === b));
+        newQuestion();
+      });
+      hintBtn.addEventListener("click", () => {
+        showHint = !showHint;
+        hintBtn.textContent = showHint ? "🙈 합계 숨기기" : "💡 자릿값 합계 보기";
+        updateLiveSum();
+      });
+
+      // ── 새 문제 ──
+      function newQuestion() {
+        answered = false;
+        feedback.className = "feedback";
+        feedback.innerHTML = "";
+        submitBtn.style.display = "";
+        nextBtn.style.display = "none";
+        showHint = false;
+        hintBtn.textContent = "💡 자릿값 합계 보기";
+
+        dir = mode === "random" ? (Math.random() < 0.5 ? "dec2bin" : "bin2dec") : mode;
+        const maxV = (1 << bits) - 1;
+        target = Math.floor(Math.random() * (maxV + 1));
+
+        if (dir === "dec2bin") {
+          qLabel.textContent = `${target}을(를) 이진법으로 바꿔보세요`;
+          bigNum.textContent = target;
+          bitsPanel.style.display = "";
+          decArea.style.display = "none";
+          buildBits();
+          submitBtn.focus();
+        } else {
+          const bin = target.toString(2).padStart(bits, "0");
+          qLabel.textContent = "이 이진수를 십진수로 바꿔보세요";
+          bigNum.textContent = spaceBinary(bin);
+          bitsPanel.style.display = "none";
+          decArea.style.display = "";
+          decInput.value = "";
+          decInput.focus();
+        }
+      }
+
+      // dec2bin 토글 스위치 생성
+      function buildBits() {
+        bitVals = new Array(bits).fill(0);
+        bitsArea.innerHTML = "";
+        for (let i = 0; i < bits; i++) {
+          if (i > 0) {
+            const plus = document.createElement("div");
+            plus.className = "plus";
+            plus.textContent = "+";
+            bitsArea.appendChild(plus);
+          }
+          const power = bits - 1 - i;
+          const place = 1 << power;
+          const el = document.createElement("div");
+          el.className = "bit";
+          el.style.setProperty("--c", BIT_COLORS[i % BIT_COLORS.length]);
+          el.innerHTML =
+            `<div class="place">${place}</div>` +
+            `<button class="switch" data-i="${i}" aria-label="${place}의 자리"><span class="knob"></span></button>` +
+            `<div class="val">0</div>` +
+            `<div class="pow">2${superPow(power)}</div>`;
+          bitsArea.appendChild(el);
+        }
+        updateLiveSum();
+      }
+
+      bitsArea.addEventListener("click", (e) => {
+        const sw = e.target.closest(".switch");
+        if (!sw || answered) return;
+        const i = +sw.dataset.i;
+        bitVals[i] = bitVals[i] ? 0 : 1;
+        const bit = sw.closest(".bit");
+        bit.classList.toggle("on", !!bitVals[i]);
+        bit.querySelector(".val").textContent = bitVals[i];
+        updateLiveSum();
+        submitBtn.focus(); // Enter=제출 유지 (Enter가 스위치 재토글하지 않게)
+      });
+
+      function currentBitSum() {
+        return bitVals.reduce((s, v, i) => s + (v ? 1 << (bits - 1 - i) : 0), 0);
+      }
+      function updateLiveSum() {
+        liveSum.textContent = showHint ? `현재 합계 = ${currentBitSum()}` : "";
+      }
+
+      function breakdown(value) {
+        const bin = value.toString(2).padStart(bits, "0");
+        const parts = [];
+        for (let i = 0; i < bits; i++) {
+          const power = bits - 1 - i;
+          if (bin[i] === "1") parts.push(1 << power);
+        }
+        return { bin, sum: parts.length ? parts.join(" + ") : "0" };
+      }
+
+      // ── 제출 / 채점 ──
+      function submit() {
+        if (answered) return;
+        let userVal;
+        if (dir === "dec2bin") {
+          userVal = currentBitSum();
+        } else {
+          if (decInput.value.trim() === "") {
+            decInput.focus();
+            return;
+          }
+          userVal = parseInt(decInput.value, 10);
+        }
+        answered = true;
+        const correct = userVal === target;
+        solved++;
+        const { bin, sum } = breakdown(target);
+        if (correct) {
+          streak++;
+          best = Math.max(best, streak);
+          const gained = 10 + (streak - 1) * 2;
+          score += gained;
+          feedback.className = "feedback show ok";
+          feedback.innerHTML =
+            `🎉 정답! <b>+${gained}점</b> (연속 ${streak})` +
+            `<span class="calc">${target}(10) = ${sum} = ${spaceBinary(bin)}(2)</span>`;
+        } else {
+          streak = 0;
+          feedback.className = "feedback show no";
+          feedback.innerHTML =
+            `❌ 아쉬워요! 정답은 <b>${dir === "dec2bin" ? spaceBinary(bin) + "(2)" : target + "(10)"}</b>` +
+            `<span class="calc">${target}(10) = ${sum} = ${spaceBinary(bin)}(2)</span>`;
+          if (dir === "dec2bin") revealBits();
+        }
+        updateStats();
+        submitBtn.style.display = "none";
+        nextBtn.style.display = "";
+        nextBtn.focus();
+      }
+
+      // 오답 시 정답 스위치 표시
+      function revealBits() {
+        const bin = target.toString(2).padStart(bits, "0");
+        [...bitsArea.querySelectorAll(".bit")].forEach((bit, i) => {
+          const should = bin[i] === "1" ? 1 : 0;
+          bit.classList.add(bitVals[i] === should ? "ok" : "bad");
+        });
+      }
+
+      function updateStats() {
+        scoreEl.textContent = score;
+        streakEl.textContent = streak;
+        bestEl.textContent = best;
+        solvedEl.textContent = solved;
+      }
+
+      submitBtn.addEventListener("click", submit);
+      nextBtn.addEventListener("click", newQuestion);
+      decInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submit();
+      });
+
+      newQuestion();
+      updateStats();
+    </script>
+  </body>
+</html>
