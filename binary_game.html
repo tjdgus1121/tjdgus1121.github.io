@@ -211,16 +211,22 @@
       }
       .bits {
         display: flex;
-        justify-content: center;
+        justify-content: safe center;
         align-items: flex-start;
-        gap: clamp(6px, 2vw, 16px);
-        flex-wrap: wrap;
+        gap: clamp(3px, 0.7vw, 6px);
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 4px 2px 12px;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
       }
       .bit {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 12px;
+        flex: 0 1 92px;
+        min-width: 56px;
         --c: var(--indigo);
       }
       .place {
@@ -228,15 +234,15 @@
         color: #fff;
         font-family: "JetBrains Mono", monospace;
         font-weight: 800;
-        font-size: clamp(15px, 3vw, 20px);
-        padding: 7px 18px;
+        font-size: clamp(14px, 2vw, 18px);
+        padding: 7px clamp(8px, 1.4vw, 14px);
         border-radius: 999px;
         box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 45%, transparent);
+        white-space: nowrap;
       }
       .switch {
-        --w: clamp(70px, 15vw, 92px);
-        --h: clamp(40px, 8.5vw, 50px);
-        width: var(--w);
+        --h: clamp(38px, 5vw, 46px);
+        width: 100%;
         height: var(--h);
         border: none;
         border-radius: 999px;
@@ -255,14 +261,14 @@
         border-radius: 50%;
         background: #fff;
         box-shadow: 0 3px 9px rgba(0, 0, 0, 0.22);
-        transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.7, 1);
+        transition: left 0.22s cubic-bezier(0.34, 1.4, 0.7, 1);
       }
       .bit.on .switch {
         background: var(--c);
         box-shadow: 0 6px 18px color-mix(in srgb, var(--c) 50%, transparent);
       }
       .bit.on .knob {
-        transform: translateX(calc(var(--w) - var(--h)));
+        left: calc(100% - var(--h) + 5px);
       }
       .bit .val {
         font-family: "Orbitron", monospace;
@@ -288,11 +294,12 @@
         outline-offset: 2px;
       }
       .plus {
-        font-size: clamp(26px, 6vw, 42px);
+        flex: 0 0 20px;
+        font-size: clamp(22px, 3vw, 30px);
         font-weight: 900;
         color: #c0c7d6;
         align-self: center;
-        margin-top: clamp(34px, 8vw, 46px);
+        margin-top: 38px;
       }
 
       .hint-row {
