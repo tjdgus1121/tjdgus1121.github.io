@@ -234,6 +234,8 @@
             border-radius: 10px;
             margin-bottom: 14px;
             box-shadow: 0 2px 8px rgba(80,80,120,0.05);
+            -webkit-user-select: none;
+            user-select: none;
         }
         .cell {
             aspect-ratio: 1/1;
@@ -258,6 +260,14 @@
             gap: 12px;
             flex-wrap: wrap;
             justify-content: center;
+        }
+        .btn-capture-inline {
+            background: linear-gradient(135deg,#43a047 0%,#2e7d32 100%);
+            box-shadow: 0 2px 8px rgba(67,160,71,0.18);
+        }
+        .btn-capture-inline:hover {
+            background: linear-gradient(135deg,#2e7d32 0%,#43a047 100%);
+            box-shadow: 0 8px 24px rgba(67,160,71,0.22);
         }
         button {
             padding: 11px 22px;
@@ -416,6 +426,410 @@
 }
 
 </style>
+<style>
+/* ============================================================
+   고전 휴대용 게임기(레트로 LCD) 컨셉 - 프레임 캡쳐/재생 영역
+   ============================================================ */
+.console-section {
+    margin: 0 auto 28px auto;
+    width: 100%;
+    max-width: 1200px;
+    background: linear-gradient(160deg, #2b2d33 0%, #1c1e22 100%);
+    border-radius: 22px;
+    padding: 28px 24px 30px 24px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35), inset 0 0 0 2px #3a3d44;
+    border: 1.5px solid #14151a;
+    box-sizing: border-box;
+}
+.console-intro {
+    text-align: center;
+    color: #d7dae0;
+    font-size: 0.95em;
+    line-height: 1.7;
+    margin-bottom: 22px;
+    padding: 0 8px;
+}
+.console-intro strong { color: #8be28b; }
+.console-intro i { color: #8be28b; margin-right: 4px; }
+
+.console-body {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* 화면(LCD) 부분 */
+.console-screen-wrap {
+    background: #45484f;
+    border-radius: 18px;
+    padding: 18px 18px 20px 18px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.25);
+    width: 320px;
+    flex: 0 0 320px;
+    box-sizing: border-box;
+    border: 2px solid #26282d;
+}
+.console-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.console-brand {
+    color: #cfd3da;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.78em;
+    letter-spacing: 0.12em;
+}
+.console-brand span { color: #8b8f99; font-weight: 400; }
+
+/* 픽셀(그림) 모드 ⇄ 0,1(행렬) 모드 전환 스위치 - 물리 스위치 느낌 */
+.view-switch {
+    cursor: pointer;
+    flex: 0 0 auto;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.view-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.view-switch-track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 78px;
+    height: 26px;
+    background: #1c1e22;
+    border: 1.5px solid #3a3d44;
+    border-radius: 14px;
+    padding: 2px;
+    box-sizing: border-box;
+}
+.view-switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 37px;
+    height: 20px;
+    border-radius: 10px;
+    background: linear-gradient(135deg,#4caf50,#2e7d32);
+    transition: transform 0.2s ease, background 0.2s ease;
+    z-index: 1;
+}
+.view-switch input:checked ~ .view-switch-track .view-switch-thumb {
+    transform: translateX(37px);
+    background: linear-gradient(135deg,#42a5f5,#1565c0);
+}
+.view-switch-label {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    text-align: center;
+    font-size: 0.52em;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #8b8f99;
+    letter-spacing: 0.02em;
+}
+.view-switch input:not(:checked) ~ .view-switch-track .view-switch-label:first-of-type,
+.view-switch input:checked ~ .view-switch-track .view-switch-label:last-of-type {
+    color: #fff;
+}
+
+.console-screen {
+    background: #9bbf6b;
+    border: 6px solid #1c1e22;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.45);
+}
+.console-grid {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    gap: 1px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #7fa356;
+    transition: background 0.2s ease;
+}
+.console-pixel {
+    position: relative;
+    background: #b9d98c;
+    transition: background 0.12s linear;
+}
+.console-pixel.on {
+    background: #29331c;
+}
+.console-pixel-text {
+    display: none; /* 기본(픽셀 모드)에서는 숫자를 숨기고 색상 픽셀만 보여준다 */
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    font-weight: 700;
+    line-height: 1;
+}
+/* 0,1 모드 - 픽셀 색 대신 실제 이진 숫자를 드러내 게임기 화면 뒤의 수학적 원리를 보여준다 */
+.console-grid.mode-binary {
+    background: #12140f;
+}
+.console-grid.mode-binary .console-pixel {
+    background: #12140f;
+}
+.console-grid.mode-binary .console-pixel-text {
+    display: flex;
+    color: #4d5a37;
+}
+.console-grid.mode-binary .console-pixel.on .console-pixel-text {
+    color: #cfe8b8;
+}
+.console-view-hint {
+    margin: 8px 0 0 0;
+    text-align: center;
+    font-size: 0.68em;
+    color: #9aa0aa;
+    line-height: 1.4;
+}
+.console-view-hint strong { color: #8be28b; }
+.console-screen-label {
+    margin-top: 10px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #cfe8b8;
+    letter-spacing: 0.03em;
+    background: #1c1e22;
+    border: 1px solid #3a3d44;
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+.console-speaker {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 14px;
+    padding-right: 4px;
+}
+.console-speaker span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #26282d;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,0.6);
+}
+
+/* 조작 버튼 영역 */
+.console-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1 1 260px;
+    max-width: 420px;
+    justify-content: center;
+}
+
+/* 실행/정지/다시재생 - 아이콘 위, 라벨 아래인 카드형 3분할 버튼 */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px 8px;
+    border-radius: 16px;
+    font-size: 1em;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+.action-btn i { font-size: 1.5em; }
+.action-btn span { font-size: 0.86em; font-weight: 700; }
+.action-play { background: linear-gradient(160deg,#4caf50,#2e7d32); }
+.action-play:hover { background: linear-gradient(160deg,#2e7d32,#4caf50); }
+.action-stop { background: linear-gradient(160deg,#ef5350,#c62828); }
+.action-stop:hover { background: linear-gradient(160deg,#c62828,#ef5350); }
+.action-replay { background: linear-gradient(160deg,#ab47bc,#7b1fa2); }
+.action-replay:hover { background: linear-gradient(160deg,#7b1fa2,#ab47bc); }
+
+/* 속도 조절 - 세그먼트 탭 형태 */
+.speed-control {
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+    background: #1c1e22;
+    border: 1.5px solid #3a3d44;
+    border-radius: 12px;
+    padding: 4px;
+}
+.speed-btn {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 0.88em;
+    font-weight: 600;
+    background: transparent;
+    color: #a4a8b0;
+    box-shadow: none;
+    border-radius: 9px;
+}
+.speed-btn:hover { background: #2c2f36; color: #d7dae0; transform: none; }
+.speed-btn.active {
+    background: linear-gradient(135deg,#4caf50,#2e7d32);
+    color: #fff;
+}
+
+/* 전체삭제 - 프레임 목록 헤더의 작은 보조 버튼 */
+.btn-clear-chip {
+    padding: 8px 14px;
+    font-size: 0.85em;
+    background: #3a3d44;
+    border-radius: 10px;
+    box-shadow: none;
+    flex: 0 0 auto;
+}
+.btn-clear-chip:hover { background: #4c505a; transform: none; }
+
+/* GIF로 저장 - 캡쳐된 프레임들을 애니메이션 GIF 파일로 내보내는 버튼 */
+.btn-gif-wide {
+    width: 100%;
+    padding: 12px 18px;
+    font-size: 0.95em;
+    border-radius: 14px;
+    background: linear-gradient(135deg,#f9a825,#f57f17);
+}
+.btn-gif-wide:hover { background: linear-gradient(135deg,#f57f17,#f9a825); }
+.btn-gif-wide:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none;
+}
+
+/* 저장된 프레임 리스트 영역 */
+.frames-section {
+    margin-top: 26px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 16px;
+    padding: 20px 18px;
+    border: 1.2px solid #3a3d44;
+}
+.frames-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+.frames-section h2 {
+    color: #e7e9ee;
+    font-size: 1.05em;
+    text-align: left;
+    margin-bottom: 0;
+}
+.frames-section h2 span { color: #8b8f99; font-weight: 400; font-size: 0.85em; }
+.frames-section > p {
+    text-align: center;
+    color: #a4a8b0;
+    font-size: 0.85em;
+    margin-bottom: 16px;
+}
+.frame-list-empty {
+    text-align: center;
+    color: #6b6f78;
+    font-size: 0.85em;
+    padding: 18px 0;
+}
+.frame-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 14px;
+    padding: 6px 4px 10px 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #616161 #26282d;
+}
+.frame-item {
+    flex: 0 0 auto;
+    width: 130px;
+    background: #26282d;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border: 1px solid #3a3d44;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.frame-item.is-playing {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px #667eea55, 0 2px 8px rgba(0,0,0,0.3);
+}
+.frame-label {
+    color: #cfd3da;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    margin-bottom: 6px;
+}
+.frame-thumb {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    width: 100px;
+    height: 100px;
+    background: #9bbf6b;
+    border: 2px solid #1c1e22;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.frame-thumb-cell { background: #b9d98c; }
+.frame-thumb-cell.black { background: #29331c; }
+
+.frame-matrix-toggle { width: 100%; }
+.frame-matrix-toggle summary {
+    cursor: pointer;
+    font-size: 0.76em;
+    color: #8ecbff;
+    text-align: center;
+    list-style: none;
+}
+.frame-matrix-toggle summary::-webkit-details-marker { display: none; }
+.frame-matrix-toggle[open] summary { color: #b9dcff; }
+.frame-matrix-text {
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55em;
+    line-height: 1.3;
+    color: #cfd3da;
+    background: #1c1e22;
+    padding: 6px;
+    border-radius: 6px;
+    max-height: 160px;
+    overflow: auto;
+    white-space: pre;
+}
+
+@media (max-width: 768px) {
+    .console-screen-wrap {
+        width: 100%;
+        flex: 1 1 100%;
+        max-width: 320px;
+    }
+    .console-controls {
+        max-width: 100%;
+    }
+}
+</style>
 </head>
 <body>
     <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
@@ -480,9 +894,82 @@
         <div class="controls">
             <button type="button" id="showMatrix">행렬 표시</button>
             <button type="button" id="clearGrid">초기화</button>
+            <button type="button" id="captureBtn" class="btn-capture-inline"><i class="fa-solid fa-camera"></i> 캡쳐/저장</button>
         </div>
     </div> <!-- main-content-wrapper 닫기 -->
-    
+
+    <!-- ============================================================
+         고전 휴대용 게임기 컨셉 - 프레임 캡쳐 & 재생 영역
+         ============================================================ -->
+    <div class="console-section">
+        <div class="console-intro">
+            <p><i class="fa-solid fa-gamepad"></i> 옛날 게임기 화면은 사실상 <strong>0과 1로 이루어진 픽셀 행렬</strong>이 빠르게 바뀌는 구조입니다.<br>
+            지금 만든 패턴을 <strong>캡쳐</strong>하면 게임기의 <strong>한 장면(frame)</strong>이 됩니다. 여러 장 캡쳐하고 <strong>실행</strong> 버튼을 눌러 애니메이션을 만들어보세요!</p>
+        </div>
+
+        <div class="console-body">
+            <!-- 재생 전용 화면 (레트로 LCD 느낌) -->
+            <div class="console-screen-wrap">
+                <div class="console-brand-row">
+                    <div class="console-brand">BINARY BOY <span>15×15</span></div>
+                    <label class="view-switch" id="viewSwitch" title="픽셀 화면 / 0,1 행렬 전환">
+                        <input type="checkbox" id="viewModeToggle">
+                        <span class="view-switch-track">
+                            <span class="view-switch-thumb"></span>
+                            <span class="view-switch-label">PIXEL</span>
+                            <span class="view-switch-label">0,1</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="console-screen">
+                    <div class="console-grid" id="deviceGrid"></div>
+                </div>
+                <p class="console-view-hint">스위치를 켜면 게임기 화면 뒤에 숨은 <strong>0과 1의 행렬</strong>이 보여요.</p>
+                <div class="console-screen-label" id="deviceStatus">대기 중</div>
+                <div class="console-speaker">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <!-- 조작 버튼 -->
+            <div class="console-controls">
+                <div class="action-grid">
+                    <button type="button" id="playBtn" class="action-btn action-play">
+                        <i class="fa-solid fa-play"></i>
+                        <span>실행</span>
+                    </button>
+                    <button type="button" id="stopBtn" class="action-btn action-stop">
+                        <i class="fa-solid fa-stop"></i>
+                        <span>정지</span>
+                    </button>
+                    <button type="button" id="replayBtn" class="action-btn action-replay">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>다시재생</span>
+                    </button>
+                </div>
+
+                <div class="speed-control">
+                    <button type="button" class="speed-btn" data-speed="600">느리게</button>
+                    <button type="button" class="speed-btn active" data-speed="400">보통</button>
+                    <button type="button" class="speed-btn" data-speed="200">빠르게</button>
+                </div>
+
+                <button type="button" id="downloadGifBtn" class="btn-gif-wide"><i class="fa-solid fa-download"></i> GIF로 저장</button>
+            </div>
+        </div>
+
+        <div class="frames-section">
+            <div class="frames-header">
+                <h2><i class="fa-solid fa-film"></i> 저장된 프레임 <span id="frameCount">(0장)</span></h2>
+                <button type="button" id="clearFramesBtn" class="btn-clear-chip"><i class="fa-solid fa-trash"></i> 전체삭제</button>
+            </div>
+            <p>캡쳐 버튼을 누르면 지금의 15×15 패턴이 하나의 프레임으로 저장됩니다. 저장된 프레임들은 실행 버튼을 누르면 순서대로 재생됩니다.</p>
+            <div class="frame-list" id="frameList">
+                <div class="frame-list-empty" id="frameListEmpty">아직 저장된 프레임이 없습니다. 패턴을 만들고 '캡쳐/저장' 버튼을 눌러보세요!</div>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <div class="footer-content">
             <div>
@@ -512,6 +999,8 @@
     </footer>
     <!-- TensorFlow.js 추가 -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+    <!-- GIF 인코딩 (gif.js) - 캡쳐된 프레임을 애니메이션 GIF로 내보내는 데 사용. gif.worker.js는 같은 폴더에 위치해야 함 -->
+    <script src="gif.js"></script>
     <script>
         let model; // 모델 변수는 유지하되, 로드 코드는 비활성화
         let showMatrixBtn; // 버튼 요소를 저장할 변수 추가
@@ -542,6 +1031,17 @@
             // 그리드 셀 & 행렬 셀을 동시에 생성 (인덱스 1:1 대응)
             const matCells = [];
 
+            // 드래그로 여러 칸을 한 번에 칠하기 위한 상태값
+            let isDrawing = false; // 현재 마우스 버튼을 누른 채 드래그 중인지
+            let paintValue = true; // 드래그 중 적용할 색상값 (true=검은칸, false=흰칸)
+
+            // 특정 칸을 지정한 색상(black 여부)으로 확정 설정 (toggle이 아닌 명시적 설정)
+            function setCellState(index, cellEl, isBlack) {
+                cellEl.classList.toggle('black', isBlack);
+                matCells[index].className = 'matrix-cell' + (isBlack ? ' is-zero' : '');
+                matCells[index].textContent = isBlack ? '0' : '1';
+            }
+
             for (let i = 0; i < 15 * 15; i++) {
                 // 행렬 셀 미리 생성
                 const matCell = document.createElement('div');
@@ -554,14 +1054,32 @@
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.dataset.index = i;
-                cell.addEventListener('click', function() {
-                    this.classList.toggle('black');
-                    const isBlack = this.classList.contains('black');
-                    matCells[i].className = 'matrix-cell' + (isBlack ? ' is-zero' : '');
-                    matCells[i].textContent = isBlack ? '0' : '1';
+
+                // 마우스를 누른 칸: 그 칸의 색을 반전시키고, 드래그 동안 적용할 색을 그 결과로 고정
+                cell.addEventListener('mousedown', function(e) {
+                    e.preventDefault(); // 드래그 중 텍스트 선택/고스트 이미지 방지
+                    isDrawing = true;
+                    const newIsBlack = !this.classList.contains('black');
+                    paintValue = newIsBlack;
+                    setCellState(i, this, newIsBlack);
                 });
+
+                // 드래그 중 지나가는 칸에는 같은 색을 칠함 (지나갈 때마다 반전되지 않도록 명시적 설정 사용)
+                cell.addEventListener('mouseenter', function() {
+                    if (isDrawing) {
+                        setCellState(i, this, paintValue);
+                    }
+                });
+
                 grid.appendChild(cell);
             }
+
+            // 그리드 밖에서 마우스를 놓아도 드래그가 멈추도록 document 전체에서 감지
+            document.addEventListener('mouseup', function() {
+                isDrawing = false;
+            });
+            // 그리드 자체에도 드래그 이미지가 생기지 않도록 처리
+            grid.addEventListener('dragstart', function(e) { e.preventDefault(); });
 
             // 행렬 표시 버튼 — 전체 재동기화 (실시간 연동 보조)
             showMatrixBtn.addEventListener('click', function() {
@@ -687,6 +1205,278 @@
             }
         });
     </script>
+
+<script>
+/* ============================================================
+   고전 휴대용 게임기 컨셉 - 프레임 캡쳐 / 재생 로직
+   - frames: 캡쳐된 15x15 이진 행렬들을 담는 배열 (각 프레임은 독립된 복사본)
+   - playTimer: 재생용 setInterval ID. 항상 1개만 유지하여 중복 interval을 방지한다.
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', function() {
+    const frames = []; // 캡쳐된 프레임(2차원 배열)들을 순서대로 저장
+    let playTimer = null; // 현재 실행 중인 재생 interval (없으면 null)
+    let playIndex = 0; // 재생 중 현재 프레임 인덱스
+    let intervalMs = 400; // 프레임 전환 간격(ms) - 속도 버튼으로 조정 가능
+
+    const captureBtn = document.getElementById('captureBtn');
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const replayBtn = document.getElementById('replayBtn');
+    const clearFramesBtn = document.getElementById('clearFramesBtn');
+    const frameList = document.getElementById('frameList');
+    const frameListEmpty = document.getElementById('frameListEmpty');
+    const frameCount = document.getElementById('frameCount');
+    const deviceGrid = document.getElementById('deviceGrid');
+    const deviceStatus = document.getElementById('deviceStatus');
+    const speedBtns = document.querySelectorAll('.speed-btn');
+    const downloadGifBtn = document.getElementById('downloadGifBtn');
+    const viewModeToggle = document.getElementById('viewModeToggle');
+    let isRenderingGif = false; // GIF 렌더링 도중 중복 클릭으로 인한 중복 render() 호출을 막는다
+
+    // 게임기 화면(15x15)을 구성하는 픽셀 DOM을 미리 생성해 둔다 (재생 전용, 메인 그리드와 독립적)
+    // 각 칸은 색 픽셀(배경)과 숫자 텍스트를 함께 가지고 있어, 모드 스위치로 둘 중 하나를 드러낸다.
+    const deviceCells = [];
+    const deviceCellTexts = [];
+    for (let i = 0; i < 15 * 15; i++) {
+        const px = document.createElement('div');
+        px.className = 'console-pixel';
+        const txt = document.createElement('span');
+        txt.className = 'console-pixel-text';
+        px.appendChild(txt);
+        deviceGrid.appendChild(px);
+        deviceCells.push(px);
+        deviceCellTexts.push(txt);
+    }
+
+    // 픽셀(그림) 모드 ⇄ 0,1(행렬) 모드 스위치: 체크되면 색 픽셀 대신 실제 이진수를 보여준다.
+    viewModeToggle.addEventListener('change', function() {
+        deviceGrid.classList.toggle('mode-binary', this.checked);
+    });
+
+    // 상단 15x15 그리드의 현재 상태를 읽어 0/1 2차원 배열로 변환한다.
+    // 검은 칸 = 0, 흰 칸 = 1 (기존 '이진행렬' 표시 규칙과 동일하게 맞춘다)
+    function readCurrentMatrix() {
+        const cells = document.querySelectorAll('#grid .cell');
+        const matrix = [];
+        for (let i = 0; i < 15; i++) {
+            const row = [];
+            for (let j = 0; j < 15; j++) {
+                const idx = i * 15 + j;
+                row.push(cells[idx].classList.contains('black') ? 0 : 1);
+            }
+            matrix.push(row);
+        }
+        return matrix;
+    }
+
+    // 주어진 행렬을 게임기 화면(LCD)에 렌더링한다. 재생과 캡쳐 직후 미리보기에 공용으로 사용.
+    // 픽셀 배경색과 0/1 숫자를 항상 함께 갱신해두고, 어느 것을 보여줄지는 CSS(mode-binary)로 전환한다.
+    function renderToDevice(matrix) {
+        for (let i = 0; i < 15; i++) {
+            for (let j = 0; j < 15; j++) {
+                const idx = i * 15 + j;
+                deviceCells[idx].classList.toggle('on', matrix[i][j] === 0);
+                deviceCellTexts[idx].textContent = matrix[i][j];
+            }
+        }
+    }
+
+    // 프레임 카드용 15x15 미니 썸네일 DOM을 생성한다.
+    function buildThumbnail(matrix) {
+        const thumb = document.createElement('div');
+        thumb.className = 'frame-thumb';
+        for (let i = 0; i < 15; i++) {
+            for (let j = 0; j < 15; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'frame-thumb-cell';
+                if (matrix[i][j] === 0) cell.classList.add('black');
+                thumb.appendChild(cell);
+            }
+        }
+        return thumb;
+    }
+
+    // 행렬을 "0 1 1 0 ..." 형태의 텍스트로 변환 (접기/펼치기 영역에 표시)
+    function matrixToText(matrix) {
+        return matrix.map(row => row.join(' ')).join('\n');
+    }
+
+    // 프레임 리스트 하단에 새 카드를 추가한다 (기존 목록 아래로 계속 누적).
+    function addFrameCard(matrix, frameNumber) {
+        frameListEmpty.style.display = 'none';
+
+        const card = document.createElement('div');
+        card.className = 'frame-item';
+        card.dataset.frameIndex = frameNumber - 1;
+
+        const label = document.createElement('div');
+        label.className = 'frame-label';
+        label.textContent = 'frame #' + frameNumber;
+
+        const thumb = buildThumbnail(matrix);
+
+        const details = document.createElement('details');
+        details.className = 'frame-matrix-toggle';
+        const summary = document.createElement('summary');
+        summary.textContent = '행렬 값 보기';
+        const pre = document.createElement('pre');
+        pre.className = 'frame-matrix-text';
+        pre.textContent = matrixToText(matrix);
+        details.appendChild(summary);
+        details.appendChild(pre);
+
+        card.appendChild(label);
+        card.appendChild(thumb);
+        card.appendChild(details);
+        frameList.appendChild(card);
+    }
+
+    // 캡쳐/저장 버튼: 현재 그리드 상태를 깊은 복사로 저장 -> 이후 원본 그리드가 바뀌어도 캡쳐본은 유지된다.
+    captureBtn.addEventListener('click', function() {
+        const matrix = readCurrentMatrix(); // readCurrentMatrix는 매번 새 배열을 만들므로 이미 독립적인 복사본
+        frames.push(matrix);
+        addFrameCard(matrix, frames.length);
+        frameCount.textContent = '(' + frames.length + '장)';
+        renderToDevice(matrix); // 방금 캡쳐한 프레임을 화면에도 바로 보여준다
+        deviceStatus.textContent = 'frame #' + frames.length + ' 저장됨';
+    });
+
+    // 재생 중인 프레임 카드에 강조 표시를 준다.
+    function highlightPlayingCard(index) {
+        const cards = frameList.querySelectorAll('.frame-item');
+        cards.forEach(function(card) {
+            card.classList.toggle('is-playing', Number(card.dataset.frameIndex) === index);
+        });
+    }
+
+    // 재생 시작: 저장된 프레임들을 처음부터 순서대로 반복 재생한다.
+    // 기존 interval이 남아있으면 먼저 정리해서 중복 interval(메모리 누수)을 막는다.
+    function startPlayback() {
+        if (frames.length === 0) {
+            deviceStatus.textContent = '저장된 프레임이 없습니다';
+            return;
+        }
+        stopPlayback();
+
+        playIndex = 0;
+        renderToDevice(frames[playIndex]);
+        highlightPlayingCard(playIndex);
+        deviceStatus.textContent = '재생 중 (frame #1/' + frames.length + ')';
+
+        playTimer = setInterval(function() {
+            playIndex = (playIndex + 1) % frames.length; // 마지막 프레임 다음엔 처음으로 반복
+            renderToDevice(frames[playIndex]);
+            highlightPlayingCard(playIndex);
+            deviceStatus.textContent = '재생 중 (frame #' + (playIndex + 1) + '/' + frames.length + ')';
+        }, intervalMs);
+    }
+
+    // 정지: 실행 중인 interval을 정리하고 상태를 리셋한다.
+    function stopPlayback() {
+        if (playTimer !== null) {
+            clearInterval(playTimer);
+            playTimer = null;
+            deviceStatus.textContent = '정지됨';
+        }
+    }
+
+    playBtn.addEventListener('click', startPlayback);
+    replayBtn.addEventListener('click', startPlayback); // 처음부터 다시 재생
+    stopBtn.addEventListener('click', stopPlayback);
+
+    // 전체 삭제: 재생 중지 + 프레임 배열/리스트/화면을 모두 초기 상태로.
+    clearFramesBtn.addEventListener('click', function() {
+        stopPlayback();
+        frames.length = 0;
+        frameList.querySelectorAll('.frame-item').forEach(function(card) { card.remove(); });
+        frameListEmpty.style.display = '';
+        frameCount.textContent = '(0장)';
+        deviceCells.forEach(function(px) { px.classList.remove('on'); });
+        deviceCellTexts.forEach(function(txt) { txt.textContent = '1'; });
+        deviceStatus.textContent = '대기 중';
+    });
+
+    // 재생 속도 조절 (느리게/보통/빠르게). 재생 중이라면 새 속도로 즉시 재시작한다.
+    speedBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            speedBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            intervalMs = parseInt(btn.dataset.speed, 10);
+            if (playTimer !== null) {
+                startPlayback(); // startPlayback 내부에서 기존 interval을 정리한 뒤 새로 시작
+            }
+        });
+    });
+
+    // 행렬 하나를 GIF 프레임용 캔버스에 그린다 (게임기 LCD 화면과 같은 초록/검정 픽셀 배색)
+    function drawMatrixToCanvas(matrix, ctx, cellSize) {
+        const size = cellSize * 15;
+        ctx.fillStyle = '#7fa356'; // 칸 사이 격자(배경) 색
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 15; i++) {
+            for (let j = 0; j < 15; j++) {
+                ctx.fillStyle = matrix[i][j] === 0 ? '#29331c' : '#b9d98c';
+                ctx.fillRect(j * cellSize + 1, i * cellSize + 1, cellSize - 1, cellSize - 1);
+            }
+        }
+    }
+
+    // GIF로 저장: 캡쳐된 프레임들을 순서대로 캔버스에 그려 gif.js로 인코딩한 뒤 다운로드한다.
+    downloadGifBtn.addEventListener('click', function() {
+        if (isRenderingGif) return; // 렌더링 중 재클릭 방지
+        if (frames.length === 0) {
+            deviceStatus.textContent = '저장된 프레임이 없습니다';
+            return;
+        }
+
+        isRenderingGif = true;
+        downloadGifBtn.disabled = true;
+        deviceStatus.textContent = 'GIF 생성 준비 중...';
+
+        const cellSize = 20; // 1칸당 픽셀 크기 (결과 GIF 해상도 = 300x300)
+        const gifCanvas = document.createElement('canvas');
+        gifCanvas.width = cellSize * 15;
+        gifCanvas.height = cellSize * 15;
+        const gifCtx = gifCanvas.getContext('2d');
+
+        const gif = new GIF({
+            workers: 2,
+            quality: 10,
+            workerScript: 'gif.worker.js', // activity1_intro.html과 같은 폴더에 위치
+            width: gifCanvas.width,
+            height: gifCanvas.height,
+            repeat: 0 // 0 = 무한 반복
+        });
+
+        // 저장된 프레임 각각을 캔버스에 그려 GIF에 추가 (copy:true로 캔버스 상태를 매번 복사해 독립 프레임으로 저장)
+        frames.forEach(function(matrix) {
+            drawMatrixToCanvas(matrix, gifCtx, cellSize);
+            gif.addFrame(gifCtx, { copy: true, delay: intervalMs });
+        });
+
+        gif.on('progress', function(p) {
+            deviceStatus.textContent = 'GIF 생성 중... ' + Math.round(p * 100) + '%';
+        });
+
+        gif.on('finished', function(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'binary-boy-frames.gif';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url); // 다운로드 후 메모리에서 즉시 해제
+
+            deviceStatus.textContent = 'GIF 다운로드 완료!';
+            isRenderingGif = false;
+            downloadGifBtn.disabled = false;
+        });
+
+        gif.render();
+    });
+});
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
