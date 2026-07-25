@@ -358,14 +358,14 @@
         }
         
         .class-input-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: 72px minmax(180px, 1.4fr) 28px minmax(110px, 0.7fr) auto;
             gap: 8px;
             align-items: center;
             margin: 12px 0;
         }
         
         .class-input-group label {
-            min-width: 80px;
             font-weight: 600;
             color: #475569;
         }
@@ -379,6 +379,75 @@
             width: auto;
             margin: 0;
             padding: 10px 20px;
+        }
+
+        .mapping-arrow {
+            color: #059669;
+            font-size: 20px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .mapping-guide {
+            display: grid;
+            grid-template-columns: 72px minmax(180px, 1.4fr) 28px minmax(110px, 0.7fr) auto;
+            gap: 8px;
+            padding: 0 0 4px;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .mapping-guide span:nth-child(2),
+        .mapping-guide span:nth-child(4) {
+            padding-left: 14px;
+        }
+
+        #applyMappings {
+            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+        }
+
+        .mapping-status, .model-class-info {
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin: 10px 0;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .mapping-status {
+            color: #475569;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+        }
+
+        .mapping-status.success {
+            color: #047857;
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .mapping-status.warning {
+            color: #92400e;
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .model-class-info {
+            color: #3730a3;
+            background: #eef2ff;
+            border: 2px solid #c7d2fe;
+        }
+
+        .model-class-chip {
+            display: inline-block;
+            margin: 4px 4px 0 0;
+            padding: 3px 9px;
+            border-radius: 999px;
+            color: #3730a3;
+            background: white;
+            border: 1px solid #a5b4fc;
+            font-weight: 700;
         }
         
         #commandDisplay {
@@ -487,6 +556,33 @@
         #nextToAI {
             display: none;
         }
+
+        @media (max-width: 760px) {
+            .class-input-group {
+                grid-template-columns: 64px 1fr 28px 90px;
+            }
+
+            .class-input-group button {
+                grid-column: 2 / 5;
+                width: 100%;
+            }
+
+            .mapping-guide {
+                display: none;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .step { padding: 24px 18px; }
+            .class-input-group {
+                grid-template-columns: 1fr;
+                padding: 12px;
+                border: 2px solid #e2e8f0;
+                border-radius: 14px;
+            }
+            .mapping-arrow { display: none; }
+            .class-input-group button { grid-column: auto; }
+        }
     </style>
 </head>
 <body>
@@ -548,7 +644,7 @@
             
             <div class="radio-group">
                 <div class="radio-option">
-                    <input type="radio" name="modelType" id="imageModel" value="image" checked>
+                    <input type="radio" name="modelType" id="imageModel" value="image">
                     <label for="imageModel" class="radio-label">
                         <div class="icon">🖼️</div>
                         <div class="title">Image Model</div>
@@ -557,7 +653,7 @@
                 </div>
                 
                 <div class="radio-option">
-                    <input type="radio" name="modelType" id="poseModel" value="pose">
+                    <input type="radio" name="modelType" id="poseModel" value="pose" checked>
                     <label for="poseModel" class="radio-label">
                         <div class="icon">🧘</div>
                         <div class="title">Pose Model</div>
@@ -581,47 +677,72 @@
                 <div id="displayURL"></div>
                 <button class="edit-btn" id="editURL">✏️ URL 수정</button>
             </div>
+
+            <button id="loadModel">🧠 모델 로드 및 클래스 확인</button>
             
             <h2>⚙️ 클래스별 명령어 설정</h2>
             <div class="info">
-                각 클래스가 인식되면 마이크로비트로 전송할 명령어를 설정하세요.
+                티처블머신에서 만든 <strong>클래스명을 직접 입력</strong>하고, 인식됐을 때 마이크로비트로 보낼 명령을 연결하세요.<br>
+                모델을 먼저 로드하면 학생이 학습한 클래스명이 자동으로 입력됩니다. 클래스명은 <strong>대소문자와 띄어쓰기까지 정확히 같아야</strong> 합니다.<br>
+                움직임을 연결할 클래스에만 명령을 입력해도 됩니다. 단, 전송할 명령은 한 개 이상 설정하세요.<br>
+                예: <strong>왼팔 들기 → L</strong>
+            </div>
+
+            <div class="mapping-guide" aria-hidden="true">
+                <span>번호</span><span>티처블머신 클래스명</span><span></span><span>전송 명령</span><span></span>
+            </div>
+            <datalist id="modelClassOptions"></datalist>
+
+            <div id="mappingRows">
+            <div class="class-input-group">
+                <label for="className1">매핑 1</label>
+                <input type="text" id="className1" class="class-name-input" list="modelClassOptions" maxlength="100" placeholder="예: Class 1 또는 왼팔 들기">
+                <span class="mapping-arrow" aria-hidden="true">→</span>
+                <input type="text" id="classCommand1" class="command-input" maxlength="40" aria-label="매핑 1 전송 명령" placeholder="예: F">
+                <button class="test-btn" data-row="1" disabled>📤 테스트</button>
             </div>
             
             <div class="class-input-group">
-                <label>Class 1:</label>
-                <input type="text" id="class1" placeholder="예: F (전진)">
-                <button class="test-btn" data-class="1" disabled>📤 테스트</button>
+                <label for="className2">매핑 2</label>
+                <input type="text" id="className2" class="class-name-input" list="modelClassOptions" maxlength="100" placeholder="예: Class 2 또는 오른팔 들기">
+                <span class="mapping-arrow" aria-hidden="true">→</span>
+                <input type="text" id="classCommand2" class="command-input" maxlength="40" aria-label="매핑 2 전송 명령" placeholder="예: B">
+                <button class="test-btn" data-row="2" disabled>📤 테스트</button>
             </div>
             
             <div class="class-input-group">
-                <label>Class 2:</label>
-                <input type="text" id="class2" placeholder="예: B (후진)">
-                <button class="test-btn" data-class="2" disabled>📤 테스트</button>
+                <label for="className3">매핑 3</label>
+                <input type="text" id="className3" class="class-name-input" list="modelClassOptions" maxlength="100" placeholder="예: Class 3 또는 몸 왼쪽">
+                <span class="mapping-arrow" aria-hidden="true">→</span>
+                <input type="text" id="classCommand3" class="command-input" maxlength="40" aria-label="매핑 3 전송 명령" placeholder="예: L">
+                <button class="test-btn" data-row="3" disabled>📤 테스트</button>
             </div>
             
             <div class="class-input-group">
-                <label>Class 3:</label>
-                <input type="text" id="class3" placeholder="예: L (좌회전)">
-                <button class="test-btn" data-class="3" disabled>📤 테스트</button>
+                <label for="className4">매핑 4</label>
+                <input type="text" id="className4" class="class-name-input" list="modelClassOptions" maxlength="100" placeholder="예: Class 4 또는 몸 오른쪽">
+                <span class="mapping-arrow" aria-hidden="true">→</span>
+                <input type="text" id="classCommand4" class="command-input" maxlength="40" aria-label="매핑 4 전송 명령" placeholder="예: R">
+                <button class="test-btn" data-row="4" disabled>📤 테스트</button>
             </div>
             
             <div class="class-input-group">
-                <label>Class 4:</label>
-                <input type="text" id="class4" placeholder="예: R (우회전)">
-                <button class="test-btn" data-class="4" disabled>📤 테스트</button>
+                <label for="className5">매핑 5</label>
+                <input type="text" id="className5" class="class-name-input" list="modelClassOptions" maxlength="100" placeholder="예: Class 5 또는 정지 자세">
+                <span class="mapping-arrow" aria-hidden="true">→</span>
+                <input type="text" id="classCommand5" class="command-input" maxlength="40" aria-label="매핑 5 전송 명령" placeholder="예: S">
+                <button class="test-btn" data-row="5" disabled>📤 테스트</button>
             </div>
-            
-            <div class="class-input-group">
-                <label>Class 5:</label>
-                <input type="text" id="class5" placeholder="예: S (정지)">
-                <button class="test-btn" data-class="5" disabled>📤 테스트</button>
             </div>
+
+            <button id="applyMappings" type="button">✅ 클래스-명령 설정 적용</button>
+            <div id="mappingStatus" class="mapping-status" role="status" aria-live="polite">클래스명과 명령을 한 쌍 이상 입력해 주세요.</div>
+            <div id="modelClassInfo" class="model-class-info" hidden></div>
             
             <div id="commandDisplay">🤖 AI 제어 대기 중...</div>
             
-            <h2>🎬 웹캠 및 모델 실행</h2>
+            <h2>🎬 웹캠 실행</h2>
             
-            <button id="loadModel">🧠 모델 로드</button>
             <button id="startWebcam">🎥 웹캠 시작</button>
             <button id="stopWebcam" disabled>⏹ 웹캠 중지</button>
             
@@ -648,12 +769,15 @@
         let txCharacteristic;
         let model, webcam, maxPredictions;
         let isWebcamRunning = false;
-        let classCommands = {};
+        let classCommands = Object.create(null);
+        let modelClassLabels = [];
+        let mappingsApplied = false;
+        let testMode = false;
         let savedModelURL = '';
         let lastCommand = '';
         let lastSendTime = 0;
         let currentStep = 1;
-        let modelType = 'image'; // 기본값: image
+        let modelType = 'pose'; // Maqueen 활동 기본값: pose
         
         // Pose 전용 변수
         let ctx, labelContainer;
@@ -665,7 +789,10 @@
             const time = new Date().toLocaleTimeString();
             const icon = isError ? '❌' : '✓';
             const color = isError ? '#ef4444' : '#10b981';
-            logDiv.innerHTML += `<div style="color: ${color}">[${time}] ${icon} ${msg}</div>`;
+            const row = document.createElement('div');
+            row.style.color = color;
+            row.textContent = `[${time}] ${icon} ${msg}`;
+            logDiv.appendChild(row);
             logDiv.scrollTop = logDiv.scrollHeight;
         }
         
@@ -689,8 +816,66 @@
                 });
             }, 500);
         }
+
+        function isBluetoothConnected() {
+            return Boolean(device && device.gatt && device.gatt.connected && txCharacteristic);
+        }
+
+        function updateTestButtonState() {
+            const canSend = testMode || isBluetoothConnected();
+            document.querySelectorAll('.test-btn').forEach(button => {
+                button.disabled = !canSend;
+            });
+        }
+
+        function setTestMode(enabled) {
+            testMode = enabled;
+            const status = document.getElementById('btStatus');
+            const textSection = document.getElementById('textSection');
+            const nextButton = document.getElementById('nextToAI');
+
+            if (testMode) {
+                status.className = 'status connected';
+                status.textContent = '🧪 교사용 테스트 모드 · 실제 명령은 전송되지 않음';
+                textSection.style.display = 'block';
+                nextButton.style.display = 'block';
+                log('교사용 테스트 모드가 켜졌습니다. 명령은 모의 전송됩니다.', false, 'log1');
+            } else if (isBluetoothConnected()) {
+                status.className = 'status connected';
+                status.textContent = '✅ 블루투스 연결됨: ' + device.name;
+                textSection.style.display = 'block';
+                nextButton.style.display = 'block';
+                log('교사용 테스트 모드를 종료하고 실제 연결을 사용합니다.', false, 'log1');
+            } else {
+                status.className = 'status disconnected';
+                status.textContent = '❌ 블루투스 연결 안됨';
+                textSection.style.display = 'none';
+                nextButton.style.display = 'none';
+                log('교사용 테스트 모드가 꺼졌습니다.', false, 'log1');
+            }
+
+            if (currentStep === 2) {
+                document.getElementById('deviceName').textContent = testMode
+                    ? '🧪 교사용 테스트 모드'
+                    : (isBluetoothConnected() ? '✅ 연결됨: ' + device.name : '연결된 기기 없음');
+            }
+            updateTestButtonState();
+        }
+
+        // 화면에는 노출하지 않는 교사용 단축키: Ctrl + Shift + M
+        document.addEventListener('keydown', (event) => {
+            if (currentStep !== 1) return;
+            if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'm') {
+                event.preventDefault();
+                setTestMode(!testMode);
+            }
+        });
         
         async function sendToMicrobit(text, logId = 'log1') {
+            if (testMode) {
+                log(`모의 전송: ${text}`, false, logId);
+                return true;
+            }
             if (!txCharacteristic) {
                 log('블루투스가 연결되지 않았습니다', true, logId);
                 return false;
@@ -726,9 +911,7 @@
                 // 모델이 이미 로드되어 있으면 경고
                 if (model) {
                     alert('모델 타입을 변경했습니다. 모델을 다시 로드해주세요!');
-                    document.getElementById('loadModel').disabled = false;
-                    document.getElementById('loadModel').textContent = '🧠 모델 로드';
-                    model = null;
+                    clearLoadedModel();
                 }
             });
         });
@@ -736,6 +919,226 @@
         function updateModelTypeDisplay() {
             const displayText = modelType === 'image' ? '🖼️ Image' : '🧘 Pose';
             document.getElementById('modelTypeDisplay').textContent = displayText;
+        }
+
+        function setMappingStatus(message, kind = '') {
+            const status = document.getElementById('mappingStatus');
+            status.className = `mapping-status${kind ? ' ' + kind : ''}`;
+            status.textContent = message;
+        }
+
+        // DOM과 분리된 매핑 검증 로직. 클래스명은 대소문자·띄어쓰기를 보존한다.
+        function buildClassCommandMap(rows) {
+            const commands = Object.create(null);
+            const errors = [];
+
+            for (const row of rows) {
+                const className = String(row.className || '').trim();
+                const command = String(row.command || '').trim();
+                if (!className && !command) continue;
+                if (!className) {
+                    errors.push(`매핑 ${row.index}: 티처블머신 클래스명을 입력하세요.`);
+                    continue;
+                }
+                if (!command) {
+                    // 모델에서 자동 입력된 클래스 중 명령이 필요 없는 것은 비워둘 수 있다.
+                    continue;
+                }
+                if (Object.prototype.hasOwnProperty.call(commands, className)) {
+                    errors.push(`클래스명 '${className}'이(가) 중복되었습니다.`);
+                    continue;
+                }
+                commands[className] = command;
+            }
+
+            if (!Object.keys(commands).length && !errors.length) {
+                errors.push('클래스명과 명령을 한 쌍 이상 입력하세요.');
+            }
+            return { commands, errors };
+        }
+
+        function getMappingRows() {
+            return [...document.querySelectorAll('#mappingRows .class-input-group')].map((group, index) => ({
+                index: index + 1,
+                className: group.querySelector('.class-name-input').value,
+                command: group.querySelector('.command-input').value
+            }));
+        }
+
+        function createMappingRow(row, index) {
+            const rowNumber = index + 1;
+            const group = document.createElement('div');
+            group.className = 'class-input-group';
+
+            const label = document.createElement('label');
+            label.htmlFor = `className${rowNumber}`;
+            label.textContent = `매핑 ${rowNumber}`;
+
+            const classInput = document.createElement('input');
+            classInput.type = 'text';
+            classInput.id = `className${rowNumber}`;
+            classInput.className = 'class-name-input';
+            classInput.setAttribute('list', 'modelClassOptions');
+            classInput.maxLength = 100;
+            classInput.placeholder = '티처블머신 클래스명';
+            classInput.value = row.className || '';
+
+            const arrow = document.createElement('span');
+            arrow.className = 'mapping-arrow';
+            arrow.setAttribute('aria-hidden', 'true');
+            arrow.textContent = '→';
+
+            const commandInput = document.createElement('input');
+            commandInput.type = 'text';
+            commandInput.id = `classCommand${rowNumber}`;
+            commandInput.className = 'command-input';
+            commandInput.maxLength = 40;
+            commandInput.setAttribute('aria-label', `매핑 ${rowNumber} 전송 명령`);
+            commandInput.placeholder = '예: F';
+            commandInput.value = row.command || '';
+
+            const testButton = document.createElement('button');
+            testButton.type = 'button';
+            testButton.className = 'test-btn';
+            testButton.dataset.row = String(rowNumber);
+            testButton.disabled = !(testMode || isBluetoothConnected());
+            testButton.textContent = '📤 테스트';
+
+            group.append(label, classInput, arrow, commandInput, testButton);
+            return group;
+        }
+
+        function renderMappingRows(rows) {
+            const container = document.getElementById('mappingRows');
+            container.textContent = '';
+            rows.forEach((row, index) => container.appendChild(createMappingRow(row, index)));
+        }
+
+        function buildModelMappingRows(labels, currentRows) {
+            const commandByClass = new Map(
+                currentRows
+                    .filter(row => row.className.trim() && row.command.trim())
+                    .map(row => [row.className.trim(), row.command.trim()])
+            );
+            const namesWereBlank = currentRows.every(row => !row.className.trim());
+            return labels.map((className, index) => ({
+                className,
+                command: commandByClass.get(className) || (namesWereBlank ? (currentRows[index]?.command || '') : '')
+            }));
+        }
+
+        function populateMappingRowsFromModel(labels) {
+            if (!labels.length) return 0;
+
+            const rows = buildModelMappingRows(labels, getMappingRows());
+            renderMappingRows(rows);
+            classCommands = Object.create(null);
+            mappingsApplied = false;
+            return rows.length;
+        }
+
+        function renderModelClassInfo() {
+            const info = document.getElementById('modelClassInfo');
+            const options = document.getElementById('modelClassOptions');
+            info.textContent = '';
+            options.textContent = '';
+
+            if (!modelClassLabels.length) {
+                info.hidden = true;
+                return;
+            }
+
+            info.hidden = false;
+            const title = document.createElement('strong');
+            title.textContent = '모델에서 확인한 실제 클래스: ';
+            info.appendChild(title);
+            for (const className of modelClassLabels) {
+                const chip = document.createElement('span');
+                chip.className = 'model-class-chip';
+                chip.textContent = className;
+                info.appendChild(chip);
+
+                const option = document.createElement('option');
+                option.value = className;
+                options.appendChild(option);
+            }
+        }
+
+        function validateMappingsAgainstModel(showAlert = true) {
+            const mappedNames = Object.keys(classCommands);
+            if (!modelClassLabels.length) {
+                setMappingStatus(`✅ ${mappedNames.length}개 매핑을 적용했습니다. 모델을 로드하면 클래스명을 다시 확인합니다.`, 'success');
+                return true;
+            }
+
+            const unknown = mappedNames.filter(name => !modelClassLabels.includes(name));
+            if (unknown.length) {
+                const message = `모델에 없는 클래스명: ${unknown.join(', ')}. 위의 실제 클래스명을 그대로 입력하세요.`;
+                setMappingStatus('⚠️ ' + message, 'warning');
+                if (showAlert) alert(message);
+                return false;
+            }
+
+            const unmapped = modelClassLabels.filter(name => !classCommands[name]);
+            const suffix = unmapped.length ? ` (명령 미설정: ${unmapped.join(', ')})` : '';
+            setMappingStatus(`✅ 모델 클래스와 ${mappedNames.length}개 명령을 정확히 연결했습니다.${suffix}`, 'success');
+            return true;
+        }
+
+        function applyClassMappings(showAlert = true) {
+            const { commands, errors } = buildClassCommandMap(getMappingRows());
+            if (errors.length) {
+                mappingsApplied = false;
+                setMappingStatus('⚠️ ' + errors.join(' '), 'warning');
+                if (showAlert) alert(errors.join('\n'));
+                return false;
+            }
+
+            classCommands = commands;
+            lastCommand = '';
+            mappingsApplied = validateMappingsAgainstModel(showAlert);
+            return mappingsApplied;
+        }
+
+        async function readModelClassLabels(metadataURL) {
+            try {
+                if (model && typeof model.getClassLabels === 'function') {
+                    const labels = await Promise.resolve(model.getClassLabels());
+                    if (Array.isArray(labels) && labels.length) {
+                        return [...new Set(labels.map(label => String(label)))];
+                    }
+                }
+            } catch (_) { /* metadata.json으로 재시도 */ }
+
+            try {
+                const response = await fetch(metadataURL, { cache: 'no-store' });
+                if (!response.ok) return [];
+                const metadata = await response.json();
+                const labels = Array.isArray(metadata.labels) ? metadata.labels : [];
+                return [...new Set(labels.map(label => String(label)))];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function clearLoadedModel() {
+            if (webcam && isWebcamRunning) webcam.stop();
+            webcam = null;
+            isWebcamRunning = false;
+            const webcamContainer = document.getElementById('webcam-container');
+            const predictionContainer = document.getElementById('label-container');
+            if (webcamContainer) webcamContainer.textContent = '';
+            if (predictionContainer) predictionContainer.textContent = '';
+            document.getElementById('startWebcam').disabled = false;
+            document.getElementById('stopWebcam').disabled = true;
+            model = null;
+            maxPredictions = 0;
+            modelClassLabels = [];
+            mappingsApplied = false;
+            renderModelClassInfo();
+            const loadButton = document.getElementById('loadModel');
+            loadButton.disabled = false;
+            loadButton.textContent = '🧠 모델 로드 및 클래스 확인';
         }
         
         // 블루투스 연결
@@ -752,11 +1155,16 @@
                 
                 device.addEventListener('gattserverdisconnected', () => {
                     log('연결이 끊어졌습니다', true, 'log1');
-                    document.getElementById('btStatus').className = 'status disconnected';
-                    document.getElementById('btStatus').textContent = '❌ 블루투스 연결 안됨';
-                    document.getElementById('textSection').style.display = 'none';
-                    document.getElementById('nextToAI').style.display = 'none';
                     txCharacteristic = null;
+                    if (testMode) {
+                        setTestMode(true);
+                    } else {
+                        document.getElementById('btStatus').className = 'status disconnected';
+                        document.getElementById('btStatus').textContent = '❌ 블루투스 연결 안됨';
+                        document.getElementById('textSection').style.display = 'none';
+                        document.getElementById('nextToAI').style.display = 'none';
+                        updateTestButtonState();
+                    }
                 });
                 
                 const server = await device.gatt.connect();
@@ -775,6 +1183,8 @@
                 if (!txCharacteristic) {
                     throw new Error('쓰기 가능한 특성을 찾을 수 없습니다.');
                 }
+
+                testMode = false;
                 
                 log('✨ 블루투스 연결 성공!', false, 'log1');
                 
@@ -782,6 +1192,7 @@
                 document.getElementById('btStatus').textContent = '✅ 블루투스 연결됨: ' + device.name;
                 document.getElementById('textSection').style.display = 'block';
                 document.getElementById('nextToAI').style.display = 'block';
+                updateTestButtonState();
                 
             } catch (error) {
                 log('연결 오류: ' + error.message, true, 'log1');
@@ -816,6 +1227,7 @@
                 return;
             }
             
+            if (savedModelURL && savedModelURL !== url && model) clearLoadedModel();
             savedModelURL = url;
             document.getElementById('displayURL').textContent = url;
             document.getElementById('urlInputSection').style.display = 'none';
@@ -830,14 +1242,14 @@
         
         // STEP 2로 이동
         document.getElementById('nextToAI').addEventListener('click', () => {
-            if (device && device.gatt.connected) {
-                document.getElementById('deviceName').textContent = '✅ 연결됨: ' + device.name;
+            if (testMode || isBluetoothConnected()) {
+                document.getElementById('deviceName').textContent = testMode
+                    ? '🧪 교사용 테스트 모드 · 모의 명령 전송'
+                    : '✅ 연결됨: ' + device.name;
                 updateModelTypeDisplay();
                 
                 setTimeout(() => {
-                    document.querySelectorAll('.test-btn').forEach(btn => {
-                        btn.disabled = false;
-                    });
+                    updateTestButtonState();
                 }, 600);
                 
                 showStep(2);
@@ -846,29 +1258,47 @@
             }
         });
         
-        // 클래스 테스트 버튼
-        document.querySelectorAll('.test-btn').forEach(button => {
-            button.addEventListener('click', async function() {
-                const classNum = this.getAttribute('data-class');
-                const input = document.getElementById(`class${classNum}`);
-                const command = input.value.trim();
+        // 클래스 행은 모델 로드 후 동적으로 바뀌므로 컨테이너에서 이벤트를 처리한다.
+        document.getElementById('mappingRows').addEventListener('click', async (event) => {
+            const button = event.target.closest('.test-btn');
+            if (!button) return;
+
+                const rowNumber = button.getAttribute('data-row');
+                const nameInput = document.getElementById(`className${rowNumber}`);
+                const commandInput = document.getElementById(`classCommand${rowNumber}`);
+                const className = nameInput.value.trim();
+                const command = commandInput.value.trim();
                 
+                if (!className) {
+                    alert(`매핑 ${rowNumber}의 티처블머신 클래스명을 입력하세요!`);
+                    nameInput.focus();
+                    return;
+                }
                 if (!command) {
-                    alert(`Class ${classNum}의 명령어를 먼저 입력하세요!`);
-                    input.focus();
+                    alert(`'${className}' 클래스의 명령어를 먼저 입력하세요!`);
+                    commandInput.focus();
                     return;
                 }
                 
                 const success = await sendToMicrobit(command, 'log2');
                 if (success) {
-                    document.getElementById('commandDisplay').textContent = `🧪 테스트: Class ${classNum} → ${command}`;
+                    document.getElementById('commandDisplay').textContent = `🧪 테스트: ${className} → ${command}`;
                     
-                    this.textContent = '✅ 완료';
+                    button.textContent = '✅ 완료';
                     setTimeout(() => {
-                        this.textContent = '📤 테스트';
+                        button.textContent = '📤 테스트';
                     }, 1000);
                 }
-            });
+        });
+
+        document.getElementById('mappingRows').addEventListener('input', (event) => {
+            if (!event.target.matches('.class-name-input, .command-input')) return;
+            mappingsApplied = false;
+            setMappingStatus('입력 내용이 변경되었습니다. 클래스-명령 설정 적용 버튼을 눌러 주세요.');
+        });
+
+        document.getElementById('applyMappings').addEventListener('click', () => {
+            applyClassMappings(true);
         });
         
         // 모델 로드
@@ -878,19 +1308,9 @@
                 return;
             }
             
-            classCommands = {};
-            for (let i = 1; i <= 5; i++) {
-                const input = document.getElementById(`class${i}`);
-                if (input && input.value.trim()) {
-                    classCommands[`Class ${i}`] = input.value.trim();
-                }
-            }
-            
-            if (Object.keys(classCommands).length === 0) {
-                alert('최소 하나 이상의 클래스 명령어를 입력하세요!');
-                return;
-            }
-            
+            const loadButton = document.getElementById('loadModel');
+            loadButton.disabled = true;
+            loadButton.textContent = '⏳ 모델과 클래스 확인 중...';
             try {
                 log(`${modelType.toUpperCase()} 모델 로딩 중...`, false, 'log2');
                 
@@ -906,13 +1326,38 @@
                 }
                 
                 maxPredictions = model.getTotalClasses();
+                modelClassLabels = await readModelClassLabels(URL + 'metadata.json');
+                renderModelClassInfo();
+                const autoFilledCount = populateMappingRowsFromModel(modelClassLabels);
+                const hasCommandInput = getMappingRows().some(row => row.command.trim());
+                if (hasCommandInput) {
+                    applyClassMappings(false);
+                } else {
+                    classCommands = Object.create(null);
+                    mappingsApplied = false;
+                    const message = autoFilledCount
+                        ? `✅ 학생이 학습한 클래스 ${autoFilledCount}개를 자동으로 입력했습니다. 각 움직임에 보낼 명령을 입력해 주세요.`
+                        : '모델 클래스명을 자동으로 읽지 못했습니다. 클래스명과 명령을 직접 입력해 주세요.';
+                    setMappingStatus(message, autoFilledCount ? 'success' : 'warning');
+                }
                 
                 log(`✅ 모델 로드 완료: ${maxPredictions}개 클래스`, false, 'log2');
+                if (modelClassLabels.length) {
+                    log(`모델 클래스 자동 입력: ${modelClassLabels.join(', ')}`, false, 'log2');
+                } else {
+                    log('모델 클래스명을 자동으로 읽지 못했습니다. 입력한 클래스명을 직접 확인하세요.', true, 'log2');
+                }
+                if (hasCommandInput && !mappingsApplied) {
+                    log('입력한 클래스명과 모델의 실제 클래스명이 다릅니다.', true, 'log2');
+                } else if (!hasCommandInput) {
+                    log('자동 입력된 클래스에 전송 명령을 연결하세요.', false, 'log2');
+                }
                 
-                document.getElementById('loadModel').disabled = true;
-                document.getElementById('loadModel').textContent = '✅ 모델 로드 완료';
+                loadButton.disabled = true;
+                loadButton.textContent = '✅ 모델·클래스 확인 완료';
                 
             } catch (error) {
+                clearLoadedModel();
                 log('❌ 모델 로드 실패: ' + error.message, true, 'log2');
                 console.error(error);
             }
@@ -924,12 +1369,13 @@
                 alert('먼저 모델을 로드하세요!');
                 return;
             }
+            if (!mappingsApplied && !applyClassMappings(true)) return;
             
             try {
                 log('웹캠 시작 중...', false, 'log2');
                 
                 const container = document.getElementById('webcam-container');
-                container.innerHTML = '';
+                container.textContent = '';
                 
                 if (modelType === 'image') {
                     // Image 모델 웹캠
@@ -978,8 +1424,8 @@
                 isWebcamRunning = false;
                 document.getElementById('startWebcam').disabled = false;
                 document.getElementById('stopWebcam').disabled = true;
-                document.getElementById('webcam-container').innerHTML = '';
-                document.getElementById('label-container').innerHTML = '';
+                document.getElementById('webcam-container').textContent = '';
+                document.getElementById('label-container').textContent = '';
                 log('웹캠 중지', false, 'log2');
             }
         });
@@ -1027,19 +1473,21 @@
             }
             
             // 예측 결과 표시
-            labelContainer.innerHTML = '';
+            labelContainer.textContent = '';
             
             let maxProb = 0;
             let maxClass = '';
-            
-            for (let i = 0; i < maxPredictions; i++) {
+
+            for (const item of prediction) {
+                if (item.probability > maxProb) {
+                    maxProb = item.probability;
+                    maxClass = item.className;
+                }
+            }
+
+            for (let i = 0; i < prediction.length; i++) {
                 const className = prediction[i].className;
                 const probability = prediction[i].probability;
-                
-                if (probability > maxProb) {
-                    maxProb = probability;
-                    maxClass = className;
-                }
                 
                 const div = document.createElement('div');
                 div.className = 'prediction';
@@ -1056,14 +1504,20 @@
                 
                 div.setAttribute('data-covered-label', labelCovered);
                 div.setAttribute('data-covered-value', valueCovered);
-                
-                div.innerHTML = `
-                    <div class="prediction-bar-container">
-                        <div class="prediction-bar" style="width: ${(probability * 100)}%"></div>
-                        <div class="prediction-label-in-bar">${labelText}</div>
-                        <div class="prediction-value-in-bar">${(probability * 100).toFixed(0)}%</div>
-                    </div>
-                `;
+
+                const barContainer = document.createElement('div');
+                barContainer.className = 'prediction-bar-container';
+                const bar = document.createElement('div');
+                bar.className = 'prediction-bar';
+                bar.style.width = `${Math.max(0, Math.min(100, probability * 100))}%`;
+                const label = document.createElement('div');
+                label.className = 'prediction-label-in-bar';
+                label.textContent = labelText;
+                const value = document.createElement('div');
+                value.className = 'prediction-value-in-bar';
+                value.textContent = `${(probability * 100).toFixed(0)}%`;
+                barContainer.append(bar, label, value);
+                div.appendChild(barContainer);
                 labelContainer.appendChild(div);
             }
             
