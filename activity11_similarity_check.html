@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>해밍 거리 - 개념과 체험</title>
+    <title>해밍 거리와 데이터 유사도 | 인공지능 수학 웹앱</title>
     <meta name="description" content="해밍 거리의 개념을 배우고 숫자 이미지로 직접 체험해보는 인공지능 수학 교육 사이트입니다.">
     <meta name="keywords" content="해밍거리, Hamming Distance, 이진행렬, 이미지분류, 인공지능수학">
     <meta name="author" content="황성현">
@@ -12,10 +12,10 @@
     <meta property="og:title" content="해밍 거리 - 개념과 체험">
     <meta property="og:description" content="해밍 거리의 개념을 배우고 숫자 이미지로 직접 체험해보세요.">
     <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
-    <meta property="og:url" content="https://tjdgus1121.github.io/activity_haming.html">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity11_similarity_check.html">
     <meta property="og:type" content="website">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://tjdgus1121.github.io/activity_haming.html">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity11_similarity_check.html">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="subject" content="AI 수학 교육 체험">
     <meta name="theme-color" content="#6c8cff">
@@ -303,6 +303,24 @@
         .editable-cell { cursor: pointer; -webkit-user-select: none; user-select: none; }
         .editable-cell:hover { opacity: 0.75; }
 
+        /* ── 해밍 미니 데모: 승(작은 H) 강조 / 패(큰 H) 회색 처리 ── */
+        .small-grid.grid-winner { box-shadow: 0 0 0 3px var(--success); }
+        .small-grid.grid-dimmed { position: relative; filter: grayscale(0.4); }
+        .small-grid.grid-dimmed::after {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(120,124,132,0.5);
+            border-radius: 8px; pointer-events: none;
+        }
+        .mini-h-display { transition: transform 0.25s, box-shadow 0.25s, opacity 0.25s; }
+        .mini-h-display .mh-sub { display: block; font-size: 0.5em; font-weight: 800; opacity: 0.95; margin-top: 4px; }
+        .mini-h-win { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #fbbf24; transform: scale(1.05); }
+        .mini-h-lose { opacity: 0.5; filter: grayscale(0.55); }
+        .mini-diff-legend { text-align: center; font-size: 0.86em; color: var(--muted); margin: 2px 0 14px; }
+        .mini-diff-legend .dsw {
+            display: inline-block; width: 13px; height: 13px; border-radius: 3px;
+            background: var(--danger); vertical-align: middle; margin-right: 4px;
+        }
+
         /* ── 셀 툴팁 (빨간 diff 셀 설명) ── */
         .small-cell[data-tooltip] { position: relative; overflow: visible; }
         .small-cell[data-tooltip]:hover::after {
@@ -526,12 +544,13 @@
             margin-bottom: 8px;
         }
         .concept-h-box {
-            background: var(--primary);
+            background: linear-gradient(135deg, #2b3555, #1f284a);
             color: #fff;
             border-radius: 14px;
             padding: 16px 28px;
             text-align: center;
             min-width: 140px;
+            box-shadow: 0 6px 18px rgba(31,40,74,0.25);
         }
         .concept-h-label { font-size: 0.9em; opacity: 0.85; margin-bottom: 4px; }
         .concept-h-value { font-size: 2.4em; font-weight: 900; font-family: 'Orbitron', sans-serif; }
@@ -1267,6 +1286,118 @@
         .cta-btn-perc { background: #7c3aed; }
         .cta-btn-perc:hover { background: #6d28d9; }
 
+        /* ── 퍼셉트론 개념: 핵심 직관 박스 ── */
+        .perc-key-insight {
+            background: #fff;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-top: 14px;
+            font-size: 1.02em;
+            line-height: 1.85;
+        }
+        .perc-key-insight b { color: var(--primary-dark); }
+        .perc-key-insight .pill {
+            display: inline-block; background: #3b82f6; color: #fff;
+            border-radius: 6px; padding: 1px 9px; font-weight: 700; font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .perc-key-insight .pill.den { background: #f59e0b; }
+
+        /* ── 퍼셉트론 겹침(overlap) 시각화 ── */
+        .perc-ov-flow {
+            display: flex; gap: 14px; align-items: center; justify-content: center;
+            flex-wrap: wrap; margin-bottom: 16px;
+        }
+        .perc-ov-op {
+            font-size: 1.6em; color: var(--muted); font-weight: 800;
+            display: flex; flex-direction: column; align-items: center; line-height: 1.1;
+        }
+        .perc-ov-op small { font-size: 0.4em; font-weight: 700; color: var(--primary); letter-spacing: 0.3px; }
+
+        /* 겹침 셀 색 (개념·체험 공용) */
+        .small-cell.pov-both  { background: #3b82f6; color: #fff; border: 1px solid #2563eb; }
+        .small-cell.pov-miss  { background: #f59e0b; color: #fff; border: 1px solid #d97706; }
+        .small-cell.pov-xonly { background: #fde2e2; color: #d88; border: 1px solid #f7cccc; }
+        .small-cell.pov-off   { background: #fff; color: #d1d5db; border: 1px solid #eef1f8; }
+
+        /* 겹침 결과 카드 안 분모 표기 */
+        .ov-den-note {
+            font-size: 0.85em; color: var(--muted); margin-top: 10px; line-height: 1.45;
+            border-top: 1px dashed var(--border); padding-top: 8px;
+        }
+        .ov-den-note b.c-both { color: #2563eb; }
+        .ov-den-note b.c-miss { color: #d97706; }
+
+        /* 겹침 결과 셀 안의 가중치 1/|A| 세로 분수 */
+        .pov-frac {
+            display: inline-flex; flex-direction: column; align-items: center;
+            line-height: 1; font-weight: 800; color: #fff;
+        }
+        .pov-frac .pfn { font-size: 11px; border-bottom: 1.5px solid rgba(255,255,255,0.9); padding: 0 3px 1px; }
+        .pov-frac .pfd { font-size: 11px; padding: 1px 3px 0; }
+        /* 주황(A만 켬, X=0) 칸: 분자에 더해지지 않으므로 연한 회색으로 흐리게 */
+        .pov-frac.off { color: rgba(255,255,255,0.48); }
+        .pov-frac.off .pfn { border-bottom-color: rgba(255,255,255,0.48); }
+
+        .perc-ov-legend {
+            display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+            font-size: 0.86em; color: var(--muted); margin-bottom: 18px;
+        }
+        .perc-ov-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .perc-ov-legend i { width: 13px; height: 13px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+        .perc-ov-legend .lg-both  { background: #3b82f6; }
+        .perc-ov-legend .lg-miss  { background: #f59e0b; }
+        .perc-ov-legend .lg-xonly { background: #fde2e2; border: 1px solid #f7cccc; }
+
+        /* 비율 패널 */
+        .perc-ratio-panel {
+            max-width: 580px; margin: 0 auto; background: #f8faff;
+            border-radius: 14px; padding: 18px 22px;
+        }
+        .perc-ratio-step { font-size: 0.98em; line-height: 1.95; color: var(--text); }
+        .perc-ratio-step .cnt { font-weight: 800; font-family: 'Orbitron', sans-serif; }
+        .perc-ratio-step .cnt.num { color: #2563eb; }
+        .perc-ratio-step .cnt.den { color: #d97706; }
+        .perc-ratio-note { font-size: 0.86em; color: var(--muted); }
+        .perc-ratio-bar {
+            height: 24px; border-radius: 8px; background: #fde7c9; overflow: hidden;
+            margin: 12px 0 6px; border: 1px solid #f2d3a6;
+        }
+        .perc-ratio-fill {
+            height: 100%; background: linear-gradient(90deg, #60a5fa, #2563eb);
+            width: var(--pw, 0%); transition: width 0.5s ease;
+            display: flex; align-items: center; justify-content: flex-end;
+            color: #fff; font-weight: 800; font-size: 0.82em; padding-right: 8px; min-width: 0;
+        }
+        .perc-ratio-final { text-align: center; font-size: 1.35em; font-weight: 800; margin-top: 10px; color: var(--text); }
+        .perc-ratio-final .pv { color: var(--primary); font-size: 1.12em; }
+
+        /* 숫자 가독성: 값 표시는 또렷한 폰트 + 자릿수 구분(Orbitron 대체) */
+        .perc-ratio-step .cnt,
+        .perc-ratio-final .pv,
+        .concept-h-value,
+        .p-out-num,
+        .perceptron-output .p-out-value {
+            font-family: 'Noto Sans KR', 'Segoe UI', system-ui, sans-serif;
+            font-variant-numeric: tabular-nums;
+            font-style: normal;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        /* 체험 데모: P 표시 안의 분수 */
+        .plive-main { display: block; }
+        .plive-sub  { display: block; font-size: 0.5em; opacity: 0.92; font-weight: 600; margin-top: 3px; }
+        /* P 값 오른쪽 세로 분수 (겹침 / |A|) */
+        .plive-row { display: inline-flex; align-items: center; justify-content: center; gap: 9px; }
+        .plive-eq  { font-size: 0.7em; opacity: 0.9; }
+        .pf { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.02; font-size: 0.56em; font-weight: 800; }
+        .pf-num { padding: 0 7px 2px; border-bottom: 2px solid rgba(255,255,255,0.92); }
+        .pf-den { padding: 2px 7px 0; }
+        .c-both { color: #2563eb; }
+        .c-miss { color: #d97706; }
+
         /* ── 페이지 헤더 (제목 + 퍼셉트론 버튼) ── */
         .page-header {
             display: flex;
@@ -1299,6 +1430,171 @@
         }
         .perc-toggle-btn.mode-perc:hover { background: #3b4fb5; }
         .hidden { display: none !important; }
+
+        /* ── 모드별 테마 (해밍=파랑 / 퍼셉트론=보라) ── */
+        body { transition: background 0.4s ease; }
+        body[data-mode="hamming"]    { background: #eef1f8; }
+        body[data-mode="perceptron"] {
+            --primary: #7c3aed;
+            --primary-dark: #5b21b6;
+            background: #f2edfb;
+        }
+        /* 퍼셉트론 모드에서 카드 배경도 보라 계열로 */
+        body[data-mode="perceptron"] .concept-card { background: linear-gradient(120deg, #f6f0ff 0%, #efe6ff 100%); }
+        body[data-mode="perceptron"] .mini-demo-area,
+        body[data-mode="perceptron"] .perc-ratio-panel { background: #f7f2ff; }
+        body[data-mode="perceptron"] .container { box-shadow: 0 8px 40px rgba(124,58,237,0.12); }
+
+        /* ── 현재 모드 배너 ── */
+        .mode-banner {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            flex-wrap: wrap; text-align: center;
+            border-radius: 14px; padding: 12px 20px; margin: 4px 0 16px;
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            transition: border-color 0.3s;
+        }
+        .mode-banner .mode-chip {
+            background: var(--primary); color: #fff; font-weight: 800;
+            border-radius: 20px; padding: 5px 15px; font-size: 0.85em; white-space: nowrap;
+        }
+        .mode-banner .mode-name {
+            font-family: 'Do Hyeon', sans-serif; font-size: 1.35em; color: var(--primary-dark);
+        }
+        .mode-banner .mode-desc { color: var(--muted); font-size: 0.95em; }
+
+        /* ── 학습 로드맵 (4단계) ── */
+        .roadmap {
+            list-style: none; display: flex; gap: 6px; justify-content: center;
+            flex-wrap: wrap; padding: 0; margin: 0 0 26px;
+        }
+        .roadmap li {
+            display: flex; align-items: center; gap: 7px;
+            background: #e9edf6; color: var(--muted);
+            border-radius: 10px; padding: 8px 13px; font-size: 0.9em; font-weight: 800;
+            border: 2px solid transparent; transition: all 0.25s;
+        }
+        .roadmap li .rm-num {
+            width: 21px; height: 21px; border-radius: 50%;
+            background: #c3ccdd; color: #fff; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.82em; font-weight: 800; flex-shrink: 0;
+        }
+        .roadmap li.done { color: var(--success); background: #eafaf1; }
+        .roadmap li.done .rm-num { background: var(--success); }
+        .roadmap li.current {
+            background: #fff; color: var(--primary-dark);
+            border-color: var(--primary); box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        .roadmap li.current .rm-num { background: var(--primary); }
+        .roadmap li[data-stage] { cursor: pointer; }
+        .roadmap li[data-stage]:hover { border-color: var(--primary); color: var(--primary-dark); }
+        .roadmap .rm-sep {
+            background: none; color: #b9c2d6; font-weight: 800; padding: 8px 2px; border: none; cursor: default;
+        }
+
+        /* ── 버튼 가독성 개선 (전 버튼) ── */
+        .perc-toggle-btn, .cta-btn, .btn, .new-sample-btn, .mini-demo-btn,
+        .compare-btn, .grid-toggle-btn, .tab-btn, .compare-btn-anim {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 800;
+        }
+        /* 색 버튼은 그림자로 흰 글씨 대비 강화 */
+        .perc-toggle-btn, .cta-btn, .btn-primary, .btn-clear, .btn-calc, .cta-btn-perc {
+            text-shadow: 0 1px 2px rgba(0,0,0,0.22);
+            letter-spacing: 0;
+        }
+        .perc-toggle-btn { font-size: 1em; padding: 11px 26px; }
+        .cta-btn { font-size: 1.12em; }
+
+        /* ── XOR(배타적 논리합) 진리표 ── */
+        .xor-truth { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 16px 0 6px; }
+        .xor-case {
+            background: #fff; border: 2px solid var(--border); border-radius: 10px;
+            padding: 10px 14px; text-align: center; min-width: 88px;
+        }
+        .xor-case.same { opacity: 0.85; }
+        .xor-case.diff { border-color: var(--danger); background: #fff5f5; }
+        .xc-expr { display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 800; }
+        .xc-bit {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; border-radius: 5px; font-weight: 800; color: #fff; font-size: 0.9em;
+        }
+        .xc-bit.b0 { background: #cbd5e1; color: #64748b; }
+        .xc-bit.b1 { background: var(--text); }
+        .xc-op { color: var(--muted); font-weight: 800; }
+        .xc-out { font-family: 'Orbitron', sans-serif; font-size: 1.15em; font-weight: 900; }
+        .xc-out.o0 { color: #94a3b8; }
+        .xc-out.o1 { color: var(--danger); }
+        .xc-label { font-size: 0.76em; color: var(--muted); margin-top: 5px; font-weight: 700; }
+
+        /* ── X ⊕ A 를 한 묶음(그룹)으로 강조 (X·A·결과 격자를 같은 높이로) ── */
+        .xor-group {
+            position: relative;
+            display: inline-block;
+            background: #eef2fb;
+            border: 2px dashed var(--primary);
+            border-radius: 16px;
+            padding: 14px 18px 16px;
+        }
+        /* 캡션은 테두리 위 레전드처럼 절대배치 → 격자를 아래로 밀지 않음 */
+        .xor-group-cap {
+            position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+            font-size: 0.85em; font-weight: 800; color: var(--primary-dark);
+            background: #fff; border: 1px solid var(--primary); border-radius: 20px;
+            padding: 3px 14px; white-space: nowrap; z-index: 2;
+        }
+        .xor-group-cap b { color: var(--primary); }
+        .xor-operands { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        /* XOR 결과 카드를 그룹과 같은 여백으로 감싸 높이를 맞춤 → 세 격자 정렬 */
+        .xor-result-frame {
+            border: 2px solid transparent; border-radius: 16px;
+            padding: 14px 18px 16px;
+        }
+        /* H 박스를 결과 격자 바로 아래에 배치(절대배치 → 세 격자 높이는 그대로) */
+        .xor-result-wrap { position: relative; }
+        .xor-hbox-under { position: absolute; top: calc(100% + 14px); left: 50%; transform: translateX(-50%); }
+        .example-area.xor-compare { margin-bottom: 150px; } /* 결과 아래 H박스 자리 확보 */
+        .xor-op-sym {
+            font-size: 2.3em; font-weight: 800; color: var(--primary);
+            display: flex; align-items: center; line-height: 1;
+        }
+        .xor-eq {
+            font-size: 2.5em; font-weight: 800; color: var(--muted);
+            display: flex; align-items: center; line-height: 1;
+        }
+
+        /* ── 퍼셉트론 분모 |A| 시각화 스트립 ── */
+        .den-strip {
+            display: flex; flex-wrap: wrap; gap: 3px; justify-content: center;
+            margin: 8px auto 4px; max-width: 100%;
+        }
+        .den-cell { width: 15px; height: 15px; border-radius: 3px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12); }
+        .den-cell.num  { background: #3b82f6; }   /* 겹친 칸 = 분자 */
+        .den-cell.rest { background: #f59e0b; }   /* A만 켠 칸 */
+        .den-strip-caption { font-size: 0.85em; color: var(--muted); text-align: center; margin: 4px 0 2px; }
+
+        /* ── 수식 이탤릭체 ── */
+        .formula-box { font-style: italic; }
+        i.math, em.math { font-style: italic; font-weight: 700; }
+
+        /* ── 모드 간 요약 비교 ── */
+        .mode-compare {
+            display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+            margin: 26px 0 6px;
+        }
+        .mode-compare .mc-card {
+            flex: 1 1 240px; max-width: 340px;
+            border-radius: 14px; padding: 16px 20px; color: #fff;
+            text-align: center;
+        }
+        .mode-compare .mc-ham  { background: linear-gradient(135deg, #6c8cff, #4b5fc9); }
+        .mode-compare .mc-perc { background: linear-gradient(135deg, #9066e6, #6d28d9); }
+        .mode-compare .mc-title { font-family: 'Do Hyeon', sans-serif; font-size: 1.15em; margin-bottom: 6px; }
+        .mode-compare .mc-body { font-size: 0.95em; line-height: 1.7; opacity: 0.96; }
+        .mode-compare .mc-tag {
+            display: inline-block; background: rgba(255,255,255,0.22);
+            border-radius: 6px; padding: 2px 9px; font-weight: 800; font-size: 0.85em; margin-top: 6px;
+        }
 
         /* 반응형 */
         @media (max-width: 900px) {
@@ -1343,12 +1639,28 @@
     <div class="container">
         <!-- 페이지 헤더 -->
         <div class="page-header">
-            <h1>해밍 거리 (Hamming Distance)</h1>
+            <h1 id="pageTitle">해밍 거리 (Hamming Distance)</h1>
             <button type="button" class="perc-toggle-btn" id="percToggleBtn" onclick="toggleMode()">
-                🧠 퍼셉트론 알아보기
+                🧠 퍼셉트론 학습으로 전환 →
             </button>
         </div>
-        <p class="subtitle">이진 이미지 간의 유사도를 측정하고 숫자를 분류하는 원리를 탐구해보자</p>
+        <p class="subtitle" id="pageSubtitle">두 이진 이미지가 얼마나 다른지를 세어 숫자를 분류하는 원리를 탐구해보자</p>
+
+        <!-- 현재 모드 배너 -->
+        <div class="mode-banner" id="modeBanner">
+            <span class="mode-chip">📍 지금 배우는 것</span>
+            <b class="mode-name" id="modeName">해밍 거리</b>
+            <span class="mode-desc" id="modeDesc">서로 다른 픽셀의 개수 — 값이 작을수록 더 닮음</span>
+        </div>
+
+        <!-- 학습 로드맵 (4단계) -->
+        <ol class="roadmap" id="roadmap">
+            <li data-stage="concept"><span class="rm-num">1</span> 해밍 개념</li>
+            <li data-stage="activity"><span class="rm-num">2</span> 해밍 체험</li>
+            <li class="rm-sep">→</li>
+            <li data-stage="perc-concept"><span class="rm-num">3</span> 퍼셉트론 개념</li>
+            <li data-stage="perc-activity"><span class="rm-num">4</span> 퍼셉트론 체험</li>
+        </ol>
 
         <!-- 탭 내비게이션: 해밍 모드 -->
         <div class="tab-nav" id="tabNavHamming">
@@ -1367,17 +1679,36 @@
 
             <!-- 정의 -->
             <div class="concept-card">
-                <h2>해밍 거리란?</h2>
-                <p>두 이진 행렬(0과 1로 이루어진 행렬)에서 <strong>서로 다른 값을 가지는 위치의 개수</strong>를 해밍 거리라고 합니다.</p>
-                <p>값이 다른 위치가 많을수록 두 행렬은 서로 멀리 떨어져 있다(다르다)고 볼 수 있습니다.</p>
-                <div class="formula-box">H(A, B) = (A와 B에서 값이 서로 다른 위치의 수)</div>
+                <h2>해밍 거리란? — 배타적 논리합(XOR)으로 세기</h2>
+                <p>두 비트를 비교해 <strong>다르면 1, 같으면 0</strong>을 내는 연산이
+                   <strong>배타적 논리합(XOR, 기호 ⊕)</strong>입니다.</p>
+                <div class="xor-truth">
+                    <div class="xor-case same">
+                        <div class="xc-expr"><span class="xc-bit b0">0</span><span class="xc-op">⊕</span><span class="xc-bit b0">0</span><span class="xc-op">=</span><span class="xc-out o0">0</span></div>
+                        <div class="xc-label">같음</div>
+                    </div>
+                    <div class="xor-case diff">
+                        <div class="xc-expr"><span class="xc-bit b0">0</span><span class="xc-op">⊕</span><span class="xc-bit b1">1</span><span class="xc-op">=</span><span class="xc-out o1">1</span></div>
+                        <div class="xc-label">다름</div>
+                    </div>
+                    <div class="xor-case diff">
+                        <div class="xc-expr"><span class="xc-bit b1">1</span><span class="xc-op">⊕</span><span class="xc-bit b0">0</span><span class="xc-op">=</span><span class="xc-out o1">1</span></div>
+                        <div class="xc-label">다름</div>
+                    </div>
+                    <div class="xor-case same">
+                        <div class="xc-expr"><span class="xc-bit b1">1</span><span class="xc-op">⊕</span><span class="xc-bit b1">1</span><span class="xc-op">=</span><span class="xc-out o0">0</span></div>
+                        <div class="xc-label">같음</div>
+                    </div>
+                </div>
+                <p><strong>해밍 거리</strong>는 두 이진 행렬을 XOR 한 결과에서 <strong>1의 개수</strong> — 즉 값이 서로 다른 위치의 수입니다.</p>
+                <div class="formula-box"><i class="math">H</i>(<i class="math">A</i>, <i class="math">B</i>) = Σ (<i class="math">A</i><sub>i</sub> ⊕ <i class="math">B</i><sub>i</sub>) = (<i class="math">A</i> ⊕ <i class="math">B</i> 결과에서 1의 개수)</div>
             </div>
 
             <!-- 해밍 거리 시각화 예제 -->
             <div class="section-title"><i class="fa fa-images"></i> 해밍 거리 시각화 예제</div>
             <p class="example-intro">
-                두 이미지 X와 A를 이진 행렬로 변환하고 H(X, A)를 구해봅시다.
-                <br><span class="diff-highlight">빨간 셀</span>이 두 행렬에서 서로 다른 위치입니다.
+                두 이미지 X와 A를 이진 행렬로 변환하고 <i class="math">H</i>(<i class="math">X</i>, <i class="math">A</i>)를 구해봅시다.
+                <br><span class="diff-highlight">빨간 셀</span> = 두 값이 달라 <strong>XOR 결과가 1</strong>인 위치이고, 그 개수가 곧 해밍 거리입니다.
             </p>
 
             <div id="conceptLoading" class="concept-loading hidden">
@@ -1396,7 +1727,8 @@
             <div class="section-title"><i class="fa fa-hand-pointer"></i> 직접 해보기 — 셀을 클릭해서 비트를 바꿔보세요</div>
             <div class="mini-demo-area">
                 <p class="demo-hint">
-                    아래 <strong>X 행렬</strong>의 셀을 클릭하면 0↔1이 바뀌며 H(X,A), H(X,B)가 실시간으로 업데이트됩니다.
+                    가운데 <strong>X 행렬</strong>의 셀을 클릭해 0↔1을 바꿔 보세요.
+                    <strong>해밍 거리가 더 짧은 쪽</strong>으로 분류되고, 진 숫자는 회색으로 흐려집니다.
                 </p>
                 <div class="mini-demo-grids">
                     <div class="mini-grid-item">
@@ -1412,6 +1744,9 @@
                         <div id="miniGridB" class="small-grid"></div>
                     </div>
                 </div>
+                <p class="mini-diff-legend">
+                    <span class="dsw"></span> 분류된(이긴) 숫자 격자의 <strong>빨간 칸</strong> = X와 값이 다른 위치(해밍 거리만큼)
+                </p>
                 <div class="mini-h-row">
                     <div id="miniHA" class="mini-h-display mini-h-a">H(X,A) = —</div>
                     <div id="miniResult" class="mini-h-display mini-h-result">?</div>
@@ -1422,6 +1757,21 @@
                 </div>
             </div>
 
+            <!-- 두 측정법 비교 (체계적 학습 다리) -->
+            <div class="section-title"><i class="fa fa-code-compare"></i> 두 가지 유사도 측정법</div>
+            <div class="mode-compare">
+                <div class="mc-card mc-ham">
+                    <div class="mc-title">📏 해밍 거리 <small>(지금 배우는 중)</small></div>
+                    <div class="mc-body">두 이미지를 XOR 해서 <b>서로 다른 픽셀(=1)의 개수</b>를 셉니다.
+                        <br><span class="mc-tag">값이 작을수록 닮음</span></div>
+                </div>
+                <div class="mc-card mc-perc">
+                    <div class="mc-title">🧠 퍼셉트론 <small>(다음 단계)</small></div>
+                    <div class="mc-body">기준 이미지 A의 픽셀 중 <b>X가 겹친 비율</b>을 봅니다.
+                        <br><span class="mc-tag">값이 클수록 닮음</span></div>
+                </div>
+            </div>
+
             <!-- 개념→활동 CTA -->
             <div class="tab-cta">
                 <p>개념을 이해했다면 직접 숫자를 그려서 해밍 거리를 확인하거나, 퍼셉트론 분류를 탐구해보세요!</p>
@@ -1429,7 +1779,7 @@
                     <i class="fa fa-pencil"></i> 체험 활동 →
                 </button>
                 <button type="button" class="cta-btn cta-btn-perc" onclick="toggleMode()">
-                    <i class="fa fa-brain"></i> 퍼셉트론 알아보기 →
+                    <i class="fa fa-brain"></i> 퍼셉트론 학습으로 전환 →
                 </button>
             </div>
 
@@ -1520,18 +1870,24 @@
         <div id="tab-perc-concept" class="tab-panel">
 
             <div class="concept-card">
-                <h2>가중치 행렬 W와 퍼셉트론</h2>
-                <p>기준 이미지 A(이진 행렬)에서 <strong>가중치 행렬 W<sub>A</sub></strong>를 만들 수 있습니다.</p>
-                <p>A의 1의 개수를 <strong>|A|</strong>라 하면: <strong>W<sub>A</sub> = (1/|A|) × A</strong></p>
-                <p>퍼셉트론 P<sub>A</sub>의 출력값은 X와 W<sub>A</sub>의 내적(성분별 곱의 합)입니다:</p>
-                <div class="formula-box">P<sub>A</sub>(X) = X · W<sub>A</sub> = Σ(X<sub>i</sub> × A<sub>i</sub>) / |A|</div>
-                <p class="perc-note">이 값이 클수록 X가 A와 <strong>더 유사</strong>합니다.
-                출력값이 <strong>가장 큰</strong> 퍼셉트론의 클래스로 분류합니다.</p>
+                <h2>가중치 행렬 <i class="math">W</i>와 퍼셉트론</h2>
+                <p>기준 이미지 <i class="math">A</i>(이진 행렬)의 켜진 칸 개수를 <strong><i class="math">|A|</i></strong>라 하면, 가중치 행렬은
+                   <strong><i class="math">W<sub>A</sub></i> = (1/<i class="math">|A|</i>) × <i class="math">A</i></strong> — A의 켜진 칸마다 <b>1/<i class="math">|A|</i></b>씩 나눠 준 것입니다.</p>
+                <p>퍼셉트론 <i class="math">P<sub>A</sub></i>의 출력값은 입력 <i class="math">X</i>와 <i class="math">W<sub>A</sub></i>의 내적(성분별 곱의 합)입니다:</p>
+                <div class="formula-box"><i class="math">P<sub>A</sub></i>(<i class="math">X</i>) = <i class="math">X</i> · <i class="math">W<sub>A</sub></i> = Σ(<i class="math">X<sub>i</sub></i> × <i class="math">A<sub>i</sub></i>) / <i class="math">|A|</i></div>
+                <div class="perc-key-insight">
+                    💡 <b>쉽게 말하면</b> — <i class="math">P<sub>A</sub></i>(<i class="math">X</i>)는
+                    <span class="pill">A와 X가 함께 켜진 칸 수</span> ÷
+                    <span class="pill den">A의 켜진 칸 수 |A|</span>,
+                    즉 <b>“A를 이루는 픽셀 중 X가 덮은 비율”</b>입니다.<br>
+                    완전히 겹치면 <b>1(100%)</b>, 전혀 안 겹치면 <b>0</b> — 값이 <b>클수록</b> 더 닮았고,
+                    출력값이 <b>가장 큰</b> 퍼셉트론의 숫자로 분류합니다.
+                </div>
             </div>
 
             <!-- 교과서 예제 동적 렌더 -->
-            <div class="section-title"><i class="fa fa-images"></i> 가중치 행렬 시각화 예제</div>
-            <p class="example-intro">A → W<sub>A</sub> = (1/|A|)A 변환과 퍼셉트론 출력값 P(X) = X · W<sub>A</sub>를 확인해봅시다.</p>
+            <div class="section-title"><i class="fa fa-layer-group"></i> 겹침으로 보는 퍼셉트론 출력값</div>
+            <p class="example-intro">A와 X를 겹쳐 보고, <strong>‘A의 픽셀 중 X가 덮은 비율’</strong>로 출력값 P(X, A) = Σ(X·A) / |A|를 계산해봅시다.</p>
             <div id="perceptronExampleArea" class="perc-example-area"></div>
             <div class="text-center perc-example-btn-row">
                 <button type="button" class="new-sample-btn" onclick="loadPerceptronExample()">
@@ -1543,8 +1899,9 @@
             <div class="section-title"><i class="fa fa-hand-pointer"></i> 직접 해보기 — X 셀을 클릭해보세요</div>
             <div class="mini-demo-area">
                 <p class="demo-hint">
-                    아래 <strong>X 행렬</strong>의 셀을 클릭하면 0↔1이 바뀌며
-                    퍼셉트론 출력값 P(X,A)와 P(X,B)가 실시간으로 업데이트됩니다.
+                    가운데 <strong>X 행렬</strong>의 셀을 클릭해 0↔1을 바꿔 보세요.
+                    양옆 A·B 그림이 <b class="c-both">파랑(겹침)</b>·<b class="c-miss">주황(A만 켬)</b>으로 물들고,
+                    <strong>P가 더 큰 쪽</strong>으로 분류되며 진 쪽은 회색으로 비활성화됩니다.
                 </p>
                 <div class="mini-demo-grids">
                     <div class="mini-grid-item">
@@ -1561,6 +1918,11 @@
                         <div id="percGridB" class="small-grid"></div>
                         <div class="mini-hint">|B| = <span id="percSizeB">—</span></div>
                     </div>
+                </div>
+                <div class="perc-ov-legend">
+                    <span><i class="lg-both"></i> 겹침 (X·A 모두 1) — 분자</span>
+                    <span><i class="lg-miss"></i> A만 켬 (X=0) — 분모</span>
+                    <span><i class="lg-xonly"></i> X만 켬 (A=0) — 무관</span>
                 </div>
                 <div class="mini-h-row">
                     <div id="percPA" class="mini-h-display mini-h-a">P(X,A) = —</div>
@@ -1694,6 +2056,48 @@
 
     let currentMode = 'hamming'; // 'hamming' | 'perceptron'
 
+    // 모드별 제목·부제·배너·토글버튼 문구
+    const MODE_INFO = {
+        hamming: {
+            title: '해밍 거리 (Hamming Distance)',
+            subtitle: '두 이진 이미지가 얼마나 다른지를 세어 숫자를 분류하는 원리를 탐구해보자',
+            name: '해밍 거리',
+            desc: '서로 다른 픽셀의 개수 (XOR=1) — 값이 작을수록 더 닮음',
+            toggle: '🧠 퍼셉트론 학습으로 전환 →'
+        },
+        perceptron: {
+            title: '퍼셉트론 분류 (Perceptron)',
+            subtitle: '가중치와 겹침 비율로 입력이 어떤 숫자에 가장 가까운지 분류하는 원리를 탐구해보자',
+            name: '퍼셉트론 분류',
+            desc: 'A의 픽셀 중 X가 덮은 비율 — 값이 클수록 더 닮음',
+            toggle: '← 해밍 거리 학습으로 돌아가기'
+        }
+    };
+
+    // 로드맵 4단계 순서
+    const STAGE_ORDER = ['concept', 'activity', 'perc-concept', 'perc-activity'];
+
+    function updateModeUI() {
+        const info = MODE_INFO[currentMode];
+        document.body.dataset.mode = currentMode;
+        document.getElementById('pageTitle').textContent = info.title;
+        document.getElementById('pageSubtitle').textContent = info.subtitle;
+        document.getElementById('modeName').textContent = info.name;
+        document.getElementById('modeDesc').textContent = info.desc;
+        const btn = document.getElementById('percToggleBtn');
+        btn.textContent = info.toggle;
+        btn.classList.toggle('mode-perc', currentMode === 'perceptron');
+    }
+
+    function updateRoadmap(name) {
+        const cur = STAGE_ORDER.indexOf(name);
+        document.querySelectorAll('#roadmap li[data-stage]').forEach(li => {
+            const idx = STAGE_ORDER.indexOf(li.dataset.stage);
+            li.classList.toggle('current', idx === cur);
+            li.classList.toggle('done', idx >= 0 && idx < cur);
+        });
+    }
+
     function switchTab(name) {
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         document.getElementById('tab-' + name).classList.add('active');
@@ -1703,28 +2107,30 @@
         document.querySelectorAll('#' + activeNav + ' .tab-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.tab === name);
         });
+        updateRoadmap(name);
     }
 
     function toggleMode() {
         currentMode = currentMode === 'hamming' ? 'perceptron' : 'hamming';
+        document.getElementById('tabNavHamming').classList.toggle('hidden', currentMode !== 'hamming');
+        document.getElementById('tabNavPerc').classList.toggle('hidden', currentMode !== 'perceptron');
+        updateModeUI();
+        switchTab(currentMode === 'perceptron' ? 'perc-concept' : 'concept');
+        document.querySelector('.page-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
-        const navHamming = document.getElementById('tabNavHamming');
-        const navPerc    = document.getElementById('tabNavPerc');
-        const toggleBtn  = document.getElementById('percToggleBtn');
-
-        if (currentMode === 'perceptron') {
-            navHamming.classList.add('hidden');
-            navPerc.classList.remove('hidden');
-            toggleBtn.textContent = '← 해밍 거리로 돌아가기';
-            toggleBtn.classList.add('mode-perc');
-            switchTab('perc-concept');
-        } else {
-            navPerc.classList.add('hidden');
-            navHamming.classList.remove('hidden');
-            toggleBtn.textContent = '🧠 퍼셉트론 알아보기';
-            toggleBtn.classList.remove('mode-perc');
-            switchTab('concept');
+    // 로드맵 칸 클릭 → 해당 모드+탭으로 바로 이동 (체계적 학습 내비게이션)
+    function goToStage(stage) {
+        const wantMode = (stage === 'perc-concept' || stage === 'perc-activity') ? 'perceptron' : 'hamming';
+        if (currentMode !== wantMode) {
+            currentMode = wantMode;
+            document.getElementById('tabNavHamming').classList.toggle('hidden', currentMode !== 'hamming');
+            document.getElementById('tabNavPerc').classList.toggle('hidden', currentMode !== 'perceptron');
+            updateModeUI();
         }
+        // 체험 단계로 이동 시 기준 이미지가 없으면 로드
+        if ((stage === 'activity' || stage === 'perc-activity') && refBinaryData.length === 0) loadReferences();
+        switchTab(stage);
     }
 
     // ─────────────────────────────────────────────
@@ -1998,44 +2404,55 @@
         const { xLabel, xMat, aLabel, aMat } = problem;
         const h = hammingDist(xMat, aMat);
 
-        // ── 행 1: X | → | A | → | [비교결과 + H(X,A)] ──
+        // ── (X ⊕ A) = [XOR 결과 + H(X,A)] ──
         const row = document.createElement('div');
-        row.className = 'example-area';
+        row.className = 'example-area xor-compare';
+        row.style.alignItems = 'center'; // 그룹·= ·결과를 세로 가운데로 정렬
 
-        // X (원본)
-        row.appendChild(makeConceptCard(xLabel, xMat, null));
+        // X 와 A 를 한 컨테이너로 묶어, 이 둘을 XOR 계산한다는 것을 강조
+        const group = document.createElement('div');
+        group.className = 'xor-group';
+        const cap = document.createElement('div');
+        cap.className = 'xor-group-cap';
+        cap.innerHTML = '이 두 이미지를 <b>XOR</b>';
+        group.appendChild(cap);
+        const operands = document.createElement('div');
+        operands.className = 'xor-operands';
+        operands.appendChild(makeConceptCard(xLabel, xMat, null));
+        const opSym = document.createElement('div');
+        opSym.className = 'xor-op-sym';
+        opSym.textContent = '⊕';
+        operands.appendChild(opSym);
+        operands.appendChild(makeConceptCard(aLabel, aMat, null));
+        group.appendChild(operands);
+        row.appendChild(group);
 
-        // 화살표 1
-        const arrow1 = document.createElement('div');
-        arrow1.className = 'arrow-label';
-        arrow1.textContent = '→';
-        row.appendChild(arrow1);
+        // = (계산 결과로 이어짐)
+        const eq = document.createElement('div');
+        eq.className = 'xor-eq';
+        eq.textContent = '=';
+        row.appendChild(eq);
 
-        // A (원본)
-        row.appendChild(makeConceptCard(aLabel, aMat, null));
+        // XOR 결과: 프레임(격자)과 그 바로 아래 H(X,A) 박스를 한 묶음으로.
+        // 프레임은 그룹과 같은 여백이라 X·A 카드와 높이가 맞고, H 박스는 결과 격자 하단에 절대배치.
+        const resultWrap = document.createElement('div');
+        resultWrap.className = 'xor-result-wrap';
+        const resultFrame = document.createElement('div');
+        resultFrame.className = 'xor-result-frame';
+        resultFrame.appendChild(makeConceptCard('X ⊕ A (XOR 결과)', aMat, xMat));
+        resultWrap.appendChild(resultFrame);
 
-        // 화살표 2
-        const arrow2 = document.createElement('div');
-        arrow2.className = 'arrow-label';
-        arrow2.textContent = '→';
-        row.appendChild(arrow2);
-
-        // 비교결과 + H(X,A) 세로 묶음
-        const resultCol = document.createElement('div');
-        resultCol.className = 'concept-result-col';
-
-        // 비교 결과 카드
-        resultCol.appendChild(makeConceptCard('비교 결과', aMat, xMat));
-
-        // H 결과 박스
+        const hUnder = document.createElement('div');
+        hUnder.className = 'xor-hbox-under';
         const hBox = document.createElement('div');
         hBox.className = 'concept-h-box';
-        hBox.innerHTML = `<div class="concept-h-label">H(X, A)</div>
+        hBox.innerHTML = `<div class="concept-h-label"><i class="math">H</i>(<i class="math">X</i>, <i class="math">A</i>)</div>
                           <div class="concept-h-value">${h}</div>
-                          <div class="concept-h-label">서로 다른 위치: ${h}개</div>`;
-        resultCol.appendChild(hBox);
+                          <div class="concept-h-label">XOR = 1인 칸: ${h}개</div>`;
+        hUnder.appendChild(hBox);
+        resultWrap.appendChild(hUnder);
 
-        row.appendChild(resultCol);
+        row.appendChild(resultWrap);
         area.appendChild(row);
     }
 
@@ -2064,10 +2481,35 @@
 
     // ── 인터랙티브 미니 데모 ──
     function renderMiniGrids() {
-        renderStaticGrid('miniGridA', matA);
-        renderStaticGrid('miniGridB', matB);
         renderEditableGrid();
-        updateMiniH();
+        updateMiniH(); // A·B 그리드를 승/패 상태로 렌더 + H 갱신
+    }
+
+    // 기준 그리드(A/B)를 승/패 상태로 렌더.
+    //  win  → X와 다른 칸을 빨강으로(해밍 거리 위치) + 초록 테두리
+    //  lose → 회색 오버레이로 흐리게(분류 탈락 느낌)
+    function renderMiniRefGrid(id, refMat, state) {
+        const grid = document.getElementById(id);
+        grid.innerHTML = '';
+        grid.classList.toggle('grid-dimmed', state === 'lose');
+        grid.classList.toggle('grid-winner', state === 'win');
+        refMat.forEach((v, i) => {
+            const cell = document.createElement('div');
+            if (state === 'win' && matX[i] !== v) {
+                cell.className = 'small-cell diff';
+                cell.dataset.tooltip = `X=${matX[i]}, 값=${v} → 다름 (해밍 +1)`;
+            } else {
+                cell.className = `small-cell ${v === 1 ? 'val-1' : 'val-0'}`;
+            }
+            cell.textContent = v;
+            grid.appendChild(cell);
+        });
+    }
+
+    function miniHSub(state) {
+        if (state === 'win')  return `<span class="mh-sub">✓ 최소 거리 · 분류!</span>`;
+        if (state === 'lose') return `<span class="mh-sub">✗ 더 멀어요</span>`;
+        return `<span class="mh-sub">동률</span>`;
     }
 
     function renderStaticGrid(id, mat) {
@@ -2101,18 +2543,31 @@
     function updateMiniH() {
         const hA = hammingDist(matX, matA);
         const hB = hammingDist(matX, matB);
-        document.getElementById('miniHA').textContent = `H(X,A) = ${hA}`;
-        document.getElementById('miniHB').textContent = `H(X,B) = ${hB}`;
+        const aState = hA < hB ? 'win' : (hA > hB ? 'lose' : 'tie');
+        const bState = hB < hA ? 'win' : (hB > hA ? 'lose' : 'tie');
+
+        // 기준 그리드: 승자는 다른 칸 빨강, 패자는 회색 오버레이
+        renderMiniRefGrid('miniGridA', matA, aState);
+        renderMiniRefGrid('miniGridB', matB, bState);
+
+        // H 표시 박스: 승자 강조(금색 링·확대), 패자 흐리게
+        const boxA = document.getElementById('miniHA');
+        const boxB = document.getElementById('miniHB');
+        boxA.className = `mini-h-display mini-h-a${aState === 'win' ? ' mini-h-win' : aState === 'lose' ? ' mini-h-lose' : ''}`;
+        boxB.className = `mini-h-display mini-h-b${bState === 'win' ? ' mini-h-win' : bState === 'lose' ? ' mini-h-lose' : ''}`;
+        boxA.innerHTML = `H(X,A) = ${hA}${miniHSub(aState)}`;
+        boxB.innerHTML = `H(X,B) = ${hB}${miniHSub(bState)}`;
+
         const res = document.getElementById('miniResult');
         res.classList.remove('mini-result-correct', 'mini-result-alt', 'mini-result-tie');
         if (hA < hB) {
-            res.textContent = '→ 숫자 0으로 분류';
+            res.innerHTML = `→ 숫자 0으로 분류<span class="mh-sub">H ${hA} &lt; ${hB} · 더 가까운 쪽</span>`;
             res.classList.add('mini-result-correct');
         } else if (hB < hA) {
-            res.textContent = '→ 숫자 6으로 분류';
+            res.innerHTML = `→ 숫자 6으로 분류<span class="mh-sub">H ${hB} &lt; ${hA} · 더 가까운 쪽</span>`;
             res.classList.add('mini-result-alt');
         } else {
-            res.textContent = '동률! (H 동일)';
+            res.innerHTML = `동률! (H 동일)<span class="mh-sub">두 거리가 같아요</span>`;
             res.classList.add('mini-result-tie');
         }
     }
@@ -2930,51 +3385,22 @@
         renderPerceptronExample(conceptProblems[idx]);
     }
 
-    function renderPerceptronExample(problem) {
-        const area = document.getElementById('perceptronExampleArea');
-        area.innerHTML = '';
-        const { xLabel, xMat, aLabel, aMat } = problem;
-        const sumA = aMat.reduce((s, v) => s + v, 0);
-        const dot  = xMat.reduce((s, v, i) => s + v * aMat[i], 0);
-        const pOut = dot / sumA;
-
-        // ── 행 1: A → W_A ──
-        const row1 = document.createElement('div');
-        row1.className = 'perceptron-flow';
-
-        row1.appendChild(makePercCard(aLabel, aMat, false, 0));
-
-        const op1 = document.createElement('div');
-        op1.className = 'perceptron-op-label';
-        op1.innerHTML = `→<small>× <span class="frac" style="display:inline-flex;font-size:0.9em;"><span class="frac-num">1</span><span class="frac-den">${sumA}</span></span></small>`;
-        row1.appendChild(op1);
-
-        row1.appendChild(makePercCard(`W = (1/${sumA})A`, aMat, true, sumA));
-
-        const op2 = document.createElement('div');
-        op2.className = 'perceptron-op-label';
-        op2.innerHTML = `<small>내적</small>·`;
-        row1.appendChild(op2);
-
-        row1.appendChild(makePercCard(xLabel, xMat, false, 0));
-
-        const op3 = document.createElement('div');
-        op3.className = 'perceptron-op-label';
-        op3.innerHTML = `→<small>=</small>`;
-        row1.appendChild(op3);
-
-        const outBox = document.createElement('div');
-        outBox.className = 'perceptron-output';
-        outBox.innerHTML = `
-            <div class="p-out-label">P(X, ${aLabel.split(' ')[0]})</div>
-            <div class="p-out-value">${pOut.toFixed(2)}</div>
-            <div class="p-out-label">${dot} / ${sumA}</div>`;
-        row1.appendChild(outBox);
-
-        area.appendChild(row1);
+    // 각 칸을 (X, A) 값으로 분류: 겹침 / A만 / X만 / 배경
+    function percCategory(x, a) {
+        if (x === 1 && a === 1) return 'both';
+        if (a === 1) return 'miss';
+        if (x === 1) return 'xonly';
+        return 'off';
     }
+    const PERC_CAT_TIP = {
+        both: 'X=1, A=1 → 겹침 (분자·분모)',
+        miss: 'X=0, A=1 → A만 켬 (분모에만)',
+        xonly: 'X=1, A=0 → X만 켬 (계산과 무관)',
+        off: 'X=0, A=0 → 배경'
+    };
 
-    function makePercCard(title, mat, isWeight, divisor) {
+    // 0/1을 그대로 보여주는 행렬 카드
+    function makePMatrixCard(title, mat, subHtml) {
         const card = document.createElement('div');
         card.className = 'perceptron-card';
         card.innerHTML = `<div class="p-label">${title}</div>`;
@@ -2982,33 +3408,143 @@
         grid.className = 'small-grid';
         mat.forEach(v => {
             const cell = document.createElement('div');
-            if (isWeight) {
-                cell.className = `weight-cell ${v === 1 ? 'w-active' : 'w-zero'}`;
-                if (v === 1) {
-                    cell.innerHTML = `<span class="frac"><span class="frac-num">1</span><span class="frac-den">${divisor}</span></span>`;
-                } else {
-                    cell.textContent = '0';
-                }
-            } else {
-                cell.className = `small-cell ${v === 1 ? 'val-1' : 'val-0'}`;
-                cell.textContent = v;
+            cell.className = `small-cell ${v === 1 ? 'val-1' : 'val-0'}`;
+            cell.textContent = v;
+            grid.appendChild(cell);
+        });
+        card.appendChild(grid);
+        if (subHtml) {
+            const sub = document.createElement('div');
+            sub.className = 'mini-hint';
+            sub.innerHTML = subHtml;
+            card.appendChild(sub);
+        }
+        return card;
+    }
+
+    // X와 A를 겹쳐 4색으로 칠한 '겹침 지도' 카드
+    function makeOverlapCard(title, xMat, aMat) {
+        const card = document.createElement('div');
+        card.className = 'perceptron-card';
+        card.innerHTML = `<div class="p-label">${title}</div>`;
+        // A의 켜진 칸 = 파랑(겹침) + 주황(A만) → 분모 |A|, 각 A-칸의 가중치는 1/|A|
+        const N = aMat.reduce((s, v) => s + v, 0);
+        const M = xMat.reduce((s, v, i) => s + v * aMat[i], 0);
+
+        const grid = document.createElement('div');
+        grid.className = 'small-grid';
+        xMat.forEach((xv, i) => {
+            const cat = percCategory(xv, aMat[i]);
+            const cell = document.createElement('div');
+            cell.className = `small-cell pov-${cat}`;
+            cell.dataset.tooltip = PERC_CAT_TIP[cat];
+            // A=1인 칸(파랑·주황)은 가중치 W = 1/|A| 를 세로 분수로 표기.
+            // 주황(X=0)은 분자에 더해지지 않으므로 'off'로 흐리게.
+            if (cat === 'both' || cat === 'miss') {
+                const off = cat === 'miss' ? ' off' : '';
+                cell.innerHTML = `<span class="pov-frac${off}"><span class="pfn">1</span><span class="pfd">${N}</span></span>`;
             }
             grid.appendChild(cell);
         });
         card.appendChild(grid);
+        const note = document.createElement('div');
+        note.className = 'ov-den-note';
+        note.innerHTML = `분모 <i class="math">|A|</i> = <b class="c-both">파랑 ${M}</b> + <b class="c-miss">주황 ${N - M}</b> = <b>${N}</b>칸`;
+        card.appendChild(note);
         return card;
+    }
+
+    function renderPerceptronExample(problem) {
+        const area = document.getElementById('perceptronExampleArea');
+        area.innerHTML = '';
+        const { xLabel, xMat, aLabel, aMat } = problem;
+        const N = aMat.reduce((s, v) => s + v, 0);              // |A| = 분모
+        const M = xMat.reduce((s, v, i) => s + v * aMat[i], 0); // 겹침 = 분자
+        const P = N ? M / N : 0;
+        const pct = Math.round(P * 100);
+        const digit = (aLabel.match(/\d+/) || ['A'])[0];
+
+        // ── 겹침 흐름: A ⊕ X = 겹침 지도 ──
+        const flow = document.createElement('div');
+        flow.className = 'perc-ov-flow';
+        flow.appendChild(makePMatrixCard(aLabel, aMat, `|A| = <b>${N}</b>`));
+        const op1 = document.createElement('div');
+        op1.className = 'perc-ov-op';
+        op1.innerHTML = `⊕<small>겹치기</small>`;
+        flow.appendChild(op1);
+        flow.appendChild(makePMatrixCard(xLabel, xMat, '&nbsp;'));
+        const op2 = document.createElement('div');
+        op2.className = 'perc-ov-op';
+        op2.innerHTML = `=<small>겹침 지도</small>`;
+        flow.appendChild(op2);
+        flow.appendChild(makeOverlapCard('겹침 결과', xMat, aMat));
+        area.appendChild(flow);
+
+        // ── 범례 ──
+        const legend = document.createElement('div');
+        legend.className = 'perc-ov-legend';
+        legend.innerHTML =
+            '<span><i class="lg-both"></i> 겹침 (X·A 모두 1) — 분자</span>'
+          + '<span><i class="lg-miss"></i> A만 켬 (X=0) — 분모</span>'
+          + '<span><i class="lg-xonly"></i> X만 켬 (A=0) — 무관</span>';
+        area.appendChild(legend);
+
+        // ── 비율 패널 (분모 |A| 시각화 포함) ──
+        // 분모 = A의 켜진 칸 N개를 정사각형으로 나열: 겹친 M개(파랑=분자) + 나머지 주황
+        let denCells = '';
+        for (let k = 0; k < N; k++) denCells += `<span class="den-cell ${k < M ? 'num' : 'rest'}"></span>`;
+
+        const panel = document.createElement('div');
+        panel.className = 'perc-ratio-panel';
+        panel.innerHTML =
+            `<div class="perc-ratio-step">`
+          + `① 숫자 ${digit}(<i class="math">A</i>)를 이루는 켜진 칸 <span class="cnt den"><i class="math">|A|</i> = ${N}</span> → <b>분모</b><br>`
+          + `② 그중 <i class="math">X</i>도 함께 켠 칸(파랑) <span class="cnt num">${M}</span> → <b>분자</b>`
+          + ` <span class="perc-ratio-note">(파랑 칸 하나가 1/<i class="math">|A|</i> = 1/${N} ≈ ${N ? (1 / N).toFixed(3) : '0'}씩 기여)</span>`
+          + `</div>`
+          + `<div class="den-strip-caption">분모 <i class="math">|A|</i> = ${N}칸 중 파랑 <b class="c-both">${M}</b>칸이 분자</div>`
+          + `<div class="den-strip">${denCells}</div>`
+          + `<div class="perc-ratio-bar"><div class="perc-ratio-fill"></div></div>`
+          + `<div class="perc-ratio-final"><i class="math">P</i>(<i class="math">X</i>, ${digit}) = <span class="cnt num">${M}</span> / <span class="cnt den">${N}</span> = <span class="pv">${P.toFixed(2)}</span></div>`
+          + `<p class="binary-stats-text"><i class="math">A</i>의 픽셀 중 <i class="math">X</i>가 <b>${pct}%</b>를 덮었어요. 100%에 가까울수록 더 닮은 숫자!</p>`;
+        area.appendChild(panel);
+        const fill = panel.querySelector('.perc-ratio-fill');
+        fill.style.setProperty('--pw', pct + '%');
+        fill.textContent = pct + '%';
     }
 
     // ── 인터랙티브 퍼셉트론 데모 ──
     function renderPercGrids() {
-        const sumA = matA.reduce((s, v) => s + v, 0);
-        const sumB = matB.reduce((s, v) => s + v, 0);
-        renderStaticGrid('percGridA', matA);
-        renderStaticGrid('percGridB', matB);
-        document.getElementById('percSizeA').textContent = sumA;
-        document.getElementById('percSizeB').textContent = sumB;
+        document.getElementById('percSizeA').textContent = matA.reduce((s, v) => s + v, 0);
+        document.getElementById('percSizeB').textContent = matB.reduce((s, v) => s + v, 0);
         renderPercEditableGrid();
-        updatePercOutput();
+        updatePercOutput(); // A·B 그리드를 X와의 겹침 색으로 칠하고 P를 갱신
+    }
+
+    // 기준 그리드(A/B)를 현재 X와의 겹침 색으로 칠하고, A-칸(파랑·주황)엔 가중치 1/|A|를 채운다.
+    // state: 'win'(초록 테두리) / 'lose'(회색 오버레이로 비활성) / 'tie'
+    function renderPercRefOverlap(id, refMat, state) {
+        const grid = document.getElementById(id);
+        grid.innerHTML = '';
+        grid.classList.toggle('grid-dimmed', state === 'lose');
+        grid.classList.toggle('grid-winner', state === 'win');
+        const N = refMat.reduce((s, v) => s + v, 0);
+        refMat.forEach((av, i) => {
+            const cat = percCategory(percMatX[i], av);
+            const cell = document.createElement('div');
+            cell.className = `small-cell pov-${cat}`;
+            if (cat === 'both' || cat === 'miss') {
+                const off = cat === 'miss' ? ' off' : ''; // 주황(X=0)은 분자에 안 더해짐 → 흐리게
+                cell.innerHTML = `<span class="pov-frac${off}"><span class="pfn">1</span><span class="pfd">${N}</span></span>`;
+            }
+            grid.appendChild(cell);
+        });
+    }
+
+    function percHSub(state) {
+        if (state === 'win')  return `<span class="mh-sub">✓ 최대 P · 분류!</span>`;
+        if (state === 'lose') return `<span class="mh-sub">✗ 더 작아요</span>`;
+        return `<span class="mh-sub">동률</span>`;
     }
 
     function renderPercEditableGrid() {
@@ -3029,14 +3565,27 @@
     }
 
     function updatePercOutput() {
-        const pA  = perceptronOutput(percMatX, matA);
-        const pB  = perceptronOutput(percMatX, matB);
-        const dotA = percMatX.reduce((s, v, i) => s + v * matA[i], 0);
-        const dotB = percMatX.reduce((s, v, i) => s + v * matB[i], 0);
         const sumA = matA.reduce((s, v) => s + v, 0);
         const sumB = matB.reduce((s, v) => s + v, 0);
-        document.getElementById('percPA').textContent = `P(X,A) = ${pA.toFixed(2)}`;
-        document.getElementById('percPB').textContent = `P(X,B) = ${pB.toFixed(2)}`;
+        const dotA = percMatX.reduce((s, v, i) => s + v * matA[i], 0);
+        const dotB = percMatX.reduce((s, v, i) => s + v * matB[i], 0);
+        const pA = sumA ? dotA / sumA : 0;
+        const pB = sumB ? dotB / sumB : 0;
+        // 퍼셉트론은 P가 클수록 승리(더 닮음)
+        const aState = pA > pB ? 'win' : (pA < pB ? 'lose' : 'tie');
+        const bState = pB > pA ? 'win' : (pB < pA ? 'lose' : 'tie');
+        renderPercRefOverlap('percGridA', matA, aState);
+        renderPercRefOverlap('percGridB', matB, bState);
+
+        const pf = (num, den) => `<span class="pf"><span class="pf-num">${num}</span><span class="pf-den">${den}</span></span>`;
+        const boxA = document.getElementById('percPA');
+        const boxB = document.getElementById('percPB');
+        boxA.className = `mini-h-display mini-h-a${aState === 'win' ? ' mini-h-win' : aState === 'lose' ? ' mini-h-lose' : ''}`;
+        boxB.className = `mini-h-display mini-h-b${bState === 'win' ? ' mini-h-win' : bState === 'lose' ? ' mini-h-lose' : ''}`;
+        boxA.innerHTML =
+            `<span class="plive-row"><span class="plive-main">P(X,A) = ${pA.toFixed(2)}</span><span class="plive-eq">=</span>${pf(dotA, sumA)}</span>${percHSub(aState)}`;
+        boxB.innerHTML =
+            `<span class="plive-row"><span class="plive-main">P(X,B) = ${pB.toFixed(2)}</span><span class="plive-eq">=</span>${pf(dotB, sumB)}</span>${percHSub(bState)}`;
         const res = document.getElementById('percResult');
         res.classList.remove('mini-result-correct', 'mini-result-alt', 'mini-result-tie');
         if (pA > pB) {
@@ -3109,6 +3658,11 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        updateModeUI();          // body[data-mode]·제목·배너 초기화 (해밍)
+        updateRoadmap('concept'); // 로드맵 1단계 활성화
+        document.querySelectorAll('#roadmap li[data-stage]').forEach(li => {
+            li.addEventListener('click', () => goToStage(li.dataset.stage));
+        });
         loadConceptExample();
         loadPerceptronExample();
         renderMiniGrids();
