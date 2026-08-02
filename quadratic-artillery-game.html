@@ -1,0 +1,3222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이차함수 포격 게임: 궤적과 이차함수</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2383d8e8'/%3E%3Cpath d='M12 47Q31 8 52 47' fill='none' stroke='%23292633' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='13' cy='46' r='6' fill='%23f05f50' stroke='%23292633' stroke-width='3'/%3E%3C/svg%3E">
+<!-- 수식 조판(KaTeX). 오프라인이거나 차단되면 renderMath()가 평문 수식으로 자동 강등된다. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+        integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg1:#0d1326; --bg2:#1a2547;
+  --card:#ffffff; --ink:#16203c; --sub:#5a6480;
+  --accent:#e94560; --good:#12946a; --warn:#d98014; --info:#3f6fd8;
+  --line:#e3e8f1; --soft:#f5f7fb;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+/* hidden 은 무조건 숨긴다.
+   .side-foot{display:flex} 같은 작성자 규칙이 브라우저 기본 [hidden]{display:none} 을
+   우선순위로 이겨 버려, JS 로 .hidden=true 를 줘도 화면에 그대로 남는 사고가 난다. */
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;height:100%}
+body{
+  font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Segoe UI',system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(80,120,220,.28), transparent 60%),
+    radial-gradient(900px 500px at 95% 0%, rgba(233,69,96,.16), transparent 55%),
+    linear-gradient(165deg,var(--bg1) 0%,var(--bg2) 100%);
+  background-attachment:fixed;
+  color:var(--ink); padding:10px; line-height:1.5;
+  height:100vh; height:100dvh; overflow:hidden;    /* 화면 전체를 게임에 쓴다 */
+}
+.wrap{
+  max-width:1600px;margin:0 auto;height:100%;
+  display:flex;flex-direction:column;gap:10px;
+}
+
+/* ---------- header ---------- */
+header{
+  flex:none;
+  background:var(--card);border-radius:14px;padding:9px 14px;
+  box-shadow:0 8px 28px rgba(0,0,0,.28);
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;
+}
+header h1{font-size:1.02rem;font-weight:800;letter-spacing:-.02em;flex:1 1 250px;white-space:nowrap}
+.stats{display:flex;gap:7px;flex-wrap:wrap}
+.chip{
+  background:var(--soft);border:1px solid var(--line);border-radius:999px;
+  padding:5px 12px;font-size:.82rem;font-weight:600;color:var(--sub);white-space:nowrap;
+}
+.chip b{color:var(--accent);font-size:.98rem;margin-left:4px;font-variant-numeric:tabular-nums}
+.tools{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.toggle{
+  display:flex;align-items:center;gap:6px;font-size:.84rem;font-weight:600;
+  cursor:pointer;-webkit-user-select:none;user-select:none;
+  background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:6px 10px;
+}
+.toggle input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer}
+button{
+  font-family:inherit;background:linear-gradient(135deg,#243259,#101e3e);
+  color:#fff;border:none;padding:8px 15px;border-radius:9px;
+  font-size:.85rem;font-weight:700;cursor:pointer;
+  transition:transform .08s ease, box-shadow .12s ease, opacity .12s ease;
+}
+button.primary{background:linear-gradient(135deg,#e94560,#bf2c46)}
+button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 5px 14px rgba(0,0,0,.25)}
+button:active:not(:disabled){transform:translateY(0)}
+button:disabled{opacity:.32;cursor:not-allowed}
+button:focus-visible,.toggle:focus-within,canvas:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
+/* ---------- 시작 화면 (난이도 선택) ---------- */
+.startwrap{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:rgba(8,14,30,.72);padding:18px;overflow:auto;
+}
+.startwrap[hidden]{display:none}
+.startdlg{
+  background:var(--card);border-radius:18px;padding:24px 24px 20px;
+  width:min(760px,100%);box-shadow:0 24px 60px rgba(0,0,0,.45);
+}
+.startdlg h2{font-size:1.32rem;color:var(--ink);margin-bottom:6px}
+.slead{font-size:.9rem;color:var(--sub);margin-bottom:16px;line-height:1.55}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+button.dcard{
+  display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;
+  background:var(--soft);border:2px solid var(--line);color:var(--ink);
+  border-radius:13px;padding:18px 14px 16px;font-weight:600;
+}
+button.dcard:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px)}
+.dstar{font-size:1rem;color:var(--warn);letter-spacing:2px;line-height:1}
+.dstar .dim{color:var(--line)}
+.dname{font-size:1.2rem;font-weight:800;color:var(--accent)}
+/* 설명은 항상 한 줄로 — 줄바꿈되면 카드 높이가 들쭉날쭉해진다 */
+.dnote{font-size:.8rem;color:var(--sub);font-weight:500;line-height:1.5;white-space:nowrap}
+@media (max-width:720px){ .dnote{font-size:.75rem} }
+.srow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:16px;
+  border-top:1px solid var(--line);padding-top:14px}
+.srow label{font-size:.84rem;font-weight:700;color:var(--ink)}
+.srow input{
+  font-family:inherit;font-size:.86rem;font-weight:700;width:132px;
+  border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);
+}
+.shint{font-size:.76rem;color:var(--sub);flex:1;min-width:190px;line-height:1.45}
+@media (max-width:640px){ .dgrid{grid-template-columns:1fr} }
+
+/* 배경음악 토글 — 눌린 상태를 색으로 구분한다 */
+button.musbtn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--soft);border:1px solid var(--line);color:var(--sub);
+  padding:6px 10px;font-size:.84rem;font-weight:600;
+}
+button.musbtn .ico{font-size:1rem;line-height:1;width:1.15em;text-align:center}
+button.musbtn[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:#fff1f3}
+button.musbtn:disabled{opacity:.45}
+
+/* ---------- 2단 레이아웃: 게임 | 문제 (화면 전체 높이) ---------- */
+.stage-area{
+  flex:1;min-height:0;
+  /* 문제 패널은 넓은 화면에서 더 넓게. 캔버스는 16:9 로 높이에 먼저 갇히므로
+     가로를 조금 양보해도 실제로 작아지지 않는다. */
+  display:grid;grid-template-columns:minmax(0,1fr) clamp(360px,30vw,520px);gap:10px;
+}
+.board{
+  background:var(--card);border-radius:14px;padding:9px;
+  box-shadow:0 8px 28px rgba(0,0,0,.28);
+  display:flex;flex-direction:column;gap:7px;min-height:0;
+  /* 캔버스는 16:9 라 가로에 먼저 갇힌다. 카드까지 전체 높이로 늘리면
+     위아래에 쓸모없는 흰 여백이 크게 남으므로 내용만큼만 차지하게 한다.
+     (화면이 낮을 때는 max-height 가 걸려 예전처럼 캔버스가 줄어든다) */
+  align-self:start;max-height:100%;
+}
+/* 남는 공간을 캔버스가 모두 차지하되 16:9 비율 유지 */
+.canvas-wrap{position:relative;flex:1;min-height:0;display:grid;place-items:center;overflow:hidden}
+.stage-strip{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-size:.82rem;font-weight:700;color:var(--sub);flex-wrap:wrap;
+}
+.stage-strip .name{color:var(--ink)}
+.stage-strip .hint{font-weight:500}
+canvas{
+  display:block;max-width:100%;max-height:100%;width:auto;height:auto;
+  background:#cfe8f7;border-radius:10px;cursor:crosshair;
+  box-shadow:0 2px 10px rgba(0,0,0,.12);
+  touch-action:none;-webkit-user-select:none;user-select:none;
+}
+.canvas-formula{
+  position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;
+  min-width:0;min-height:0;padding:0 7px;line-height:1;white-space:nowrap;
+  color:#292633;background:rgba(255,253,247,.95);border:1.5px solid #292633;
+  border-radius:11px;box-shadow:3px 3px 0 rgba(41,38,51,.28);
+  pointer-events:none;transform:rotate(-1deg);transform-origin:center;
+}
+.canvas-formula .katex{font-size:1em;color:#292633}
+.canvas-formula .plainmath{
+  font-family:'Cambria Math','Times New Roman',Georgia,serif;
+  font-size:1em;font-style:italic;font-weight:700;color:#292633;
+}
+.status{
+  border-radius:9px;padding:8px 12px;font-size:.85rem;font-weight:700;
+  background:var(--soft);border-left:5px solid var(--sub);color:var(--ink);
+  min-height:36px;display:flex;align-items:center;
+}
+.status.hit{background:#e9f8f1;border-left-color:var(--good);color:#0b5b41}
+.status.miss{background:#fdecef;border-left-color:var(--accent);color:#9a1e35}
+.status.charge{background:#fff6e6;border-left-color:var(--warn);color:#77490a}
+
+/* ---------- 오른쪽 문제 패널 ---------- */
+.side{
+  background:var(--card);border-radius:14px;
+  box-shadow:0 8px 28px rgba(0,0,0,.28);
+  overflow:hidden;height:100%;min-height:0;
+  display:flex;flex-direction:column;
+}
+.side-head{padding:12px 15px;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.side-head.idle{background:linear-gradient(135deg,#3b4a72,#222f52)}
+.side-head.hit{background:linear-gradient(135deg,#12946a,#0b6b4c)}
+.side-head.fail{background:linear-gradient(135deg,#e94560,#a32540)}
+.side-head h3{font-size:.95rem;font-weight:800;line-height:1.35}
+.side-head .badge{
+  background:rgba(255,255,255,.22);border-radius:999px;padding:2px 9px;
+  font-size:.7rem;font-weight:700;margin-left:auto;white-space:nowrap;
+}
+.side-body{padding:13px 15px;overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column}
+#idle-view{display:flex;flex-direction:column;flex:1;min-height:0}
+.waiting{
+  text-align:center;color:var(--sub);font-size:.95rem;line-height:1.7;font-weight:600;
+  padding:22px 0 6px;
+}
+.waiting b{color:var(--accent)}
+/* 분석이 뜨면 "발사하면 문제가 나옵니다" 안내는 역할이 끝난다 */
+#analysis:not([hidden]) ~ .waiting{display:none}
+.side-foot{
+  padding:11px 15px;border-top:1px solid var(--line);background:var(--soft);
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+}
+.total{font-size:.85rem;font-weight:800;white-space:nowrap}
+.total b{color:var(--accent);font-size:1.1rem;font-variant-numeric:tabular-nums}
+.side-foot .sp{margin-left:auto;display:flex;gap:6px}
+.side-foot button{padding:7px 12px;font-size:.79rem}
+
+/* 발사 전 안내 — 크게 읽히도록 */
+.idle-note{color:var(--sub)}
+.idle-note .lead{
+  font-size:1.06rem;line-height:1.6;color:var(--ink);font-weight:700;
+  text-align:center;margin:6px 0 16px;
+}
+.idle-note .lead b{color:var(--accent)}
+.idle-note .lead2{
+  font-size:.84rem;text-align:center;margin:18px 0 9px;font-weight:600;
+}
+/* ---------- 게임 화면 아래 안내 ----------
+   캔버스가 16:9 라 세로가 남는다 → 그 자리에 풀이 순서를 가로로 깔아 둔다.
+   문제 패널은 문제에만 쓰이고, 화면이 낮으면 이 띠부터 접혀 캔버스를 지킨다. */
+.guide{
+  border-top:1px dashed var(--line);padding-top:14px;padding-bottom:4px;
+  display:flex;flex-direction:column;gap:13px;
+}
+.guide .lead{font-size:1rem;margin:0;line-height:1.55}
+.guide .lead2{font-size:.82rem;margin:0}
+.guide .howto{flex-direction:row;gap:10px}
+.guide .ht{flex:1 1 0;min-width:0;padding:14px 15px;gap:11px}
+.guide .ht .n{width:27px;height:27px;font-size:.9rem}
+.guide .ht b{font-size:.96rem;white-space:nowrap}
+.guide .ht span{font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guide .gfoot{
+  display:flex;align-items:center;justify-content:center;gap:12px 20px;flex-wrap:wrap;
+  /* 1~4 카드 줄과 붙어 보이지 않게 한 칸 띄운다 (guide 의 gap 13px 에 더해진다) */
+  margin-top:9px;padding-top:4px;
+}
+.guide .keys{margin:0;padding:0;border:0;font-size:.78rem}
+/* 화면이 낮아지면 캔버스를 지키기 위해 안내부터 단계적으로 접는다 */
+@media(max-height:880px){ .guide .lead,.guide .lead2{display:none} }
+@media(max-height:760px){ .guide .ht span{display:none} }
+@media(max-height:700px){ .guide{display:none} }
+
+.howto{display:flex;flex-direction:column;gap:9px}
+.ht{
+  display:flex;align-items:center;gap:11px;
+  background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+}
+.ht .n{
+  flex:none;width:28px;height:28px;border-radius:50%;
+  background:var(--ink);color:#fff;display:grid;place-items:center;
+  font-size:.92rem;font-weight:800;
+}
+.ht div{display:flex;flex-direction:column;gap:2px}
+.ht b{font-size:.98rem;color:var(--ink);font-weight:700}
+.ht span{font-size:.8rem;color:var(--sub)}
+.ht i{font-family:'Cambria Math','Times New Roman',Georgia,serif;font-style:italic;font-size:1.05em}
+.kinds{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.kinds span{
+  background:var(--soft);border:1px solid var(--line);border-radius:999px;
+  padding:6px 12px;font-size:.82rem;font-weight:700;color:var(--ink);white-space:nowrap;
+}
+
+.given{
+  background:linear-gradient(135deg,#eef3fd,#e6edfa);
+  border:1px solid #d3ddf2;border-radius:10px;
+  padding:14px 16px;margin-bottom:14px;text-align:center;
+}
+.given .gt{font-weight:700;color:var(--sub);font-size:.8rem;margin-bottom:7px;letter-spacing:.04em}
+.given .gv{font-size:1.22rem;font-weight:800;font-variant-numeric:tabular-nums;color:#123a72}
+.given .gx{font-size:.86rem;color:var(--sub);margin-top:7px;line-height:1.6}
+
+/* 진행 표시 1 · 2 · 3 · 4-1 · 4-2 */
+.progress{display:flex;align-items:center;gap:4px;margin-bottom:12px}
+.pdot{
+  display:flex;align-items:center;gap:6px;font-size:.76rem;font-weight:700;color:var(--sub);
+  background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:4px 11px 4px 4px;
+}
+.pdot b{
+  width:auto;min-width:21px;height:21px;padding:0 4px;border-radius:999px;background:#c8cfdd;color:#fff;
+  display:grid;place-items:center;font-size:.7rem;
+}
+.pdot.cur{border-color:var(--info);background:#eef3fd;color:var(--info)}
+.pdot.cur b{background:var(--info)}
+.pdot.done{border-color:#bfe3d3;background:#f1fbf7;color:var(--good)}
+.pdot.done b{background:var(--good)}
+.pline{flex:1;height:2px;background:var(--line);border-radius:2px}
+
+/* 한 문항 = 문제 영역(qbox) + 답안 영역(abox) */
+.step{margin-bottom:12px;transition:opacity .18s}
+.step.locked{opacity:.35;pointer-events:none}
+.qbox{
+  border:1px solid var(--line);border-radius:12px 12px 0 0;
+  border-bottom:none;padding:14px;background:#fff;
+}
+.abox{
+  border:1px solid var(--line);border-top:2px dashed var(--line);
+  border-radius:0 0 12px 12px;padding:13px 14px;background:var(--soft);
+}
+.alabel{
+  font-size:.76rem;font-weight:700;color:var(--sub);letter-spacing:.06em;
+  text-align:center;margin-bottom:9px;
+}
+.step.done .qbox{border-color:#bfe3d3}
+.step.done .abox{border-color:#bfe3d3;border-top-color:#cfe9dd;background:#f4fbf8}
+.step .sh{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
+.step .no{
+  background:var(--ink);color:#fff;width:auto;min-width:28px;height:28px;padding:0 5px;border-radius:999px;
+  display:grid;place-items:center;font-size:.82rem;font-weight:800;flex:none;
+}
+.step.done .no{background:var(--good)}
+.step .q{font-size:1.06rem;font-weight:700;line-height:1.55}
+.step .pt{margin-left:auto;font-size:.8rem;color:var(--sub);font-weight:700;white-space:nowrap;padding-top:4px}
+.formula{margin:14px 0 16px;overflow-x:auto;padding:10px 0;text-align:center;font-size:1.22em}
+.formula .sub{font-size:.84rem;color:var(--sub);font-weight:600;margin-top:10px;font-family:inherit}
+.concept-feedback{
+  width:100%;min-height:78px;margin:26px 0 2px;padding:16px 18px;
+  display:flex;align-items:center;border:2px solid #70b5a3;border-radius:13px;
+  background:linear-gradient(135deg,#e5f8f1,#f1fbf7);color:#205f55;
+  box-shadow:3px 3px 0 rgba(39,95,87,.16);
+  font-family:inherit;font-size:1.02rem;font-weight:900;line-height:1.65;letter-spacing:-.015em;
+}
+.concept-feedback .katex{font-size:1.08em}
+.inputs{display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:center}
+.blankeq{
+  display:flex;align-items:center;justify-content:center;gap:3px;flex-wrap:wrap;
+  font-family:'Cambria Math','Times New Roman',Georgia,serif;font-size:1.4rem;
+  margin-bottom:12px;color:#123a72;line-height:1.1;
+}
+/* )² 처럼 위첨자가 붙는 조각은 한 덩어리(인라인)로 묶어야 제자리에 온다.
+   flex 자식이 되면 vertical-align 이 먹지 않는다. */
+.blankeq .mt{display:inline-block;white-space:nowrap}
+.blankeq .mt .katex{font-size:1.5rem}
+/* KaTeX 미로드(오프라인) 시 평문 폴백도 수식처럼 보이게 */
+.blankeq .mt .plainmath{font-family:'Cambria Math','Times New Roman',Georgia,serif;
+  font-size:1.4rem;font-weight:400;font-style:italic;color:#123a72}
+.blankeq input{
+  width:78px;padding:9px 5px;margin:0 2px;text-align:center;
+  font-family:'Cascadia Mono','Consolas',monospace;font-size:1.12rem;font-weight:700;
+  border:2px dashed var(--info);border-radius:8px;background:#fff;color:var(--ink);
+}
+.blankeq input:focus{outline:none;border-style:solid}
+.blankeq input.right{border-style:solid;border-color:var(--good);background:#f1fbf7}
+.blankeq input.wrong{border-style:solid;border-color:var(--accent);background:#fdf3f5}
+.inhint{margin-top:9px;text-align:center;font-size:.8rem;color:var(--sub);font-weight:600}
+.actions{margin-top:12px;display:flex;justify-content:center}
+.actions .choice{padding:12px 28px;font-size:1rem}
+.choice.go{background:linear-gradient(135deg,#12946a,#0b6b4c);color:#fff;border-color:transparent}
+.field{display:flex;align-items:center;gap:5px;font-weight:700}
+.field label{font-size:.95rem;color:var(--ink)}
+.field .mlab{display:inline-flex;align-items:center;color:var(--ink)}
+.field .mlab .katex{font-size:1.62rem}
+.field .mlab .plainmath{font-family:'Cambria Math','Times New Roman',Georgia,serif;
+  font-size:1.62rem;font-weight:400;font-style:italic;color:var(--ink)}
+.field input{
+  font-family:'Cascadia Mono','Consolas',monospace;font-size:1.24rem;font-weight:700;
+  width:124px;padding:12px 10px;border:2px solid var(--line);border-radius:9px;
+  text-align:center;background:#fff;color:var(--ink);
+}
+.field input:focus{outline:none;border-color:var(--info)}
+.field input.right{border-color:var(--good);background:#f1fbf7}
+.field input.wrong{border-color:var(--accent);background:#fdf3f5}
+.field .unit{font-size:.76rem;color:var(--sub);font-weight:600}
+.field .sign{
+  background:var(--soft);color:var(--ink);border:1px solid var(--line);
+  padding:8px 10px;border-radius:7px;font-size:.95rem;font-weight:800;line-height:1;
+}
+.field .sign:hover:not(:disabled){transform:none;box-shadow:none;background:#e8ecf5}
+.choices{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.choice{
+  border:2px solid var(--line);background:#fff;color:var(--ink);
+  padding:7px 11px;border-radius:7px;font-size:.79rem;font-weight:700;cursor:pointer;
+}
+.choice:hover:not(:disabled){transform:none;box-shadow:none;background:var(--soft)}
+.choice.sel{border-color:var(--info);background:#edf2fd}
+.choice.right{border-color:var(--good);background:#f1fbf7}
+.choice.wrong{border-color:var(--accent);background:#fdf3f5}
+.choice.submit{background:linear-gradient(135deg,#243259,#101e3e);color:#fff;border-color:transparent}
+.grade{
+  margin-top:9px;border-radius:8px;padding:11px 13px;font-size:.9rem;line-height:1.75;
+  background:var(--soft);border-left:4px solid var(--sub);
+}
+.grade.good{background:#f0faf6;border-left-color:var(--good)}
+.grade.part{background:#fff8ec;border-left-color:var(--warn)}
+.grade.bad{background:#fdf1f3;border-left-color:var(--accent)}
+.grade .gs{font-weight:800;display:block;margin-bottom:5px;font-size:1.02rem}
+.grade .ln{margin:4px 0}
+/* ---------- 분수 입력 상자 — "/" 를 누르면 분모 칸이 열린다 ---------- */
+.fbox{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle}
+.fbox .den{display:none}
+.fbox.frac .den{display:block}
+/* 분수 모드에서는 두 칸의 테두리를 지우고 상자 하나로 묶은 뒤, 가운데 선을 분수선으로 쓴다 */
+.field .fbox.frac, .blankeq .fbox.frac{
+  border:2px solid var(--info);border-radius:8px;background:#fff;overflow:hidden;
+}
+.field .fbox.frac input, .blankeq .fbox.frac input{
+  border:0;border-radius:0;background:transparent;margin:0;
+  padding:4px 8px;font-size:1.06rem;line-height:1.35;
+}
+.field .fbox.frac .den, .blankeq .fbox.frac .den{ border-top:2px solid var(--info) }
+.field .fbox.frac input:focus, .blankeq .fbox.frac input:focus{ background:#eef4ff }
+.field .fbox.frac.right, .blankeq .fbox.frac.right{ border-color:var(--good);background:#f1fbf7 }
+.field .fbox.frac.wrong, .blankeq .fbox.frac.wrong{ border-color:var(--accent);background:#fdf3f5 }
+.field .fbox.frac.right .den, .blankeq .fbox.frac.right .den{ border-top-color:var(--good) }
+.field .fbox.frac.wrong .den, .blankeq .fbox.frac.wrong .den{ border-top-color:var(--accent) }
+
+.grade .katex{font-size:1.1em}          /* 수식은 본문보다 조금 크게 */
+.grade .gmeta{font-size:.82em;white-space:nowrap}   /* 오차·배점은 부가 정보라 작게 */
+.grade .work{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);overflow-x:auto}
+.katex{font-size:1em}
+.plainmath{font-family:'Cascadia Mono','Consolas',monospace;font-weight:700;color:#123a72}
+
+/* ---------- 사이드 패널 안의 "직전 발사 분석" (문제 풀이 중에는 숨김) ---------- */
+.analysis{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+.analysis h4{
+  font-size:.76rem;color:var(--sub);font-weight:700;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;letter-spacing:.03em;
+}
+.eq{
+  font-family:'Cascadia Mono','Consolas','Courier New',monospace;
+  font-size:.88rem;font-weight:700;color:#123a72;
+  text-align:center;padding:8px;background:var(--soft);
+  border:1px solid var(--line);border-radius:7px;margin-bottom:6px;
+  overflow-x:auto;white-space:nowrap;
+}
+.eq .tag{display:block;font-family:inherit;font-size:.62rem;font-weight:600;color:var(--sub);margin-bottom:2px;letter-spacing:.03em}
+.src{font-size:.7rem;color:var(--sub);text-align:center;margin:2px 0 10px}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.mc{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:7px;padding:7px 9px}
+.mc .label{font-size:.67rem;color:var(--sub);font-weight:600;margin-bottom:1px}
+.mc .value{font-size:.92rem;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-all}
+.explain{background:#eef5fc;border:1px solid #d5e4f3;border-radius:8px;padding:9px 11px;margin-top:10px;font-size:.77rem;line-height:1.7}
+.explain code{font-family:'Cascadia Mono','Consolas',monospace;background:#fff;border:1px solid var(--line);border-radius:4px;padding:0 3px;font-size:.9em}
+.keys{font-size:.75rem;color:var(--sub);padding-top:12px;text-align:center;line-height:1.9;
+  border-top:1px dashed var(--line)}
+kbd{font-family:inherit;background:var(--soft);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;font-size:.9em;font-weight:700}
+
+@media(max-width:960px){
+  html,body{height:auto}
+  body{overflow:auto;min-height:100vh}
+  .wrap{height:auto}
+  .stage-area{grid-template-columns:1fr;flex:none}
+  .side{height:auto;max-height:none}
+  .canvas-wrap{min-height:0}
+  canvas{width:100%;max-height:none}
+}
+@media(max-width:640px){
+  body{padding:8px}
+  header h1{font-size:.95rem;flex:1 1 100%}
+  .tools{margin-left:0;width:100%}
+  .tools button{flex:1}
+  .field input{width:66px}
+}
+
+/* =========================================================
+   곱셈공식 게임과 이어지는 플레이풀 페이퍼 테마
+   게임 로직·캔버스 좌표계는 유지하고, 화면의 시각 언어만 통일한다.
+   ========================================================= */
+:root{
+  --bg1:#fff7e5; --bg2:#fff1d7;
+  --card:#fffdf7; --ink:#292633; --sub:#6f675c;
+  --accent:#f05f50; --good:#12946a; --warn:#d96f32; --info:#169bad;
+  --line:#cfc2af; --soft:#f3eee3;
+  --teal:#83d8e8; --mint:#9bded3; --yellow:#ffd765; --orange:#ffad70;
+}
+body{
+  position:relative;isolation:isolate;background:#fff7e5;color:var(--ink);
+  padding:12px;font-family:'Pretendard','Malgun Gothic','맑은 고딕',system-ui,-apple-system,sans-serif;
+}
+body::before,body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+}
+body::before{
+  background:
+    radial-gradient(circle at 2% 5%,#ffd765 0 58px,transparent 59px),
+    radial-gradient(circle at 98% 12%,#ff9b8f 0 72px,transparent 73px),
+    radial-gradient(circle at 96% 96%,#83d8c8 0 112px,transparent 113px);
+  opacity:.82;
+}
+body::after{
+  background-image:radial-gradient(#d9cdb9 1.15px,transparent 1.15px);
+  background-size:22px 22px;opacity:.55;
+}
+.wrap{position:relative;z-index:1;gap:12px}
+
+header{
+  background:var(--teal);border:3px solid var(--ink);border-radius:18px;
+  padding:9px 13px;box-shadow:6px 6px 0 var(--ink);
+}
+header h1{font-size:1.05rem;font-weight:950;letter-spacing:-.035em;color:var(--ink)}
+.stats{gap:6px}
+.chip{
+  background:#fffdf7;border:2px solid var(--ink);border-radius:999px;
+  padding:4px 11px;color:#544f49;font-weight:800;box-shadow:2px 2px 0 rgba(41,38,51,.2);
+}
+.chip b{color:var(--accent);font-weight:950}
+.tools{gap:7px}
+.toggle,button.musbtn{
+  background:#fffdf7;color:var(--ink);border:2px solid var(--ink);border-radius:10px;
+  padding:6px 10px;font-weight:800;box-shadow:2px 2px 0 var(--ink);
+}
+.toggle input{accent-color:var(--accent)}
+button{
+  background:#fffdf7;color:var(--ink);border:2px solid var(--ink);border-radius:10px;
+  padding:7px 13px;font-weight:850;box-shadow:2px 2px 0 var(--ink);
+  transition:transform .08s ease,box-shadow .12s ease,background .12s ease;
+}
+button.primary{background:var(--accent);color:#fff;border-color:var(--ink)}
+button:hover:not(:disabled){
+  transform:translate(-1px,-2px);box-shadow:4px 5px 0 var(--ink);background:#fff2a8;
+}
+button.primary:hover:not(:disabled){background:#e65348}
+button:active:not(:disabled){transform:translateY(1px);box-shadow:1px 1px 0 var(--ink)}
+button:disabled{opacity:.42;box-shadow:none}
+button.musbtn[aria-pressed="true"]{
+  color:var(--ink);border-color:var(--ink);background:#fff2a8;
+}
+button.musbtn[aria-pressed="false"]{color:#746f68;background:#eee8da}
+
+.stage-area{gap:12px}
+.board,.side{
+  background:var(--card);border:3px solid var(--ink);border-radius:18px;
+  box-shadow:7px 7px 0 var(--ink);
+}
+.board{padding:10px;gap:8px}
+.side{overflow:hidden}
+.stage-strip{padding:0 1px;color:var(--sub);font-weight:800}
+.stage-strip .name{
+  display:inline-flex;align-items:center;background:var(--yellow);border:2px solid var(--ink);
+  border-radius:999px;padding:3px 10px;color:var(--ink);box-shadow:2px 2px 0 var(--ink);
+}
+.stage-strip .hint{font-weight:750}
+canvas{
+  border:2px solid var(--ink);border-radius:13px;background:#cfe8f7;
+  box-shadow:3px 3px 0 var(--ink);
+}
+.status{
+  min-height:38px;background:#fff2b9;border:2px solid var(--ink);border-left-width:6px;
+  border-radius:10px;color:var(--ink);box-shadow:2px 2px 0 rgba(41,38,51,.18);
+}
+.status.hit{background:#dff3df;border-color:var(--ink);border-left-color:var(--good);color:#275f57}
+.status.miss{background:#ffe0dc;border-color:var(--ink);border-left-color:var(--accent);color:#8e3d35}
+.status.charge{background:#fff2b9;border-color:var(--ink);border-left-color:var(--warn);color:#704421}
+
+.side-head{padding:11px 14px;color:var(--ink);border-bottom:2px solid var(--ink)}
+.side-head.idle{background:var(--teal)}
+.side-head.hit{background:#8fd5b8;color:var(--ink)}
+.side-head.fail{background:#ff9b8f;color:var(--ink)}
+.side-head h3{font-weight:950}
+.side-head .badge{
+  background:#fffdf7;color:var(--ink);border:1.5px solid var(--ink);
+  padding:2px 9px;font-weight:850;
+}
+.side-body{background:rgba(255,253,247,.96)}
+.waiting{
+  margin:8px 0 0;padding:24px 12px;background:#fff9e8;
+  border:2px dashed #b6a993;border-radius:13px;
+}
+.waiting b,.idle-note .lead b{color:var(--accent)}
+.side-foot{background:#f3eee3;border-top:2px solid var(--ink)}
+.total b{color:var(--accent)}
+
+.guide{border-top:2px dashed #b6a993}
+.guide .ht,.ht{
+  background:#fffdf7;border:1.5px solid var(--ink);border-radius:12px;
+  box-shadow:2px 2px 0 #dfd2bd;
+}
+.guide .ht:nth-child(1){background:#c7eff5}
+.guide .ht:nth-child(2){background:#fff2b9}
+.guide .ht:nth-child(3){background:#ffd7be}
+.guide .ht:nth-child(4){background:#dff3df}
+.ht .n{background:var(--ink);color:#fff;border:1px solid var(--ink)}
+.kinds span{
+  background:#fffdf7;border:1.5px solid var(--ink);color:var(--ink);
+  box-shadow:1px 1px 0 var(--ink);
+}
+kbd{background:#fffdf7;border:1.5px solid var(--ink);border-bottom-width:3px;color:var(--ink)}
+
+.given{
+  background:#c7eff5;border:2px solid var(--ink);border-radius:12px;
+  box-shadow:3px 3px 0 #d6cbb9;
+}
+.given .gv,.plainmath,.blankeq{color:#20546a}
+.progress{gap:5px}
+.pdot{background:#fffdf7;border:1.5px solid #bfb39f}
+.pdot.cur{border:2px solid var(--ink);background:#c7eff5;color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.pdot.cur b{background:var(--info)}
+.pdot.done{border-color:#82b9aa;background:#e8f8f1;color:#275f57}
+.pline{background:#cfc2af}
+.qbox{border:1.5px solid var(--ink);border-bottom:none;background:#fffdf7}
+.abox{border:1.5px solid var(--ink);border-top:2px dashed #b6a993;background:#f7f0e2}
+.step.done .qbox,.step.done .abox{border-color:#5c9d8c}
+.step.done .abox{background:#e8f8f1}
+.step .no{background:var(--accent);border:1.5px solid var(--ink)}
+.step.done .no{background:var(--good)}
+.step .q .katex,.formula .sub .katex{font-size:1.04em}
+.step .q .plainmath,.formula .sub .plainmath{
+  font-family:'Cambria Math','Times New Roman',Georgia,serif;
+  font-style:italic;font-weight:500;color:inherit;
+}
+.blankeq input,.field input{
+  border-color:var(--ink);background:#fffdf7;color:var(--ink);box-shadow:2px 2px 0 #d8cbb7;
+}
+.blankeq input:focus,.field input:focus{border-color:var(--info);box-shadow:3px 3px 0 var(--ink)}
+.field .sign{background:#fff2b9;color:var(--ink);border:1.5px solid var(--ink)}
+.field .sign:hover:not(:disabled){background:var(--yellow)}
+.choice{background:#fffdf7;border:1.5px solid var(--ink);border-radius:9px;color:var(--ink)}
+.choice:hover:not(:disabled){background:#fff2a8;box-shadow:3px 3px 0 var(--ink);transform:translate(-1px,-1px)}
+.choice.sel{border-color:var(--ink);background:#c7eff5}
+.choice.right{border-color:var(--good);background:#e8f8f1}
+.choice.wrong{border-color:var(--accent);background:#ffe9e5}
+.choice.submit{background:var(--teal);color:var(--ink);border-color:var(--ink)}
+.choice.go{background:var(--good);color:#fff;border-color:var(--ink)}
+.grade{border:1.5px solid var(--ink);border-left-width:5px}
+.grade.good{background:#e8f8f1}.grade.part{background:#fff2b9}.grade.bad{background:#ffe9e5}
+
+.analysis{border-top:2px dashed #b6a993}
+.eq{background:#fffdf7;border:1.5px solid var(--ink);color:#20546a;box-shadow:2px 2px 0 #dfd2bd}
+.mc{background:#fff2b9;border:1.5px solid var(--ink);border-left:5px solid var(--accent)}
+.mc:nth-child(2){background:#c7eff5;border-left-color:var(--info)}
+.mc:nth-child(3){background:#ffd7be;border-left-color:var(--warn)}
+.mc:nth-child(4){background:#dff3df;border-left-color:var(--good)}
+.explain{background:#fff9e8;border:1.5px dashed #b6a993}
+.explain code{background:#fffdf7;border-color:#cfc2af}
+
+.startwrap{
+  background:rgba(45,38,31,.48);backdrop-filter:blur(3px);padding:20px;
+}
+.startdlg{
+  width:min(780px,100%);background:#fffdf7;border:3px solid var(--ink);border-radius:22px;
+  padding:28px 28px 24px;box-shadow:10px 11px 0 var(--ink);
+}
+.startbox{position:relative;text-align:center}
+.startbox::before{
+  content:'오늘의 수학 미션';display:inline-flex;align-items:center;margin-bottom:9px;
+  padding:5px 12px;border:1.5px solid var(--ink);border-radius:999px;background:#fff2b9;
+  color:#544f49;font-size:.7rem;font-weight:900;letter-spacing:.05em;
+  box-shadow:2px 2px 0 var(--ink);
+}
+.startdlg h2{
+  position:relative;width:max-content;max-width:100%;margin:0 auto 7px;
+  color:var(--ink);font-size:clamp(1.55rem,3vw,2rem);font-weight:950;letter-spacing:-.045em;
+}
+.startdlg h2::after{
+  content:'';position:absolute;left:20%;right:-2%;bottom:-2px;height:6px;
+  background:var(--yellow);border-radius:50%;z-index:-1;transform:rotate(-1deg);
+}
+.slead{color:var(--sub);font-weight:750;margin-bottom:18px}
+.dgrid{gap:13px}
+button.dcard{
+  min-height:142px;background:var(--teal);border:3px solid var(--ink);color:var(--ink);
+  border-radius:17px;padding:18px 12px 16px;box-shadow:5px 6px 0 var(--ink);
+}
+button.dcard:nth-child(2){background:var(--yellow)}
+button.dcard:nth-child(3){background:var(--orange)}
+button.dcard:hover:not(:disabled),button.dcard:focus-visible{
+  border-color:var(--ink);background:#fff2a8;transform:translate(-2px,-5px);box-shadow:8px 10px 0 var(--ink);
+}
+.dstar{
+  padding:4px 9px;background:#fffdf7;border:1.5px solid var(--ink);border-radius:999px;
+  color:var(--warn);box-shadow:1px 1px 0 var(--ink);
+}
+.dstar .dim{color:#d8cbb7}
+.dname{font-size:1.28rem;font-weight:950;color:var(--ink)}
+.dnote{color:#49424a;font-weight:700}
+.srow{border-top:2px dashed #b6a993;justify-content:center;text-align:left}
+.srow input{
+  background:#fffdf7;border:2px solid var(--ink);border-radius:10px;
+  box-shadow:2px 2px 0 var(--ink);outline:none;
+}
+.srow input:focus{border-color:var(--info);box-shadow:3px 3px 0 var(--ink)}
+.shint{color:var(--sub)}
+
+@media(max-width:960px){
+  body{padding:10px}
+  .board,.side{box-shadow:5px 5px 0 var(--ink)}
+}
+@media(max-width:640px){
+  body{padding:8px}
+  header{box-shadow:4px 4px 0 var(--ink)}
+  .chip{padding:3px 9px}
+  .startdlg{padding:22px 16px 19px;box-shadow:6px 7px 0 var(--ink)}
+  button.dcard{min-height:0}
+  .dnote{white-space:normal}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>🎯 이차함수 포격 게임 · 궤적과 이차함수</h1>
+    <div class="stats">
+      <span class="chip">점수<b id="ui-score">0</b></span>
+      <span class="chip">단계<b id="ui-stage">1 / 5</b></span>
+      <span class="chip">남은 기회<b id="ui-tries">3</b></span>
+    </div>
+    <div class="tools">
+      <label class="toggle" for="ui-vertex"><input type="checkbox" id="ui-vertex" checked>최고점 표시</label>
+      <button id="ui-music" type="button" class="musbtn" aria-pressed="false" title="배경음악 켜기/끄기 (M)">
+        <span class="ico" aria-hidden="true">🔇</span><span class="lbl">음악 꺼짐</span>
+      </button>
+      <button id="ui-start" type="button" title="난이도·판 번호를 다시 고릅니다">난이도</button>
+      <button id="ui-retry" type="button" hidden>이 단계 재도전</button>
+      <button id="ui-reset" type="button">초기화</button>
+      <button id="ui-next" type="button" class="primary" disabled>다음 단계</button>
+    </div>
+  </header>
+
+  <div class="stage-area">
+    <div class="board">
+      <div class="stage-strip">
+        <span class="name" id="ui-stage-name">1단계 · 튜토리얼</span>
+        <span class="hint" id="ui-stage-hint">남은 목표 1개</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="game" tabindex="0" aria-label="포격 게임 화면"></canvas>
+        <div class="canvas-formula" id="canvas-formula" role="img" aria-label="이차함수의 일반형 y는 ax제곱 더하기 bx 더하기 c"></div>
+      </div>
+      <div class="status" id="ui-status">마우스로 각도를 맞추고, 누른 채 강도를 조절한 뒤 떼면 발사됩니다.</div>
+      <div class="guide">
+        <div class="idle-note">
+          <p class="lead">포탄을 발사하면<br>그 <b>궤적으로 문제</b>가 만들어집니다.</p>
+          <div class="howto">
+            <div class="ht"><span class="n">1</span>
+              <div><b>다른 근</b><span>다른 지면 교점 구하기</span></div></div>
+            <div class="ht"><span class="n">2</span>
+              <div><b>표준형 빈칸</b><span>식을 완성하기</span></div></div>
+            <div class="ht"><span class="n">3</span>
+              <div><b>계수 <i>a</i></b><span>값을 구하기</span></div></div>
+            <div class="ht"><span class="n">4</span>
+              <div><b>식 구성과 높이</b><span>두 문제로 나누어 풀기</span></div></div>
+          </div>
+          <div class="gfoot">
+            <span class="lead2">발사 결과에 따라 묻는 지점이 달라집니다</span>
+            <div class="kinds">
+            <span>🎯 명중</span><span>💥 지면 착탄</span><span>🧱 벽 충돌</span>
+            </div>
+            <div class="keys">
+          <kbd>↑</kbd><kbd>↓</kbd> 각도 · <kbd>Space</kbd> 길게 눌러 충전 후 떼면 발사 · <kbd>M</kbd> 음악
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="side-head idle" id="side-head">
+        <h3 id="side-title">📐 문제</h3>
+        <span class="badge" id="side-badge"></span>
+      </div>
+      <div class="side-body" id="side-body">
+        <!-- 문제가 없을 때만 보이는 영역 (풀이 중에는 숨겨 정답 노출을 막는다) -->
+        <div id="idle-view">
+          <div class="analysis" id="analysis" hidden>
+            <h4>📐 직전 발사 분석</h4>
+            <div class="eq" id="eq-vertex"><span class="tag">표준형</span>y = a(x − p)² + q</div>
+            <div class="eq" id="eq-standard"><span class="tag">일반형</span>y = ax² + bx + c</div>
+            <div class="src" id="eq-src"></div>
+            <div class="metrics">
+              <div class="mc"><div class="label">꼭짓점 (p, q)</div><div class="value" id="m-vertex">–</div></div>
+              <div class="mc"><div class="label">계수 a</div><div class="value" id="m-a">–</div></div>
+              <div class="mc"><div class="label">각도 θ</div><div class="value" id="m-angle">45.0°</div></div>
+              <div class="mc"><div class="label">속도 v₀</div><div class="value" id="m-v0">0.0 m/s</div></div>
+            </div>
+            <div class="explain" id="explain"></div>
+          </div>
+          <p class="waiting">🎯 포탄을 발사하면<br>여기에 <b>문제</b>가 나옵니다.</p>
+        </div>
+        <div id="quiz-view" hidden></div>
+      </div>
+      <div class="side-foot" id="side-foot" hidden>
+        <span class="total">획득 <b id="side-total">0</b> / <span id="side-max">100</span>점</span>
+        <span class="sp">
+          <button type="button" id="side-skip">정답 보기</button>
+          <button type="button" id="side-close" class="primary" disabled>계속하기</button>
+        </span>
+      </div>
+    </aside>
+  </div>
+
+</div>
+
+<!-- 시작 화면(난이도 선택). 게임 위에 덮이며, 고르면 사라진다. -->
+<div class="startwrap" id="start-wrap" hidden>
+  <div class="startdlg" role="dialog" aria-modal="true" aria-label="난이도 선택" id="start-view"></div>
+</div>
+
+<!-- 배경음악. 파일이 없으면 error 이벤트로 토글이 스스로 비활성화된다. -->
+<audio id="bgm" src="quadratic-artillery-game_music.mp3" loop preload="auto"></audio>
+
+<script>
+'use strict';
+
+/* =========================================================
+   1. 상수 — 화면(px)과 수학 세계(m)를 분리한다.
+      쉬움 난이도는 대포를 원점 O(0,0)에 두어 c = 0 → y = x(ax + b) 가 되게 했다.
+      보통·어려움은 대포를 x₀ 로 옮겨 y = a(x − x₀)(x − x₂) 를 다루게 한다.
+   ========================================================= */
+const W = 800, H = 450;
+const PPM = 30;                  // 1 m = 30 px  (격자 1칸 = 1 m, 정수 눈금을 넓게)
+const ORIGIN_X = 60;             // 원점 O 의 캔버스 x
+const GROUND_Y = 400;            // 원점 O 의 캔버스 y (= 지면 = x축)
+const G = 9.8;                   // 중력가속도 (m/s²)
+const LAUNCH_H = 0;              // 발사 높이 = 0 → 상수항 c = 0
+const V_MIN = 6, V_MAX = 16;     // 강도 0% → 6 m/s, 100% → 16 m/s
+const CHARGE_CYCLE = 3.2;        // 0% → 100% → 0% 1주기 (초)
+const FLIGHT_SPEED = 1.3;        // 포물선은 유지하고 비행 애니메이션만 1.3배 빠르게
+const BALL_R = 0.15;             // 포탄 반지름 (m)
+const MIN_ANGLE = 15, MAX_ANGLE = 80;
+const BARREL_LEN = 1.05;         // 포신 길이 (m)
+const TRIES = 5;
+const FIELD_W = (W - ORIGIN_X) / PPM;   // 14.6 m
+const FIELD_H = GROUND_Y / PPM;         //  8.0 m
+const MAX_TRAIL = 4;
+const HUD = { x:W-236, y:10, w:224, h:70 };   // 좌표평면 눈금을 가리지 않도록 우상단
+
+const toPx = m => ORIGIN_X + m * PPM;
+const toPy = m => GROUND_Y - m * PPM;
+
+/* =========================================================
+   1-B. "깔끔한 포물선" 집합
+   꼭짓점 (p, q) 와 계수 a, b 가 모두 요구 자릿수로 딱 떨어지는 궤적만 모은다.
+     a = q/p² → 소수 둘째 자리,  b = 2q/p → 소수 첫째 자리,  착탄점 = 2p
+   발사할 때 가장 가까운 궤적으로 스냅하므로 학생은 항상 암산 가능한 수를 만난다.
+   ========================================================= */
+const COORD_DENS = [1,2,3,4];                       // 좌표(p, q, p²) 용 분모
+const A_DENS = [1,2,3,4,5,6,8,10,12,15,16,20,24];   // 계수 a 용 — 학생에게 친숙한 분모
+const MAX_STEP_RATIO = 1.6;   // 같은 각도에서 이웃 궤적의 착탄점 배율 상한
+const MIN_PER_ANGLE  = 4;     // 각도당 최소 궤적 수 (게이지가 의미 있게 작동하도록)
+const CLEAN = (function buildCleanSet(){
+  const fw = (W - ORIGIN_X) / PPM, fh = GROUND_Y / PPM;
+  const okDen = (v, dens) => dens.some(d => Math.abs(v*d - Math.round(v*d)) < 1e-9);
+  const raw = [];
+  for (let p2 = 2; p2 <= Math.floor(fw); p2++){                     // p 는 1/2 단위 (p ≥ 1)
+    const p = p2 / 2;                                               // 착탄점 2p 는 항상 정수 ≥ 2
+    for (let q4 = 1; q4 <= Math.floor(fh) * 4; q4++){               // q 는 1/4 단위
+      const q = q4 / 4;                                             // → p, q, p² 전부 분모 4 이하
+      const a = q / (p * p), b = 2 * q / p;
+      if (a < 0.01) continue;
+      if (!okDen(a, A_DENS)) continue;      // a 는 친숙한 분모의 분수 (소수 강제 시 궤적이 띄엄띄엄해진다)
+      if (!okDen(b, COORD_DENS)) continue;  // b 는 표시용 — 분모 4 이하
+      const th = Math.atan(b) * 180 / Math.PI;
+      const v  = Math.sqrt(G * (1 + b*b) / (2 * a));
+      if (v < V_MIN || v > V_MAX || th < MIN_ANGLE || th > MAX_ANGLE) continue;
+      raw.push({ p, q, a:-a, b, v, angle:th, land:2*p });
+    }
+  }
+  /* 같은 각도 안에서 착탄점이 촘촘히 이어지는 구간만 남긴다.
+     (2 → 10 처럼 5배씩 건너뛰면 게이지를 올릴 때 곡선이 확 바뀌어 보인다) */
+  const byAngle = new Map();
+  for (const c of raw){
+    const k = c.angle.toFixed(6);
+    if (!byAngle.has(k)) byAngle.set(k, []);
+    byAngle.get(k).push(c);
+  }
+  const out = [];
+  for (const list of byAngle.values()){
+    list.sort((x,y) => x.land - y.land);
+    let best = [], cur = [list[0]];
+    for (let i = 1; i < list.length; i++){
+      if (list[i].land / cur[cur.length-1].land <= MAX_STEP_RATIO) cur.push(list[i]);
+      else { if (cur.length > best.length) best = cur; cur = [list[i]]; }
+    }
+    if (cur.length > best.length) best = cur;
+    if (best.length >= MIN_PER_ANGLE) out.push(...best);
+  }
+  return out;
+})();
+
+/** (각도, 속도) 에 가장 가까운 깔끔한 포물선 */
+function nearestClean(angleDeg, v){
+  let best = CLEAN[0], bd = Infinity;
+  for (const c of CLEAN){
+    const d = ((angleDeg - c.angle)/60)**2 + ((v - c.v)/(V_MAX - V_MIN))**2;
+    if (d < bd){ bd = d; best = c; }
+  }
+  return best;
+}
+/** 조준값(각도, 강도)에 가장 가까운 깔끔한 포물선 */
+function snapShot(angleDeg, power){
+  return nearestClean(angleDeg, V_MIN + clampNum(power, 0, 1) * (V_MAX - V_MIN));
+}
+function clampNum(v,a,b){ return v < a ? a : (v > b ? b : v); }
+
+/** 사용 가능한 각도 눈금 (깔끔한 포물선이 존재하는 각도만) */
+const CLEAN_ANGLES = [...new Set(CLEAN.map(c => Math.round(c.angle*1000)/1000))].sort((x,y) => x-y);
+function snapAngle(deg){
+  let best = CLEAN_ANGLES[0], bd = Infinity;
+  for (const a of CLEAN_ANGLES){ const d = Math.abs(a - deg); if (d < bd){ bd = d; best = a; } }
+  return best;
+}
+/** 각도 눈금을 한 칸 이동 */
+function stepAngle(dir){
+  const i = CLEAN_ANGLES.indexOf(snapAngle(state.angle));
+  return CLEAN_ANGLES[clampNum(i + dir, 0, CLEAN_ANGLES.length - 1)];
+}
+
+/* 각 궤적의 "릴리스 여유" — 게이지가 그 궤적에 머무는 시간(ms).
+   목표를 무작위로 놓을 때 손이 못 따라갈 만큼 빡빡한 궤적만 답인 배치를 걸러낸다. */
+CLEAN.forEach((c, i) => { c.i = i; c.tol = 0; });
+(function measureTolerance(){
+  const STEP = 0.002;
+  // 게이지 power(t) = (1 − cos(2πt/T))/2 → power 구간을 시간(ms) 으로 되돌린다
+  const timeAt = p => (CHARGE_CYCLE / (2*Math.PI)) * Math.acos(clampNum(1 - 2*p, -1, 1));
+  for (const ang of CLEAN_ANGLES){
+    let prev = -1, from = 0;
+    const close = (to) => {
+      if (prev >= 0){
+        const ms = Math.abs(timeAt(to) - timeAt(from)) * 1000;
+        if (ms > CLEAN[prev].tol) CLEAN[prev].tol = ms;
+      }
+    };
+    for (let p = 0; p <= 1 + 1e-9; p += STEP){
+      const idx = snapShot(ang, p).i;
+      if (idx !== prev){ close(p); prev = idx; from = p; }
+    }
+    close(1);
+  }
+})();
+
+/* =========================================================
+   2. 스테이지 — 과녁을 절반으로 줄인 대신 목표를 4~10 m 로 재배치
+   ========================================================= */
+/* 벽을 대포 가까이 두고 과녁을 멀리 배치한다.
+   낮게 쏘면 벽에 막히므로 반드시 높은 포물선을 그려야 한다.
+
+   좌표는 매 판 새로 뽑는다. 다만 아무 데나 놓으면 "맞힐 수 없는 배치" 가 나오므로
+   뽑은 배치마다 깔끔한 궤적(CLEAN)으로 실제 도달 가능한지 검사하고, 통과할 때만 쓴다.
+   목표와 벽의 x 는 정수로 두어 대입 계산이 깔끔하게 떨어지게 했다. */
+/* band = "벽을 넘기는 데 필요한 최소 발사각(°)" 의 허용 구간.
+   목표 거리와 벽 높이를 함께 무작위로 뽑아도 이 구간에 들어오는 조합만 쓰므로
+   단계가 올라갈수록 더 가파른 포물선을 요구한다는 성격이 그대로 유지된다. */
+/* 난이도 — 대포를 어디에 두느냐가 곧 수학 난이도다.
+   대포가 원점이면 상수항 c = 0 이라 식이 y = a·x·(x − L) 로 늘 같은 모양이 된다.
+   대포를 옮기면 두 근이 모두 0이 아니게 되어 인수분해형·대입 문제가 매번 달라진다. */
+/* note 는 학생에게 보여 주는 설명이다.
+   대포 위치가 난이도의 장치라는 사실은 굳이 밝히지 않는다 — 풀면서 알아채는 게 낫다. */
+const DIFFS = {                                   // note 는 카드 한 줄에 들어가게 짧게
+  easy:   { key:'easy',   name:'쉬움',   lx:[0,0], rScale:1.00, note:'처음이라면 여기서' },
+  normal: { key:'normal', name:'보통',   lx:[1,2], rScale:1.00, note:'식이 조금 복잡해집니다' },
+  hard:   { key:'hard',   name:'어려움', lx:[2,4], rScale:0.80, note:'과녁이 작고 까다롭습니다' },
+};
+const DIFF_ORDER = ['easy','normal','hard'];
+
+/* ty = 과녁 중심 높이 범위(m). 뽑은 값이 반지름보다 작으면 지면에 놓고,
+   크면 공중에 띄운다(지지대가 자동으로 그려진다).
+   → 매번 지면에만 붙어 있지 않고, 공중 과녁을 맞히려면 포물선의 특정 지점을 노려야 한다. */
+const STAGE_SPECS = [
+  { name:'튜토리얼', hint:'앞의 턱을 넘겨 포물선을 그려 보세요.',
+    r:0.70, tx:[6,10],  ty:[0.5,2.5], wx:[2,4], wh:[0.5,2.0], band:[28,38] },
+  { name:'낮은 벽', hint:'대포 앞 벽을 넘겨야 합니다.',
+    r:0.70, tx:[8,13],  ty:[0.5,3.5], wx:[2,4], wh:[1.5,3.0], band:[40,48] },
+  { name:'이중 목표', hint:'벽을 넘어 두 목표를 모두 맞히세요.',
+    r:0.60, tx:[10,15], ty:[0.5,3.0], wx:[2,4], wh:[2.0,3.5], band:[44,52],
+    air:{ x:[4,7], y:[3,5.5], r:0.60 } },
+  { name:'높은 벽', hint:'훨씬 가파른 포물선이 필요합니다.',
+    r:0.60, tx:[13,18], ty:[0.5,4.5], wx:[2,5], wh:[3.0,5.0], band:[52,58] },
+  { name:'최종 스테이지', hint:'높은 벽 너머 가장 먼 목표입니다.',
+    r:0.60, tx:[16,22], ty:[0.5,5.0], wx:[3,6], wh:[4.0,6.5], band:[56,63] },
+];
+/* 무작위 배치가 모두 실패했을 때 쓰는, 손으로 맞춰 둔 안전한 배치 */
+const STAGE_FALLBACK = [
+  { targets:[{ x:8, y:0.70, r:0.70 }], obstacles:[{ x:3, y:0, w:0.5, h:1.0 }] },
+  { targets:[{ x:10, y:0.70, r:0.70 }], obstacles:[{ x:3, y:0, w:0.5, h:2.0 }] },
+  { targets:[{ x:6, y:4.0, r:0.60 },{ x:12, y:0.60, r:0.60 }],
+    obstacles:[{ x:3, y:0, w:0.5, h:2.5 }] },
+  { targets:[{ x:15, y:0.60, r:0.60 }], obstacles:[{ x:3, y:0, w:0.5, h:3.5 }] },
+  { targets:[{ x:20, y:0.60, r:0.60 }], obstacles:[{ x:4, y:0, w:0.5, h:4.5 }] },
+];
+const STAGE_COUNT = STAGE_SPECS.length;
+
+/* 입력 형식 안내에 쓰는 예시 값.
+   분모 9 는 A_DENS 에 없어 계수 a 로 절대 나올 수 없다 → 예시가 우연히 정답이 되는 일이 없다.
+   (예전엔 −1/12 을 예시로 썼는데, 실제로 a = −1/12 인 궤적이 나와 정답이 그대로 노출됐다) */
+const HINT_FRAC = '−7/9';
+const HINT_DEC  = '−0.78';
+
+const MIN_TOL_MS   = 90;    // 이보다 릴리스 여유가 좁은 궤적만 답이면 그 배치는 버린다
+const LAYOUT_TRIES = 300;   // 배치 재추첨 횟수
+const WALL_W       = 0.5;
+const WALL_GAP     = 1.2;   // 벽과 목표 사이 최소 간격(m)
+const MAX_ANG_SLACK = 8;    // 밴드 상한보다 이만큼 더 가파른 궤적까지만 '정답' 으로 인정
+const GROUND_TARGET_RATE = 0.35;   // 과녁을 지면에 놓을 확률 (나머지는 공중)
+
+/* 배치용 난수는 시드로 재현할 수 있어야 한다.
+   같은 시드 → 같은 스테이지. 나중에 두 사람이 같은 판으로 대결할 때 시드만 맞추면 된다. */
+let rngState = 1;
+function setSeed(s){ rngState = (s >>> 0) || 1; }
+function rnd(){                                   // mulberry32
+  rngState = (rngState + 0x6D2B79F5) | 0;
+  let t = Math.imul(rngState ^ (rngState >>> 15), 1 | rngState);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function newSeed(){ return (Math.random() * 0xFFFFFFFF) >>> 0; }
+
+const randInt  = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+const randHalf = (a, b) => randInt(Math.round(a*2), Math.round(b*2)) / 2;
+
+/* 궤적 c 를 x 를 따라 걸으며 "처음 부딪히는 것" 을 돌려준다 (실제 collide() 와 같은 순서) */
+function traceClean(c, targets, obstacles){
+  const STEP = 0.02;
+  for (let x = 0; x <= c.land + 1e-9; x += STEP){
+    const y = c.a * x * x + c.b * x;
+    for (let i = 0; i < targets.length; i++){
+      const t = targets[i];
+      if (Math.hypot(x - t.x, y - t.y) <= t.r + BALL_R) return { kind:'target', idx:i };
+    }
+    for (const o of obstacles){
+      const nx = clampNum(x, o.x, o.x + o.w), ny = clampNum(y, o.y, o.y + o.h);
+      if ((x-nx)*(x-nx) + (y-ny)*(y-ny) <= BALL_R * BALL_R) return { kind:'wall' };
+    }
+  }
+  return { kind:'ground' };
+}
+
+/* 모든 목표가 "충분한 여유를 두고" 도달 가능한 배치인지 검사한다.
+   maxAng 을 두는 이유: 공중 목표가 지상 목표의 길을 막아 버리면
+   거의 수직으로 쏘아 올려야만 풀리는 배치가 나온다. 그런 배치는 버린다. */
+function layoutSolvable(targets, obstacles, maxAng){
+  const reach = new Array(targets.length).fill(false);
+  const last = targets.length - 1;
+  for (const c of CLEAN){
+    if (c.tol < MIN_TOL_MS) continue;              // 손이 못 따라갈 만큼 빡빡하면 답으로 안 친다
+    const r = traceClean(c, targets, obstacles);
+    if (r.kind !== 'target') continue;
+    if (r.idx === last && maxAng && c.angle > maxAng) continue;
+    reach[r.idx] = true;
+  }
+  return reach.every(Boolean);
+}
+
+/* 벽 꼭대기를 스치듯 넘어 착탄점 land 에 떨어지려면 필요한 발사각.
+   포물선 y = 4q·x(L−x)/L², tanθ = 4q/L 에서 y(xw) = h 를 풀면 tanθ = h·L / (xw(L−xw)). */
+function requiredAngle(wall, land){
+  const xw = wall.x + wall.w / 2;
+  if (xw >= land) return 90;
+  return Math.atan((wall.h + BALL_R) * land / (xw * (land - xw))) * 180 / Math.PI;
+}
+
+let lastLayoutKey = [];      // 같은 배치가 연속으로 나오지 않게
+
+/** 스테이지 배치를 무작위로 뽑되, 풀 수 있는 배치가 나올 때까지 다시 뽑는다.
+    spec 의 좌표는 모두 "대포로부터의 거리" 다 → 마지막에 대포 위치 x0 만큼 밀어 준다.
+    (난이도에 따라 대포가 옮겨 다니므로 절대 좌표로 잡으면 사거리가 어긋난다) */
+function makeLayout(index, x0){
+  const spec = STAGE_SPECS[index];
+  x0 = x0 || 0;
+  const rScale = (DIFFS[state.diff] || DIFFS.easy).rScale;
+  const shift = o => Object.assign({}, o, { x:o.x + x0 });
+  for (let n = 0; n < LAYOUT_TRIES; n++){
+    const wall = { x:randInt(spec.wx[0], spec.wx[1]), y:0, w:WALL_W, h:randHalf(spec.wh[0], spec.wh[1]) };
+    const targets = [];
+    const rr = v => Math.round(v * rScale * 100) / 100;
+    if (spec.air) targets.push({ x:randHalf(spec.air.x[0], spec.air.x[1]),
+                                 y:randHalf(spec.air.y[0], spec.air.y[1]), r:rr(spec.air.r) });
+    // 높이도 뽑는다. 그냥 균등하게 뽑으면 지면 과녁이 10%도 안 나와
+    // 대포 게임다운 모습이 사라지므로, 일정 비율은 지면에 놓는다.
+    const r = rr(spec.r);
+    targets.push({ x:randInt(spec.tx[0], spec.tx[1]), r,
+                   y:rnd() < GROUND_TARGET_RATE
+                       ? r
+                       : Math.max(r, randHalf(spec.ty[0], spec.ty[1])) });
+
+    // 목표가 벽에 붙거나 서로 겹치면 버린다
+    if (targets.some(t => t.x - t.r < wall.x + wall.w + WALL_GAP)) continue;
+    // 화면 밖 판정은 대포를 민 뒤의 절대 좌표로 해야 한다
+    if (targets.some(t => x0 + t.x + t.r > FIELD_W - 0.3 || t.y + t.r > FIELD_H - 0.3)) continue;
+    let clash = false;
+    for (let i = 0; i < targets.length; i++)
+      for (let j = i+1; j < targets.length; j++)
+        if (Math.hypot(targets[i].x-targets[j].x, targets[i].y-targets[j].y) < targets[i].r + targets[j].r + 1.5) clash = true;
+    if (clash) continue;
+
+    // 벽을 넘기는 데 드는 각도가 그 단계의 성격에 맞아야 한다
+    const ang = requiredAngle(wall, targets[targets.length-1].x);
+    if (ang < spec.band[0] || ang > spec.band[1]) continue;
+
+    const key = targets.map(t => t.x+','+t.y).join('|') + '#' + wall.x + ',' + wall.h;
+    if (key === lastLayoutKey[index] && n < LAYOUT_TRIES - 1) continue;   // 직전과 같으면 다시
+    if (!layoutSolvable(targets, [wall], spec.band[1] + MAX_ANG_SLACK)) continue;
+
+    lastLayoutKey[index] = key;
+    return { targets:targets.map(shift), obstacles:[shift(wall)], generated:true };
+  }
+  const fb = STAGE_FALLBACK[index];                                  // 손으로 맞춘 배치
+  return { generated:false, targets:fb.targets.map(shift), obstacles:fb.obstacles.map(shift) };
+}
+
+/* =========================================================
+   3. 게임 상태
+   ========================================================= */
+const state = {
+  score:0, stageIndex:0, tries:TRIES,
+  diff:'easy',              // 난이도 키 (DIFFS)
+  seed:1,                   // 이 판의 시드 — 같은 시드면 같은 배치가 나온다
+  launchX:0,                // 대포의 x 좌표(m). 난이도에 따라 매 스테이지 새로 뽑는다
+  angle:45, power:0,
+  charging:false, chargeStart:0,
+  flying:false, shot:null,
+  trail:[], pastTrails:[],
+  eq:null, eqSource:'',
+  // 분석 패널용 사본. 문제를 다 풀면 곧바로 다음 단계로 넘어가는데,
+  // state.eq 는 그때 지워지므로 '직전 발사 분석'이 사라져 버린다 → 따로 들고 있는다.
+  panelEq:null,
+  showVertex:true,
+  stageClear:false, gameOver:false, allClear:false,
+  stageData:null,
+  fx:[], solutionMarks:[],
+  lastPower:0.5,            // 조준 미리보기 기준 강도(직전 발사 강도)
+  // 조준 가이드 "표시용" 값. 스냅된 목표값으로 부드럽게 수렴시켜 곡선이 튀지 않게 한다.
+  // (발사는 언제나 스냅된 정확한 궤적으로 나간다 — 숫자는 그대로 깔끔)
+  guideView:{ v:0, angle:0, vv:0, av:0, ready:false },
+  pointerX:toPx(5), pointerY:toPy(3),
+  statusText:'', statusKind:'',
+};
+
+/* =========================================================
+   4. 수학 유틸 — 표시는 소수 첫째 자리, 계수 a 만 둘째 자리
+   ========================================================= */
+const rad = d => d * Math.PI / 180;
+const deg = r => r * 180 / Math.PI;
+const clamp = (v,a,b) => v < a ? a : (v > b ? b : v);
+
+function fmt(n, d = 1){
+  if (typeof n !== 'number' || !isFinite(n)) return '–';
+  let s = n.toFixed(d);
+  if (/^-0(\.0*)?$/.test(s)) s = s.slice(1);
+  return s.replace(/^-/, '−');
+}
+/** 계수 a — 분수로 딱 떨어지면 분수로, 아니면 소수 둘째 자리 */
+function fmtA(a){
+  const f = toFrac(a, A_DENS);
+  if (f && f.d === 1) return (f.sign < 0 && f.n !== 0 ? '−' : '') + f.n;
+  if (f) return (f.sign < 0 ? '−' : '') + f.n + '/' + f.d;
+  return fmt(a, 2);
+}
+/** 계수 a 의 LaTeX 표기 */
+function nfA(a){
+  const f = toFrac(a, A_DENS);
+  if (f && f.d === 1) return (f.sign < 0 && f.n !== 0 ? '-' : '') + f.n;
+  if (f) return (f.sign < 0 ? '-' : '') + `\\frac{${f.n}}{${f.d}}`;
+  return nf(a, 2);
+}
+/* ---- 분수 표기 ----
+   1/2, 3/2, 9/4 처럼 분모가 작은 값은 소수보다 분수가 계산하기 쉽다.
+   (p = 3/2 이면 착탄점 2p = 3, p² = 9/4 로 딱 떨어진다)              */
+/** 값을 기약분수로. 허용 분모 목록에 없으면 null */
+function toFrac(v, dens){
+  if (typeof v !== 'number' || !isFinite(v)) return null;
+  const list = dens || COORD_DENS;
+  const sign = v < 0 ? -1 : 1, a = Math.abs(v);
+  for (const d of list){
+    const n = a * d;
+    if (Math.abs(n - Math.round(n)) < 1e-9) return { n:Math.round(n), d, sign };
+  }
+  return null;
+}
+/** 화면(평문)용: 정수 → "6", 분수 → "3/2", 그 외 → 소수 */
+function fmtN(v){
+  if (typeof v !== 'number' || !isFinite(v)) return '–';
+  const f = toFrac(v);                       // 부동소수 오차(3.0000000000000004)도 정수로 인식
+  if (f && f.d === 1) return (f.sign < 0 && f.n !== 0 ? '−' : '') + f.n;
+  if (f) return (f.sign < 0 ? '−' : '') + f.n + '/' + f.d;
+  return fmt(v, 1);
+}
+/** LaTeX용: 분수는 \frac 으로 조판 */
+function nfN(v){
+  if (typeof v !== 'number' || !isFinite(v)) return '?';
+  const f = toFrac(v);
+  if (f && f.d === 1) return (f.sign < 0 && f.n !== 0 ? '-' : '') + f.n;
+  if (f) return (f.sign < 0 ? '-' : '') + `\\frac{${f.n}}{${f.d}}`;
+  return nf(v, 1);
+}
+/** LaTeX용 (ASCII 부호) */
+function nf(n, d = 1){
+  if (typeof n !== 'number' || !isFinite(n)) return '?';
+  let s = n.toFixed(d);
+  if (/^-0(\.0*)?$/.test(s)) s = s.slice(1);
+  return s;
+}
+function sf(n, d = 1){ return (n < 0 ? '- ' : '+ ') + nf(Math.abs(n), d); }
+
+/* 대포를 x₀ 에 두었을 때의 세계 좌표 계수.
+   대포 기준 국소식 y = a·u² + b·u (u = x − x₀) 를 전개하면
+     y = a x² + (b − 2a x₀) x + x₀(a x₀ − b)
+   x₀ = 0 이면 c = 0 이 되어 예전 식과 같아진다. */
+function shiftEq(a, b, x0){
+  return { a, b: b - 2*a*x0, c: x0 * (a*x0 - b), p: x0 - b/(2*a), q: -b*b/(4*a) };
+}
+/** 이론식: y = ax² + bx + c (대포가 원점이면 c = 0) */
+function analyticEquation(v0, angleDeg, x0){
+  const th = rad(angleDeg), cos = Math.cos(th);
+  if (!(v0 > 0) || Math.abs(cos) < 1e-6) return null;
+  const a = -G / (2 * v0 * v0 * cos * cos);
+  const b = Math.tan(th);
+  if (!isFinite(a) || !isFinite(b) || a >= 0) return null;
+  return Object.assign(shiftEq(a, b, x0 || 0), { v0, angle:angleDeg });
+}
+
+function det3(m){
+  return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+       - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+       + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+}
+/** 역산: 실제 궤적 표본점으로 최소제곱 이차 회귀 */
+function fitQuadratic(pts){
+  const n = pts.length;
+  if (n < 3) return null;
+  let minX = Infinity, maxX = -Infinity;
+  let S1=0,S2=0,S3=0,S4=0,T0=0,T1=0,T2=0;
+  for (let i=0;i<n;i++){
+    const x = pts[i].x, y = pts[i].y, x2 = x*x;
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    S1+=x; S2+=x2; S3+=x2*x; S4+=x2*x2;
+    T0+=y; T1+=x*y; T2+=x2*y;
+  }
+  if (maxX - minX < 1.0) return null;
+  const M = [[S4,S3,S2],[S3,S2,S1],[S2,S1,n]];
+  const det = det3(M);
+  if (!isFinite(det) || Math.abs(det) < 1e-9 * (Math.abs(S4*S2*n) + 1)) return null;
+  const a = det3([[T2,S3,S2],[T1,S2,S1],[T0,S1,n]]) / det;
+  const b = det3([[S4,T2,S2],[S3,T1,S1],[S2,T0,n]]) / det;
+  const c = det3([[S4,S3,T2],[S3,S2,T1],[S2,S1,T0]]) / det;
+  if (!isFinite(a) || !isFinite(b) || !isFinite(c) || a > -1e-6) return null;
+  return { a, b, c, p:-b/(2*a), q:c - b*b/(4*a), n };
+}
+
+function vertexForm(a,p,q){
+  const sp = p >= 0 ? '− ' + fmtN(Math.abs(p)) : '+ ' + fmtN(Math.abs(p));
+  const sq = q >= 0 ? ' + ' + fmtN(Math.abs(q)) : ' − ' + fmtN(Math.abs(q));
+  return 'y = ' + fmtA(a) + '(x ' + sp + ')²' + sq;
+}
+function standardForm(a,b,c){
+  // a 가 분수로 나오는데 b, c 만 소수면 어색하다 → 셋 다 같은 표기법으로
+  let s = 'y = ' + (a < 0 ? '−' : '') + fmtA(Math.abs(a)) + 'x²';
+  s += (b < 0 ? ' − ' : ' + ') + fmtN(Math.abs(b)) + 'x';
+  if (Math.abs(c) >= 0.005) s += (c < 0 ? ' − ' : ' + ') + fmtN(Math.abs(c));
+  return s;
+}
+
+/* =========================================================
+   5. DOM
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const canvas = $('game');
+const ctx = canvas.getContext('2d');
+const el = {
+  score:$('ui-score'), stage:$('ui-stage'), tries:$('ui-tries'),
+  stageName:$('ui-stage-name'), stageHint:$('ui-stage-hint'),
+  vertexChk:$('ui-vertex'), reset:$('ui-reset'), next:$('ui-next'), retry:$('ui-retry'),
+  status:$('ui-status'),
+  eqV:$('eq-vertex'), eqS:$('eq-standard'), eqSrc:$('eq-src'),
+  mVertex:$('m-vertex'), mAngle:$('m-angle'), mV0:$('m-v0'), mA:$('m-a'),
+  explain:$('explain'),
+  sHead:$('side-head'), sTitle:$('side-title'), sBadge:$('side-badge'),
+  sBody:$('side-body'), sFoot:$('side-foot'), sTotal:$('side-total'), sMax:$('side-max'),
+  sSkip:$('side-skip'), sClose:$('side-close'),
+  idleView:$('idle-view'), quizView:$('quiz-view'), analysis:$('analysis'),
+  music:$('ui-music'), bgm:$('bgm'),
+  startWrap:$('start-wrap'), startView:$('start-view'), startBtn:$('ui-start'),
+  canvasFormula:$('canvas-formula'),
+};
+
+/* 캔버스를 화면 가득 키웠으므로 백버퍼는 항상 2배(1600×450×2)로 잡는다.
+   저사양(devicePixelRatio = 1) PC 에서도 확대 표시될 때 흐려지지 않는다. */
+const DPR = 2;
+canvas.width = Math.round(W * DPR);
+canvas.height = Math.round(H * DPR);
+
+/* =========================================================
+   6. 배경 — 좌표평면(격자 1칸 = 1 m, x축·y축·눈금·원점)
+   ========================================================= */
+const bg = document.createElement('canvas');
+bg.width = canvas.width; bg.height = canvas.height;
+/* 바깥 UI와 같은 페이퍼 일러스트 배경.
+   좌표를 읽는 데 필요한 대비는 유지하되 사진 질감 대신 단순한 면·굵은 선을 쓴다. */
+function drawBackground(){
+  const b = bg.getContext('2d');
+  b.setTransform(DPR,0,0,DPR,0,0);
+  b.clearRect(0,0,W,H);
+
+  const INK = '#292633';
+  // 맑은 민트 하늘
+  b.fillStyle = '#dff4f2';
+  b.fillRect(0,0,W,GROUND_Y);
+
+  // 해 — 난이도 카드의 노랑과 같은 색, 스티커처럼 짧은 그림자를 둔다
+  b.fillStyle = 'rgba(41,38,51,.18)';
+  b.beginPath();b.arc(690,70,31,0,Math.PI*2);b.fill();
+  b.fillStyle = '#ffd765';b.strokeStyle = INK;b.lineWidth = 2.2;
+  b.beginPath();b.arc(686,66,30,0,Math.PI*2);b.fill();b.stroke();
+
+  // 종이를 오려 붙인 듯한 구름
+  const cloud = (x,y,s) => {
+    b.save();b.translate(x,y);b.scale(s,s);
+    b.fillStyle = 'rgba(41,38,51,.14)';
+    b.beginPath();b.moveTo(-35,10);b.bezierCurveTo(-45,-5,-27,-15,-16,-9);
+    b.bezierCurveTo(-9,-28,18,-27,22,-8);b.bezierCurveTo(42,-12,49,16,31,20);
+    b.lineTo(-27,20);b.bezierCurveTo(-39,20,-43,14,-35,10);b.closePath();b.fill();
+    b.translate(-3,-4);b.fillStyle = '#fffdf7';b.strokeStyle = INK;b.lineWidth = 1.8;
+    b.beginPath();b.moveTo(-35,10);b.bezierCurveTo(-45,-5,-27,-15,-16,-9);
+    b.bezierCurveTo(-9,-28,18,-27,22,-8);b.bezierCurveTo(42,-12,49,16,31,20);
+    b.lineTo(-27,20);b.bezierCurveTo(-39,20,-43,14,-35,10);b.closePath();b.fill();b.stroke();
+    b.restore();
+  };
+  cloud(178,72,.72);cloud(460,116,.52);
+
+  // 두 겹의 파스텔 산 — 윤곽선은 약하게 두어 격자보다 뒤에 머물게 한다
+  const mountain = (points,fill,alpha) => {
+    b.save();b.globalAlpha=alpha;b.fillStyle=fill;b.strokeStyle=INK;b.lineWidth=1.6;
+    b.beginPath();b.moveTo(0,GROUND_Y);points.forEach(([x,y])=>b.lineTo(x,y));
+    b.lineTo(W,GROUND_Y);b.closePath();b.fill();b.stroke();b.restore();
+  };
+  mountain([[0,325],[82,244],[170,326],[282,205],[397,318],[515,234],[646,322],[744,250],[800,304]],'#c7eff5',.82);
+  mountain([[0,352],[98,292],[196,350],[322,273],[440,352],[578,286],[682,349],[770,305],[800,330]],'#9bded3',.86);
+
+  // 1/2 칸 보조 격자 — 꼭짓점 p 가 3/2 처럼 반정수일 수 있으므로 눈으로 읽히게 한다
+  b.strokeStyle = 'rgba(41,38,51,.075)'; b.lineWidth = 1;
+  b.beginPath();
+  for (let m = 0.5; m <= FIELD_W; m += 1){
+    const x = Math.round(toPx(m)) + .5;
+    if (x > W) break;
+    b.moveTo(x,0); b.lineTo(x,GROUND_Y);
+  }
+  for (let m = 0.5; m <= FIELD_H; m += 1){
+    const y = Math.round(toPy(m)) + .5;
+    b.moveTo(ORIGIN_X,y); b.lineTo(W,y);
+  }
+  b.stroke();
+
+  // 1 m 격자 (정수 눈금)
+  b.strokeStyle = 'rgba(41,38,51,.14)'; b.lineWidth = 1;
+  b.beginPath();
+  for (let m = 1; m <= FIELD_W; m += 1){
+    const x = Math.round(toPx(m)) + .5;
+    if (x > W) break;
+    b.moveTo(x,0); b.lineTo(x,GROUND_Y);
+  }
+  for (let m = 1; m <= FIELD_H; m += 1){
+    const y = Math.round(toPy(m)) + .5;
+    b.moveTo(ORIGIN_X,y); b.lineTo(W,y);
+  }
+  b.stroke();
+
+  // 5 m 강조 격자
+  b.strokeStyle = 'rgba(22,155,173,.30)'; b.lineWidth = 1.2;
+  b.beginPath();
+  for (let m = 5; m <= FIELD_W; m += 5){
+    const x = Math.round(toPx(m)) + .5;
+    if (x > W) break;
+    b.moveTo(x,0); b.lineTo(x,GROUND_Y);
+  }
+  for (let m = 5; m <= FIELD_H; m += 5){
+    const y = Math.round(toPy(m)) + .5;
+    b.moveTo(ORIGIN_X,y); b.lineTo(W,y);
+  }
+  b.stroke();
+
+  // 민트 잔디 + 코랄빛 종이 지면
+  b.fillStyle = '#ffbf8f';b.fillRect(0,GROUND_Y,W,H-GROUND_Y);
+  b.fillStyle = '#83d8c8';b.fillRect(0,GROUND_Y-5,W,9);
+  b.strokeStyle = INK;b.lineWidth = 2;b.beginPath();b.moveTo(0,GROUND_Y-5);b.lineTo(W,GROUND_Y-5);b.stroke();
+  b.fillStyle = 'rgba(143,81,49,.28)';
+  for(let x=18;x<W;x+=34){b.beginPath();b.arc(x,GROUND_Y+17+(x%3)*7,2,0,Math.PI*2);b.fill();}
+  for(let x=32;x<W;x+=53){b.beginPath();b.arc(x,GROUND_Y+38-(x%4)*4,1.5,0,Math.PI*2);b.fill();}
+
+  /* ── 축 ──
+     x축 아래는 흙(짙은 갈색)이라 남색 선·글씨가 묻힌다.
+     흰 테두리(halo)를 깔아 하늘 위에서도, 흙 위에서도 또렷하게 보이게 한다. */
+  const AXIS = INK, HALO = 'rgba(255,253,247,.96)';
+  const axisPath = () => {
+    b.beginPath();
+    b.moveTo(ORIGIN_X - 26, GROUND_Y + .5); b.lineTo(W - 6, GROUND_Y + .5);   // x축
+    b.moveTo(ORIGIN_X + .5, GROUND_Y + 26); b.lineTo(ORIGIN_X + .5, 8);       // y축
+  };
+  b.lineCap = 'round';
+  axisPath(); b.strokeStyle = HALO; b.lineWidth = 6;   b.stroke();   // 흰 테두리
+  axisPath(); b.strokeStyle = AXIS; b.lineWidth = 2.6; b.stroke();   // 본선
+
+  const arrow = (x,y,dx,dy) => {                    // 축 화살표
+    const tri = () => {
+      b.beginPath();
+      b.moveTo(x,y);
+      b.lineTo(x - dx*10 - dy*5.5, y - dy*10 - dx*5.5);
+      b.lineTo(x - dx*10 + dy*5.5, y - dy*10 + dx*5.5);
+      b.closePath();
+    };
+    tri(); b.strokeStyle = HALO; b.lineWidth = 4; b.lineJoin = 'round'; b.stroke();
+    tri(); b.fillStyle = AXIS; b.fill();
+  };
+  arrow(W - 4, GROUND_Y + .5, 1, 0);
+  arrow(ORIGIN_X + .5, 5, 0, -1);
+
+  // 눈금 + 숫자 (흰 테두리를 두른 뒤 채워 어떤 배경에서도 읽히게)
+  const tickNum = (txt, x, y) => {
+    b.strokeStyle = HALO; b.lineWidth = 3.5; b.lineJoin = 'round';
+    b.strokeText(txt, x, y);
+    b.fillStyle = AXIS; b.fillText(txt, x, y);
+  };
+  const tickMark = (x1,y1,x2,y2) => {
+    b.beginPath(); b.moveTo(x1,y1); b.lineTo(x2,y2);
+    b.strokeStyle = HALO; b.lineWidth = 3.6; b.stroke();
+    b.strokeStyle = AXIS; b.lineWidth = 1.6; b.stroke();
+  };
+  b.font = 'bold 14px "Cambria Math","Latin Modern Math","Times New Roman",Georgia,serif';
+  b.textAlign = 'center'; b.textBaseline = 'top';
+  for (let m = 0.5; m <= FIELD_W; m += 0.5){        // x축은 1/2 칸마다 눈금
+    const x = Math.round(toPx(m)) + .5;
+    if (x > W - 14) break;
+    const half = !Number.isInteger(m);
+    const major = !half && m % 2 === 0;
+    const len = half ? 3 : (major ? 6 : 4);
+    tickMark(x, GROUND_Y - len, x, GROUND_Y + len);
+    if (major) tickNum(String(m), x, GROUND_Y + 9);
+  }
+  b.textAlign = 'right'; b.textBaseline = 'middle';
+  for (let m = 1; m <= FIELD_H - 0.4; m += 1){
+    const y = Math.round(toPy(m)) + .5;
+    const major = m % 2 === 0;
+    const len = major ? 6 : 4;
+    tickMark(ORIGIN_X - len, y, ORIGIN_X + len, y);
+    if (major) tickNum(String(m), ORIGIN_X - 10, y);
+  }
+  // 축 이름 — 변수는 이탤릭 세리프(수식체), 단위는 보통체. 역시 흰 테두리로 또렷하게
+  const axisName = (txt, x, y, font, align, base) => {
+    b.font = font; b.textAlign = align; b.textBaseline = base;
+    b.strokeStyle = HALO; b.lineWidth = 4; b.lineJoin = 'round';
+    b.strokeText(txt, x, y);
+    b.fillStyle = AXIS; b.fillText(txt, x, y);
+  };
+  const MI = 'italic 18px "Cambria Math","Times New Roman",Georgia,serif';
+  const MU = '12px "Malgun Gothic",sans-serif';
+  axisName('x', W - 34, GROUND_Y - 8, MI, 'right', 'bottom');
+  axisName('(m)', W - 32, GROUND_Y - 8, MU, 'left', 'bottom');
+  axisName('y', ORIGIN_X + 9, 6, MI, 'left', 'top');
+  axisName('(m)', ORIGIN_X + 22, 10, MU, 'left', 'top');
+}
+drawBackground();
+
+/* =========================================================
+   6-B. 배경음악 — 켜기/끄기, 페이드, 자동재생 차단 대응
+   ========================================================= */
+const BGM_VOL  = 0.32;   // 수업 중 설명을 덮지 않을 정도
+const BGM_FADE = 700;    // 페이드 인/아웃 (ms)
+const BGM_KEY  = 'qag-music';
+
+const music = {
+  on:    true,    // 사용자가 원하는 상태 (실제 재생 여부와 별개)
+  ready: true,    // 파일 로드 성공 여부
+  timer: 0,       // 페이드 타이머
+};
+
+/* file:// 에서는 localStorage 접근이 막힐 수 있다 → 실패해도 게임은 진행 */
+function musicPrefGet(){ try { return localStorage.getItem(BGM_KEY); } catch (e) { return null; } }
+function musicPrefSet(v){ try { localStorage.setItem(BGM_KEY, v); } catch (e) {} }
+
+function paintMusicBtn(){
+  const b = el.music;
+  if (!b) return;
+  const on = music.on && music.ready;
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.disabled = !music.ready;
+  b.querySelector('.ico').textContent = on ? '🔊' : '🔇';
+  b.querySelector('.lbl').textContent = !music.ready ? '음악 없음' : (on ? '음악 켜짐' : '음악 꺼짐');
+  b.title = !music.ready ? '배경음악 파일을 찾을 수 없습니다'
+                         : (on ? '배경음악 끄기 (M)' : '배경음악 켜기 (M)');
+}
+
+/* 볼륨을 target 까지 서서히 옮긴다 — 뚝 끊기는 소리 방지 */
+function fadeVolume(target, done){
+  const a = el.bgm;
+  if (!a) return;
+  clearInterval(music.timer);
+  const from = a.volume, t0 = performance.now();
+  music.timer = setInterval(() => {
+    const k = Math.min(1, (performance.now() - t0) / BGM_FADE);
+    a.volume = clampNum(from + (target - from) * k, 0, 1);
+    if (k >= 1){ clearInterval(music.timer); music.timer = 0; if (done) done(); }
+  }, 40);
+}
+
+function setMusic(on){
+  const a = el.bgm;
+  if (!a || !music.ready) return;
+  music.on = on;
+  musicPrefSet(on ? '1' : '0');
+  if (on){
+    if (a.paused){ a.volume = 0; const pr = a.play(); if (pr && pr.catch) pr.catch(() => {}); }
+    fadeVolume(BGM_VOL);
+  } else {
+    fadeVolume(0, () => { if (!music.on) a.pause(); });   // 페이드 도중 다시 켜면 유지
+  }
+  paintMusicBtn();
+}
+
+if (el.bgm){
+  el.bgm.volume = 0;
+  if (musicPrefGet() === '0') music.on = false;     // 지난번에 꺼 뒀다면 존중
+
+  el.bgm.addEventListener('error', () => {          // 파일 없음/코덱 미지원
+    music.ready = false;
+    paintMusicBtn();
+  });
+
+  /* 브라우저는 사용자 조작 전에는 소리를 막는다.
+     → 첫 클릭·터치·키 입력 때 다시 시도하고, 재생이 시작되면 감시를 뗀다. */
+  const kickstart = () => { if (music.on && music.ready && el.bgm.paused) setMusic(true); };
+  const dropKick = () => {
+    window.removeEventListener('pointerdown', kickstart, true);
+    window.removeEventListener('keydown', kickstart, true);
+  };
+  window.addEventListener('pointerdown', kickstart, true);
+  window.addEventListener('keydown', kickstart, true);
+  el.bgm.addEventListener('playing', dropKick);
+
+  /* 다른 탭으로 넘어가면 멈추고 돌아오면 잇는다 (사용자 설정은 그대로) */
+  document.addEventListener('visibilitychange', () => {
+    if (!music.ready || !music.on) return;
+    if (document.hidden) el.bgm.pause();
+    else { const pr = el.bgm.play(); if (pr && pr.catch) pr.catch(() => {}); }
+  });
+
+  el.music.addEventListener('click', () => {
+    setMusic(!music.on);
+    canvas.focus({ preventScroll:true });      // 곧바로 M 키를 다시 쓸 수 있게
+  });
+  paintMusicBtn();
+}
+
+/* =========================================================
+   7. 파티클
+   ========================================================= */
+function burst(xm, ym, colors, count){
+  const list = [];
+  for (let i=0;i<count;i++){
+    const sp = 1.1 + Math.random()*3.2;
+    const an = Math.random()*Math.PI*2;
+    list.push({
+      x:xm, y:ym, vx:Math.cos(an)*sp, vy:Math.sin(an)*sp*0.9 + 1.1,
+      life:0.5 + Math.random()*0.5, max:1, r:1.5 + Math.random()*2.2,
+      c:colors[(Math.random()*colors.length)|0],
+    });
+  }
+  list.forEach(p => p.max = p.life);
+  state.fx.push(list);
+}
+function updateFx(dt){
+  for (let i = state.fx.length-1; i>=0; i--){
+    const list = state.fx[i];
+    for (let j = list.length-1; j>=0; j--){
+      const p = list[j];
+      p.vy -= 9.8*dt;
+      p.x += p.vx*dt; p.y += p.vy*dt;
+      p.life -= dt;
+      if (p.life <= 0 || p.y < -1) list.splice(j,1);
+    }
+    if (!list.length) state.fx.splice(i,1);
+  }
+}
+function drawFx(){
+  for (const list of state.fx){
+    for (const p of list){
+      ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+      ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(toPx(p.x), toPy(p.y), p.r, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* =========================================================
+   8. 스테이지 / 초기화
+   ========================================================= */
+function loadStage(index){
+  const spec = STAGE_SPECS[index];
+  const d = DIFFS[state.diff] || DIFFS.easy;
+  state.launchX = randInt(d.lx[0], d.lx[1]);        // 난이도에 따라 대포가 옮겨 다닌다
+  const lay = makeLayout(index, state.launchX);     // 목표·벽 위치를 매번 새로 뽑는다
+  state.stageData = {
+    name:spec.name, hint:spec.hint,
+    targets:lay.targets.map(t => ({ x:t.x, y:t.y, r:t.r, hit:false })),
+    obstacles:lay.obstacles.map(o => ({ x:o.x, y:o.y, w:o.w, h:o.h })),
+  };
+  state.tries = TRIES;
+  state.flying = false; state.charging = false; state.shot = null;
+  state.power = 0; state.lastPower = 0.5; state.trail = []; state.pastTrails = [];
+  state.eq = null; state.eqSource = '';
+  state.stageClear = false; state.gameOver = false;
+  state.fx.length = 0; state.solutionMarks = [];
+  state.guideView.ready = false;
+  closeQuizPanel();
+  updateHud(); updatePanel();
+  setStatus('마우스로 각도를 맞추고, <b>누른 채</b> 강도를 조절한 뒤 <b>떼면 발사</b>됩니다.','');
+}
+/** 새 게임. diff 를 주면 난이도를 바꾸고, seed 를 주면 그 판을 그대로 재현한다
+    (대결에서 두 사람에게 같은 배치를 주려면 같은 시드를 넘기면 된다). */
+function resetGame(diff, seed){
+  if (diff && DIFFS[diff]) state.diff = diff;
+  state.seed = (seed === undefined || seed === null) ? newSeed() : (seed >>> 0);
+  setSeed(state.seed);
+  lastLayoutKey = [];
+  state.score = 0; state.stageIndex = 0; state.angle = 45; state.allClear = false;
+  state.panelEq = null;
+  loadStage(0);
+}
+function nextStage(){
+  if (!state.stageClear || state.stageIndex >= STAGE_COUNT - 1) return;
+  state.stageIndex++;
+  loadStage(state.stageIndex);
+}
+
+/* =========================================================
+   9. 조작
+   ========================================================= */
+function canFire(){
+  return !state.flying && !state.stageClear && !state.gameOver && !quiz.open;
+}
+function aimAt(cx, cy){
+  const dx = cx - toPx(state.launchX), dy = toPy(LAUNCH_H) - cy;
+  if (dx === 0 && dy === 0) return;
+  // 각도도 눈금(깔끔한 포물선이 존재하는 값)으로 스냅 → 포신·HUD·가이드가 항상 일치
+  state.angle = snapAngle(clamp(deg(Math.atan2(dy, dx)), MIN_ANGLE, MAX_ANGLE));
+}
+function beginCharge(){
+  if (!canFire() || state.charging) return;
+  state.charging = true;
+  state.chargeStart = performance.now();
+  state.power = 0;
+}
+function releaseCharge(){
+  if (!state.charging) return;
+  state.charging = false;
+  if (state.flying) return;
+  fire(state.power);
+}
+function cancelCharge(){ state.charging = false; state.power = 0; }
+
+function fire(power){
+  const p = clamp(power, 0, 1);
+  // 화면에 그려지고 있던 바로 그 곡선을 쏜다.
+  // (가이드가 부드럽게 수렴하는 중이면 목표값이 아니라 "보이는 값" 기준 —
+  //  보이는 대로 날아가야 조준이 정직하다)
+  const g = state.guideView;
+  const snapped = g.ready ? nearestClean(g.angle, g.v) : snapShot(state.angle, p);
+  const v0 = snapped.v;
+  state.angle = snapped.angle;
+  const th = rad(state.angle);
+  const x0 = state.launchX;
+  const eq = analyticEquation(v0, state.angle, x0);
+  if (!eq){ cancelCharge(); return; }
+  Object.assign(eq, shiftEq(snapped.a, snapped.b, x0));   // 표시·출제는 딱 떨어지는 값으로
+  eq.p = x0 + snapped.p; eq.q = snapped.q;                // 부동소수 오차 없이 정확히
+  eq.x0 = x0;                                             // 문제 출제에 쓰이는 '아는 한쪽 근'
+  state.snapped = snapped;
+
+  if (state.trail.length > 1){
+    state.pastTrails.push(state.trail);
+    while (state.pastTrails.length > MAX_TRAIL) state.pastTrails.shift();
+  }
+  state.shot = { t:0, x:x0, y:LAUNCH_H, x0, vx:v0*Math.cos(th), vy:v0*Math.sin(th), v0, angle:state.angle };
+  state.trail = [{ x:x0, y:LAUNCH_H }];
+  state.solutionMarks = [];
+  state.flying = true;
+  state.power = p;
+  state.lastPower = p;          // 다음 조준 미리보기의 기준
+  state.eq = eq;
+  state.eqSource = 'theory';
+  updatePanel();
+  setStatus('비행 중 · 강도 ' + Math.round(p*100) + '% · v₀ = ' + fmt(v0) + ' m/s','charge');
+}
+
+function localPos(e){
+  const r = canvas.getBoundingClientRect();
+  if (!r.width || !r.height) return null;
+  return { x:(e.clientX - r.left) * (W / r.width), y:(e.clientY - r.top) * (H / r.height) };
+}
+canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  canvas.focus({ preventScroll:true });
+  const p = localPos(e);
+  if (p){ state.pointerX = p.x; state.pointerY = p.y; if (canFire()) aimAt(p.x, p.y); }
+  try { canvas.setPointerCapture(e.pointerId); } catch (_){}
+  beginCharge();
+});
+canvas.addEventListener('pointermove', e => {
+  const p = localPos(e);
+  if (!p) return;
+  state.pointerX = p.x; state.pointerY = p.y;
+  if (canFire()) aimAt(p.x, p.y);
+});
+canvas.addEventListener('pointerup', e => {
+  e.preventDefault();
+  try { canvas.releasePointerCapture(e.pointerId); } catch (_){}
+  releaseCharge();
+});
+canvas.addEventListener('pointercancel', cancelCharge);
+window.addEventListener('pointerup', releaseCharge);
+window.addEventListener('blur', releaseCharge);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+window.addEventListener('keydown', e => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'BUTTON') return;
+  if (e.code === 'ArrowUp' || e.code === 'ArrowDown'){
+    e.preventDefault();
+    state.angle = stepAngle(e.code === 'ArrowUp' ? 1 : -1);   // 각도 눈금 한 칸씩
+  } else if (e.code === 'Space'){
+    e.preventDefault();
+    if (!e.repeat) beginCharge();
+  } else if (e.code === 'KeyM' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey){
+    setMusic(!music.on);                                    // M = 배경음악 토글
+  }
+});
+window.addEventListener('keyup', e => { if (e.code === 'Space'){ e.preventDefault(); releaseCharge(); } });
+
+el.vertexChk.addEventListener('change', () => { state.showVertex = el.vertexChk.checked; });
+el.reset.addEventListener('click', () => { resetGame(); canvas.focus({ preventScroll:true }); });
+el.next.addEventListener('click', () => { nextStage(); canvas.focus({ preventScroll:true }); });
+el.retry.addEventListener('click', () => {
+  if (quiz.open) return;
+  loadStage(state.stageIndex);
+  canvas.focus({ preventScroll:true });
+});
+
+/* =========================================================
+   10. 물리 & 충돌 (미터 단위, 서브스텝으로 관통 방지)
+   ========================================================= */
+function advance(dt){
+  const s = state.shot;
+  if (!s) return;
+  const SUB = 1/240;
+  let left = dt;
+  while (left > 0 && state.flying){
+    const h = Math.min(SUB, left);
+    left -= h;
+    s.t += h;
+    s.x = s.x0 + s.vx * s.t;
+    s.y = LAUNCH_H + s.vy * s.t - 0.5 * G * s.t * s.t;
+    recordPoint(s.x, s.y);
+    collide(s);
+  }
+}
+function recordPoint(x, y){
+  const last = state.trail[state.trail.length-1];
+  if (!last || Math.hypot(x-last.x, y-last.y) >= 0.06) state.trail.push({ x, y });
+}
+function collide(s){
+  const st = state.stageData;
+  for (const t of st.targets){
+    if (t.hit) continue;
+    if (Math.hypot(s.x - t.x, s.y - t.y) <= t.r + BALL_R){ onHit(t); return; }
+  }
+  for (const o of st.obstacles){
+    const nx = clamp(s.x, o.x, o.x + o.w);
+    const ny = clamp(s.y, o.y, o.y + o.h);
+    const dx = s.x - nx, dy = s.y - ny;
+    if (dx*dx + dy*dy <= BALL_R*BALL_R){
+      onMiss('벽에 막혔습니다', 'wall', { wallX:o.x, wallH:o.y + o.h });
+      return;
+    }
+  }
+  // 착탄 판정을 y = 0 으로 두어 화면 착탄점과 방정식의 근이 정확히 일치한다
+  if (s.y <= 0){ s.y = 0; recordPoint(s.x, 0); onMiss('지면에 떨어졌습니다', 'ground', {}); return; }
+  if (s.x > FIELD_W + 0.4){ onMiss('사거리를 벗어났습니다', 'out', {}); return; }
+}
+function endFlight(){
+  state.flying = false;
+  const fit = fitQuadratic(state.trail);
+  if (fit){
+    state.eq = Object.assign(fit, { v0:state.shot.v0, angle:state.shot.angle });
+    state.eqSource = 'fit';
+    // 역산 결과의 부동소수 오차(≈1e-13)를 걷어내고 스냅된 정확한 값으로 맞춘다.
+    // 화면 분석과 문제에 같은 수가 나오도록 하기 위함.
+    if (state.snapped){
+      const s = state.snapped;
+      Object.assign(state.eq, shiftEq(s.a, s.b, state.launchX));
+      state.eq.p = state.launchX + s.p; state.eq.q = s.q;
+      state.eq.x0 = state.launchX;
+    }
+  }
+  state.panelEq = state.eq;        // 다음 단계로 넘어가도 '직전 발사 분석'은 남는다
+  updatePanel();
+}
+function onHit(target){
+  target.hit = true;
+  state.score += 100;
+  endFlight();
+  burst(target.x, target.y, ['#ffd765','#ffad70','#fffdf7','#f05f50','#83d8e8'], 26);
+  const left = state.stageData.targets.filter(t => !t.hit).length;
+  setStatus('🎯 명중! +100점 · 오른쪽 문제를 풀어 추가 점수를 얻으세요.','hit');
+  updateHud();
+  openQuiz('hit', { targetX:target.x, targetY:target.y }, () => {
+    if (left === 0){
+      state.score += 50;
+      state.stageClear = true;
+      if (state.stageIndex >= STAGE_COUNT - 1){
+        state.allClear = true;
+        setStatus('🎉 모든 단계를 클리어했습니다! 총점 <b>' + state.score + '점</b>','hit');
+      } else {
+        setStatus('🎯 스테이지 클리어! (+50) · <b>[다음 단계]</b>를 누르세요.','hit');
+      }
+    } else {
+      setStatus('🎯 명중! 남은 목표 <b>' + left + '개</b> · 계속 발사하세요.','hit');
+    }
+    updateHud();
+  });
+}
+function onMiss(reason, kind, info){
+  endFlight();
+  const s = state.shot;
+  burst(s.x, clamp(s.y, 0, FIELD_H), ['#f05f50','#6f675c','#fffdf7','#ffd765'], 18);
+  state.tries--;
+  if (state.tries > 0){
+    setStatus('💥 ' + reason + ' · 남은 기회 <b>' + state.tries + '</b>회','miss');
+    updateHud();
+    return;
+  }
+  state.tries = 0;
+  state.gameOver = true;
+  setStatus('💥 ' + reason + ' · 기회 소진 · 오른쪽 문제를 풀고 재도전하세요.','miss');
+  updateHud();
+  openQuiz(kind || 'ground', info || {}, () => {
+    /* 기회를 모두 쓴 뒤 복습 문제까지 마쳤다면 학습 목표를 달성한 것으로 본다.
+       예전에는 gameOver 만 남아 현재 단계 재도전으로 되돌아가 다음 단계에 갈 수 없었다. */
+    state.gameOver = false;
+    state.stageClear = true;
+    if (state.stageIndex >= STAGE_COUNT - 1){
+      state.allClear = true;
+      setStatus('🎉 모든 단계를 완료했습니다! 총점 <b>' + state.score + '점</b>','hit');
+    } else {
+      setStatus('📘 복습 문제 완료 · 다음 단계로 이동합니다.','hit');
+    }
+    updateHud();
+  });
+}
+
+/* =========================================================
+   11. UI 갱신
+   ========================================================= */
+function setStatus(html, kind){
+  if (state.statusText === html && state.statusKind === kind) return;
+  state.statusText = html; state.statusKind = kind;
+  el.status.innerHTML = html;
+  el.status.className = 'status' + (kind ? ' ' + kind : '');
+}
+function updateHud(){
+  el.score.textContent = state.score;
+  el.stage.textContent = (state.stageIndex + 1) + ' / ' + STAGE_COUNT;
+  el.tries.textContent = state.tries;
+  el.stageName.textContent = (state.stageIndex + 1) + '단계 · ' + state.stageData.name;
+  const left = state.stageData.targets.filter(t => !t.hit).length;
+  el.stageHint.textContent = state.stageClear ? '✅ 클리어' : '남은 목표 ' + left + '개 · ' + state.stageData.hint;
+  el.next.disabled = !(state.stageClear && state.stageIndex < STAGE_COUNT - 1);
+  el.retry.hidden = !state.gameOver;
+}
+function updatePanel(){
+  const eq = state.panelEq;
+  // 분석은 "직전 발사"에 대한 것. 문제를 푸는 동안에는 idle-view 전체가 숨겨져
+  // 정답(a, 꼭짓점, 근)이 노출되지 않는다.
+  el.analysis.hidden = !eq;
+  if (!eq){
+    el.mAngle.textContent = fmt(state.angle) + '°';
+    return;
+  }
+  el.eqV.innerHTML = '<span class="tag">표준형</span>' + renderMath(
+      `y = ${nfA(eq.a)}\\left(x - ${nfN(eq.p)}\\right)^2 + ${nfN(eq.q)}`,
+      vertexForm(eq.a, eq.p, eq.q));
+  el.eqS.innerHTML = '<span class="tag">일반형</span>' + renderMath(
+      `y = ${nfA(eq.a)}x^2 ${eq.b < 0 ? '-' : '+'} ${nfN(Math.abs(eq.b))}x`,
+      standardForm(eq.a, eq.b, eq.c));
+  el.eqSrc.textContent = state.eqSource === 'fit'
+    ? '실제 비행 궤적 표본 ' + eq.n + '개 좌표를 최소제곱법으로 역산한 결과입니다.'
+    : '발사 조건(v₀, θ)으로 계산한 이론 궤적식입니다.';
+  el.mVertex.innerHTML = renderMath(`\\left(${nfN(eq.p)},\\; ${nfN(eq.q)}\\right)`,
+                                     '(' + fmtN(eq.p) + ', ' + fmtN(eq.q) + ')');
+  el.mAngle.textContent = fmt(eq.angle) + '°';
+  el.mV0.textContent = fmt(eq.v0) + ' m/s';
+  el.mA.textContent = fmtA(eq.a);
+  const x0 = Math.round(state.launchX), other = 2 * eq.p - x0;
+  el.explain.innerHTML =
+    '계수 <b>a = ' + fmtA(eq.a) + ' &lt; 0</b> 이므로 <b>위로 볼록</b>합니다. |a|가 클수록 폭이 좁아집니다.<br>' +
+    (x0 === 0
+      ? '원점을 지나므로 <b>c = 0</b> 이고 <code>y = x(ax + b)</code> 로 인수분해됩니다. '
+      : '발사점 <b>(' + x0 + ', 0)</b> 을 지나므로 <code>y = a(x − ' + x0 + ')(x − ' +
+        fmtN(other) + ')</code> 로 인수분해됩니다. ') +
+    '따라서 근은 <b>x = ' + x0 + '</b>(발사점)과 <b>x = </b>' + mathVal(other) + '(착탄점)입니다.<br>' +
+    '꼭짓점 ' + mathVal(eq.p) + ' , ' + mathVal(eq.q) + ' — ' +
+    '두 근은 <b>축 x = ' + fmtN(eq.p) + ' 에 대해 대칭</b>입니다.';
+}
+
+/* =========================================================
+   12. 수식 조판 (KaTeX → 실패 시 평문)
+   ========================================================= */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+/** 값 하나를 KaTeX 분수식으로 (인라인 HTML 용) */
+function mathVal(v){ return renderMath(nfN(v), fmtN(v)); }
+/** "3/2" 같은 슬래시 표기를 KaTeX 분수로 바꿔 문장에 섞어 쓴다 */
+function mathInline(tex, plain){ return renderMath(tex, plain); }
+
+function renderMath(tex, plain){
+  if (window.katex && typeof window.katex.renderToString === 'function'){
+    try { return window.katex.renderToString(tex, { throwOnError:false, displayMode:false }); }
+    catch (_){ /* 평문으로 강등 */ }
+  }
+  return '<span class="plainmath">' + escapeHtml(plain != null ? plain : tex) + '</span>';
+}
+
+/* 캔버스 위 수식 스티커는 DOM 으로 겹쳐 KaTeX 조판을 그대로 사용한다.
+   캔버스가 반응형으로 축소되어도 논리 좌표 (333, 24)에 붙어 있도록 동기화한다. */
+function syncCanvasFormula(){
+  const badge = el.canvasFormula;
+  if (!badge || !canvas.parentElement) return;
+  const cb = canvas.getBoundingClientRect(), wb = canvas.parentElement.getBoundingClientRect();
+  if (!cb.width || !cb.height) return;
+  const sx = cb.width / W, sy = cb.height / H, scale = Math.min(sx, sy);
+  badge.style.left = (cb.left - wb.left + 333 * sx) + 'px';
+  badge.style.top = (cb.top - wb.top + 24 * sy) + 'px';
+  badge.style.height = (36 * sy) + 'px';
+  badge.style.padding = '0 ' + Math.max(6, 9 * scale) + 'px';
+  badge.style.fontSize = Math.max(10, 15 * scale) + 'px';
+  badge.style.borderRadius = Math.max(7, 11 * scale) + 'px';
+  badge.style.transform = 'translateX(-50%) rotate(-1deg)';
+}
+function renderCanvasFormula(){
+  if (!el.canvasFormula) return;
+  el.canvasFormula.innerHTML = renderMath('y = ax^2 + bx + c', 'y = ax² + bx + c');
+  syncCanvasFormula();
+}
+if (document.readyState === 'loading')
+  document.addEventListener('DOMContentLoaded', renderCanvasFormula, { once:true });
+else renderCanvasFormula();
+window.addEventListener('resize', syncCanvasFormula);
+if (typeof ResizeObserver !== 'undefined'){
+  const canvasFormulaObserver = new ResizeObserver(syncCanvasFormula);
+  canvasFormulaObserver.observe(canvas);
+}
+
+/* =========================================================
+   13. 문제 출제 · 채점
+       주어진 정보는 "꼭짓점 (p, q)" 하나로 최소화한다.
+       p, q 를 소수 첫째 자리로 반올림해 출제하므로
+       a = −q/p²,  b = 2q/p,  착탄점 = 2p 가 깔끔하게 떨어진다.
+   ========================================================= */
+/* 5문항 스캐폴딩 — ① 다른 근  ② 표준형  ③ 계수 a
+   ④-1 인수분해형 구성  ④-2 특정 x 에서의 높이. */
+const QUIZ_MAX = [20, 20, 20, 20, 20];    // 합 100점
+const QUIZ_N = QUIZ_MAX.length;
+const QUIZ_STEPS = QUIZ_MAX.map((_, i) => i);
+const QUIZ_LABELS = ['1','2','3','4-1','4-2'];
+
+const quiz = {
+  open:false, kind:'', eq:null, given:null, ctxInfo:null,
+  step:0, stu:{}, raw:{}, mark:{},
+  gradeHtml:Array(QUIZ_N).fill(''), gradeCls:Array(QUIZ_N).fill(''),
+  conceptHtml:Array(QUIZ_N).fill(''), revealed:false,
+  scores:Array(QUIZ_N).fill(0), max:QUIZ_MAX.slice(), onDone:null, committed:false,
+  h:0, ask:'', title:'', head:'',
+};
+
+function scoreOf(student, truth, weight, tolAbs){
+  if (typeof student !== 'number' || !isFinite(student)) return { s:0, err:NaN, tier:'미입력' };
+  if (typeof truth !== 'number' || !isFinite(truth)) return { s:0, err:NaN, tier:'채점 불가' };
+  const scale = Math.max(Math.abs(truth), 0.05);
+  const diff = Math.abs(student - truth);
+  // 분수 정답을 소수로 반올림해 낸 경우도 정답으로 인정 (tolAbs)
+  if (tolAbs != null && diff <= tolAbs) return { s:weight, err:diff/scale, tier:'정확' };
+  const err = diff / scale;
+  if (err <= 0.02) return { s:weight, err, tier:'정확' };
+  if (err <= 0.05) return { s:Math.round(weight*0.8), err, tier:'근접' };
+  if (err <= 0.10) return { s:Math.round(weight*0.5), err, tier:'오차 있음' };
+  if (err <= 0.20) return { s:Math.round(weight*0.25), err, tier:'큰 오차' };
+  return { s:0, err, tier:'오답' };
+}
+/** 소수(−0.4)와 분수(−2/5) 입력을 모두 받는다 */
+function parseNum(v){
+  if (v == null) return NaN;
+  const raw = String(v).trim().replace(/−/g,'-');
+  if (raw === '') return NaN;
+  /* 대분수 "1 1/2" = 1.5.
+     공백을 먼저 지우면 "11/2" = 5.5 가 되어 엉뚱하게 채점되므로 여기서 먼저 걸러낸다. */
+  const mix = raw.match(/^(-?)(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mix){
+    const den = Number(mix[4]);
+    if (!den) return NaN;
+    const val = Number(mix[2]) + Number(mix[3]) / den;
+    return isFinite(val) ? (mix[1] === '-' ? -val : val) : NaN;
+  }
+  const t = raw.replace(/\s/g,'');
+  const m = t.match(/^(-?\d*\.?\d+)\/(-?\d*\.?\d+)$/);   // 분수 입력
+  if (m){
+    const a = Number(m[1]), b = Number(m[2]);
+    return (isFinite(a) && isFinite(b) && b !== 0) ? a/b : NaN;
+  }
+  const n = Number(t);
+  return isFinite(n) ? n : NaN;
+}
+/** 학생에게 요구한 자릿수로 정답도 반올림한다.
+    (그래야 "바르게 계산하고 반올림한" 답이 감점되지 않는다) */
+const DP_A = 2, DP_B = 1, DP_X = 1, DP_D = 2;
+function roundTo(v, d){
+  if (typeof v !== 'number' || !isFinite(v)) return NaN;
+  const m = Math.pow(10, d);
+  return Math.round(v * m) / m;
+}
+
+function buildQuiz(kind, info){
+  const raw = state.eq;
+  if (!raw) return null;
+  // 발사 시 이미 "깔끔한 포물선"으로 스냅되었으므로 반올림 없이 그대로 쓴다.
+  // p 는 0.5 단위, q 는 0.1 단위, a 는 0.01 단위, b 는 0.1 단위로 정확히 떨어진다.
+  // 스냅된 격자(p 는 1/2, q 는 1/4 단위)로 정확히 맞춘다.
+  // 소수 첫째 자리로 반올림하면 2.25 가 2.3 이 되어 분수 표기가 깨진다.
+  const p = Math.round(raw.p * 2) / 2, q = Math.round(raw.q * 4) / 4;
+  const x0 = Math.round(raw.x0 || 0);         // 대포(= 한쪽 근)의 x 좌표
+  const pl = p - x0;                          // 대포에서 꼭짓점까지 (국소 좌표의 p)
+  // 정확한 분수값으로 둔다 (반올림하면 −7/16 이 −0.44 가 된다)
+  const a = -q / (pl * pl), b = -2 * a * p, c = a * x0 * (2*p - x0);
+  if (!(pl > 0) || !isFinite(a) || !isFinite(b) || a >= 0) return null;
+
+  // 학생이 요구 자릿수로 반올림해 풀었을 때도 실근이 두 개 남는 높이만 출제한다
+  const aS = roundTo(a, DP_A), bS = roundTo(-2 * aS * p, DP_B);
+  const heightUsable = hh => {
+    if (!(Math.abs(aS) > 1e-9)) return false;
+    const D = bS*bS + 4*aS*hh;
+    if (!(D > 0.02)) return false;
+    const s = Math.sqrt(D);
+    const r1 = (-bS + s)/(2*aS), r2 = (-bS - s)/(2*aS);
+    return isFinite(r1) && isFinite(r2) && Math.abs(r1 - r2) >= 0.2;
+  };
+
+  const t = { kind, eq:{ a, b, c, p, q, v0:raw.v0, angle:raw.angle },
+              given:{ p, q, x0 }, x0, ctxInfo:info || {} };
+  t.land = 2 * p - x0;               // 지면과 만나는 다른 한 점 (①의 정답)
+  /* ③은 결과와 무관하게 "인수분해형 y = a(x − x₀)(x − L) 에 대입" 으로 통일한다.
+     대입할 x 는 두 근 사이의 정수여야 값이 의미를 갖는다.
+       · 착탄점에 그대로 대입하면 y = 0 (자명)
+       · 착탄점 바깥에 대입하면 −84 처럼 물리적으로 무의미한 값     */
+  t.h = 0;
+  const pickSubX = prefer => {
+    const lo = x0 + 1, hi = Math.max(lo, Math.round(t.land) - 1);
+    if (prefer != null){
+      const P = Math.round(prefer);
+      if (P >= lo && P <= hi) return P;          // 벽·목표물이 구간 안이면 그대로 사용
+    }
+    return clamp(Math.round(x0 + (t.land - x0) / 4), lo, hi);
+  };
+  if (kind === 'hit'){
+    t.title = '🎯 명중! 궤적을 분석해 봅시다';
+    t.head = 'hit';
+    t.subX = pickSubX(info.targetX);
+    t.atTarget = (t.subX === Math.round(info.targetX));
+    t.objX = info.targetX; t.objY = info.targetY; t.objLabel = '목표물';
+  } else if (kind === 'wall'){
+    t.title = '🧱 벽에 막혔습니다 — 왜 그런지 확인해 봅시다';
+    t.head = 'fail';
+    t.subX = pickSubX(info.wallX);
+    t.atWall = (t.subX === Math.round(info.wallX));
+    t.objX = info.wallX; t.objY = info.wallH; t.objLabel = '벽';
+  } else {
+    t.title = kind === 'out' ? '💨 사거리를 벗어났습니다' : '💥 지면에 떨어졌습니다';
+    t.head = 'fail';
+    t.subX = pickSubX(null);
+    const tg0 = state.stageData.targets.find(x => !x.hit) || state.stageData.targets[0];
+    t.objX = tg0 ? tg0.x : null; t.objY = tg0 ? tg0.y : null; t.objLabel = '목표물';
+  }
+  const where = t.atWall ? ' (벽이 있는 곳)' : (t.atTarget ? ' (목표물이 있는 곳)' : '');
+  t.ask = `포탄이 <b>x = ${t.subX}</b>${where} 을 지날 때의 높이 y는?`;
+  return t;
+}
+
+function openQuiz(kind, info, onDone){
+  const q = buildQuiz(kind, info);
+  if (!q){ if (onDone) onDone(0); return; }
+  Object.assign(quiz, q, { open:true, step:0, stu:{}, raw:{}, mark:{},
+                           gradeHtml:Array(QUIZ_N).fill(''), gradeCls:Array(QUIZ_N).fill(''),
+                           conceptHtml:Array(QUIZ_N).fill(''),
+                           revealed:false, scores:Array(QUIZ_N).fill(0),
+                           max:QUIZ_MAX.slice(), onDone:onDone || null, committed:false });
+  el.sTitle.textContent = q.title;
+  el.sHead.className = 'side-head ' + q.head;
+  el.sBadge.textContent = (state.stageIndex + 1) + '단계';
+  el.sMax.textContent = String(quiz.max.reduce((a,b)=>a+b,0));
+  el.sTotal.textContent = '0';
+  el.sClose.disabled = true;
+  // 이 문제를 끝내면 무엇이 이어지는지 버튼에 미리 알려 준다
+  const lastTargetLeft = state.stageData.targets.filter(t => !t.hit).length === 0;
+  const clearsStage = (kind === 'hit' && lastTargetLeft) || state.gameOver;
+  const willAdvance = clearsStage && state.stageIndex < STAGE_COUNT - 1;
+  el.sClose.textContent = willAdvance ? '다음 단계 →'
+                        : (clearsStage ? '완료하기 ✓' : '계속하기');
+  el.sFoot.hidden = false;
+  renderQuizBody();
+  const first = el.quizView.querySelector('input');
+  if (first) setTimeout(() => first.focus(), 30);
+}
+
+function closeQuizPanel(){
+  quiz.open = false;
+  el.sFoot.hidden = true;
+  el.sHead.className = 'side-head idle';
+  el.sTitle.textContent = '📐 문제';
+  el.sBadge.textContent = '';
+  el.quizView.hidden = true;
+  el.quizView.innerHTML = '';
+  el.idleView.hidden = false;       // 분석은 문제가 끝난 뒤에만 보인다
+  el.sBody.scrollTop = 0;
+}
+
+function stuCoef(){
+  const e = quiz.eq;
+  // 미입력이면 학생이 냈어야 할 값(요구 자릿수로 반올림)으로 대체해 풀이 일관성을 유지
+  const a = isFinite(quiz.stu.a) ? quiz.stu.a : e.a;   // 미입력이면 정확한 분수값
+  const b = isFinite(quiz.stu.b) ? quiz.stu.b : roundTo(-2 * a * quiz.given.p, DP_B);
+  const x0 = quiz.x0 || 0;
+  return { a, b, c: a * x0 * (2 * quiz.given.p - x0) };
+}
+function expectedFinal(){
+  const e = quiz.eq;
+  let { a, b } = stuCoef();
+  const h = quiz.h;
+  if (!(Math.abs(a) > 1e-9)){ a = e.a; b = e.b; }
+  const L = isFinite(quiz.stu.L) ? quiz.stu.L : quiz.land;
+  const x = quiz.subX, x0 = quiz.x0 || 0;
+  return { y: a * (x - x0) * (x - L), x, L, x0 };
+  let D = b*b - 4*a*(0 - h);
+  if (quiz.kind === 'wall'){
+    if (!isFinite(D)) D = e.b*e.b - 4*e.a*(0 - h);
+    return { D, pass:D > 0 };
+  }
+  if (!isFinite(D) || D < 0){ a = e.a; b = e.b; D = b*b - 4*a*(0 - h); }
+  const s = Math.sqrt(Math.max(D,0));
+  const r = [(-b + s)/(2*a), (-b - s)/(2*a)].sort((x,y) => x - y);
+  return { D, roots:r };
+}
+
+function renderQuizBody(){
+  const g = quiz.given;
+  let extra = '';
+  if (quiz.objX != null)
+    // 벽 높이도 분수가 될 수 있으므로 꼭짓점과 같이 수식으로 조판한다 (3/2 같은 표기 금지)
+    extra = `${quiz.objLabel}: ` +
+      renderMath(`\\left(${nfN(quiz.objX)},\\; ${nfN(quiz.objY)}\\right)`,
+                 `(${fmtN(quiz.objX)}, ${fmtN(quiz.objY)})`);
+  // 2단계에서 빈칸을 채우게 되므로, 완성된 식이 아니라 꼭짓점 좌표만 제시한다
+  const head =
+    `<div class="given"><div class="gt">주어진 정보</div>` +
+    `<div class="gv">` +
+    renderMath(`\\text{꼭짓점}\\;(p,\\; q) = \\left(${nfN(g.p)},\\; ${nfN(g.q)}\\right)`,
+               `꼭짓점 (p, q) = (${fmtN(g.p)}, ${fmtN(g.q)})`) +
+    `</div>` +
+    `<div class="gx">이 포물선은 <b>${(quiz.x0 || 0) === 0 ? '원점 ' : '발사점 '}` +
+    renderMath(`(${nfN(quiz.x0 || 0)},\\;0)`, `(${fmtN(quiz.x0 || 0)}, 0)`) + `</b>을 지납니다` +
+    `${extra ? '<br>' + extra : ''}</div></div>`;
+  // 한 번에 한 문제만 크게 보여 준다 ('정답 보기' 를 누르면 전체 공개)
+  const body = quiz.revealed ? QUIZ_STEPS.map(stepHtml).join('') : stepHtml(quiz.step);
+  el.quizView.innerHTML = head + progressHtml() + body;
+  el.idleView.hidden = true;        // 풀이 중에는 분석(정답)을 감춘다
+  el.quizView.hidden = false;
+  el.sBody.scrollTop = 0;
+  bindQuiz();
+  const inp = el.quizView.querySelector('input:not([disabled])');
+  if (inp) setTimeout(() => inp.focus(), 30);
+}
+
+/** 1 · 2 · 3 · 4-1 · 4-2 진행 표시 */
+function progressHtml(){
+  const dots = QUIZ_STEPS.map(i => {
+    const done = quiz.stu['_graded'+i];
+    const cur = !quiz.revealed && i === quiz.step;
+    const cls = done ? 'done' : (cur ? 'cur' : '');
+    const label = done ? quiz.scores[i] + '점' : '';
+    return `<span class="pdot ${cls}"><b>${QUIZ_LABELS[i]}</b>${label}</span>`;
+  }).join('<span class="pline"></span>');
+  return `<div class="progress">${dots}</div>`;
+}
+
+function stepHtml(i){
+  const locked = i > quiz.step;
+  const done = quiz.stu['_graded'+i];
+  const g = quiz.given;
+  let qText, fields, inner = '', inputKind = 'fields';
+  const X0 = quiz.x0 || 0;                       // 대포(= 이미 아는 한쪽 근)의 x
+  const launchMath = renderMath(`(${nfN(X0)},0)`, `(${fmtN(X0)}, 0)`);
+  if (i === 0){
+    qText = `이 포물선은 <b>${X0 === 0 ? '원점 ' : '발사점 '}${launchMath}</b>을 지납니다. ` +
+            `지면과 만나는 <b>다른 한 점</b>의 ${renderMath('x','x')}좌표를 구하시오.`;
+    fields = [{ key:'L', v:'x' }];
+  } else if (i === 1){
+    qText = '이차함수의 <b>표준형</b>이 되도록 빈칸을 알맞게 채우시오.';
+    fields = [{ key:'p', blank:true }, { key:'q', blank:true }];
+    inputKind = 'vertex';
+  } else if (i === 2){
+    const aVar = renderMath('a', 'a');
+    qText = `2번에서 완성한 식을 이용하여 계수 ${aVar}의 값을 구하시오. ` +
+            `<span style="color:#5a6480;font-weight:600">(이때 발사대의 좌표는 ${launchMath}이다.)</span>`;
+    fields = [{ key:'a', v:'a' }];
+    // 2번의 제출값과 관계없이 올바른 p, q를 넣은 식을 제시한다.
+    inner = renderMath(
+      `y = a\\left(x - ${nfN(g.p)}\\right)^2 + ${nfN(g.q)}`,
+      `y = a(x − ${fmtN(g.p)})² + ${fmtN(g.q)}`);
+  } else if (i === 3){
+    const L = quiz.land;
+    const av = quiz.eq.a;
+    const aVar = renderMath('a', 'a');
+    const aValue = renderMath(nfA(av), fmtA(av));
+    const endMath = renderMath(`(${nfN(L)},0)`, `(${fmtN(L)}, 0)`);
+    qText = `포탄은 ${launchMath}에서 시작해서 ${endMath}에서 끝납니다. ` +
+            `${aVar} = ${aValue}일 때 식을 완성하시오.`;
+    fields = [{ key:'r1', blank:true }, { key:'r2', blank:true }];
+    inputKind = 'factors';
+  } else {
+    const L = quiz.land;
+    const sx = quiz.subX;
+    const av = quiz.eq.a;
+    const aTex = `\\left(${nfA(av)}\\right)`, aTxt = `(${fmtA(av)})`;
+    const xValue = renderMath(`x = ${nfN(sx)}`, `x = ${fmtN(sx)}`);
+    qText = `4-1에서 완성한 식에서 포탄이 <b>${xValue}</b>일 때 높이 ${renderMath('y','y')}를 구하시오.`;
+    fields = [{ key:'y', v:'y' }];
+    inner = renderMath(
+      `y = ${aTex}(x - ${nfN(X0)})(x - ${nfN(L)})`,
+      `y = ${aTxt}(x − ${fmtN(X0)})(x − ${fmtN(L)})`);
+  }
+  const dis = done ? ' disabled' : '';
+  /* 입력칸은 "분수 상자". "/" 를 누르면 분모 칸이 열리며 세로로 쌓인다.
+     저장은 여전히 "15/4" 한 문자열이라 채점·재렌더가 그대로 돌아간다. */
+  const box = f => {
+    const raw = quiz.raw[f.key] != null ? String(quiz.raw[f.key]).replace(/"/g,'') : '';
+    const si = raw.indexOf('/');
+    const nv = si >= 0 ? raw.slice(0, si).trim() : raw;
+    const dv = si >= 0 ? raw.slice(si + 1).trim() : '';
+    // 정오 표시는 상자에도 붙인다 — 분수 모드에서는 테두리가 상자 쪽으로 옮겨가기 때문
+    return `<span class="fbox${dv ? ' frac' : ''} ${quiz.mark[f.key] || ''}" data-box="${f.key}">` +
+      `<input id="in-${f.key}" data-key="${f.key}" type="text" inputmode="decimal" autocomplete="off"` +
+      ` class="num ${quiz.mark[f.key] || ''}" value="${nv}"${dis}>` +
+      `<input data-den="${f.key}" type="text" inputmode="decimal" autocomplete="off"` +
+      ` class="den" aria-label="분모" value="${dv}"${dis}>` +
+      `</span>`;
+  };
+  // 라벨도 KaTeX 로 조판 (변수 이탤릭·등호 간격이 수식 규칙대로)
+  const field = f =>
+    `<span class="field"><label for="in-${f.key}" class="mlab">` +
+    renderMath(`${f.v || ''} =`, `${f.v || ''} =`) + `</label>` + box(f) +
+    `<button type="button" class="sign" data-sign="${f.key}" aria-label="부호 바꾸기"${dis}>±</button>` +
+    (f.unit ? `<span class="unit">${f.unit}</span>` : '') + '</span>';
+  const blanks = fields.filter(f => f.blank);
+  let inputs;
+  if (inputKind === 'vertex'){
+    inputs = `<div class="blankeq">` +
+      `<span class="mt">` + renderMath('y = a(x -', 'y = a(x −') + `</span>` + box(blanks[0]) +
+      `<span class="mt">` + renderMath(')^2 +', ')² +') + `</span>` + box(blanks[1]) + `</div>` +
+      fields.filter(f => !f.blank).map(field).join('');
+  } else if (inputKind === 'factors'){
+    const av = quiz.eq.a;
+    const aTex = `\\left(${nfA(av)}\\right)`;
+    const aTxt = `(${fmtA(av)})`;
+    inputs = `<div class="blankeq factor-eq">` +
+      `<span class="mt">` + renderMath(`y = ${aTex}(x -`, `y = ${aTxt}(x −`) + `</span>` + box(blanks[0]) +
+      `<span class="mt">` + renderMath(')(x -', ')(x −') + `</span>` + box(blanks[1]) +
+      `<span class="mt">` + renderMath(')', ')') + `</span></div>`;
+  } else {
+    inputs = fields.map(field).join('');
+  }
+  const choices = '';
+  const actions = done
+    ? (i < QUIZ_N - 1 && !quiz.revealed ? `<button type="button" class="choice go" data-next="1">다음 문제 →</button>` : '')
+    : `<button type="button" class="choice submit" data-submit="${i}">채점하기</button>`;
+  // 문제(qbox) 와 답안(abox) 을 분리한 두 영역으로 관리한다
+  return `<div class="step ${locked?'locked':''} ${done?'done':''}" data-i="${i}">
+    <div class="qbox">
+      <div class="sh"><span class="no">${QUIZ_LABELS[i]}</span><span class="q">${qText}</span><span class="pt">${quiz.max[i]}점</span></div>
+      ${inner ? `<div class="formula">${inner}</div>` : ''}
+    </div>
+    <div class="abox">
+      <div class="alabel">답안</div>
+      <div class="inputs">${inputs}</div>
+      ${done ? '' : `<div class="inhint">소수(${renderMath('-0.78', HINT_DEC)})로 쓰거나, <b>/</b>를 눌러 ` +
+                    `분수(${renderMath('-\\frac{7}{9}', HINT_FRAC)})로 쓸 수 있습니다</div>`}
+      ${choices}
+      <div class="grade ${done ? (quiz.gradeCls[i]||'') : ''}"${done?'':' hidden'}>${done ? (quiz.gradeHtml[i] || '') : ''}</div>
+      <div class="actions">${actions}</div>
+      ${done ? (quiz.conceptHtml[i] || '') : ''}
+    </div>
+  </div>`;
+}
+
+function bindQuiz(){
+  el.quizView.querySelectorAll('[data-submit]').forEach(b =>
+    b.addEventListener('click', () => gradeStep(Number(b.dataset.submit))));
+  el.quizView.querySelectorAll('[data-next]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (quiz.step < QUIZ_N - 1 && quiz.stu['_graded'+quiz.step]){ quiz.step++; renderQuizBody(); }
+    }));
+  el.quizView.querySelectorAll('.choice[data-pass]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (b.disabled) return;
+      el.quizView.querySelectorAll('.choice[data-pass]').forEach(o => o.classList.remove('sel'));
+      b.classList.add('sel');
+      quiz.stu.pass = b.dataset.pass === '1';
+    }));
+  el.quizView.querySelectorAll('.sign').forEach(b =>
+    b.addEventListener('click', () => {
+      const inp = el.quizView.querySelector(`input[data-key="${b.dataset.sign}"]`);
+      if (!inp || inp.disabled) return;
+      const t = inp.value.trim().replace(/−/g,'-');
+      inp.value = t.startsWith('-') ? t.slice(1) : (t === '' ? '-' : '-' + t);
+      inp.focus();
+    }));
+  el.quizView.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        const st = inp.closest('.step');
+        if (st) gradeStep(Number(st.dataset.i));
+        return;
+      }
+      fracKeys(e, inp);
+    });
+    inp.addEventListener('input', () => fracSplit(inp));
+  });
+}
+
+/* 분수 상자에서 실제 답으로 읽어 낼 문자열.
+   분모 칸이 열려 있고 값이 있으면 "분자/분모", 아니면 위 칸 그대로. */
+function fieldValue(scope, key){
+  const num = scope.querySelector(`input[data-key="${key}"]`);
+  if (!num) return '';
+  const bx = num.closest('.fbox');
+  const den = bx && bx.querySelector('.den');
+  const dv = den ? den.value.trim() : '';
+  return (bx && bx.classList.contains('frac') && dv) ? `${num.value.trim()}/${dv}` : num.value;
+}
+/** "/" 로 분모 칸 열기 · 빈 분모에서 백스페이스로 닫기 */
+function fracKeys(e, inp){
+  const bx = inp.closest('.fbox');
+  if (!bx) return;
+  const num = bx.querySelector('input[data-key]');
+  const den = bx.querySelector('.den');
+  if (!num || !den || num.disabled) return;
+  if (e.key === '/'){
+    e.preventDefault();
+    bx.classList.add('frac');
+    den.focus(); den.select();
+    return;
+  }
+  // 분모가 빈 상태에서 지우면 다시 한 칸으로 되돌린다
+  if (e.key === 'Backspace' && inp === den && den.value === ''){
+    e.preventDefault();
+    bx.classList.remove('frac');
+    num.focus();
+    const v = num.value; num.value = ''; num.value = v;   // 커서를 끝으로
+  }
+}
+/** 붙여넣기 등으로 "15/4" 가 위 칸에 통째로 들어오면 갈라 준다 */
+function fracSplit(inp){
+  const bx = inp.closest('.fbox');
+  if (!bx || !inp.matches('input[data-key]')) return;
+  const i = inp.value.indexOf('/');
+  if (i < 0) return;
+  const den = bx.querySelector('.den');
+  const tail = inp.value.slice(i + 1).trim();
+  inp.value = inp.value.slice(0, i).trim();
+  bx.classList.add('frac');
+  if (tail) den.value = tail;
+  den.focus();
+}
+
+function conceptFeedback(text){
+  return `<div class="concept-feedback">✓ ${text}</div>`;
+}
+
+function gradeStep(i){
+  if (i !== quiz.step || quiz.stu['_graded'+i]) return;
+  const stepEl = el.quizView.querySelector(`.step[data-i="${i}"]`);
+  if (!stepEl) return;
+  const e = quiz.eq, g = quiz.given;
+  stepEl.querySelectorAll('input[data-key]').forEach(inp => {
+    quiz.raw[inp.dataset.key] = fieldValue(stepEl, inp.dataset.key);
+  });
+  const read = k => parseNum(fieldValue(stepEl, k));
+  let lines = [], total = 0, work = '', concept = '';
+
+  if (i === 0){
+    const L = read('L');
+    quiz.stu.L = L;
+    const truth = quiz.land;
+    const r = scoreOf(L, truth, quiz.max[0]);
+    total = r.s;
+    mark(stepEl, 'L', r.s === quiz.max[0]);
+    lines.push(coefLine('x', L, truth, r, 0, 'L'));
+    const X0 = quiz.x0 || 0;
+    work = renderMath(
+      `x_{\\mathrm{other}} = 2 \\times ${nfN(g.p)} - ${nfN(X0)} = ${nfN(truth)}`,
+      `x(other) = 2 × ${fmtN(g.p)} − ${fmtN(X0)} = ${fmtN(truth)}`);
+    if (r.s === quiz.max[0])
+      concept = conceptFeedback('포물선의 두 근은 대칭축을 기준으로 서로 대칭입니다.');
+  } else if (i === 1){
+    // 표준형 빈칸 — 주어진 (p, q) 를 옮겨 적는 단계
+    const sp = read('p'), sq = read('q');
+    quiz.stu.p = sp; quiz.stu.q = sq;
+    const half = quiz.max[1] / 2;
+    const rp = scoreOf(sp, g.p, half), rq = scoreOf(sq, g.q, half);
+    total = rp.s + rq.s;
+    mark(stepEl, 'p', rp.s === half); mark(stepEl, 'q', rq.s === half);
+    lines.push(coefLine('p', sp, g.p, rp, 1), coefLine('q', sq, g.q, rq, 1));
+    work = renderMath(
+      `y = a\\,(x - ${nfN(g.p)})^2 + ${nfN(g.q)}`,
+      `y = a(x − ${fmtN(g.p)})² + ${fmtN(g.q)}`);
+    if (total === quiz.max[1])
+      concept = conceptFeedback('표준형에서는 꼭짓점 (p, q)의 값을 식에 그대로 옮겨 적습니다.');
+  } else if (i === 2){
+    // 계수 a — 주어진 꼭짓점과 발사대의 좌표를 표준형에 대입한다
+    const a = read('a');
+    quiz.stu.a = a;
+    const X0b = quiz.x0 || 0;
+    const up = g.p;
+    const uq = g.q;
+    const upl = up - X0b;                              // 발사점에서 축까지의 거리
+    const truth = -uq / (upl * upl);
+    const r = scoreOf(a, truth, quiz.max[2], 0.006);   // −1/6 도 −0.17 도 정답
+    total = r.s;
+    mark(stepEl, 'a', r.s === quiz.max[2]);
+    lines.push(coefLineA('a', a, truth, r));
+    // p 가 분수면 (x₀ − p)² 도 분수로 (3/2 → 9/4 처럼 나눗셈이 쉬워진다)
+    const dl = up - X0b;
+    work = X0b === 0
+      ? renderMath(
+          `a = -q \\div p^2 = -${nfN(uq)} \\div ${nfN(dl*dl)} = ${nfA(truth)}`,
+          `a = −q ÷ p² = −${fmtN(uq)} ÷ ${fmtN(dl*dl)} = ${fmtA(truth)}`)
+      : renderMath(
+          `a = -q \\div (${nfN(X0b)} - p)^2 = -${nfN(uq)} \\div ${nfN(dl*dl)} = ${nfA(truth)}`,
+          `a = −q ÷ (${fmtN(X0b)} − p)² = −${fmtN(uq)} ÷ ${fmtN(dl*dl)} = ${fmtA(truth)}`);
+    if (r.s === quiz.max[2])
+      concept = conceptFeedback('발사대의 좌표를 표준형에 대입하면 계수 ' +
+                                renderMath('a', 'a') + '의 값을 구할 수 있습니다.');
+  } else if (i === 3){
+    // 두 x절편을 인수로 바꾸는 단계. 인수의 순서는 달라도 같은 식이다.
+    const r1 = read('r1'), r2 = read('r2');
+    quiz.stu.r1 = r1; quiz.stu.r2 = r2;
+    const X0c = quiz.x0 || 0;
+    const L = quiz.land;
+    const near = (u, v) => isFinite(u) && Math.abs(u - v) < 1e-6;
+    const pair = (near(r1, X0c) && near(r2, L)) || (near(r1, L) && near(r2, X0c));
+    let right1 = false, right2 = false;
+    if (pair){
+      right1 = true; right2 = true; total = quiz.max[3];
+    } else if (near(r1, X0c) || near(r1, L)){
+      right1 = true; total = quiz.max[3] / 2;
+    } else if (near(r2, X0c) || near(r2, L)){
+      right2 = true; total = quiz.max[3] / 2;
+    }
+    mark(stepEl, 'r1', right1); mark(stepEl, 'r2', right2);
+    const submitted = renderMath(
+      `y = \\left(${nfA(quiz.eq.a)}\\right)(x-${isFinite(r1)?nfN(r1):'?'})(x-${isFinite(r2)?nfN(r2):'?'})`,
+      `y = (${fmtA(quiz.eq.a)})(x−${isFinite(r1)?fmtN(r1):'?'})(x−${isFinite(r2)?fmtN(r2):'?'})`);
+    const answer = renderMath(
+      `y = \\left(${nfA(quiz.eq.a)}\\right)(x-${nfN(X0c)})(x-${nfN(L)})`,
+      `y = (${fmtA(quiz.eq.a)})(x−${fmtN(X0c)})(x−${fmtN(L)})`);
+    const tier = pair ? '정확' : (total ? '부분 정답' : '오답');
+    lines.push(`제출 <b>${submitted}</b> / 정답 <b>${answer}</b> <span class="gmeta">[${tier} · ${total}점]</span>`);
+    work = answer;
+    if (pair)
+      concept = conceptFeedback('x절편이 r이면 대응하는 인수는 (x − r)입니다. 두 인수의 순서는 바뀌어도 같습니다.');
+  } else {
+    // 4-1에서 완성한 인수분해형에 x를 대입해 높이를 구한다
+    const co = { a:quiz.eq.a };
+    const L = quiz.land;
+    const x = quiz.subX;
+    const y = read('y');
+    const X0c = quiz.x0 || 0;
+    const want = roundTo(co.a * (x - X0c) * (x - L), DP_X);
+    const r = scoreOf(y, want, quiz.max[4]);
+    total = r.s;
+    mark(stepEl, 'y', r.s === quiz.max[4]);
+    lines.push(coefLine('y', y, want, r, DP_X));
+    work = renderMath(
+      `y = (${nfA(co.a)}) \\times (${x} - ${nfN(X0c)}) \\times (${x} - ${nfN(L)}) = ${nf(want,DP_X)}`,
+      `y = (${fmtA(co.a)}) × (${x} − ${fmtN(X0c)}) × (${x} − ${fmtN(L)}) = ${fmt(want,DP_X)}`);
+    if (r.s === quiz.max[4])
+      concept = conceptFeedback('함숫값은 주어진 x를 완성한 식에 대입해 구합니다.');
+    if (quiz.atWall){
+      const grazed = want >= quiz.objY && want - BALL_R < quiz.objY;   // 모서리에 스침
+      work += `<div class="ln">★ 벽 높이는 <b>${mathVal(quiz.objY)}</b>, 그 자리에서 포탄 높이는 ` +
+              `<b>${fmt(want,DP_X)}</b> — ` +
+              (want < quiz.objY ? '벽보다 <b>낮아서 막혔습니다</b>'
+                                : grazed ? '겨우 넘었지만 포탄이 <b>모서리에 걸렸습니다</b>'
+                                         : '높이는 넘었으나 <b>벽에 닿았습니다</b>') + '.</div>';
+    } else if (quiz.atTarget){
+      work += `<div class="ln">★ 목표물은 <b>(${x}, ${mathVal(quiz.objY)})</b>. 계산한 높이 ` +
+              `<b>${fmt(want,DP_X)}</b> 가 목표와 가까운지 확인해 보세요.</div>`;
+    } else {
+      work += `<div class="ln">★ 화면의 파란 점이 <b>(${x}, ${fmt(want,DP_X)})</b> 입니다. ` +
+              `그린 궤적 위에 놓이는지 확인해 보세요.</div>`;
+    }
+    state.solutionMarks = [{ x, y:want, label:'(' + x + ', ' + fmt(want,DP_X) + ')' }];
+  }
+
+  quiz.scores[i] = total;
+  quiz.stu['_graded'+i] = true;
+  quiz.conceptHtml[i] = concept;
+  const ratio = total / quiz.max[i];
+  quiz.gradeHtml[i] =
+    `<span class="gs">${total} / ${quiz.max[i]}점</span>` +
+    lines.map(l => `<div class="ln">${l}</div>`).join('') +
+    (work ? `<div class="work">${work}</div>` : '');
+  quiz.gradeCls[i] = ratio >= 0.99 ? 'good' : ratio > 0 ? 'part' : 'bad';
+
+  el.sTotal.textContent = String(quiz.scores.reduce((a,b) => a+b, 0));
+  if (QUIZ_STEPS.every(k => quiz.stu['_graded'+k])){
+    el.sClose.disabled = false;
+    // 4-2 채점이 끝난 순간 점수와 스테이지 완료 상태를 확정한다.
+    // 사이드 패널 버튼을 한 번 더 눌러야 상단 [다음 단계]가 켜지던 문제를 막는다.
+    commitQuizResult();
+  }
+  renderQuizBody();          // 채점 결과 + [다음 문제] 버튼을 반영해 다시 그린다
+}
+
+/** 계수 a 전용 — 분수로 표기 */
+/* 채점표에 쓰는 값 표기.
+   분수 격자 위의 값이면 분수로, 아니면 요구 자릿수의 소수로 조판한다.
+   (fmtN 은 격자 밖 값을 소수 첫째 자리로 깎아 버려, 학생이 적은 0.44 를 0.4 로 잘못 보여 준다) */
+function gradeNum(v, dp){
+  if (!isFinite(v)) return '<i>(미입력)</i>';
+  return toFrac(v, COORD_DENS) ? renderMath(nfN(v), fmtN(v))
+                               : renderMath(fmt(v, dp), fmt(v, dp));
+}
+const mathVar = n => renderMath(String(n), String(n));   // x, p, q, a … 이탤릭 변수체
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* 학생이 적은 값은 "적은 그대로" 돌려준다.
+   3.5 를 7/2 로 바꿔 보여 주면 자기가 뭘 냈는지 헷갈린다. */
+function gradeRaw(key, got, dp){
+  const s = String((quiz.raw || {})[key] == null ? '' : quiz.raw[key]).trim();
+  if (!s) return isFinite(got) ? gradeNum(got, dp) : '<i>(미입력)</i>';
+  const t = s.replace(/−/g, '-');
+  const f = t.match(/^(-?)(\d+)\s*\/\s*(\d+)$/);          // 분수로 적었으면 분수 그대로
+  if (f) return renderMath(`${f[1]}\\frac{${f[2]}}{${f[3]}}`, s);
+  if (/^-?\d*\.?\d+$/.test(t)) return renderMath(t, s);
+  return `<i>${esc(s)}</i>`;                              // 숫자가 아니면 적은 그대로 (문자 등)
+}
+
+function gradeTail(r){
+  const pct = isFinite(r.err) ? ' · 오차 ' + fmt(r.err*100) + '%' : '';
+  const color = r.s === 0 ? '#e94560' : (r.tier === '정확' ? '#12946a' : '#c07a10');
+  return `<span class="gmeta" style="color:${color}">[${r.tier}${pct} · ${r.s}점]</span>`;
+}
+function coefLineA(name, got, want, r){
+  return `${mathVar(name)} 제출 <b>${gradeRaw(name, got, DP_A)}</b> ` +
+         `/ 정답 <b>${renderMath(nfA(want), fmtA(want))}</b> ` + gradeTail(r);
+}
+function coefLine(name, got, want, r, dp, rawKey){
+  const d = dp == null ? 2 : dp;
+  return `${mathVar(name)} 제출 <b>${gradeRaw(rawKey || name, got, d)}</b> ` +
+         `/ 정답 <b>${gradeNum(want, d)}</b> ` + gradeTail(r);
+}
+/** 정답/오답 표시는 다시 그려도 유지되도록 상태에 저장한다 */
+function mark(stepEl, key, right){
+  quiz.mark[key] = right ? 'right' : 'wrong';
+}
+/** 판별식 판정 선택지의 선택/정답 표시 클래스 */
+function passCls(v){
+  let c = (quiz.stu.pass === v) ? ' sel' : '';
+  if (quiz.mark._passRight !== undefined)
+    c += (v === quiz.mark._passRight) ? ' right' : (quiz.stu.pass === v ? ' wrong' : '');
+  return c;
+}
+/** 남은 문제를 0점 처리하고 모든 문제의 풀이를 한꺼번에 펼쳐 보여 준다 */
+function revealAll(){
+  for (let i = 0; i < QUIZ_N; i++){
+    if (quiz.stu['_graded'+i]) continue;
+    quiz.step = i;
+    renderQuizBody();
+    gradeStep(i);
+  }
+  quiz.revealed = true;
+  quiz.step = QUIZ_N;
+  el.sClose.disabled = false;
+  renderQuizBody();
+}
+/** 퀴즈 결과는 최종 채점 시 한 번만 게임 상태에 반영한다. */
+function commitQuizResult(){
+  if (quiz.committed) return;
+  quiz.committed = true;
+  const got = quiz.scores.reduce((a,b) => a+b, 0);
+  const cb = quiz.onDone;
+  quiz.onDone = null;
+  state.score += got;
+  if (cb) cb(got);
+  updateHud();
+}
+function closeQuiz(){
+  if (!quiz.open) return;
+  commitQuizResult();
+  closeQuizPanel();
+  /* 문제를 다 풀고 [다음 단계]를 눌렀는데 또 헤더 버튼을 눌러야 하면 번거롭다.
+     스테이지가 끝났으면 여기서 바로 다음 판으로 넘어가 다음 문제가 이어지게 한다. */
+  if (state.stageClear && !state.allClear && state.stageIndex < STAGE_COUNT - 1){
+    nextStage();
+    canvas.focus({ preventScroll:true });
+  }
+}
+el.sSkip.addEventListener('click', revealAll);
+el.sClose.addEventListener('click', closeQuiz);
+
+/* =========================================================
+   14. 렌더링
+   ========================================================= */
+function render(){
+  vertexLabelBox = null;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(bg, 0, 0, W, H);
+
+  drawHud();
+  drawObstacles();
+  drawTargets();
+  drawPastTrails();
+  drawGhostArc();                 // 끊긴 뒤 이어졌을 부분 (실제 궤적보다 먼저 = 아래에)
+  drawTrail();
+  if (state.showVertex && state.eq) drawVertex(state.eq);
+  drawSolutionMarks();
+  drawAimGuide();
+  drawCannon();
+  if (state.flying && state.shot) drawBall(state.shot.x, state.shot.y);
+  drawFx();
+  drawOrigin();
+}
+
+function drawObstacles(){
+  for (const o of state.stageData.obstacles){
+    const x = toPx(o.x), y = toPy(o.y + o.h), w = o.w * PPM, h = o.h * PPM;
+    ctx.save();
+    ctx.fillStyle = '#292633';
+    ctx.fillRect(x + 4, y + 5, w, h);
+    ctx.fillStyle = '#ffad70'; ctx.fillRect(x, y, w, h);
+    // 종이 블록처럼 단순화한 벽돌결
+    ctx.strokeStyle = 'rgba(41,38,51,.42)'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (let yy = y + 9; yy < y + h; yy += 9){ ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); }
+    let row = 0;
+    for (let yy = y; yy < y + h; yy += 9, row++){
+      const off = (row % 2) ? w/2 : 0;
+      ctx.moveTo(x + off, yy); ctx.lineTo(x + off, Math.min(yy + 9, y + h));
+    }
+    ctx.stroke();
+    ctx.strokeStyle = '#292633'; ctx.lineWidth = 2.2; ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = '#ffd765'; ctx.fillRect(x + 2, y + 2, Math.max(0,w - 4), 3);
+    ctx.restore();
+  }
+}
+
+function drawTargets(){
+  for (const t of state.stageData.targets){
+    const x = toPx(t.x), y = toPy(t.y), r = t.r * PPM;
+    ctx.save();
+    if (t.hit){
+      ctx.fillStyle = '#dff3df';ctx.strokeStyle = '#292633';ctx.lineWidth = 2.5;
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle = '#12946a'; ctx.font = 'bold ' + Math.round(r*1.3) + 'px "Malgun Gothic",sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('✔', x, y + 1);
+      ctx.restore(); continue;
+    }
+    ctx.fillStyle = '#292633';
+    ctx.beginPath(); ctx.arc(x + 4, y + 5, r, 0, Math.PI*2); ctx.fill();
+    const rings = ['#f05f50','#fffdf7','#ffd765','#fffdf7'];
+    for (let i = 0; i < rings.length; i++){
+      ctx.beginPath(); ctx.arc(x, y, r * (1 - i*0.235), 0, Math.PI*2);
+      ctx.fillStyle = rings[i]; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(x, y, r*0.14, 0, Math.PI*2);
+    ctx.fillStyle = '#292633'; ctx.fill();
+    ctx.strokeStyle = '#292633'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+    // 지면과 이어주는 지지대
+    if (toPy(t.y - t.r) < GROUND_Y - 2){
+      ctx.strokeStyle = '#292633'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x, y + r); ctx.lineTo(x, GROUND_Y); ctx.stroke();
+      ctx.fillStyle = '#ffd765';ctx.strokeStyle='#292633';ctx.lineWidth=1.8;
+      ctx.beginPath();ctx.moveTo(x-8,GROUND_Y);ctx.lineTo(x+8,GROUND_Y);ctx.lineTo(x,GROUND_Y-10);ctx.closePath();ctx.fill();ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function polyline(pts){
+  ctx.beginPath();
+  ctx.moveTo(toPx(pts[0].x), toPy(pts[0].y));
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(toPx(pts[i].x), toPy(pts[i].y));
+  ctx.stroke();
+}
+function drawPastTrails(){
+  if (!state.pastTrails.length) return;
+  ctx.setLineDash([]); ctx.lineWidth = 1.5;
+  for (let i = 0; i < state.pastTrails.length; i++){
+    const t = state.pastTrails[i];
+    if (t.length < 2) continue;
+    ctx.strokeStyle = 'rgba(22,155,173,' + (0.12 + 0.055*i).toFixed(2) + ')';
+    polyline(t);
+  }
+}
+function drawTrail(){
+  if (state.trail.length < 2) return;
+  ctx.save();
+  ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,253,247,.88)';
+  ctx.setLineDash([]); polyline(state.trail);
+  ctx.setLineDash([7,5]); ctx.lineWidth = 2.5;
+  ctx.strokeStyle = state.flying ? '#f05f50' : 'rgba(240,95,80,.72)';
+  polyline(state.trail);
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+/* 과녁·벽에 막혀 끊긴 궤적의 "원래 그렸을" 나머지 부분.
+   포물선 전체 모양이 보여야 대칭성·다른 근이 눈에 들어온다.
+
+   다만 ①을 풀기 전에 지면까지 다 그리면 그 답(다른 근)이 그대로 보인다.
+   → ①을 채점하기 전에는 착지점 앞에서 끊어 모양만 보여 주고,
+     채점한 뒤에는 지면까지 그려 자기 답을 눈으로 확인하게 한다. */
+function drawGhostArc(){
+  const eq = state.eq;
+  if (!eq || state.flying || !state.trail.length) return;
+  const x0 = state.launchX, x2 = 2 * eq.p - x0;
+  const last = state.trail[state.trail.length - 1];
+  if (!(x2 > last.x + 0.1)) return;                 // 이미 끝까지 날아갔으면 그릴 게 없다
+  const showRoot = !quiz.open || !!quiz.stu['_graded0'];
+  const cut = showRoot ? x2 : x2 - Math.max(1.2, (x2 - x0) * 0.14);
+  const pts = [];
+  for (let x = last.x; x <= cut + 1e-9; x += 0.12){
+    const y = eq.a*x*x + eq.b*x + eq.c;
+    if (y < 0) break;
+    pts.push({ x, y });
+  }
+  if (showRoot) pts.push({ x:x2, y:0 });            // 지면에 닿는 점까지 정확히
+  if (pts.length < 2) return;
+  ctx.save();
+  ctx.setLineDash([3,6]); ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  // 뒤로 갈수록 흐려지게 — 끊긴 부분이 "가정"임을 드러낸다
+  for (let i = 1; i < pts.length; i++){
+    const f = i / (pts.length - 1);
+    ctx.strokeStyle = `rgba(217,111,50,${(0.48 - 0.28*f).toFixed(3)})`;
+    ctx.beginPath();
+    ctx.moveTo(toPx(pts[i-1].x), toPy(pts[i-1].y));
+    ctx.lineTo(toPx(pts[i].x), toPy(pts[i].y));
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+let vertexLabelBox = null;      // 대입 마커 라벨이 겹치지 않도록 기억
+function drawVertex(eq){
+  const rawX = toPx(eq.p), rawY = toPy(eq.q);
+  const x = clamp(rawX, 14, W - 14), y = clamp(rawY, 16, GROUND_Y - 6);
+  const off = (Math.abs(x - rawX) > 0.5) || (Math.abs(y - rawY) > 0.5);
+  ctx.save();
+  ctx.setLineDash([4,4]); ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(18,148,106,.8)';
+  ctx.beginPath();
+  ctx.moveTo(x, y); ctx.lineTo(x, GROUND_Y);
+  ctx.moveTo(x, y); ctx.lineTo(toPx(state.launchX), y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#12946a'; ctx.strokeStyle = '#fffdf7'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+  const label = (off ? '▲ ' : '★ ') + '(' + fmtN(eq.p) + ', ' + fmtN(eq.q) + ')';
+  const parts = richParts(label);
+  const fsz = richSize(parts, 14);       // 분수가 있으면 더 크게
+  const hBox = richHeight(parts, 14);
+  const wBox = measureRich(parts, fsz) + 16;
+  let bx = clamp(x - wBox/2, 4, W - wBox - 4);
+  let by = y - hBox - 8;
+  if (by < 4) by = y + 12;
+  if (bx < HUD.x + HUD.w && bx + wBox > HUD.x && by < HUD.y + HUD.h && by + hBox > HUD.y)
+    by = HUD.y + HUD.h + 6;
+  ctx.fillStyle = '#292633';roundRect(bx+2,by+3,wBox,hBox,8);ctx.fill();
+  ctx.fillStyle = '#dff3df';ctx.strokeStyle = '#292633';ctx.lineWidth = 1.7;
+  roundRect(bx, by, wBox, hBox, 8); ctx.fill(); ctx.stroke();
+  drawRich(parts, bx + 8, by + hBox/2, fsz, '#0b5b41');
+  vertexLabelBox = { x:bx, y:by, w:wBox, h:hBox };
+  ctx.restore();
+}
+
+function drawSolutionMarks(){
+  if (!state.solutionMarks.length) return;
+  ctx.save();
+  for (const m of state.solutionMarks){
+    const rawX = toPx(m.x), y = toPy(m.y);
+    const onScreen = rawX >= -20 && rawX <= W + 20;
+    const cx = clamp(rawX, 12, W - 12);
+    ctx.strokeStyle = '#169bad'; ctx.lineWidth = 2;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(cx, clamp(y, 0, GROUND_Y)); ctx.lineTo(cx, GROUND_Y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#169bad'; ctx.strokeStyle = '#fffdf7'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(cx, clamp(y, 8, GROUND_Y), 5.5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    const label = (onScreen ? '' : '▶ ') + m.label;
+    const mp = richParts(label);
+    const msz = richSize(mp, 13);
+    const w = measureRich(mp, msz) + 14;
+    const hB = richHeight(mp, 13);
+    const my = clamp(y, 8, GROUND_Y);
+    const bx = clamp(cx - w/2, 4, W - w - 4);
+    let by = my - hB - 12;                          // 기본은 점 위쪽
+    if (by < 4) by = my + 12;                       // 위가 좁으면 아래로
+    const overlap = r => bx < r.x + r.w && bx + w > r.x && by < r.y + r.h && by + hB > r.y;
+    if (vertexLabelBox && overlap(vertexLabelBox)){  // 꼭짓점 라벨과 겹치면 위쪽 우선
+      const up = vertexLabelBox.y - hB - 5;
+      by = up >= 4 ? up : vertexLabelBox.y + vertexLabelBox.h + 5;
+    }
+    if (HUD && overlap(HUD)) by = HUD.y + HUD.h + 6;
+    by = clamp(by, 4, H - hB - 4);
+    // x축 눈금 숫자(지면 바로 아래)와 겹치면 지면 위로 올린다
+    const tickZone = { x:0, y:GROUND_Y + 6, w:W, h:22 };
+    if (overlap(tickZone)) by = clamp(GROUND_Y - hB - 6, 4, H - hB - 4);
+    ctx.fillStyle = '#292633';roundRect(bx+2,by+3,w,hB,7);ctx.fill();
+    ctx.fillStyle = '#c7eff5';ctx.strokeStyle = '#292633';ctx.lineWidth = 1.6;
+    roundRect(bx, by, w, hB, 7); ctx.fill(); ctx.stroke();
+    drawRich(mp, bx + 7, by + hB/2, msz, '#20546a');
+  }
+  ctx.restore();
+}
+
+/** 가이드에 쓸 강도 — 충전 중이면 실시간, 조준만 할 때는 직전 발사 강도 */
+function guidePower(){
+  return state.charging ? clamp(state.power, 0, 1) : clamp(state.lastPower, 0, 1);
+}
+/** 임계감쇠 스프링 보간 — 속도가 0에서 시작하므로 전환 첫 프레임에 튀지 않는다.
+    (지수 감쇠는 첫 프레임에 격차의 26%를 한 번에 이동해 '툭' 하고 끊겨 보인다) */
+function smoothDamp(cur, target, st, key, smoothTime, dt){
+  const omega = 2 / smoothTime;
+  const x = omega * dt;
+  const exp = 1 / (1 + x + 0.48*x*x + 0.235*x*x*x);
+  const change = cur - target;
+  const temp = (st[key] + omega * change) * dt;
+  st[key] = (st[key] - omega * temp) * exp;
+  const out = target + (change + temp) * exp;
+  return isFinite(out) ? out : target;
+}
+/** 스냅된 목표 궤적으로 표시값을 부드럽게 수렴시킨다 (곡선이 뚝뚝 끊기지 않게) */
+const GUIDE_SMOOTH = 0.06;               // 수렴 시간(초)
+function updateGuideView(dt){
+  const g = state.guideView;
+  if (!canFire() || state.flying){ g.ready = false; return; }
+  const s = snapShot(state.angle, guidePower());
+  if (!g.ready){                          // 조준을 막 시작한 순간엔 곧바로 맞춘다
+    g.v = s.v; g.angle = s.angle; g.vv = 0; g.av = 0; g.ready = true;
+    return;
+  }
+  const h = clamp(dt, 0, 0.05);
+  g.v     = smoothDamp(g.v,     s.v,     g, 'vv', GUIDE_SMOOTH, h);
+  g.angle = smoothDamp(g.angle, s.angle, g, 'av', GUIDE_SMOOTH, h);
+  if (!isFinite(g.v) || !isFinite(g.angle)){ g.v = s.v; g.angle = s.angle; g.vv = 0; g.av = 0; }
+}
+
+/** 조준 가이드 — 현재 각도·강도로 그려질 <포물선> y = ax² + bx 을 점선으로 미리 보여 준다.
+    · 등시간 간격으로 찍으므로 x 방향으로 균등하게 배치된다.
+    · 충전하지 않을 때는 최소 강도(v = V_MIN)의 곡선이 보이고,
+      충전하면서 게이지가 오르내리면 포물선이 함께 늘었다 줄었다 한다. */
+function drawAimGuide(){
+  if (state.flying || !canFire()) return;
+  const g = state.guideView;
+  const th = rad(g.ready ? g.angle : state.angle);
+  const v  = g.ready ? g.v : snapShot(state.angle, guidePower()).v;
+  const vx = v * Math.cos(th), vy = v * Math.sin(th);
+  if (!(vx > 0) || !isFinite(vy)) return;
+
+  const tEnd = 2 * vy / G;                 // 다시 지면(y = 0)에 닿는 시각
+  const N = 26;
+  ctx.save();
+  for (let i = 1; i <= N; i++){
+    const t = tEnd * i / N;
+    const xm = state.launchX + vx * t, ym = vy * t - 0.5 * G * t * t;
+    if (ym < 0) break;
+    const x = toPx(xm), y = toPy(ym);
+    if (x > W - 5 || y < 5) break;
+    const f = i / N;                       // 뒤로 갈수록 작고 흐리게
+    ctx.globalAlpha = 0.72 - 0.36 * f;
+    ctx.fillStyle = '#169bad';ctx.strokeStyle='#fffdf7';ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.arc(x, y, 3.4 - 1.6 * f, 0, Math.PI*2);
+    ctx.fill();ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+/** 대포 — 원점을 가리지 않도록 작게, 받침은 지면 아래로 */
+function drawCannon(){
+  const gv = state.guideView;
+  const drawAng = (gv.ready && canFire()) ? gv.angle : state.angle;   // 표시용(부드럽게)
+  const bx = toPx(state.launchX), by = toPy(LAUNCH_H), th = rad(drawAng);
+  ctx.save();
+  // 받침(지면 아래) — 민트 카드와 같은 평면 색
+  ctx.fillStyle = '#292633';
+  ctx.beginPath();
+  ctx.moveTo(bx - 16, GROUND_Y + 19); ctx.lineTo(bx + 17, GROUND_Y + 19);
+  ctx.lineTo(bx + 10, GROUND_Y + 3); ctx.lineTo(bx - 9, GROUND_Y + 3);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#83d8e8';ctx.strokeStyle='#292633';ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(bx - 15, GROUND_Y + 15); ctx.lineTo(bx + 15, GROUND_Y + 15);
+  ctx.lineTo(bx + 8, GROUND_Y + 1); ctx.lineTo(bx - 8, GROUND_Y + 1);
+  ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle = '#ffd765';ctx.strokeStyle='#292633';ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(bx - 8, GROUND_Y + 14, 5, 0, Math.PI*2); ctx.fill();ctx.stroke();
+  ctx.beginPath(); ctx.arc(bx + 8, GROUND_Y + 14, 5, 0, Math.PI*2); ctx.fill();ctx.stroke();
+
+  // 각도 호
+  ctx.strokeStyle = 'rgba(41,38,51,.58)'; ctx.lineWidth = 1.5;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.arc(bx, by, 30, -th, 0); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 포신
+  const tx = bx + BARREL_LEN*PPM*Math.cos(th);
+  const ty = by - BARREL_LEN*PPM*Math.sin(th);
+  ctx.strokeStyle = '#292633'; ctx.lineWidth = 14; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(bx + 2, by + 2); ctx.lineTo(tx + 2, ty + 2); ctx.stroke();
+  ctx.strokeStyle = '#f05f50'; ctx.lineWidth = 9;
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.stroke();
+  ctx.strokeStyle = '#ffd765'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx - 6*Math.cos(th), ty + 6*Math.sin(th)); ctx.stroke();
+  ctx.lineCap = 'butt';
+
+  // 회전축(작게 — 원점이 보이도록 링 형태)
+  ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
+  ctx.fillStyle = '#ffd765'; ctx.fill();
+  ctx.strokeStyle = '#292633'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // 각도 라벨(지면 아래, 축 눈금과 겹치지 않게 오른쪽)
+  const txt = 'θ = ' + fmt(state.angle) + '°';
+  ctx.font = 'italic 14px "Cambria Math","Times New Roman",Georgia,serif';
+  const w = ctx.measureText(txt).width + 12;
+  ctx.fillStyle = '#292633';roundRect(bx + 24,GROUND_Y + 28,w,18,5);ctx.fill();
+  ctx.fillStyle = '#fffdf7';ctx.strokeStyle = '#292633';ctx.lineWidth = 1.4;
+  roundRect(bx + 22, GROUND_Y + 26, w, 18, 5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#292633';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, bx + 22 + w/2, GROUND_Y + 35);
+  ctx.restore();
+}
+
+/** 끝점에 삼각형 화살촉을 단 선 */
+function arrowTo(x1, y1, x2, y2, color){
+  const a = Math.atan2(y2 - y1, x2 - x1), HEAD = 8;
+  ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2 - Math.cos(a)*HEAD*0.9, y2 - Math.sin(a)*HEAD*0.9);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - Math.cos(a - 0.4)*HEAD, y2 - Math.sin(a - 0.4)*HEAD);
+  ctx.lineTo(x2 - Math.cos(a + 0.4)*HEAD, y2 - Math.sin(a + 0.4)*HEAD);
+  ctx.closePath(); ctx.fill();
+}
+
+/** 원점 O 와 발사점.
+    원점은 축이 만나는 x = 0 에 그대로 두고(대포와 함께 옮기면 좌표를 잘못 읽는다),
+    대포가 옮겨진 난이도에서는 발사점 (x₀, 0) 을 화살표로 가리켜 준다.
+    1·2번 문제가 "발사점을 지나므로" 로 시작하므로 이 좌표가 잘 보여야 한다. */
+function drawOrigin(){
+  const y = toPy(0);
+  ctx.save();
+
+  // 원점 O — 축 위의 작은 점
+  const ox = toPx(0);
+  ctx.fillStyle = '#fffdf7'; ctx.strokeStyle = '#292633'; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.arc(ox, y, 4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.font = 'bold 13px "Malgun Gothic",sans-serif';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillStyle = '#fffdf7'; ctx.strokeStyle = '#292633'; ctx.lineWidth = 3;
+  ctx.strokeText('O', ox - 7, y + 4); ctx.fillText('O', ox - 7, y + 4);
+
+  if (state.launchX > 0){
+    const AC = '#f05f50';
+    const px = toPx(state.launchX);
+    const parts = richParts('(' + fmtN(state.launchX) + ', 0)');
+    const fsz = richSize(parts, 13);
+    const hBox = richHeight(parts, 13), wBox = measureRich(parts, fsz) + 14;
+    /* 대포 왼쪽 위 하늘에 둔다. 다만 y축 눈금 숫자(x < ORIGIN_X)를 덮으면 안 되고,
+       포신·각도호(지면에서 약 35px)보다 위여야 한다. */
+    const by = clamp(y - 52 - hBox, 4, GROUND_Y - hBox - 40);
+    const bx = clamp(px - 26 - wBox, ORIGIN_X + 4, W - wBox - 4);
+    // 화살표는 배지 아래에서 거의 수직으로 떨어뜨린다 (포신을 가로지르지 않게)
+    const fromX = clamp(px, bx + 10, bx + wBox - 10), fromY = by + hBox;
+    arrowTo(fromX, fromY, px, y - 7, AC);
+    ctx.fillStyle = '#292633';roundRect(bx+2,by+3,wBox,hBox,8);ctx.fill();
+    ctx.fillStyle = '#ffd7be';ctx.strokeStyle = '#292633';ctx.lineWidth = 1.6;
+    roundRect(bx, by, wBox, hBox, 8); ctx.fill(); ctx.stroke();
+    drawRich(parts, bx + 7, by + hBox/2, fsz, '#8e3d35');
+    // 발사점 자체 — 흰 테두리를 두른 점
+    ctx.fillStyle = AC; ctx.strokeStyle = '#fffdf7'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(px, y, 5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawBall(xm, ym){
+  const x = toPx(xm), y = toPy(ym), r = Math.max(BALL_R*PPM, 4);
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,215,101,.42)';
+  ctx.beginPath(); ctx.arc(x, y, r*2.6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#f05f50';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#292633'; ctx.lineWidth = 1.8; ctx.stroke();
+  ctx.fillStyle = '#fffdf7';ctx.beginPath();ctx.arc(x-r*.3,y-r*.3,Math.max(1,r*.22),0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+function drawHud(){
+  const bx = HUD.x, by = HUD.y, bw = HUD.w, bh = HUD.h;
+  ctx.save();
+  ctx.fillStyle = '#292633';roundRect(bx+4,by+5,bw,bh,12);ctx.fill();
+  ctx.fillStyle = '#fffdf7';ctx.strokeStyle = '#292633'; ctx.lineWidth = 2.2;
+  roundRect(bx, by, bw, bh, 12); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = '#292633';
+  ctx.font = 'bold 13px "Malgun Gothic",sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.font = '14px "Malgun Gothic",sans-serif';
+  ctx.fillText('각도 ', bx + 11, by + 16);
+  const aw = ctx.measureText('각도 ').width;
+  ctx.font = 'italic 15px "Cambria Math","Times New Roman",Georgia,serif';
+  ctx.fillText('θ = ' + fmt(state.angle) + '°', bx + 11 + aw, by + 16);
+  ctx.font = '11px "Malgun Gothic",sans-serif';
+  ctx.fillStyle = '#6f675c';
+  ctx.fillText('발사 강도', bx + 11, by + 34);
+
+  const gx = bx + 11, gy = by + 44, gw = bw - 22, gh = 15;
+  ctx.fillStyle = '#f3eee3';
+  ctx.strokeStyle = '#292633'; ctx.lineWidth = 1.5;
+  roundRect(gx, gy, gw, gh, 7); ctx.fill(); ctx.stroke();
+  const ratio = clamp(state.power, 0, 1);
+  if (ratio > 0.005){
+    ctx.save();
+    roundRect(gx, gy, gw, gh, 7); ctx.clip();
+    const grad = ctx.createLinearGradient(gx, 0, gx + gw, 0);
+    grad.addColorStop(0,'#83d8e8'); grad.addColorStop(.55,'#ffd765'); grad.addColorStop(1,'#f05f50');
+    ctx.fillStyle = grad; ctx.fillRect(gx, gy, gw * ratio, gh);
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(41,38,51,.28)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i < 4; i++){ const x = gx + gw*i/4; ctx.moveTo(x, gy+3); ctx.lineTo(x, gy+gh-3); }
+  ctx.stroke();
+  ctx.font = 'bold 11px "Cascadia Mono","Consolas",monospace';
+  ctx.textAlign = 'center'; ctx.fillStyle = '#292633';
+  ctx.fillText(state.charging || state.flying ? Math.round(ratio*100) + '%' : '누르고 있으면 충전',
+               gx + gw/2, gy + gh/2 + 1);
+  ctx.restore();
+}
+
+/* ---- 캔버스용 분수 조판 ----
+   캔버스에는 KaTeX 를 쓸 수 없으므로 "3/2" 를 세로 분수로 직접 그린다. */
+const MATH_FONT = '"Cambria Math","Times New Roman",Georgia,serif';
+/** "★ (3/2, 9/4)" → [{t:'text'},{t:'frac',n,d},…] */
+function richParts(str){
+  const out = [], re = /([-−]?\d+)\/(\d+)/g;
+  let last = 0, m;
+  while ((m = re.exec(str))){
+    if (m.index > last) out.push({ t:'text', s:str.slice(last, m.index) });
+    out.push({ t:'frac', n:m[1], d:m[2] });
+    last = m.index + m[0].length;
+  }
+  if (last < str.length) out.push({ t:'text', s:str.slice(last) });
+  return out;
+}
+/* 분수가 섞인 라벨은 글자가 작아져 잘 안 보이므로,
+   분수가 있으면 기준 글자를 키우고 박스도 그만큼 높인다. */
+const FRAC_SCALE = 0.82;                   // 분자·분모 크기 비율
+const hasFrac = parts => parts.some(p => p.t === 'frac');
+const richSize   = (parts, base) => hasFrac(parts) ? Math.round(base * 1.22) : base;
+const richHeight = (parts, base) => {
+  const s = richSize(parts, base);
+  return hasFrac(parts) ? Math.round(s * 2.35) + 8 : Math.round(s * 1.5) + 8;
+};
+function measureRich(parts, size){
+  let w = 0;
+  for (const p of parts){
+    if (p.t === 'text'){ ctx.font = size + 'px ' + MATH_FONT; w += ctx.measureText(p.s).width; }
+    else {
+      ctx.font = Math.round(size*FRAC_SCALE) + 'px ' + MATH_FONT;
+      w += Math.max(ctx.measureText(p.n).width, ctx.measureText(p.d).width) + 8;
+    }
+  }
+  return w;
+}
+/** x 는 왼쪽, y 는 세로 중심 */
+function drawRich(parts, x, y, size, color){
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  let cx = x;
+  for (const p of parts){
+    if (p.t === 'text'){
+      ctx.font = size + 'px ' + MATH_FONT;
+      ctx.fillText(p.s, cx, y);
+      cx += ctx.measureText(p.s).width;
+    } else {
+      const fs = Math.round(size*FRAC_SCALE);
+      ctx.font = fs + 'px ' + MATH_FONT;
+      const w = Math.max(ctx.measureText(p.n).width, ctx.measureText(p.d).width);
+      ctx.textAlign = 'center';
+      ctx.fillText(p.n, cx + w/2 + 4, y - fs*0.62);      // 분자
+      ctx.fillText(p.d, cx + w/2 + 4, y + fs*0.68);      // 분모
+      ctx.strokeStyle = color; ctx.lineWidth = 1.8;      // 분수선
+      ctx.beginPath();
+      ctx.moveTo(cx + 3, Math.round(y) + .5); ctx.lineTo(cx + w + 5, Math.round(y) + .5);
+      ctx.stroke();
+      ctx.textAlign = 'left';
+      cx += w + 8;
+    }
+  }
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r){
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr, y);
+  ctx.arcTo(x+w, y,   x+w, y+h, rr);
+  ctx.arcTo(x+w, y+h, x,   y+h, rr);
+  ctx.arcTo(x,   y+h, x,   y,   rr);
+  ctx.arcTo(x,   y,   x+w, y,   rr);
+  ctx.closePath();
+}
+
+/* =========================================================
+   15. 메인 루프
+   ========================================================= */
+let last = 0, statusTick = 0;
+function loop(now){
+  if (!last) last = now;
+  let dt = (now - last) / 1000;
+  last = now;
+  if (!isFinite(dt) || dt < 0) dt = 0;
+  dt = Math.min(dt, 0.05);
+
+  if (state.charging && !state.flying){
+    const t = (now - state.chargeStart) / 1000;
+    state.power = (1 - Math.cos(2*Math.PI * t / CHARGE_CYCLE)) / 2;
+    if (!isFinite(state.power)) state.power = 0;
+    if (now - statusTick > 90){
+      statusTick = now;
+      setStatus('충전 중 · 강도 <b>' + Math.round(state.power*100) + '%</b> (떼면 발사) · θ = ' + fmt(state.angle) + '°','charge');
+    }
+  }
+  if (state.flying){
+    advance(dt * FLIGHT_SPEED);
+    if (state.flying && state.shot && now - statusTick > 90){
+      statusTick = now;
+      setStatus('비행 중 · x = <b>' + fmt(state.shot.x) + '</b>, y = <b>' + fmt(Math.max(state.shot.y,0)) + '</b>','charge');
+    }
+  }
+  if (!state.panelEq){
+    const txt = fmt(state.angle) + '°';
+    if (el.mAngle.textContent !== txt) el.mAngle.textContent = txt;
+  }
+  updateGuideView(dt);          // 조준 가이드·포신을 부드럽게 수렴
+  updateFx(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   16. 시작 화면 — 난이도를 고르고 시작한다
+   ========================================================= */
+function startHtml(){
+  const cards = DIFF_ORDER.map((k, i) => {
+    const d = DIFFS[k];
+    return `<button type="button" class="dcard" data-diff="${k}">
+      <span class="dstar">${'★'.repeat(i+1)}<span class="dim">${'★'.repeat(2-i)}</span></span>
+      <span class="dname">${d.name}</span>
+      <span class="dnote">${d.note}</span>
+    </button>`;
+  }).join('');
+  return `<div class="startbox">
+    <h2>🎯 이차함수 포격 게임</h2>
+    <p class="slead">난이도를 고르세요.</p>
+    <div class="dgrid">${cards}</div>
+    <div class="srow">
+      <label for="ui-seed">판 번호(시드)</label>
+      <input id="ui-seed" type="text" inputmode="numeric" autocomplete="off" placeholder="비워 두면 무작위">
+      <span class="shint">같은 번호를 넣으면 <b>똑같은 판</b>이 나옵니다 — 친구와 같은 조건으로 겨룰 때 쓰세요.</span>
+    </div>
+  </div>`;
+}
+function openStart(){
+  el.startView.innerHTML = startHtml();
+  el.startView.querySelectorAll('.dcard').forEach(b => {
+    b.addEventListener('click', () => {
+      const raw = (el.startView.querySelector('#ui-seed') || {}).value;
+      const n = parseInt(String(raw).trim(), 10);
+      closeStart();
+      resetGame(b.dataset.diff, Number.isFinite(n) && n > 0 ? n : undefined);
+      aimAt(state.pointerX, state.pointerY);
+      canvas.focus({ preventScroll:true });
+    });
+  });
+  el.startWrap.hidden = false;
+  const first = el.startView.querySelector('.dcard');
+  if (first) first.focus({ preventScroll:true });
+}
+function closeStart(){ el.startWrap.hidden = true; }
+// 바깥을 눌러 닫으면 직전 설정 그대로 이어서 진행한다
+el.startWrap.addEventListener('click', e => { if (e.target === el.startWrap) closeStart(); });
+el.startBtn.addEventListener('click', () => { if (!quiz.open) openStart(); });
+window.addEventListener('keydown', e => {
+  if (e.code === 'Escape' && !el.startWrap.hidden) closeStart();
+});
+
+resetGame('easy');                 // 팝업 뒤에서 미리 한 판 깔아 둔다
+aimAt(state.pointerX, state.pointerY);
+openStart();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
