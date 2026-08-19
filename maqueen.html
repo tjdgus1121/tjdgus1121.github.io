@@ -659,6 +659,32 @@
         .train-lead strong { color: var(--accent-dark); }
         .train-sub { font-size: 12.5px; color: var(--ink-3); margin: 0 0 12px; line-height: 1.6; }
 
+        .train-learned {
+            margin: 10px 0 2px;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: var(--r-sm);
+            background: #f7f9fa;
+        }
+
+        .tl-title { font-size: 12.5px; font-weight: 700; color: var(--ink-3); }
+
+        .tl-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+
+        .tl-chip {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid #b6ddcb;
+            background: var(--accent-weak);
+            color: var(--accent-dark);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .tl-next { margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+        .tl-next strong { color: var(--ink); }
+
         .train-name-row { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: center; margin: 10px 0 2px; }
         .train-name-row label { font-size: 13px; font-weight: 600; color: var(--ink-3); }
 
@@ -955,6 +981,8 @@
             <div class="train-progress"><div id="trainBar"></div></div>
             <div id="trainMsg" class="train-msg" role="status" aria-live="polite">카메라를 준비하는 중입니다…</div>
 
+            <div class="train-learned" id="trainLearned"></div>
+
             <div id="trainNameRow" class="train-name-row" hidden>
                 <label for="trainName">동작 이름</label>
                 <input type="text" id="trainName" maxlength="40" value="class1">
@@ -1147,6 +1175,35 @@
             }
         });
         
+        // 브라우저가 주는 영어 오류를 학생이 알아볼 수 있는 말로 바꾼다.
+        function describeError(error, kind) {
+            const name = (error && error.name) || '';
+            const android = /Android/.test(navigator.userAgent);
+            if (kind === 'bluetooth') {
+                if (name === 'NotFoundError') {
+                    return '기기를 고르지 않았거나 마이크로비트를 찾지 못했습니다. ' +
+                        '마이크로비트 전원과 블루투스 코드를 확인하고' +
+                        (android ? ', 휴대전화의 블루투스와 위치를 켠 뒤' : '') +
+                        ' 다시 「마이크로비트 연결」을 눌러 주세요.';
+                }
+                if (name === 'SecurityError') return 'https 주소에서만 연결할 수 있습니다. 주소를 확인해 주세요.';
+                if (name === 'NetworkError') return '연결이 끊겼습니다. 마이크로비트를 껐다 켜고 다시 시도해 주세요.';
+                if (name === 'NotSupportedError') return '이 브라우저는 마이크로비트 연결을 지원하지 않습니다. 크롬에서 열어 주세요.';
+                return '연결하지 못했습니다. 마이크로비트를 껐다 켠 뒤 다시 시도해 주세요. (' + (error && error.message) + ')';
+            }
+            if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+                return '카메라 사용이 허용되지 않았습니다. 주소창의 자물쇠(또는 카메라) 아이콘을 눌러 ' +
+                    '카메라를 «허용»으로 바꾼 뒤 다시 시도해 주세요.';
+            }
+            if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+                return '쓸 수 있는 카메라를 찾지 못했습니다. 카메라가 연결돼 있는지 확인해 주세요.';
+            }
+            if (name === 'NotReadableError' || name === 'TrackStartError') {
+                return '다른 프로그램이 카메라를 쓰고 있습니다. 화상회의나 카메라 앱을 닫고 다시 시도해 주세요.';
+            }
+            return '카메라를 켜지 못했습니다. (' + (error && error.message) + ')';
+        }
+
         async function sendToMicrobit(text, logId = 'log1') {
             if (testMode) {
                 log(`모의 전송: ${text}`, false, logId);
@@ -1575,7 +1632,14 @@
                 updateTestButtonState();
                 
             } catch (error) {
-                log('연결 오류: ' + error.message, true, 'log1');
+                const guide = describeError(error, 'bluetooth');
+                log(guide, true, 'log1');
+                const note = document.getElementById('supportNote');
+                if (note && note.hidden) {
+                    note.hidden = false;
+                    note.className = 'warning';
+                    note.textContent = guide;
+                }
             }
         });
         
@@ -1772,7 +1836,7 @@
                     log('✅ 카메라 시작 완료! 학습한 동작을 해 보세요.', false, 'log2');
                     window.requestAnimationFrame(loop);
                 } catch (error) {
-                    log('❌ 카메라 시작 실패: ' + error.message, true, 'log2');
+                    log(describeError(error, 'camera'), true, 'log2');
                     console.error(error);
                 }
                 return;
@@ -2242,6 +2306,47 @@
 
         function setTrainMessage(text) { trainMsg.textContent = text; }
 
+        // class1, class2 … 이미 쓴 이름은 건너뛴다(덮어쓰기 방지)
+        function nextClassName() {
+            let n = trained.length + 1;
+            while (trained.some(cls => cls.name === 'class' + n)) n++;
+            return 'class' + n;
+        }
+
+        // 팝업 안에서 지금까지 무엇을 학습했는지 보여 준다
+        function renderTrainLearned() {
+            const box = document.getElementById('trainLearned');
+            if (!box) return;
+            box.textContent = '';
+
+            const title = document.createElement('div');
+            title.className = 'tl-title';
+            title.textContent = trained.length
+                ? '현재 학습된 모델 ' + trained.length + '개'
+                : '아직 학습한 동작이 없습니다 — 이번이 첫 번째입니다';
+            box.appendChild(title);
+
+            if (trained.length) {
+                const chips = document.createElement('div');
+                chips.className = 'tl-chips';
+                trained.forEach(cls => {
+                    const chip = document.createElement('span');
+                    chip.className = 'tl-chip';
+                    chip.textContent = cls.name;          // 학생이 적은 이름 — 글자 그대로만 넣는다
+                    chips.appendChild(chip);
+                });
+                box.appendChild(chips);
+            }
+
+            const next = document.createElement('div');
+            next.className = 'tl-next';
+            next.append('다음에 저장될 이름 ');
+            const name = document.createElement('strong');
+            name.textContent = nextClassName();
+            next.appendChild(name);
+            box.appendChild(next);
+        }
+
         // 카메라 화면 비율을 지켜 캔버스 안에 넣을 자리를 구한다(휴대전화는 세로로 찍힌다).
         function fitRect(video, W, H) {
             const vw = (video && video.videoWidth) || W;
@@ -2340,7 +2445,7 @@
             const skipped = trainMissed ? ` (놓친 장면 ${trainMissed}회)` : '';
             setTrainMessage(`${trainSamples.length}장을 기억했습니다${skipped}. 이름을 정하고 저장하세요.`);
             trainNameRow.hidden = false;
-            trainNameInput.value = 'class' + (trained.length + 1);
+            trainNameInput.value = nextClassName();
             trainSaveBtn.hidden = false;
             trainStartBtn.hidden = true;
             trainNameInput.focus();
@@ -2359,6 +2464,7 @@
             trainStartBtn.disabled = true;
             trainStartBtn.textContent = '▶ 시작';
             trainCloseBtn.textContent = trained.length ? '닫기 (' + trained.length + '개 저장됨)' : '닫기';
+            renderTrainLearned();
             setTrainMessage('카메라와 인식 파일을 준비하는 중입니다. 처음 한 번은 조금 걸립니다…');
             if (!trainRaf) trainLoop();
             try {
@@ -2367,8 +2473,9 @@
                 trainStartBtn.disabled = false;
                 setTrainMessage('준비됐습니다. 자세를 잡고 「시작」을 누르세요.');
             } catch (error) {
-                setTrainMessage('준비 실패: ' + error.message);
-                log('직접 학습 준비 실패: ' + error.message, true, 'log2');
+                const guide = describeError(error, 'camera');
+                setTrainMessage(guide);
+                log(guide, true, 'log2');
             }
         }
 
@@ -2427,7 +2534,8 @@
             trainStartBtn.disabled = false;
             trainStartBtn.textContent = '▶ 이어서 학습';
             trainCloseBtn.textContent = '닫기 (' + trained.length + '개 저장됨)';
-            setTrainMessage(`'${name}' 을(를) 저장했습니다. 지금까지 ${trained.length}개. ` +
+            renderTrainLearned();
+            setTrainMessage(`'${name}' 을(를) 저장했습니다. ` +
                 '다음 동작을 준비하고 「이어서 학습」을, 다 했으면 「닫기」를 누르세요.');
         });
 
