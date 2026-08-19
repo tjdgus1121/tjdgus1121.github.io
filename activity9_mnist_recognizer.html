@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>손글씨 인식 테스트</title>
+    <title>MNIST 손글씨 숫자 인식 | 인공지능 수학 웹앱</title>
 
     <!-- 🔍 SEO (검색엔진 최적화) -->
     <meta name="description" content="손글씨 숫자를 직접 그려 인공지능 모델이 인식하도록 체험하는 활동입니다. AI가 이미지를 어떻게 학습하고 예측하는지 탐구해 보세요.">
@@ -48,8 +48,9 @@
     <meta name="reply-to" content="tjdgus1121@naver.com">
     <meta name="url" content="https://tjdgus1121.github.io/activity9_mnist_recognizer.html">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.13.0/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
     <link rel="stylesheet" href="nav.css">
+  <script src="backguard.js"></script>
     <script src="nav.js"></script>
     <style>
         /* 전역 스타일 */
@@ -61,7 +62,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            background: #a1c4fd;
             min-height: 100vh;
             padding: 20px;
         }
@@ -89,12 +90,12 @@
         /* BEM 스타일 적용 */
         .mnist-app {
             background: rgba(255, 255, 255, 0.95);
-            -webkit-backdrop-filter: blur(10px);
+            
             /* Safari 지원 */
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
+            
+            border-radius:10px;
             padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
             max-width: 800px;
             width: 100%;
             text-align: center;
@@ -111,21 +112,20 @@
             letter-spacing: 2px;
             font-family:"Do Hyeon";
             font-weight: 400;
-            background: linear-gradient(45deg, #66b5ea, rgb(26, 10, 43), #1b1b1b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: rgba(255, 255, 255, 0);
-            background-clip: text;
+            
+            -webkit-text-fill-color:#232227;
+            
         }
         .mnist-app__title span{
-            -webkit-text-fill-color: white;
+            -webkit-text-fill-color:#232227;
         }
 
         .mnist-app__instructions {
             background: rgba(102, 126, 234, 0.1);
-            border-radius: 15px;
+            border-radius:15px;
             padding: 20px;
             margin-bottom: 30px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #2F5FA8;
             text-align: left;
             /* 지침은 왼쪽 정렬 */
             width: 100%;
@@ -146,7 +146,7 @@
         .mnist-app__status {
             margin: 10px 0;
             padding: 10px;
-            border-radius: 10px;
+            border-radius:10px;
             font-weight: 500;
             width: 100%;
             /* 부모 너비에 맞춤 */
@@ -154,7 +154,7 @@
 
         .mnist-app__status--loading {
             background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+            color: #2F5FA8;
         }
 
         .mnist-app__status--ready {
@@ -167,7 +167,7 @@
             margin: 20px 0;
             padding: 20px;
             background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
+            border-radius:15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 100%;
             /* 부모 너비에 맞춤 */
@@ -186,7 +186,7 @@
             width: 100%;
             height: 20px;
             background: #e0e6ed;
-            border-radius: 10px;
+            border-radius:10px;
             overflow: hidden;
             margin: 10px 0;
             position: relative;
@@ -194,8 +194,8 @@
 
         .mnist-app__progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            border-radius: 10px;
+            background: #2F5FA8;
+            border-radius:10px;
             transition: width 0.3s ease;
             width: 0%;
         }
@@ -204,7 +204,7 @@
             width: 40px;
             height: 40px;
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #2F5FA8;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 10px auto;
@@ -224,7 +224,7 @@
             margin-top: 15px;
             padding: 10px;
             background: rgba(102, 126, 234, 0.05);
-            border-radius: 8px;
+            border-radius:8px;
             text-align: left;
             /* 단계 목록 왼쪽 정렬 */
         }
@@ -232,13 +232,13 @@
         .mnist-app__step {
             margin: 5px 0;
             padding: 5px;
-            border-radius: 5px;
+            border-radius:5px;
             transition: all 0.3s ease;
         }
 
         .mnist-app__step--active {
             background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+            color: #2F5FA8;
             font-weight: 600;
         }
 
@@ -274,11 +274,11 @@
         }
 
         .mnist-app__canvas--drawing {
-            border: 3px solid #667eea;
-            border-radius: 15px;
+            border: 3px solid #2F5FA8;
+            border-radius:15px;
             cursor: crosshair;
             background: white;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
             transition: transform 0.2s ease;
         }
 
@@ -297,7 +297,7 @@
         .mnist-app__button {
             padding: 12px 24px;
             border: none;
-            border-radius: 25px;
+            border-radius:10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -306,23 +306,23 @@
         }
 
         .mnist-app__button--clear {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            background: #C0392B;
             color: white;
         }
 
         .mnist-app__button--clear:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
         }
 
         .mnist-app__button--predict {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2F5FA8;
             color: white;
         }
 
         .mnist-app__button--predict:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
         }
 
         .mnist-app__button--predict:disabled {
@@ -332,8 +332,8 @@
         }
 
         .mnist-app__results {
-            background: linear-gradient(135deg, #f8f9ff, #e6f3ff);
-            border-radius: 15px;
+            background: #f8f9ff;
+            border-radius:15px;
             padding: 25px;
             margin-top: 30px;
             box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -345,7 +345,7 @@
         .mnist-app__prediction-result {
             font-size: 5rem;
             font-weight: 900;
-            color: #667eea;
+            color: #2F5FA8;
             line-height: 1;
             margin-bottom: 4px;
             font-family: 'Do Hyeon', sans-serif;
@@ -377,18 +377,18 @@
         .mnist-app__confidence-bar {
             height: 14px;
             background: #e0e6ed;
-            border-radius: 7px;
+            border-radius:7px;
             overflow: hidden;
         }
         .mnist-app__confidence-fill {
             height: 100%;
-            background: linear-gradient(to right, #667eea, #764ba2);
-            border-radius: 7px;
+            background: #2F5FA8;
+            border-radius:7px;
             width: 0%;
             transition: width 0.6s ease;
         }
         .mnist-app__confidence-fill.highlight {
-            background: linear-gradient(to right, #ff6b6b, #ee5a24);
+            background: #C0392B;
         }
         .mnist-app__confidence-text {
             font-size: 0.78rem;
@@ -399,17 +399,17 @@
         /* 피드백 버튼 (삭제됨 — 참조 방지용 빈 규칙) */
         .mnist-app__feedback-button {
             padding: 8px 15px;
-            background: linear-gradient(45deg, #ffc107, #ff9800);
+            background: #ffc107;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius:5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
             font-size: 1rem;
         }
 
         .mnist-app__feedback-button:hover {
-            background: linear-gradient(45deg, #ffb300, #f57c00);
+            background: #ffb300;
         }
 
         .mnist-app__feedback-button:disabled {
@@ -432,13 +432,13 @@
             left: 50%;
             transform: translateX(-50%);
             padding: 15px 30px;
-            border-radius: 8px;
+            border-radius:8px;
             z-index: 1000;
             transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
             font-size: 16px;
             font-weight: bold;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            color: white;
+            color:#4A4750;
             opacity: 0;
             /* 기본적으로 숨김 */
             visibility: hidden;
@@ -468,8 +468,8 @@
             max-height: 400px;
             overflow-y: auto;
             flex-shrink: 0;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 10px;
+            background-color:#FFFFFF;
+            border-radius:10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             border-top: none;
             border-left: 1px solid #eee;
@@ -502,7 +502,7 @@
         .history-item {
             border: 1px solid #ddd;
             padding: 5px;
-            border-radius: 8px;
+            border-radius:8px;
             background-color: #fff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             display: flex;
@@ -611,42 +611,54 @@
                 /* 아주 작은 화면에서 2개씩 */
             }
         }
-    </style>
+    
+</style>
+  <link rel="stylesheet" href="quiz-theme.css" />
 </head>
 
-<body>
+<body class="theme-mnist">
     <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
         <i class="fas fa-bars"></i>
       </div>
 
     <aside class="sidebar">
         <nav>
+            <div class="nav-sec">시작</div>
             <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
             <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
             <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
             <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
             <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
             <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
             <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
             <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
             <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
             <a href="activity9_mnist_recognizer.html" class="active"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
             <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
             <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
             <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
             <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
             <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
       <a href="activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
         </nav>
     </aside>
     <!-- 메인 레이아웃 컨테이너 추가 -->
     <div class="main-layout-container">
 
         <div class="mnist-app container">
-            <h1 class="mnist-app__title"><span>🔢</span> MNIST 손글씨 인식기</h1>
+            <h1 class="mnist-app__title"><span></span> MNIST 손글씨 인식기</h1>
 
             <div class="mnist-app__instructions">
                 <h3>사용법</h3>
@@ -1242,7 +1254,22 @@
         }
 
         // Canvas 지우기
+        // ── 뒤로가기 되돌리기용 : 획 하나를 긋기 직전의 캔버스를 저장 ──
+        function bgSnapCanvas() {
+            if (!window.BackGuard) return;
+            const url = canvas.toDataURL();          // 대부분 흰 바탕이라 용량이 작다
+            BackGuard.push(function () {
+                const img = new Image();
+                img.onload = function () {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = url;
+            });
+        }
+
         function clearCanvas() {
+            bgSnapCanvas();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             // 예측 결과 및 피드백 영역 숨김
             const resultsDiv = document.getElementById('results');
@@ -1334,6 +1361,7 @@
 
             // 마우스 이벤트
             canvas.addEventListener('mousedown', (e) => {
+                bgSnapCanvas();
                 isDrawing = true;
                 const pos = getTouchPos(e);
                 ctx.beginPath();
@@ -1358,6 +1386,7 @@
             // 터치 이벤트
             canvas.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                bgSnapCanvas();
                 isDrawing = true;
                 const pos = getTouchPos(e);
                 ctx.beginPath();

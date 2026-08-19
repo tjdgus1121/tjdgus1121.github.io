@@ -3,10 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>배경 제거의 원리 — CNN·U-Net 시각화 학습</title>
+<title>CNN·U-Net 배경 제거 원리 | 인공지능 수학 웹앱</title>
+<meta name="description" content="이미지 배경 제거가 만들어지는 과정을 CNN과 U-Net 구조로 시각화하여 특징 추출과 픽셀 분류 원리를 배우는 인공지능 수학 활동입니다.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://tjdgus1121.github.io/activity18_nukki.html">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Gowun+Dodum&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" href="nav.css">
+  <script src="backguard.js"></script>
 <script src="nav.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -293,25 +297,35 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 <aside class="sidebar">
   <nav>
+    <div class="nav-sec">시작</div>
     <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
     <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+    <div class="nav-sec">색과 이미지</div>
     <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
     <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+    <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
     <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
     <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
     <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+    <div class="nav-sec">행렬 연산</div>
     <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
     <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+    <div class="nav-sec">데이터와 인식</div>
     <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+    <a href="activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
     <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
     <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+    <div class="nav-sec">AI 이미지 기술</div>
     <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
     <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
     <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
     <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
     <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의 신경망 변환</span></a>
+    <div class="nav-sec">CNN과 군집화</div>
     <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+    <a href="activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
     <a href="activity18_home.html" class="active"><i class="fa fa-eye"></i><span>CNN 이미지 인식</span></a>
+    <a href="activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
   </nav>
 </aside>
 
@@ -395,7 +409,67 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 </div>
 
 <script type="module">
-import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.4.5';
+// ── 라이브러리 JS 로드 (미러 폴백) ──
+// 기본 esm.sh 가 학교/사내망에서 막히면 jsdelivr 로 자동 전환
+const LIB_MIRRORS = [
+  'https://esm.sh/@imgly/background-removal@1.4.5',
+  'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm',
+];
+let removeBackground = null;
+let _libPromise = null;
+function ensureLib() {
+  if (_libPromise) return _libPromise;
+  _libPromise = (async () => {
+    let lastErr;
+    for (const url of LIB_MIRRORS) {
+      try {
+        const mod = await import(url);
+        removeBackground = mod.removeBackground;
+        return removeBackground;
+      } catch (e) {
+        lastErr = e;
+        console.warn('[nukki] 라이브러리 미러 실패, 다음 시도:', url, e.message);
+      }
+    }
+    throw lastErr || new Error('배경 제거 라이브러리를 불러오지 못했습니다.');
+  })();
+  return _libPromise;
+}
+
+// ── 모델 데이터 소스 (미러 폴백) ──
+// 1순위: staticimgly.com (라이브러리 기본 CDN) — GitHub 대역폭 소모 없음
+// 2순위: unpkg CDN 미러
+// 3순위: 로컬 사본(package/dist) — CDN 전부 막혔을 때만 사용 (차단 불가 최후 보루)
+// path:undefined = 라이브러리 기본값(staticimgly) 사용
+const LOCAL_MODEL_PATH = new URL('package/dist/', location.href).href;
+const MODEL_MIRRORS = [
+  { path: undefined,        label: '기본(staticimgly)' },
+  { path: 'https://unpkg.com/@imgly/background-removal-data@1.4.5/dist/', label: 'unpkg' },
+  { path: LOCAL_MODEL_PATH, label: '로컬(package/dist)' },
+];
+// removeBackground 를 미러 폴백 + 미러별 타임아웃으로 감싼 래퍼
+async function removeBackgroundFB(input, opts, timeoutMs) {
+  await ensureLib();
+  let lastErr;
+  for (let i = 0; i < MODEL_MIRRORS.length; i++) {
+    const { path: pubPath, label } = MODEL_MIRRORS[i];
+    try {
+      const o = Object.assign({}, opts);
+      if (pubPath) o.publicPath = pubPath;
+      const runPromise = removeBackground(input, o);
+      if (!timeoutMs) return await runPromise;
+      const timeoutPromise = new Promise((_, rej) =>
+        setTimeout(() => rej(new Error('시간 초과')), timeoutMs));
+      return await Promise.race([runPromise, timeoutPromise]);
+    } catch (e) {
+      lastErr = e;
+      const more = (i < MODEL_MIRRORS.length - 1) ? ' → 다음 소스 시도' : '';
+      console.warn(`[nukki] 모델 소스 실패 [${label}]: ${e.message}${more}`);
+    }
+  }
+  throw new Error('모든 모델 소스(로컬·staticimgly·unpkg)에서 U-Net 로드에 실패했습니다. — ' +
+    (lastErr ? lastErr.message : '원인 불명'));
+}
 
 // ── 모델 파일 Cache Storage 영구 캐시 ──
 // window.fetch 를 래핑해 CDN 모델·WASM 요청을 Cache API 에 저장
@@ -439,7 +513,7 @@ let preloadFailed = false;
     canvas.width = canvas.height = 1;
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
 
-    await removeBackground(blob, {
+    await removeBackgroundFB(blob, {
       model: 'small',
       progress: (key, cur, total) => {
         if (!statusEl) return;
@@ -450,7 +524,7 @@ let preloadFailed = false;
           statusEl.textContent = '⬇ U-Net 모델 준비 중…';
         }
       }
-    });
+    }, 60000);
 
     preloadDone = true;
     if (statusEl) statusEl.textContent = '✓ U-Net 모델 준비 완료';
@@ -745,28 +819,18 @@ async function startBackgroundNukki() {
   nukkiFailed = false;
   nukkiProgressPct = 0;
   try {
-    // 모델이 이미 사전 로드됐으면 추론만 남으므로 타임아웃을 짧게
+    // 모델이 이미 사전 로드됐으면 추론만 남으므로 타임아웃을 짧게 (미러별로 적용)
     const TIMEOUT_MS = preloadDone ? 30000 : 60000;
-    let progressFired = preloadDone; // 이미 다운로드 완료 → progress 콜백 없어도 timeout 메시지 올바르게
-    const removePromise = removeBackground(origFile, {
+    // removeBackgroundFB: 기본(staticimgly) 실패/시간초과 시 unpkg 미러로 자동 재시도
+    const blob = await removeBackgroundFB(origFile, {
       model: 'small',   // small ~42MB  vs  medium ~84MB (기본값)
       progress: (key, cur, total) => {
-        progressFired = true;
         if (total > 0 && !preloadDone) {
           nukkiProgressPct = Math.min(99, Math.round((cur / total) * 100));
           if (currentStep === 4) updateNukkiLoadingText();
         }
       }
-    });
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => {
-        const reason = progressFired
-          ? '추론 시간 초과 — 이미지가 너무 크거나 CPU가 느릴 수 있습니다.'
-          : '모델 다운로드 시간 초과 (60초) — 네트워크 연결 또는 CDN 접속을 확인하세요.';
-        reject(new Error(reason));
-      }, TIMEOUT_MS)
-    );
-    const blob = await Promise.race([removePromise, timeoutPromise]);
+    }, TIMEOUT_MS);
     nukkiProgressPct = 100;
     if (nukkiBlobUrl) URL.revokeObjectURL(nukkiBlobUrl);
     nukkiBlobUrl = URL.createObjectURL(blob);

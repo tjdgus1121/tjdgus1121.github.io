@@ -8,9 +8,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="stylefooter.css">
     <link rel="stylesheet" href="nav.css">
+  <script src="backguard.js"></script>
     <script src="nav.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg:       #f0f2f7;
@@ -666,13 +667,63 @@
             .game-side { width: 100%; }
             .mode-row { flex-direction: column; max-width: 320px; }
         }
+
+        /* ── 결과 확인 모달 ── */
+        .rmodal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15,23,42,.75);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 8000; opacity: 0; pointer-events: none;
+            transition: opacity .3s;
+        }
+        .rmodal-overlay.open { opacity: 1; pointer-events: all; }
+        .rmodal-box {
+            background: var(--surface); border-radius: 24px;
+            padding: 40px 36px 32px; max-width: 420px; width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(15,23,42,.4);
+            transform: scale(.82) translateY(24px);
+            transition: transform .38s cubic-bezier(.175,.885,.32,1.275);
+        }
+        .rmodal-overlay.open .rmodal-box { transform: scale(1) translateY(0); }
+        .rmodal-crown { font-size: 4rem; line-height: 1; margin-bottom: 8px; }
+        .rmodal-badge {
+            font-family: 'Do Hyeon', sans-serif; font-size: .9rem;
+            color: var(--muted); letter-spacing: .14em;
+            text-transform: uppercase; margin-bottom: 4px;
+        }
+        .rmodal-winner {
+            font-family: 'Do Hyeon', sans-serif; font-size: 2.6rem;
+            color: var(--amber); line-height: 1.15; margin-bottom: 3px;
+        }
+        .rmodal-winner-sub { color: var(--muted); font-size: .88rem; margin-bottom: 22px; }
+        .rmodal-list {
+            border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; margin-bottom: 22px; text-align: left;
+        }
+        .rmodal-list .result-item {
+            margin-bottom: 0; border-radius: 0;
+            border-left: none; border-right: none; border-top: none;
+        }
+        .rmodal-list .result-item:first-child { border-top: none; }
+        .rmodal-list .result-item:last-child { border-bottom: none; }
+        .rmodal-rematch-btn { margin-top: 8px; }
+        @keyframes rmodal-bounce {
+            0%  { transform: scale(1); }
+            30% { transform: scale(1.18); }
+            60% { transform: scale(.95); }
+            100%{ transform: scale(1); }
+        }
+        .rmodal-crown.bounce { animation: rmodal-bounce .55s ease; }
     </style>
 </head>
 
 <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0"><i class="fas fa-bars"></i></div>
 <aside class="sidebar">
     <nav>
+        <div class="nav-sec">시작</div>
         <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+        <div class="nav-sec">행렬 연산</div>
         <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
         <a href="activity7_competition.html" class="active"><i class="fa fa-trophy"></i><span>행렬 경쟁모드</span></a>
     </nav>
@@ -849,6 +900,19 @@
         </div>
     </div>
 
+    <!-- ════ 결과 확인 모달 ════ -->
+    <div id="result-modal" class="rmodal-overlay">
+        <div class="rmodal-box">
+            <div class="rmodal-crown" id="rmodal-crown">🏆</div>
+            <div class="rmodal-badge">1등</div>
+            <div class="rmodal-winner" id="rmodal-winner"></div>
+            <div class="rmodal-winner-sub" id="rmodal-winner-sub"></div>
+            <div class="rmodal-list" id="rmodal-list"></div>
+            <button type="button" class="btn btn-primary btn-full" id="btn-rmodal-close">결과 확인하기</button>
+            <button type="button" class="btn btn-outline btn-full rmodal-rematch-btn hidden-btn" id="btn-rmodal-rematch">⚔️ 같은 멤버로 한판 더</button>
+        </div>
+    </div>
+
     <!-- ════ SCREEN 5: 결과 ════ -->
     <div id="screen-result" class="screen">
         <div class="card result-card">
@@ -863,6 +927,7 @@
             </div>
             <div class="result-actions">
                 <button type="button" class="btn btn-primary" id="btn-play-again">다시 하기</button>
+                <button type="button" class="btn btn-outline hidden-btn" id="btn-rematch">⚔️ 한판 더</button>
                 <button type="button" class="btn btn-outline" id="btn-to-menu">메뉴로</button>
             </div>
         </div>
@@ -875,13 +940,13 @@
 // console.firebase.google.com → 프로젝트 설정 → 앱 추가 → Config
 // ════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
-    apiKey:            "AIzaSyCWaRFzjBK6a6mEHocpB2DBPIa_L_0Eol0",
-    authDomain:        "rgbguess.firebaseapp.com",
-    databaseURL:       "https://rgbguess-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId:         "rgbguess",
-    storageBucket:     "rgbguess.firebasestorage.app",
-    messagingSenderId: "640906203572",
-    appId:             "1:640906203572:web:871cdc8f8f8d7e5e7b5a7e"
+    apiKey:            "AIzaSyBWPFzLMfZYbalIB-84bHio8LOwtP7nvfc",
+    authDomain:        "matrix-rank.firebaseapp.com",
+    databaseURL:       "https://matrix-rank-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "matrix-rank",
+    storageBucket:     "matrix-rank.firebasestorage.app",
+    messagingSenderId: "269153547105",
+    appId:             "1:269153547105:web:28f830862b136b48280b20"
 };
 
 // ════════════════════════════════════════════════
@@ -918,6 +983,10 @@ let score = 0;
 let gameActive = false;
 let skipTimeout = null;
 let dangerTriggered = false;
+// 멀티 타이머 동기화
+let serverTimeOffset = 0;  // server_time = Date.now() + serverTimeOffset
+let gameEndTime = 0;       // 게임 종료 절대 시각 (서버 기준 ms)
+let timesUpSub = null;     // Firebase timesup 리스너
 
 // 멀티 상태
 let roomId   = null;
@@ -1012,19 +1081,35 @@ async function loadRanking(size, sec) {
 // 카운트다운 타이머
 // ════════════════════════════════════════════════
 function startCountdown(totalSec) {
+    // 솔로 모드용 — 단순 감소 방식
     stopCountdown();
     totalMs = totalSec * 1000;
     remainMs = totalMs;
     updateTimerUI();
-    countdownInterval = setInterval(() => {
+    const tick = () => {
         remainMs -= 100;
         if (remainMs <= 0) { remainMs = 0; updateTimerUI(); onTimeUp(); }
-        else updateTimerUI();
-    }, 100);
+        else { updateTimerUI(); countdownInterval = setTimeout(tick, 100); }
+    };
+    countdownInterval = setTimeout(tick, 100);
+}
+
+function startCountdownAbsolute(endTime) {
+    // 멀티 모드용 — 절대 종료시각 기준 (탭 비활성화·시계 차이 무관)
+    stopCountdown();
+    totalMs = currentTimeSec * 1000;
+    gameEndTime = endTime;
+    const tick = () => {
+        remainMs = Math.max(0, gameEndTime - (Date.now() + serverTimeOffset));
+        updateTimerUI();
+        if (remainMs <= 0) { onTimeUp(); }
+        else { countdownInterval = setTimeout(tick, 100); }
+    };
+    tick();
 }
 
 function stopCountdown() {
-    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    if (countdownInterval) { clearTimeout(countdownInterval); countdownInterval = null; }
 }
 
 function updateTimerUI() {
@@ -1054,15 +1139,128 @@ function updateTimerUI() {
 }
 
 function onTimeUp() {
+    if (!gameActive) return; // 중복 호출 방지
     stopCountdown();
     gameActive = false;
     dangerTriggered = false;
+    if (timesUpSub) { timesUpSub(); timesUpSub = null; }
     if (skipTimeout) { clearTimeout(skipTimeout); skipTimeout = null; }
     document.querySelector('#screen-game .game-main')?.classList.remove('danger-bg', 'danger-shake');
     document.getElementById('timer-display').className = 'done';
     document.getElementById('timer-display').textContent = '0';
     document.getElementById('timer-progress').style.width = '0%';
-    showSoloResult();
+
+    if (currentMode === 'multi' && roomRef) {
+        // 내 최종 점수 저장 + 전체에게 timesup 신호 (모두 동시 종료)
+        roomRef.child(`players/${myUid}`).update({ finished: true, score }).catch(() => {});
+        roomRef.update({ status: 'timesup' }).catch(() => {});
+        // 1.5초 후 전체 점수 읽어서 결과 모달 표시
+        setTimeout(async () => {
+            try {
+                const snap = await roomRef.child('players').once('value');
+                const players = snap.val() || {};
+                const entries = Object.entries(players)
+                    .map(([uid, p]) => ({ uid, name: p.name, score: p.score ?? 0 }))
+                    .sort((a, b) => b.score - a.score);
+                openResultModal(entries);
+                if (isHost) roomRef.update({ status: 'finished' }).catch(() => {});
+                prepareMultiEndScreen(players);
+            } catch (e) {
+                showSoloResult();
+            }
+        }, 1500);
+    } else {
+        openResultModal([{ name: myName || '나', score, uid: myUid, isSolo: true }]);
+        prepareSoloResultForModal();
+    }
+}
+
+// ════════════════════════════════════════════════
+// 결과 확인 모달
+// ════════════════════════════════════════════════
+function openResultModal(entries) {
+    const winner = entries[0];
+    document.getElementById('rmodal-winner').textContent = winner ? winner.name : '-';
+    document.getElementById('rmodal-winner-sub').textContent =
+        winner ? `${winner.score}개 정답` + (entries[0]?.isSolo ? ` · ${currentTimeSec}초 도전` : '') : '';
+
+    const listEl = document.getElementById('rmodal-list');
+    listEl.innerHTML = '';
+    if (entries.length > 1) {
+        entries.forEach((p, i) => {
+            const div = document.createElement('div');
+            div.className = 'result-item' + (p.uid === myUid ? ' me' : '');
+            div.innerHTML = `
+                <span class="result-rank">${medals(i)}</span>
+                <span class="result-name">${p.name}</span>
+                <span class="result-time">${p.score}개</span>`;
+            listEl.appendChild(div);
+        });
+        listEl.style.display = '';
+    } else {
+        listEl.style.display = 'none';
+    }
+
+    // 멀티 모드일 때만 "한판 더" 버튼 표시
+    const rematchBtn = document.getElementById('btn-rmodal-rematch');
+    rematchBtn.classList.toggle('hidden-btn', !(currentMode === 'multi' && roomRef));
+
+    const modal = document.getElementById('result-modal');
+    modal.classList.add('open');
+    // 트로피 바운스 애니메이션
+    const crown = document.getElementById('rmodal-crown');
+    crown.classList.remove('bounce');
+    requestAnimationFrame(() => { crown.classList.add('bounce'); });
+}
+
+function prepareSoloResultForModal() {
+    const n = currentSize, sec = currentTimeSec;
+    document.getElementById('result-title').textContent = '시간 종료!';
+    document.getElementById('result-score-big').textContent = score + '개';
+    document.getElementById('result-subtitle').textContent = `${n}×${n} 행렬 · ${sec}초 제한`;
+    document.getElementById('result-list').innerHTML = '';
+    document.getElementById('save-score-msg').textContent =
+        `${score}개 정답 — 랭킹에 기록하려면 닉네임을 입력하세요`;
+    document.getElementById('save-row').classList.remove('hidden');
+    document.getElementById('nickname-save-input').value = '';
+}
+
+function prepareMultiEndScreen(players) {
+    const entries = Object.entries(players)
+        .map(([uid, p]) => ({ uid, ...p }))
+        .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const list = document.getElementById('result-list');
+    list.innerHTML = '';
+    entries.forEach((p, i) => {
+        const div = document.createElement('div');
+        div.className = 'result-item' + (p.uid === myUid ? ' me' : '');
+        div.innerHTML = `
+            <span class="result-rank">${medals(i)}</span>
+            <span class="result-name">${p.name}</span>
+            <span class="result-time">${p.score ?? 0}개</span>`;
+        list.appendChild(div);
+    });
+    const myEntry = entries.find(e => e.uid === myUid);
+    const myRank = myEntry ? entries.indexOf(myEntry) + 1 : null;
+    document.getElementById('result-title').textContent = myRank === 1 ? '🏆 우승!' : '게임 결과';
+    document.getElementById('result-subtitle').textContent =
+        myEntry ? `내 점수: ${myEntry.score ?? 0}개 (${myRank}위)` : '';
+    document.getElementById('save-row').classList.add('hidden');
+    // 멀티 모드 — "한판 더" 버튼 표시, "다시 하기" 숨김
+    document.getElementById('btn-rematch').classList.remove('hidden-btn');
+    document.getElementById('btn-play-again').classList.add('hidden-btn');
+
+    // 방장이 재시작하면 비호스트에게 알림
+    if (!isHost && roomRef) {
+        const _ref = roomRef;
+        const _onRematch = _ref.on('value', snap => {
+            if (!snap.exists()) { _ref.off('value', _onRematch); return; }
+            if (snap.val().status === 'waiting') {
+                _ref.off('value', _onRematch);
+                showToast('방장이 재게임을 준비했습니다! 한판 더 버튼을 눌러 참여하세요', 4000);
+            }
+        });
+    }
 }
 
 // ════════════════════════════════════════════════
@@ -1143,6 +1341,10 @@ function checkAnswers() {
 function onCorrect() {
     score++;
     document.getElementById('score-display').textContent = score;
+    // 멀티 모드: 실시간으로 내 점수를 Firebase에 기록 (다른 참가자가 볼 수 있게)
+    if (currentMode === 'multi' && roomRef) {
+        roomRef.child(`players/${myUid}/score`).set(score).catch(() => {});
+    }
     // 짧은 플래시 후 다음 문제
     document.querySelectorAll('.ans-cell').forEach(i => i.disabled = true);
     setTimeout(() => nextProblem(), 350);
@@ -1347,8 +1549,8 @@ function enterLobby() {
                 b.classList.toggle('active', +b.dataset.time === currentTimeSec);
             });
         }
-        if (room.status === 'playing') {
-            // matA/matB가 채워지면 게임 시작
+        if (room.status === 'playing' && !gameActive) {
+            // matA/matB가 채워지면 게임 시작 (gameActive 체크로 중복 호출 방지)
             if (room.matA) {
                 matA = room.matA; matB = room.matB;
                 matAns = multiplyMat(matA, matB, currentSize);
@@ -1434,15 +1636,30 @@ function startMultiGame(serverStartTime) {
     // (setStatus removed — timer-attack UI has no status bar)
     renderProblem(currentSize);
 
-    // 서버 시간 기준 타이머 (경과 시간 반영)
-    const now = Date.now();
-    const serverDelta = now - (serverStartTime || now);
     score = 0;
     document.getElementById('score-display').textContent = '0';
-    startCountdown(currentTimeSec);
-    remainMs = Math.max(0, remainMs - serverDelta);
-    updateTimerUI();
-    timerStarted = true;
+
+    // 서버 시간 오프셋 읽어서 절대 종료시각 기준 타이머 시작
+    db.ref('/.info/serverTimeOffset').once('value', snap => {
+        serverTimeOffset = snap.val() || 0;
+        const serverNow = Date.now() + serverTimeOffset;
+        const elapsed = serverStartTime ? Math.max(0, serverNow - serverStartTime) : 0;
+        const remaining = currentTimeSec * 1000 - elapsed;
+        if (remaining <= 500) { onTimeUp(); return; }
+        startCountdownAbsolute(serverNow + remaining);
+    });
+
+    // Firebase timesup 신호 구독 — 누군가 시간이 끝나면 모두 동시 종료
+    if (timesUpSub) { timesUpSub(); timesUpSub = null; }
+    const _timesUpRef = roomRef;
+    const _onTimesUp = _timesUpRef.on('value', snap => {
+        if (!snap.exists() || !gameActive) return;
+        if (snap.val().status === 'timesup') {
+            if (timesUpSub) { timesUpSub(); timesUpSub = null; }
+            onTimeUp();
+        }
+    });
+    timesUpSub = () => _timesUpRef.off('value', _onTimesUp);
 
     // 상대방 현황 구독
     const playersRef = roomRef.child('players');
@@ -1469,15 +1686,13 @@ function renderRivals(players) {
         const div = document.createElement('div');
         div.className = 'rival-item';
         let statusHtml, statusCls;
+        const pScore = p.score ?? 0;
         if (p.finished) {
-            statusHtml = fmtTime(p.time_ms);
+            statusHtml = `${pScore}개 ✓`;
             statusCls = 'done';
-        } else if (uid === myUid && gameActive) {
-            statusHtml = '풀이 중';
-            statusCls = 'playing';
         } else {
-            statusHtml = '대기';
-            statusCls = 'waiting';
+            statusHtml = `${pScore}개`;
+            statusCls = gameActive ? 'playing' : 'waiting';
         }
         div.innerHTML = `
             <div class="rival-avatar ${avatarClass(idx)}">${avatarLetter(p.name)}</div>
@@ -1567,10 +1782,15 @@ document.getElementById('btn-back-to-menu').addEventListener('click', () => show
 document.getElementById('room-code-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') joinRoom();
 });
+document.getElementById('room-code-input').addEventListener('input', function() {
+    // 붙여넣기 시 공백 자동 제거
+    const v = this.value.replace(/\s/g, '').toUpperCase();
+    if (v !== this.value) this.value = v;
+});
 
 // 방 코드 복사
 document.getElementById('lobby-code-badge').addEventListener('click', function() {
-    navigator.clipboard.writeText(roomId).then(() => {
+    navigator.clipboard.writeText(roomId.trim()).then(() => {
         this.classList.add('copied');
         showToast(`방 코드 ${roomId} 복사됨`);
         setTimeout(() => this.classList.remove('copied'), 2000);
@@ -1632,10 +1852,60 @@ document.addEventListener('keydown', e => {
     }
 });
 
+// 결과 모달 닫기
+document.getElementById('btn-rmodal-close').addEventListener('click', () => {
+    document.getElementById('result-modal').classList.remove('open');
+    showScreen('screen-result');
+});
+
+// 같은 멤버로 한판 더
+document.getElementById('btn-rmodal-rematch').addEventListener('click', async () => {
+    document.getElementById('result-modal').classList.remove('open');
+    if (!roomRef) { showScreen('screen-menu'); return; }
+
+    if (isHost) {
+        // 방장: 방 상태 초기화 후 대기실로
+        try {
+            const snap = await roomRef.child('players').once('value');
+            const updates = { status: 'waiting', matA: null, matB: null };
+            snap.forEach(c => {
+                updates[`players/${c.key}/finished`] = false;
+                updates[`players/${c.key}/score`]    = 0;
+                updates[`players/${c.key}/time_ms`]  = null;
+            });
+            await roomRef.update(updates);
+        } catch (e) {
+            showToast('초기화 실패: ' + e.message); return;
+        }
+    }
+    // 방장·참가자 모두 대기실로 복귀
+    enterLobby();
+});
+
 // 결과 화면
 document.getElementById('btn-play-again').addEventListener('click', () => {
     if (currentMode === 'solo') startSolo();
     else { roomId=null; roomRef=null; isHost=false; showScreen('screen-menu'); }
+});
+document.getElementById('btn-rematch').addEventListener('click', async () => {
+    if (!roomRef) { showScreen('screen-menu'); return; }
+    document.getElementById('btn-rematch').classList.add('hidden-btn');
+    document.getElementById('btn-play-again').classList.remove('hidden-btn');
+    if (isHost) {
+        try {
+            const snap = await roomRef.child('players').once('value');
+            const updates = { status: 'waiting', matA: null, matB: null };
+            snap.forEach(c => {
+                updates[`players/${c.key}/finished`] = false;
+                updates[`players/${c.key}/score`]    = 0;
+                updates[`players/${c.key}/time_ms`]  = null;
+            });
+            await roomRef.update(updates);
+        } catch (e) {
+            showToast('초기화 실패: ' + e.message); return;
+        }
+    }
+    enterLobby();
 });
 document.getElementById('btn-to-menu').addEventListener('click', () => {
     stopCountdown();

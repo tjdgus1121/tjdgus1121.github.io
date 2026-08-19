@@ -725,6 +725,132 @@
             }
         }
 
+
+        /* 활동지 안내 (왼쪽 아래 고정) */
+        .sheet-dock {
+            position: fixed;
+            left: 20px;
+            bottom: 84px;
+            z-index: 200;
+            font-family: 'Noto Sans KR', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .sheet-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            min-height: 44px;
+            border: 1px solid rgba(123, 104, 238, 0.55);
+            border-radius: 999px;
+            background: rgba(16, 16, 34, 0.92);
+            backdrop-filter: blur(10px);
+            color: #e8e6ff;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+
+        .sheet-toggle:hover {
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        .sheet-toggle:focus-visible {
+            outline: 2px solid #00d4ff;
+            outline-offset: 3px;
+        }
+
+        .sheet-toggle .sheet-caret {
+            font-size: 0.78rem;
+            opacity: 0.8;
+            transition: transform 0.2s;
+        }
+
+        .sheet-dock.open .sheet-toggle .sheet-caret { transform: rotate(180deg); }
+
+        .sheet-panel {
+            width: 258px;
+            max-width: calc(100vw - 40px);
+            padding: 16px 18px 18px;
+            border: 1px solid rgba(123, 104, 238, 0.35);
+            border-radius: 16px;
+            background: rgba(13, 13, 28, 0.94);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+            order: -1;
+        }
+
+        .sheet-dock:not(.open) .sheet-panel { display: none; }
+
+        .sheet-panel h3 {
+            margin: 0 0 6px;
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 1.08rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #7b68ee, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sheet-panel p {
+            margin: 0 0 12px;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+
+        .sheet-links { display: flex; flex-direction: column; gap: 8px; }
+
+        .sheet-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 13px;
+            min-height: 44px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 11px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: border-color 0.2s, background 0.2s, transform 0.2s;
+        }
+
+        .sheet-link:hover {
+            border-color: rgba(0, 212, 255, 0.7);
+            background: rgba(0, 212, 255, 0.12);
+            transform: translateX(3px);
+        }
+
+        .sheet-link:focus-visible {
+            outline: 2px solid #00d4ff;
+            outline-offset: 2px;
+        }
+
+        .sheet-link .sheet-ico { font-size: 1.05rem; }
+        .sheet-link .sheet-go { margin-left: auto; opacity: 0.55; font-size: 0.8rem; }
+
+        @media (max-width: 768px) {
+            .sheet-dock { left: 14px; bottom: 96px; }
+            .sheet-panel { width: 236px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .sheet-toggle, .sheet-link, .sheet-toggle .sheet-caret { transition: none; }
+            .sheet-toggle:hover, .sheet-link:hover { transform: none; }
+        }
+
         /* Footer */
         .footer {
             position: fixed;
@@ -1157,8 +1283,8 @@
                     <ul>
                         <li><a href="./activity11_similarity_check.html">해밍 거리와 데이터 유사도</a></li>
                         <li><a href="./activity9_mnist_recognizer.html">MNIST 손글씨 숫자 인식</a></li>
-                        <li><a href="./cnn_visualizer.html">CNN 합성곱 신경망 시각화</a></li>
-                        <li><a href="./cnn_ex.html">CNN 사물 인식 원리 체험</a></li>
+                        <li><a href="./activity17_cnn_visualizer.html">CNN 합성곱 신경망 시각화</a></li>
+                        <li><a href="./activity18_cnn_ex.html">CNN 사물 인식 원리 체험</a></li>
                         <li><a href="./activity18_home.html">CNN 이미지 인식 체험 모음</a></li>
                         <li><a href="./activity18_nukki.html">CNN·U-Net 배경 제거 원리</a></li>
                         <li><a href="./activity14_yolo.html">YOLO 실시간 객체 탐지</a></li>
@@ -1177,6 +1303,25 @@
     </section>
 
     <!-- Footer -->
+    <!-- 활동지 안내 -->
+    <div class="sheet-dock" id="sheetDock">
+        <div class="sheet-panel" id="sheetPanel">
+            <h3>활동지 안내</h3>
+            <p>수업에서 함께 쓰는 활동지입니다. 새 창에서 열립니다.</p>
+            <div class="sheet-links">
+                <a class="sheet-link" href="https://naver.me/x52YwUVl" target="_blank" rel="noopener noreferrer">
+                    <span class="sheet-ico" aria-hidden="true">📝</span>텍스트 활동지<span class="sheet-go" aria-hidden="true">↗</span>
+                </a>
+                <a class="sheet-link" href="https://naver.me/FvT0f4m2" target="_blank" rel="noopener noreferrer">
+                    <span class="sheet-ico" aria-hidden="true">🖼️</span>이미지 활동지<span class="sheet-go" aria-hidden="true">↗</span>
+                </a>
+            </div>
+        </div>
+        <button type="button" class="sheet-toggle" id="sheetToggle" aria-expanded="false" aria-controls="sheetPanel">
+            <span aria-hidden="true">📄</span>활동지<span class="sheet-caret" aria-hidden="true">▾</span>
+        </button>
+    </div>
+
     <div class="footer">
         <div class="footer-content">
             <div class="visitor-count">
@@ -1554,6 +1699,38 @@
                     patchBody.innerHTML = '<div class="patch-loading">내용을 불러올 수 없습니다.</div>';
                     setupPopup('unknown');
                 });
+        })();
+
+
+        // 활동지 안내 — 열고 닫기, 푸터 높이만큼 띄우기
+        (function () {
+            var dock = document.getElementById('sheetDock');
+            var toggle = document.getElementById('sheetToggle');
+            var footer = document.querySelector('.footer');
+            if (!dock || !toggle) return;
+            var KEY = 'sheet_dock_closed';
+
+            function setOpen(open) {
+                dock.classList.toggle('open', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+            var open = false;
+            try { open = localStorage.getItem(KEY) === '0'; } catch (e) {}
+            setOpen(open);
+
+            toggle.addEventListener('click', function () {
+                var open = !dock.classList.contains('open');
+                setOpen(open);
+                try { localStorage.setItem(KEY, open ? '0' : '1'); } catch (e) {}
+            });
+
+            function place() {
+                if (!footer) return;
+                dock.style.bottom = (footer.offsetHeight + 14) + 'px';
+            }
+            place();
+            window.addEventListener('resize', place);
+            window.addEventListener('load', place);
         })();
 
         // 초기화

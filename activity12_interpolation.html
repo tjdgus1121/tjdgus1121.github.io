@@ -47,8 +47,9 @@
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="stylefooter.css">
     <link rel="stylesheet" href="nav.css">
+  <script src="backguard.js"></script>
     <script src="nav.js"></script>
-    <title>이미지 업스케일러</title>
+    <title>이미지 보간법 비교 | 인공지능 수학 웹앱</title>
     <style>
         * {
             margin: 0;
@@ -58,7 +59,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 40%, #bfcfff 80%, #e3f0ff 100%);
+            background: #e0e7ff;
             background-size: 400% 400%;
             animation: gradientMove 12s ease-in-out infinite;
             min-height: 100vh;
@@ -74,10 +75,9 @@
             max-width: 1400px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-        }
+            border-radius:10px;
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
+            padding: 30px;border:1px solid #E4E2DC;}
 
         h1 {
             text-align: center;
@@ -101,10 +101,10 @@
             position: absolute;
             right: 0;
             padding: 10px 18px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2F5FA8;
             color: white;
             text-decoration: none;
-            border-radius: 12px;
+            border-radius:12px;
             font-size: 0.95rem;
             font-family: 'Do Hyeon', sans-serif;
             transition: all 0.3s ease;
@@ -116,8 +116,8 @@
 
         .title-link-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.55);
-            background: linear-gradient(45deg, #764ba2, #667eea);
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
+            background: #2F5FA8;
         }
 
         .title-link-btn:active {
@@ -147,7 +147,7 @@
 
         .canvas-container {
             border: 3px dashed #ddd;
-            border-radius: 15px;
+            border-radius:15px;
             padding: 20px;
             background: #fafafa;
             min-height: 250px;
@@ -161,15 +161,15 @@
         }
 
         .canvas-container:hover {
-            border-color: #667eea;
+            border-color: #2F5FA8;
             background: #f0f4ff;
         }
 
         canvas {
             max-width: 100%;
             max-height: 100%;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-radius:10px;
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
         }
 
         .controls {
@@ -178,9 +178,9 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color:#FFFFFF;
             padding: 30px;
-            border-radius: 15px;
+            border-radius:15px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
@@ -190,7 +190,7 @@
             flex-direction: column;
             gap: 20px;
             padding: 20px;
-            border-radius: 12px;
+            border-radius:12px;
             background: rgba(135, 206, 250, 0.08);
             transition: all 0.3s ease;
         }
@@ -220,10 +220,10 @@
             display: block;
             width: 100%;
             padding: 23px 20px;
-            background: linear-gradient(135deg, #89CFF0 0%, #B0E0E6 100%);
+            background: #89CFF0;
             color: #2c3e50;
             border: none;
-            border-radius: 14px;
+            border-radius:14px;
             cursor: pointer;
             font-size: 1.3rem;
             text-align: center;
@@ -234,9 +234,9 @@
         }
 
         .file-input-button:hover {
-            background: linear-gradient(135deg, #A8DAFF 0%, #C9E9F6 100%);
+            background: #A8DAFF;
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(135, 206, 250, 0.5);
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
         }
 
         .file-input-button:active {
@@ -264,7 +264,7 @@
         .slider {
             width: 100%;
             height: 6px;
-            border-radius: 3px;
+            border-radius:3px;
             background: #ddd;
             outline: none;
             appearance: none;
@@ -275,7 +275,7 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #667eea;
+            background: #2F5FA8;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             transition: all 0.2s ease;
@@ -289,7 +289,7 @@
             text-align: center;
             margin-top: 5px;
             font-weight: bold;
-            color: #667eea;
+            color: #2F5FA8;
         }
 
         .radio-group {
@@ -304,7 +304,7 @@
             justify-content: flex-start;
             flex-wrap: nowrap;
             padding: 8px 12px;
-            border-radius: 8px;
+            border-radius:8px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -331,7 +331,7 @@
             background: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 8px 12px;
-            border-radius: 6px;
+            border-radius:6px;
             font-size: 12px;
             pointer-events: none;
             z-index: 1000;
@@ -367,13 +367,13 @@
             width: 100%;
             height: 20px;
             background-color: #f0f0f0;
-            border-radius: 10px;
+            border-radius:10px;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2F5FA8;
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -387,10 +387,10 @@
 
         .action-button {
             padding: 8px 16px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2F5FA8;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius:8px;
             cursor: pointer;
             font-size: 0.9rem;
             transition: all 0.3s ease;
@@ -420,16 +420,16 @@
         .interpolation-link a {
             color: white;
             text-decoration: none;
-            background-color: #667eea;
+            background-color: #2F5FA8;
             padding: 6px 12px;
-            border-radius: 8px;
+            border-radius:8px;
             display: inline-block;
             white-space: nowrap;
             transition: background-color 0.2s ease, transform 0.2s ease;
         }
 
         .interpolation-link a:hover {
-            background-color: #764ba2;
+            background-color: #2F5FA8;
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
@@ -454,10 +454,10 @@
         /* 비교 모드 스타일 */
         .compare-button {
             padding: 12px 24px;
-            background: linear-gradient(45deg, #28a745, #20c997);
+            background: #28a745;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius:10px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: bold;
@@ -495,21 +495,21 @@
 
         .comparison-item {
             border: 2px solid #ddd;
-            border-radius: 15px;
+            border-radius:15px;
             padding: 15px;
             background: #fafafa;
             transition: all 0.3s ease;
         }
 
         .comparison-item:hover {
-            border-color: #667eea;
+            border-color: #2F5FA8;
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
             transform: translateY(-2px);
         }
 
         .comparison-item h3 {
             text-align: center;
-            color: #667eea;
+            color: #2F5FA8;
             margin-bottom: 10px;
             font-size: 1.1rem;
         }
@@ -519,7 +519,7 @@
             overflow: auto;
             max-height: 400px;
             border: 1px solid #eee;
-            border-radius: 10px;
+            border-radius:10px;
             background: white;
             cursor: pointer;
         }
@@ -595,9 +595,9 @@
             color: white;
             font-size: 1.8rem;
             font-weight: 400;
-            background: linear-gradient(45deg, #28a745, #20c997);
+            background: #28a745;
             padding: 15px 30px;
-            border-radius: 12px;
+            border-radius:12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             z-index: 10002;
             font-family: 'Do Hyeon', sans-serif;
@@ -618,10 +618,10 @@
             top: 100px;
             left: 50%;
             transform: translateX(-50%) translateY(-20px);
-            background: linear-gradient(45deg, #28a745, #20c997);
+            background: #28a745;
             color: white;
             padding: 15px 30px;
-            border-radius: 10px;
+            border-radius:10px;
             font-size: 1.2rem;
             font-weight: 400;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
@@ -679,7 +679,7 @@
             color: white;
             background: rgba(0, 0, 0, 0.7);
             padding: 12px 24px;
-            border-radius: 10px;
+            border-radius:10px;
             font-size: 0.95rem;
             display: flex;
             align-items: center;
@@ -689,7 +689,7 @@
         .modal-hint kbd {
             background: rgba(255, 255, 255, 0.2);
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius:4px;
             font-family: monospace;
             font-size: 0.9rem;
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -750,7 +750,7 @@
             max-height: 500px;
             max-width: 100%;
             border: 2px solid #eee;
-            border-radius: 10px;
+            border-radius:10px;
         }
 
         .scaled-canvas-wrapper {
@@ -799,12 +799,11 @@
         .progress-popup-content {
             background-color: white;
             padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius:15px;
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
             text-align: center;
             max-width: 400px;
-            width: 90%;
-        }
+            width: 90%;border:1px solid #E4E2DC;}
 
         .progress-popup-content h3 {
             color: #333;
@@ -816,14 +815,14 @@
             width: 100%;
             height: 25px;
             background-color: #e0e0e0;
-            border-radius: 12px;
+            border-radius:12px;
             overflow: hidden;
             margin-bottom: 10px;
         }
 
         .progress-fill-popup {
             height: 100%;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2F5FA8;
             width: 0%;
             transition: width 0.3s ease;
             /* 부드러운 진행률 애니메이션 */
@@ -832,7 +831,7 @@
         .progress-text-popup {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #667eea;
+            color: #2F5FA8;
         }
 
         /* 탭 UI */
@@ -856,12 +855,12 @@
             color: #666;
             transition: all 0.3s ease;
             font-family: 'Do Hyeon', sans-serif;
-            border-radius: 10px 10px 0 0;
+            border-radius:10px 10px 0 0;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .tab-button:hover {
-            color: #667eea;
+            color: #2F5FA8;
             background: #e9ecef;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(102, 126, 234, 0.15);
@@ -869,7 +868,7 @@
 
         .tab-button.active {
             color: white;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2F5FA8;
             border-bottom-color: transparent;
             font-weight: 700;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
@@ -910,8 +909,8 @@
             max-width: 800px;
             margin: 20px auto;
             overflow: hidden;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius:15px;
+            box-shadow:0 1px 3px rgba(0,0,0,.07);
             min-height: 300px;
         }
 
@@ -971,8 +970,7 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            color: #667eea;
-        }
+            color: #2F5FA8;border:1px solid #E4E2DC;}
 
         .image-label {
             position: absolute;
@@ -980,7 +978,7 @@
             padding: 8px 16px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            border-radius: 8px;
+            border-radius:8px;
             font-weight: bold;
             z-index: 5;
         }
@@ -998,7 +996,12 @@
                 grid-template-columns: 1fr;
             }
         }
-    </style>
+    
+/* 수업용 차분한 테마 — 장식보다 학습 내용이 먼저 보이게 */
+html,body{background:#F6F5F2 !important;background-image:none !important;color:#232227}
+::selection{background:#D8E3F3}
+:focus-visible{outline:3px solid #2F5FA8;outline-offset:2px}
+</style>
 </head>
 
 <body>
@@ -1008,30 +1011,40 @@
 
     <aside class="sidebar">
         <nav>
+            <div class="nav-sec">시작</div>
             <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
             <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
             <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
             <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
             <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
             <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
             <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
             <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
             <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
             <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
             <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
             <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
             <a href="activity12_interpolation.html" class="active"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
             <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
             <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
       <a href="activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
         </nav>
     </aside>
     <div class="container">
         <div class="title-section">
-            <h1>🎨 이미지 업스케일러</h1>
+            <h1>이미지 업스케일러</h1>
             <a href="./activity12_interpolation_2.html" class="title-link-btn" title="보간법 수학적 원리 탐구 페이지로 이동">보간법 수학적 원리<br>탐구 페이지로 →</a>
         </div>
 
@@ -1127,9 +1140,7 @@
         <!-- 전체 비교 모드 -->
         <div class="view-container" id="compareView">
             <div id="compareModeSection" class="compare-mode-section active">
-            <h2 style="text-align: center; color: #333; margin-bottom: 20px; font-family: 'Do Hyeon';">
-                🔍 모든 보간법 비교
-            </h2>
+            <h2 style="text-align: center; color: #333; margin-bottom: 20px; font-family: 'Do Hyeon';">모든 보간법 비교</h2>
             <div class="comparison-grid">
                 <div class="comparison-item">
                     <h3>최근접 이웃 (Nearest Neighbor)</h3>

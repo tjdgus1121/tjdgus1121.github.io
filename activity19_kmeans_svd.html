@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔍 SEO -->
+    <meta name="description" content="사진 속 수많은 색을 K-means로 단 몇 가지 대표색으로 군집화하고, 원본과 나란히 비교하며 AI가 색 정보를 어떻게 요약하는지 직접 체험하는 인공지능 수학 활동입니다.">
+    <meta name="keywords" content="K-means, 색상 군집화, 색 양자화, 대표색, 팔레트, 색 공간, Lab, 거리, 인공지능 수학, 이미지 단순화">
+    <meta name="author" content="황성현">
+
+    <meta property="og:title" content="색 군집화로 사진 보기 - 인공지능 수학 탐구">
+    <meta property="og:description" content="K-means로 사진의 색을 몇 가지 대표색으로 요약하고 원본과 나란히 비교해 보세요.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/activity19_kmeans_svd.html">
+    <meta property="og:type" content="website">
+
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/activity19_kmeans_svd.html">
+    <meta name="theme-color" content="#2f80ed">
+
+    <title>색 군집화로 사진 보기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="stylefooter.css">
+    <link rel="stylesheet" href="nav.css">
+  <script src="backguard.js"></script>
+    <script src="nav.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #2f80ed;
+            --primary-hover: #2568d0;
+            --violet: #59a5ff;
+            --accent: #4a90e2;
+            /* 글로시 블루 버블 그라데이션 */
+            --grad: linear-gradient(135deg, #7cc0ff 0%, #3d8bf5 52%, #2563eb 100%);
+            --ink: #1f2b52;
+            --text: #263047;
+            --muted: #6b7280;
+            --surface: rgba(255, 255, 255, 0.96);
+            --line: #e3eaf5;
+            --radius: 22px;
+            --radius-sm: 16px;
+            --mono: 'JetBrains Mono', ui-monospace, monospace;
+            --shadow-sm: 0 4px 10px -3px rgba(79, 70, 229, 0.12), 0 2px 4px -2px rgba(79, 70, 229, 0.08);
+            --shadow-md: 0 14px 30px -10px rgba(99, 102, 241, 0.22);
+            --shadow-lg: 0 30px 60px -18px rgba(139, 92, 246, 0.28);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8faff 0%, #faf8ff 35%, #f8f6ff 65%, #f6f8ff 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            padding: 22px;
+        }
+
+        /* 은은한 배경: 소프트 버블 + 별자리 */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><g fill="none" stroke-width="1.2"><circle cx="180" cy="150" r="16" stroke="rgba(59,130,246,0.13)"/><circle cx="210" cy="182" r="7" stroke="rgba(59,130,246,0.11)"/><circle cx="1040" cy="120" r="14" stroke="rgba(47,128,237,0.13)"/><circle cx="1010" cy="150" r="6" stroke="rgba(47,128,237,0.11)"/><circle cx="960" cy="660" r="19" stroke="rgba(96,165,250,0.12)"/><circle cx="995" cy="695" r="9" stroke="rgba(96,165,250,0.11)"/><circle cx="250" cy="680" r="11" stroke="rgba(90,150,246,0.12)"/><circle cx="620" cy="58" r="8" stroke="rgba(90,150,246,0.11)"/><circle cx="480" cy="420" r="10" stroke="rgba(59,130,246,0.10)"/><circle cx="760" cy="620" r="13" stroke="rgba(47,128,237,0.11)"/><circle cx="1120" cy="440" r="9" stroke="rgba(96,165,250,0.11)"/><circle cx="70" cy="380" r="12" stroke="rgba(90,150,246,0.11)"/><circle cx="540" cy="720" r="6" stroke="rgba(59,130,246,0.11)"/><circle cx="860" cy="230" r="7" stroke="rgba(47,128,237,0.10)"/></g><g fill="rgba(96,165,250,0.05)"><circle cx="180" cy="150" r="16"/><circle cx="960" cy="660" r="19"/><circle cx="1040" cy="120" r="14"/><circle cx="760" cy="620" r="13"/><circle cx="70" cy="380" r="12"/></g><g stroke="rgba(90,150,246,0.14)" stroke-width="1"><line x1="300" y1="120" x2="420" y2="220"/><line x1="420" y1="220" x2="560" y2="180"/><line x1="560" y1="180" x2="650" y2="300"/><line x1="650" y1="300" x2="540" y2="360"/><line x1="820" y1="420" x2="900" y2="520"/><line x1="900" y1="520" x2="1000" y2="480"/><line x1="1000" y1="480" x2="1100" y2="300"/><line x1="180" y1="430" x2="300" y2="480"/><line x1="300" y1="480" x2="380" y2="600"/><line x1="380" y1="600" x2="520" y2="640"/><line x1="720" y1="140" x2="820" y2="90"/><line x1="820" y1="90" x2="950" y2="180"/><line x1="620" y1="660" x2="720" y2="700"/><line x1="720" y1="700" x2="820" y2="650"/><line x1="140" y1="240" x2="240" y2="300"/><line x1="1060" y1="600" x2="1140" y2="680"/></g><g fill="rgba(47,128,237,0.28)"><circle cx="300" cy="120" r="2.3"/><circle cx="420" cy="220" r="1.8"/><circle cx="560" cy="180" r="2.3"/><circle cx="650" cy="300" r="1.8"/><circle cx="540" cy="360" r="1.8"/><circle cx="820" cy="420" r="2.3"/><circle cx="900" cy="520" r="1.8"/><circle cx="1000" cy="480" r="2.3"/><circle cx="1100" cy="300" r="1.8"/><circle cx="180" cy="430" r="1.8"/><circle cx="300" cy="480" r="2.3"/><circle cx="380" cy="600" r="1.8"/><circle cx="520" cy="640" r="1.8"/><circle cx="720" cy="140" r="1.8"/><circle cx="820" cy="90" r="2.3"/><circle cx="950" cy="180" r="1.8"/><circle cx="620" cy="660" r="1.8"/><circle cx="720" cy="700" r="2.3"/><circle cx="820" cy="650" r="1.8"/><circle cx="140" cy="240" r="1.8"/><circle cx="240" cy="300" r="2.3"/><circle cx="1060" cy="600" r="1.8"/><circle cx="1140" cy="680" r="2.3"/><circle cx="70" cy="120" r="1.6"/><circle cx="1160" cy="220" r="1.6"/><circle cx="480" cy="60" r="1.6"/><circle cx="360" cy="740" r="1.6"/><circle cx="980" cy="380" r="1.6"/></g></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+        }
+        .page { max-width: 1240px; margin: 0 auto; position: relative; z-index: 1; }
+
+        /* ── 글래스 컨테이너 ── */
+        .container {
+            background: rgba(255, 255, 255, 0.78);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* ── 헤더 ── */
+        .header {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e6f0ff 0%, #edf4ff 40%, #e4eeff 70%, #eaf3ff 100%);
+            padding: 46px 40px 40px;
+            text-align: center;
+        }
+        .header::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="g" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(59,130,246,0.18)"/><circle cx="75" cy="75" r="1.5" fill="rgba(47,128,237,0.14)"/><circle cx="50" cy="10" r="0.8" fill="rgba(59,130,246,0.2)"/></pattern></defs><rect width="100" height="100" fill="url(%23g)"/></svg>');
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .eyebrow {
+            position: relative; z-index: 1;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: var(--mono);
+            font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--primary);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 999px;
+            padding: 5px 14px;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            position: relative; z-index: 1;
+            font-family: 'Do Hyeon', sans-serif;
+            font-weight: 400;
+            font-size: clamp(2rem, 4.4vw, 3.3rem);
+            letter-spacing: -0.01em;
+            color: var(--ink);
+            text-shadow: 0 2px 6px rgba(255, 255, 255, 0.4);
+        }
+        .header h1 .accent {
+            background: linear-gradient(120deg, var(--primary), var(--violet));
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p {
+            position: relative; z-index: 1;
+            margin: 12px auto 0;
+            max-width: 640px;
+            font-size: clamp(0.98rem, 1.6vw, 1.12rem);
+            line-height: 1.75;
+            color: #45407a;
+            word-break: keep-all;
+        }
+        .header p b { color: var(--primary); font-weight: 700; }
+
+        /* ── 본문 ── */
+        .content { padding: 30px 30px 40px; }
+
+        /* ── 상단 툴바 (업로드/샘플) ── */
+        .toolbar {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            justify-content: flex-end; align-items: center;
+            margin-bottom: 16px;
+        }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 20px;
+            border: none; border-radius: 12px;
+            font-family: inherit; font-size: 0.94em; font-weight: 600;
+            cursor: pointer;
+            background: var(--grad);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); filter: brightness(1.05); }
+        .btn.ghost {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary);
+            border: 1.5px solid var(--line);
+            box-shadow: none;
+        }
+        .btn.ghost:hover { border-color: var(--primary); background: #fff; }
+
+        /* ── 메인 비교 카드 ── */
+        .stage {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+            margin-bottom: 26px;
+        }
+        .compare {
+            display: flex; flex-wrap: wrap; gap: 20px;
+            justify-content: center; align-items: center;
+            position: relative;
+        }
+        .canvas-card {
+            flex: 1 1 340px; min-width: 280px;
+            position: relative;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+        .canvas-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        /* 라벨을 종이 포스트잇처럼 */
+        .canvas-label {
+            position: absolute; top: -16px; left: 18px; z-index: 5;
+            display: inline-flex; align-items: center; gap: 7px;
+            font-family: 'Do Hyeon', sans-serif; font-weight: 400;
+            font-size: 0.92em; color: #3a2f6b;
+            padding: 9px 16px 8px; border-radius: 3px;
+            box-shadow: 0 9px 18px -7px rgba(36, 27, 82, 0.4), 0 2px 5px rgba(36, 27, 82, 0.14);
+        }
+        .canvas-label i { font-size: 0.9em; opacity: 0.75; }
+        .canvas-label.orig { background: linear-gradient(135deg, #fff3b0, #ffe066); transform: rotate(-3deg); }
+        .canvas-label.quant { background: linear-gradient(135deg, #efd9ff, #d8b4fe); transform: rotate(2.5deg); }
+        /* 라벨 위 반투명 테이프 */
+        .canvas-label .tape {
+            position: absolute; top: -9px; left: 50%;
+            width: 42px; height: 17px; transform: translateX(-50%) rotate(-2deg);
+            background: rgba(255, 255, 255, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 1px 3px rgba(36, 27, 82, 0.12);
+        }
+        canvas.view {
+            width: 100%; height: auto; display: block;
+            border-radius: 10px; background: #ecebf8;
+        }
+        .swap-badge {
+            position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            width: 46px; height: 46px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: #fff; color: var(--primary);
+            box-shadow: var(--shadow-md); border: 1px solid var(--line);
+            font-size: 1.05em; z-index: 6;
+        }
+        @media (max-width: 780px) { .swap-badge { display: none; } }
+
+        /* ── 컨트롤 바 ── */
+        .controls {
+            display: flex; flex-wrap: wrap; gap: 12px;
+            align-items: stretch; margin-top: 20px;
+        }
+        .ctrl {
+            flex: 1 1 150px;
+            display: flex; align-items: center; gap: 11px;
+            background: #eff5ff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 10px 14px;
+        }
+        .ctrl .ic {
+            width: 34px; height: 34px; flex: none;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; color: #fff; font-size: 0.9em;
+            background: var(--grad);
+        }
+        .ctrl .body { flex: 1; min-width: 0; }
+        .ctrl .cap { font-size: 0.72em; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+        .ctrl select {
+            width: 100%; border: none; background: transparent;
+            font-family: inherit; font-size: 1.02em; font-weight: 700; color: var(--ink);
+            cursor: pointer; outline: none;
+            -webkit-appearance: none; appearance: none; padding-right: 14px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="%236366f1" stroke-width="1.6" stroke-linecap="round"/></svg>');
+            background-repeat: no-repeat; background-position: right center;
+        }
+        .ctrl.run {
+            flex: 1 1 170px; padding: 0; border: none; background: transparent;
+        }
+        .run-btn {
+            width: 100%; height: 100%;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            border: none; border-radius: 14px; cursor: pointer;
+            font-family: inherit; font-size: 1.02em; font-weight: 700; color: #fff;
+            padding: 12px;
+            background: var(--grad);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+        }
+        .run-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); filter: brightness(1.05); }
+
+        /* ── 3열 패널 ── */
+        .panels {
+            display: grid; grid-template-columns: 1.4fr 1fr 0.92fr; gap: 18px;
+        }
+        @media (max-width: 940px) { .panels { grid-template-columns: 1fr; } }
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            padding: 20px;
+        }
+        .panel h3 {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 1.0em; font-weight: 700; color: var(--ink);
+            margin-bottom: 14px;
+        }
+        .panel h3 i { color: var(--primary); }
+        .panel h3 .count { color: var(--muted); font-weight: 600; font-size: 0.86em; }
+
+        /* 팔레트 */
+        .palette-hint {
+            color: var(--muted); font-size: 0.8em; margin-bottom: 12px; word-break: keep-all;
+        }
+        .palette-hint i { color: var(--primary); }
+        .palette { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 10px; }
+        @media (max-width: 520px) { .palette { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .swatch {
+            min-width: 0;
+            border-radius: 14px; overflow: hidden;
+            border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+            font-size: 0.7em; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .swatch { cursor: pointer; }
+        .swatch:hover { transform: translateY(-4px) scale(1.03); box-shadow: var(--shadow-md); }
+        /* 연동 강조 */
+        .palette.linking .swatch { opacity: 0.38; }
+        .palette.linking .swatch.hl { opacity: 1; transform: translateY(-4px) scale(1.06); box-shadow: var(--shadow-md); }
+        .swatch .chip {
+            position: relative; height: 84px; cursor: pointer;
+            display: flex; align-items: flex-end; justify-content: flex-end;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+        }
+        .swatch .chip .pen {
+            font-size: 10px; color: rgba(255, 255, 255, 0.95);
+            background: rgba(0, 0, 0, 0.32); border-radius: 6px;
+            padding: 2px 6px; margin: 6px; opacity: 0; transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .swatch:hover .chip .pen { opacity: 1; }
+        .swatch .chip input[type=color] {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            opacity: 0; border: none; padding: 0; cursor: pointer;
+        }
+        .swatch .meta {
+            padding: 8px 2px; font-family: var(--mono); text-align: center;
+            color: #334155; line-height: 1.55; background: #fff; font-weight: 700;
+            white-space: nowrap; letter-spacing: -0.02em;
+        }
+
+        /* 도넛 */
+        .donut-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .donut { position: relative; width: 200px; height: 200px; flex: none; margin: -6px 0; }
+        .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .donut .seg { transition: opacity 0.15s, stroke-width 0.15s; cursor: pointer; }
+        .donut.linking .seg { opacity: 0.3; }
+        .donut.linking .seg.hl { opacity: 1; stroke-width: 9.5; }
+        .donut .center {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; pointer-events: none;
+        }
+        .donut .center .big { font-size: 1.7em; font-weight: 700; color: var(--ink); line-height: 1.1; }
+        .donut .center .sub { font-size: 0.78em; color: var(--muted); }
+        .legend { display: flex; flex-direction: column; gap: 4px; font-size: 0.84em; }
+        .legend .row {
+            display: flex; align-items: center; gap: 7px; cursor: pointer;
+            padding: 3px 6px; border-radius: 7px; transition: opacity 0.15s, background 0.15s;
+        }
+        .legend .dot { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+        .legend .pct { font-family: var(--mono); font-weight: 700; color: var(--ink); }
+        .legend.linking .row { opacity: 0.38; }
+        .legend.linking .row.hl { opacity: 1; background: #e7f1ff; }
+
+        /* 분석 정보 */
+        .info-list { display: flex; flex-direction: column; }
+        .info-list .row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 2px; border-bottom: 1px dashed var(--line);
+        }
+        .info-list .row:last-child { border-bottom: none; }
+        .info-list .k { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9em; }
+        .info-list .k i { color: var(--primary); width: 16px; text-align: center; }
+        .info-list .v { font-family: var(--mono); font-weight: 700; color: var(--ink); font-size: 0.94em; }
+
+        /* ── 4단계 설명 ── */
+        .steps-card {
+            margin-top: 26px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            padding: 22px;
+        }
+        .steps-card > h3 {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 1.05em; font-weight: 700; color: var(--ink); margin-bottom: 18px;
+        }
+        .steps-card > h3 i { color: var(--primary); }
+        .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
+        @media (max-width: 820px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 460px) { .steps { grid-template-columns: 1fr; } }
+        .step { text-align: center; padding: 4px; }
+        .step .num {
+            width: 30px; height: 30px; margin: 0 auto 10px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-weight: 700; font-size: 0.9em;
+            color: var(--primary); background: #e7f1ff; border: 1.5px solid #cfe3fb;
+        }
+        .step h4 { font-size: 0.96em; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+        .step p { font-size: 0.82em; color: var(--muted); line-height: 1.6; word-break: keep-all; }
+        .step .fig { margin-top: 12px; }
+        .step .fig svg { width: 100%; max-width: 130px; height: 60px; }
+
+        /* ── Tip ── */
+        .tip {
+            margin-top: 20px;
+            display: flex; align-items: center; gap: 10px; justify-content: center;
+            background: linear-gradient(135deg, #eaf2ff, #eef5ff);
+            border: 1px solid var(--line);
+            border-radius: 14px; padding: 14px 20px;
+            color: #3f5170; font-size: 0.92em; word-break: keep-all;
+        }
+        .tip .badge {
+            display: inline-flex; align-items: center; gap: 6px; flex: none;
+            font-weight: 700; color: var(--primary);
+            background: #fff; border: 1px solid #cfe3fb; border-radius: 999px; padding: 4px 12px;
+        }
+
+        /* ── 개념 설명 ── */
+        .explain {
+            margin-top: 22px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--primary);
+            border-radius: 14px;
+            padding: 18px 22px;
+            color: #464264; line-height: 1.8; font-size: 0.94em;
+            word-break: keep-all;
+        }
+        .explain b { color: var(--primary); }
+        .explain a { color: var(--violet); font-weight: 600; text-decoration: none; }
+        .explain a:hover { text-decoration: underline; }
+
+        /* 도넛 툴팁 */
+        .donut-tip {
+            position: fixed; z-index: 50; pointer-events: none;
+            background: #241b52; color: #fff; font-size: 0.78em; font-weight: 600;
+            padding: 6px 10px; border-radius: 8px; box-shadow: var(--shadow-md);
+            opacity: 0; transition: opacity 0.12s; white-space: nowrap;
+        }
+
+        footer.footer { margin-top: 8px; }
+
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .content { padding: 20px 14px 30px; }
+            .header { padding: 34px 20px 28px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-sec">시작</div>
+            <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+            <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
+            <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
+            <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
+            <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
+            <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+            <a href="activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+            <a href="activity19_kmeans_svd.html" class="active"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
+
+    <div class="page">
+        <div class="container">
+            <!-- 헤더 -->
+            <header class="header">
+                <span class="eyebrow"><i class="fa fa-wand-magic-sparkles"></i> K-means로 색을 요약하다</span>
+                <h1><span class="accent">색</span> 군집화로 사진 보기</h1>
+                <p>사진 속 <b>수많은 색</b>을 K-means로 단 몇 가지 <b>대표색</b>으로 군집화하고, 원본과 나란히 비교하며 <b>AI가 색 정보를 어떻게 요약하는지</b> 체험해 보세요.</p>
+            </header>
+
+            <!-- 본문 -->
+            <div class="content">
+                <!-- 툴바 -->
+                <div class="toolbar">
+                    <button type="button" class="btn" id="uploadBtn"><i class="fa fa-upload"></i> 사진 업로드</button>
+                    <button type="button" class="btn ghost" id="sampleBtn"><i class="fa fa-image"></i> 샘플 이미지</button>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+
+                <!-- 메인 비교 카드 -->
+                <div class="stage">
+                    <div class="compare">
+                        <div class="canvas-card">
+                            <span class="canvas-label orig"><span class="tape"></span><i class="fa fa-image"></i> 원본 이미지</span>
+                            <canvas class="view" id="m1orig"></canvas>
+                        </div>
+                        <div class="swap-badge"><i class="fa fa-right-left"></i></div>
+                        <div class="canvas-card">
+                            <span class="canvas-label quant"><span class="tape"></span><i class="fa fa-palette"></i> 군집화 결과</span>
+                            <canvas class="view" id="m1quant"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 컨트롤 바 -->
+                    <div class="controls">
+                        <div class="ctrl">
+                            <div class="ic"><i class="fa fa-object-ungroup"></i></div>
+                            <div class="body">
+                                <div class="cap">군집 개수 (K)</div>
+                                <select id="kSel" aria-label="군집 개수 K"></select>
+                            </div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ic"><i class="fa fa-cube"></i></div>
+                            <div class="body">
+                                <div class="cap">색 공간</div>
+                                <select id="spaceSel" aria-label="색 공간">
+                                    <option value="rgb">RGB</option>
+                                    <option value="lab" selected>Lab</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ic"><i class="fa fa-seedling"></i></div>
+                            <div class="body">
+                                <div class="cap">초기화 방식</div>
+                                <select id="initSel" aria-label="초기화 방식">
+                                    <option value="pp" selected>K-means++</option>
+                                    <option value="random">무작위</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="ctrl">
+                            <div class="ic"><i class="fa fa-repeat"></i></div>
+                            <div class="body">
+                                <div class="cap">반복 횟수</div>
+                                <select id="iterSel" aria-label="반복 횟수">
+                                    <option>10</option>
+                                    <option selected>20</option>
+                                    <option>30</option>
+                                    <option>50</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="ctrl run">
+                            <button type="button" class="run-btn" id="runBtn"><i class="fa fa-play"></i> 분석 실행</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3열 패널 -->
+                <div class="panels">
+                    <!-- 팔레트 -->
+                    <div class="panel">
+                        <h3><i class="fa fa-swatchbook"></i> 대표 색상 팔레트 <span class="count" id="palCount"></span></h3>
+                        <div class="palette-hint"><i class="fa fa-hand-pointer"></i> 색을 눌러 <b>직접 원하는 색으로</b> 바꿔 보세요 — 결과 사진이 다시 칠해집니다</div>
+                        <div class="palette" id="palette"></div>
+                    </div>
+
+                    <!-- 색 분포 -->
+                    <div class="panel">
+                        <h3><i class="fa fa-chart-pie"></i> 색 분포 <span class="count">(픽셀 비율)</span></h3>
+                        <div class="donut-wrap">
+                            <div class="donut">
+                                <svg id="donut" viewBox="0 0 42 42"></svg>
+                                <div class="center"><span class="big" id="donutK">–</span><span class="sub">대표색</span></div>
+                            </div>
+                            <div class="legend" id="legend"></div>
+                        </div>
+                    </div>
+
+                    <!-- 분석 정보 -->
+                    <div class="panel">
+                        <h3><i class="fa fa-circle-info"></i> 분석 정보</h3>
+                        <div class="info-list">
+                            <div class="row"><span class="k"><i class="fa fa-ruler-combined"></i> 이미지 크기</span><span class="v" id="iSize">–</span></div>
+                            <div class="row"><span class="k"><i class="fa fa-braille"></i> 총 픽셀 수</span><span class="v" id="iPixels">–</span></div>
+                            <div class="row"><span class="k"><i class="fa fa-palette"></i> 원본 고유색</span><span class="v" id="iUniq">–</span></div>
+                            <div class="row"><span class="k"><i class="fa fa-object-ungroup"></i> 군집 개수 (K)</span><span class="v" id="iK">–</span></div>
+                            <div class="row"><span class="k"><i class="fa fa-cube"></i> 색 공간</span><span class="v" id="iSpace">–</span></div>
+                            <div class="row"><span class="k"><i class="fa fa-repeat"></i> 반복 횟수</span><span class="v" id="iIters">–</span></div>
+                            <div class="row"><span class="k"><i class="fa fa-ruler"></i> 거리 함수</span><span class="v">Euclidean</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4단계 설명 -->
+                <div class="steps-card">
+                    <h3><i class="fa fa-diagram-project"></i> K-means 색 군집화란?</h3>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="num">1</div>
+                            <h4>초기 중심 선택</h4>
+                            <p>K개의 중심점을 이미지 색 중에서 골라 시작해요.</p>
+                            <div class="fig">
+                                <svg viewBox="0 0 130 60">
+                                    <circle cx="20" cy="18" r="2" fill="#c7cbe8"/><circle cx="42" cy="12" r="2" fill="#c7cbe8"/>
+                                    <circle cx="70" cy="20" r="2" fill="#c7cbe8"/><circle cx="95" cy="14" r="2" fill="#c7cbe8"/>
+                                    <circle cx="30" cy="40" r="2" fill="#c7cbe8"/><circle cx="60" cy="46" r="2" fill="#c7cbe8"/>
+                                    <circle cx="100" cy="42" r="2" fill="#c7cbe8"/><circle cx="112" cy="30" r="2" fill="#c7cbe8"/>
+                                    <circle cx="48" cy="30" r="5" fill="#6366f1"/><circle cx="88" cy="34" r="5" fill="#8b5cf6"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="num">2</div>
+                            <h4>클러스터 할당</h4>
+                            <p>각 색을 가장 가까운 중심에 배정해요.</p>
+                            <div class="fig">
+                                <svg viewBox="0 0 130 60">
+                                    <circle cx="20" cy="18" r="2.4" fill="#6366f1"/><circle cx="42" cy="12" r="2.4" fill="#6366f1"/>
+                                    <circle cx="30" cy="40" r="2.4" fill="#6366f1"/><circle cx="55" cy="42" r="2.4" fill="#6366f1"/>
+                                    <circle cx="70" cy="20" r="2.4" fill="#8b5cf6"/><circle cx="95" cy="14" r="2.4" fill="#8b5cf6"/>
+                                    <circle cx="100" cy="42" r="2.4" fill="#8b5cf6"/><circle cx="112" cy="30" r="2.4" fill="#8b5cf6"/>
+                                    <circle cx="40" cy="28" r="5.5" fill="none" stroke="#6366f1" stroke-width="1.4" stroke-dasharray="3 2"/>
+                                    <circle cx="92" cy="28" r="5.5" fill="none" stroke="#8b5cf6" stroke-width="1.4" stroke-dasharray="3 2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="num">3</div>
+                            <h4>중심 업데이트</h4>
+                            <p>각 클러스터의 평균으로 중심을 옮겨요.</p>
+                            <div class="fig">
+                                <svg viewBox="0 0 130 60">
+                                    <circle cx="30" cy="20" r="2.2" fill="#c7cbe8"/><circle cx="50" cy="26" r="2.2" fill="#c7cbe8"/>
+                                    <circle cx="38" cy="40" r="2.2" fill="#c7cbe8"/>
+                                    <circle cx="30" cy="30" r="5" fill="#c7cbe8"/>
+                                    <path d="M36 30 L54 30" stroke="#6366f1" stroke-width="1.6" marker-end="url(#ar)"/>
+                                    <circle cx="58" cy="30" r="5" fill="#6366f1"/>
+                                    <defs><marker id="ar" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0 0 L5 3 L0 6 z" fill="#6366f1"/></marker></defs>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="num">4</div>
+                            <h4>반복 수행</h4>
+                            <p>중심이 더 이상 움직이지 않을 때까지 반복해요.</p>
+                            <div class="fig">
+                                <svg viewBox="0 0 130 60">
+                                    <path d="M65 14 a16 16 0 1 1 -14 8" fill="none" stroke="#8b5cf6" stroke-width="2.4" stroke-linecap="round"/>
+                                    <path d="M65 14 l-7 -2 l3 8 z" fill="#8b5cf6"/>
+                                    <circle cx="65" cy="30" r="3.5" fill="#6366f1"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tip -->
+                <div class="tip">
+                    <span class="badge"><i class="fa fa-lightbulb"></i> Tip</span>
+                    더 많은 군집 수(K)를 사용할수록 원본과 더 비슷해지지만, 요약의 장점은 줄어들어요!
+                </div>
+
+                <!-- 개념 설명 -->
+                <div class="explain">
+                    <b>무슨 일이 일어날까요?</b> 모든 픽셀을 (R, G, B) 좌표를 가진 하나의 점이라고 보면, 사진은 색 공간에 흩뿌려진 수만 개의 점입니다.
+                    <b>K-means</b>는 여기에 대표점(중심, centroid) <b>K</b>개를 놓고 → 각 픽셀을 <b>가장 가까운 중심</b>에 배정하고 → 중심을 배정된 점들의 <b>평균</b>으로 옮기는 과정을 반복해 색을 <b>K가지로 요약</b>합니다.
+                    이때 '가깝다'는 것은 <a href="activity11_similarity_check.html">거리</a> 개념(√(Δ²+Δ²+Δ²))이고, <a href="activity3_rgb_explore.html">RGB 데이터</a> 활동의 연장입니다.
+                    <b>색 공간</b>을 <b>Lab</b>으로 바꾸면 사람 눈이 느끼는 색 차이에 더 가깝게, <b>RGB</b>는 화면 신호 그대로 거리를 잽니다 — 둘을 바꿔가며 결과를 비교해 보세요.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="donut-tip" id="donutTip"></div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed &amp; Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    (function () {
+        'use strict';
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        let SOURCE = null;       // 원본 이미지를 담은 캔버스
+        let SRC_DIM = [0, 0];    // 업로드된 원본의 실제 크기
+        let STATE = null;        // { centRGB, assign, N, width, height, usedCount }
+        const $ = (id) => document.getElementById(id);
+
+        // K 선택지 채우기 (2~16)
+        (function fillK() {
+            const sel = $('kSel');
+            for (let k = 2; k <= 16; k++) {
+                const o = document.createElement('option');
+                o.value = k; o.textContent = k;
+                if (k === 8) o.selected = true;
+                sel.appendChild(o);
+            }
+        })();
+
+        // ---------- 색 공간 변환 (RGB ↔ Lab) ----------
+        function rgb2lab(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+            g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+            b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+            let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+            let y = (r * 0.2126 + g * 0.7152 + b * 0.0722);
+            let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+            x = x > 0.008856 ? Math.cbrt(x) : (7.787 * x + 16 / 116);
+            y = y > 0.008856 ? Math.cbrt(y) : (7.787 * y + 16 / 116);
+            z = z > 0.008856 ? Math.cbrt(z) : (7.787 * z + 16 / 116);
+            return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+        }
+        function lab2rgb(L, a, bb) {
+            let y = (L + 16) / 116, x = a / 500 + y, z = y - bb / 200;
+            const f = (t) => (t * t * t > 0.008856) ? t * t * t : (t - 16 / 116) / 7.787;
+            x = 0.95047 * f(x); y = f(y); z = 1.08883 * f(z);
+            let r = x * 3.2406 + y * -1.5372 + z * -0.4986;
+            let g = x * -0.9689 + y * 1.8758 + z * 0.0415;
+            let b = x * 0.0557 + y * -0.2040 + z * 1.0570;
+            const gm = (c) => (c > 0.0031308) ? 1.055 * Math.pow(c, 1 / 2.4) - 0.055 : 12.92 * c;
+            const cl = (v) => Math.max(0, Math.min(255, Math.round(v * 255)));
+            return [cl(gm(r)), cl(gm(g)), cl(gm(b))];
+        }
+
+        // ---------- 이미지 로드 ----------
+        function setSource(drawable, w, h) {
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d').drawImage(drawable, 0, 0, w, h);
+            SOURCE = c;
+            renderKMeans();
+        }
+
+        function loadFromImage(img) {
+            const maxDim = 560;
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            SRC_DIM = [w, h];
+            const scale = Math.min(1, maxDim / Math.max(w, h));
+            setSource(img, Math.round(w * scale), Math.round(h * scale));
+        }
+
+        $('uploadBtn').addEventListener('click', () => $('fileInput').click());
+        $('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => loadFromImage(img);
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 외부 파일 없이 항상 동작하도록 캔버스에 샘플 장면을 그린다
+        $('sampleBtn').addEventListener('click', drawSample);
+        function drawSample() {
+            const w = 480, h = 340;
+            SRC_DIM = [w, h];
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const g = c.getContext('2d');
+            const sky = g.createLinearGradient(0, 0, 0, h);
+            sky.addColorStop(0, '#3a7bd5');
+            sky.addColorStop(0.6, '#a1c4fd');
+            sky.addColorStop(1, '#ffe7b3');
+            g.fillStyle = sky; g.fillRect(0, 0, w, h);
+            g.fillStyle = '#ffd93b';
+            g.beginPath(); g.arc(w * 0.75, h * 0.28, 44, 0, Math.PI * 2); g.fill();
+            g.fillStyle = 'rgba(255,240,150,0.5)';
+            g.beginPath(); g.arc(w * 0.75, h * 0.28, 66, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#6ab04c';
+            g.beginPath(); g.moveTo(0, h);
+            g.quadraticCurveTo(w * 0.3, h * 0.55, w * 0.6, h * 0.72);
+            g.quadraticCurveTo(w * 0.85, h * 0.85, w, h * 0.7);
+            g.lineTo(w, h); g.closePath(); g.fill();
+            g.fillStyle = '#227a3b';
+            g.beginPath(); g.moveTo(0, h);
+            g.quadraticCurveTo(w * 0.35, h * 0.78, w * 0.7, h * 0.88);
+            g.quadraticCurveTo(w * 0.9, h * 0.93, w, h * 0.9);
+            g.lineTo(w, h); g.closePath(); g.fill();
+            g.fillStyle = '#5b3a1a'; g.fillRect(w * 0.2 - 6, h * 0.7, 12, 52);
+            g.fillStyle = '#2f9e44';
+            g.beginPath(); g.arc(w * 0.2, h * 0.68, 34, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#e64980';
+            g.beginPath(); g.arc(w * 0.2 - 15, h * 0.66, 7, 0, Math.PI * 2); g.fill();
+            g.beginPath(); g.arc(w * 0.2 + 13, h * 0.72, 6, 0, Math.PI * 2); g.fill();
+            setSource(c, w, h);
+        }
+
+        // ---------- 작업용 이미지 데이터 (처리 해상도 제한) ----------
+        function getWorkingImageData(maxDim) {
+            let w = SOURCE.width, h = SOURCE.height;
+            const scale = Math.min(1, maxDim / Math.max(w, h));
+            w = Math.max(1, Math.round(w * scale));
+            h = Math.max(1, Math.round(h * scale));
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            ctx.drawImage(SOURCE, 0, 0, w, h);
+            return ctx.getImageData(0, 0, w, h);
+        }
+
+        // ---------- K-means ----------
+        function initPP(px, N, K) {
+            const cent = new Float64Array(K * 3);
+            let idx = (Math.random() * N) | 0;
+            cent[0] = px[idx * 3]; cent[1] = px[idx * 3 + 1]; cent[2] = px[idx * 3 + 2];
+            const d2 = new Float64Array(N).fill(Infinity);
+            for (let k = 1; k < K; k++) {
+                let sum = 0;
+                const pr = cent[(k - 1) * 3], pg = cent[(k - 1) * 3 + 1], pb = cent[(k - 1) * 3 + 2];
+                for (let i = 0; i < N; i++) {
+                    const dr = px[i * 3] - pr, dg = px[i * 3 + 1] - pg, db = px[i * 3 + 2] - pb;
+                    const d = dr * dr + dg * dg + db * db;
+                    if (d < d2[i]) d2[i] = d;
+                    sum += d2[i];
+                }
+                let r = Math.random() * sum, acc = 0, chosen = N - 1;
+                for (let i = 0; i < N; i++) { acc += d2[i]; if (acc >= r) { chosen = i; break; } }
+                cent[k * 3] = px[chosen * 3]; cent[k * 3 + 1] = px[chosen * 3 + 1]; cent[k * 3 + 2] = px[chosen * 3 + 2];
+            }
+            return cent;
+        }
+        function initRandom(px, N, K) {
+            const cent = new Float64Array(K * 3);
+            for (let k = 0; k < K; k++) {
+                const idx = (Math.random() * N) | 0;
+                cent[k * 3] = px[idx * 3]; cent[k * 3 + 1] = px[idx * 3 + 1]; cent[k * 3 + 2] = px[idx * 3 + 2];
+            }
+            return cent;
+        }
+
+        function kmeans(px, N, K, maxIter, initMode) {
+            let cent = (initMode === 'random') ? initRandom(px, N, K) : initPP(px, N, K);
+            const assign = new Int32Array(N);
+            let iters = 0;
+            for (let it = 0; it < maxIter; it++) {
+                iters = it + 1;
+                let changed = false;
+                for (let i = 0; i < N; i++) {
+                    const r = px[i * 3], g = px[i * 3 + 1], b = px[i * 3 + 2];
+                    let best = 0, bd = Infinity;
+                    for (let k = 0; k < K; k++) {
+                        const dr = r - cent[k * 3], dg = g - cent[k * 3 + 1], db = b - cent[k * 3 + 2];
+                        const d = dr * dr + dg * dg + db * db;
+                        if (d < bd) { bd = d; best = k; }
+                    }
+                    if (assign[i] !== best) { assign[i] = best; changed = true; }
+                }
+                const sum = new Float64Array(K * 3), cnt = new Float64Array(K);
+                for (let i = 0; i < N; i++) {
+                    const k = assign[i];
+                    sum[k * 3] += px[i * 3]; sum[k * 3 + 1] += px[i * 3 + 1]; sum[k * 3 + 2] += px[i * 3 + 2];
+                    cnt[k]++;
+                }
+                for (let k = 0; k < K; k++) {
+                    if (cnt[k] > 0) {
+                        cent[k * 3] = sum[k * 3] / cnt[k];
+                        cent[k * 3 + 1] = sum[k * 3 + 1] / cnt[k];
+                        cent[k * 3 + 2] = sum[k * 3 + 2] / cnt[k];
+                    }
+                }
+                if (!changed) break;
+            }
+            return { cent, assign, iters };
+        }
+
+        function renderKMeans() {
+            if (!SOURCE) return;
+            const K = parseInt($('kSel').value, 10);
+            const space = $('spaceSel').value;
+            const initMode = $('initSel').value;
+            const maxIter = parseInt($('iterSel').value, 10);
+
+            const imgData = getWorkingImageData(420);
+            const data = imgData.data;
+            const N = data.length / 4;
+
+            // 특징 벡터 만들기 (선택한 색 공간 기준)
+            const px = new Float64Array(N * 3);
+            for (let i = 0; i < N; i++) {
+                const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+                if (space === 'lab') {
+                    const lab = rgb2lab(r, g, b);
+                    px[i * 3] = lab[0]; px[i * 3 + 1] = lab[1]; px[i * 3 + 2] = lab[2];
+                } else {
+                    px[i * 3] = r; px[i * 3 + 1] = g; px[i * 3 + 2] = b;
+                }
+            }
+
+            const { cent, assign, iters } = kmeans(px, N, K, maxIter, initMode);
+
+            drawImageData($('m1orig'), imgData);
+
+            // 각 군집의 표시용 RGB 색 (Lab이면 다시 변환)
+            const centRGB = new Uint8ClampedArray(K * 3);
+            for (let k = 0; k < K; k++) {
+                let rgb;
+                if (space === 'lab') rgb = lab2rgb(cent[k * 3], cent[k * 3 + 1], cent[k * 3 + 2]);
+                else rgb = [Math.round(cent[k * 3]), Math.round(cent[k * 3 + 1]), Math.round(cent[k * 3 + 2])];
+                centRGB[k * 3] = rgb[0]; centRGB[k * 3 + 1] = rgb[1]; centRGB[k * 3 + 2] = rgb[2];
+            }
+
+            const usedCount = new Array(K).fill(0);
+            for (let i = 0; i < N; i++) usedCount[assign[i]]++;
+
+            STATE = { centRGB, assign, N, width: imgData.width, height: imgData.height, usedCount };
+
+            paintQuant();
+            buildPalette();
+            buildDonut();
+
+            // 분석 정보
+            $('iSize').textContent = SRC_DIM[0] + ' × ' + SRC_DIM[1];
+            $('iPixels').textContent = (SRC_DIM[0] * SRC_DIM[1]).toLocaleString();
+            $('iUniq').textContent = countUniqueColors(data).toLocaleString();
+            $('iK').textContent = K;
+            $('iSpace').textContent = (space === 'lab') ? 'Lab' : 'RGB';
+            $('iIters').textContent = iters;
+        }
+
+        // 저장된 표시색으로 결과 사진을 다시 칠한다 (K-means 재실행 없음)
+        function paintQuant() {
+            const { centRGB, assign, N, width, height } = STATE;
+            const out = new ImageData(width, height);
+            const od = out.data;
+            for (let i = 0; i < N; i++) {
+                const k = assign[i];
+                od[i * 4] = centRGB[k * 3];
+                od[i * 4 + 1] = centRGB[k * 3 + 1];
+                od[i * 4 + 2] = centRGB[k * 3 + 2];
+                od[i * 4 + 3] = 255;
+            }
+            drawImageData($('m1quant'), out);
+        }
+
+        function hex2(v) { return v.toString(16).padStart(2, '0'); }
+        function toHex(r, g, b) { return ('#' + hex2(r) + hex2(g) + hex2(b)).toUpperCase(); }
+
+        // 사용량 내림차순으로 정렬된 (군집index, 개수) 목록
+        function usedOrder() {
+            const { usedCount } = STATE;
+            return usedCount.map((c, k) => [k, c])
+                .filter(([, c]) => c > 0)
+                .sort((a, b) => b[1] - a[1]);
+        }
+
+        // 팔레트·도넛·범례를 같은 색(군집 k)끼리 연결해 서로 강조한다
+        function setHighlight(k, on) {
+            document.querySelectorAll('[data-k]').forEach((el) => {
+                el.classList.toggle('hl', on && el.dataset.k === String(k));
+            });
+            $('palette').classList.toggle('linking', on);
+            $('legend').classList.toggle('linking', on);
+            const donut = document.querySelector('.donut');
+            if (donut) donut.classList.toggle('linking', on);
+        }
+        function linkHover(el, k) {
+            el.addEventListener('mouseenter', () => setHighlight(k, true));
+            el.addEventListener('mouseleave', () => setHighlight(k, false));
+        }
+
+        function buildPalette() {
+            const { centRGB } = STATE;
+            const order = usedOrder();
+            const pal = $('palette');
+            pal.innerHTML = '';
+            for (const [k] of order) {
+                const r = centRGB[k * 3], g = centRGB[k * 3 + 1], b = centRGB[k * 3 + 2];
+                const hex = toHex(r, g, b);
+                const el = document.createElement('div');
+                el.className = 'swatch';
+                el.dataset.k = k;
+                el.innerHTML =
+                    `<div class="chip" style="background:${hex}">`
+                    + `<span class="pen"><i class="fa fa-pen"></i></span>`
+                    + `<input type="color" value="${hex}" aria-label="대표색 편집">`
+                    + `</div>`
+                    + `<div class="meta">${hex}</div>`;
+                const picker = el.querySelector('input[type=color]');
+                picker.addEventListener('input', () => editColor(k, picker.value, el));
+                linkHover(el, k);
+                pal.appendChild(el);
+            }
+            // 항상 2행 유지: 열 개수를 늘려 각 열 너비를 줄인다 (최소 4열)
+            pal.style.setProperty('--cols', Math.max(4, Math.ceil(order.length / 2)));
+            $('palCount').textContent = '(' + order.length + '개)';
+        }
+
+        // 사용자가 대표색 하나를 직접 지정 → 표시색 교체 후 사진·팔레트·도넛 갱신
+        function editColor(k, hex, el) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            STATE.centRGB[k * 3] = r;
+            STATE.centRGB[k * 3 + 1] = g;
+            STATE.centRGB[k * 3 + 2] = b;
+            paintQuant();
+            el.querySelector('.chip').style.background = toHex(r, g, b);
+            el.querySelector('.meta').innerHTML = toHex(r, g, b);
+            buildDonut();
+        }
+
+        // ---------- 도넛 차트 (색 분포) ----------
+        function buildDonut() {
+            const { centRGB, N } = STATE;
+            const order = usedOrder();
+            const svg = $('donut');
+            const C = 2 * Math.PI * 15.915; // r=15.915 → 둘레 ≈ 100
+            const R = 15.915, CX = 21, CY = 21, SW = 7;
+            const gap = order.length > 1 ? 0.6 : 0; // 세그먼트 사이 간격
+            let acc = 0;
+            let markup = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#eef0ff" stroke-width="${SW}"/>`;
+            const legend = $('legend');
+            legend.innerHTML = '';
+            for (const [k, cnt] of order) {
+                const frac = cnt / N;
+                const r = centRGB[k * 3], g = centRGB[k * 3 + 1], b = centRGB[k * 3 + 2];
+                const hex = toHex(r, g, b);
+                const len = Math.max(0, frac * C - gap);
+                const dash = `${len} ${C - len}`;
+                const offset = -acc * C;
+                markup += `<circle class="seg" cx="${CX}" cy="${CY}" r="${R}" fill="none"`
+                    + ` stroke="${hex}" stroke-width="${SW}"`
+                    + ` stroke-dasharray="${dash}" stroke-dashoffset="${offset}"`
+                    + ` data-k="${k}" data-hex="${hex}" data-pct="${(frac * 100).toFixed(1)}"></circle>`;
+                acc += frac;
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.dataset.k = k;
+                row.innerHTML = `<span class="dot" style="background:${hex}"></span>`
+                    + `<span class="pct">${(frac * 100).toFixed(1)}%</span>`;
+                linkHover(row, k);
+                legend.appendChild(row);
+            }
+            svg.innerHTML = markup;
+            $('donutK').textContent = order.length;
+
+            // 세그먼트 호버 툴팁
+            const tip = $('donutTip');
+            svg.querySelectorAll('.seg').forEach((seg) => {
+                const k = +seg.dataset.k;
+                seg.addEventListener('mouseenter', () => setHighlight(k, true));
+                seg.addEventListener('mousemove', (e) => {
+                    tip.textContent = seg.dataset.hex + '  ·  ' + seg.dataset.pct + '%';
+                    tip.style.left = (e.clientX + 12) + 'px';
+                    tip.style.top = (e.clientY + 12) + 'px';
+                    tip.style.opacity = '1';
+                });
+                seg.addEventListener('mouseleave', () => { tip.style.opacity = '0'; setHighlight(k, false); });
+            });
+        }
+
+        function countUniqueColors(data) {
+            const set = new Set();
+            const N = data.length / 4;
+            const step = Math.max(1, Math.floor(N / 40000));
+            for (let i = 0; i < N; i += step) {
+                set.add((data[i * 4] << 16) | (data[i * 4 + 1] << 8) | data[i * 4 + 2]);
+            }
+            return set.size;
+        }
+
+        function drawImageData(canvas, imgData) {
+            canvas.width = imgData.width;
+            canvas.height = imgData.height;
+            canvas.getContext('2d').putImageData(imgData, 0, 0);
+        }
+
+        // ---------- 컨트롤 이벤트 ----------
+        ['kSel', 'spaceSel', 'initSel', 'iterSel'].forEach((id) => {
+            $(id).addEventListener('change', renderKMeans);
+        });
+        $('runBtn').addEventListener('click', renderKMeans);
+
+        // ---------- 시작 ----------
+        drawSample();
+    })();
+    </script>
+</body>
+
+</html>

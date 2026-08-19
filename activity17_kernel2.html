@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -49,6 +49,7 @@
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="stylefooter.css">
     <link rel="stylesheet" href="nav.css">
+  <script src="backguard.js"></script>
     <script src="nav.js"></script>
     <title>합성곱(Convolution) 시각화</title>
     <style>
@@ -199,6 +200,8 @@
         .main-content {
             display: grid;
             grid-template-columns: auto auto auto;
+            /* 패널마다 내용 길이가 달라서, 늘리지 않고 각자 높이를 갖게 한다 */
+            align-items: start;
             gap: 20px;
             padding: 30px;
         }
@@ -238,6 +241,9 @@
         }
         
         #input2d-grid {
+            /* 줌은 transform 대신 셀 크기로 처리한다. transform: scale() 은 레이아웃
+               박스 크기를 바꾸지 않아 확대하면 패널 밖으로 넘쳐 아래 요소를 덮는다. */
+            --cell-size: 40px;
             display: grid;
             gap: 1px;
             background: #333;
@@ -245,9 +251,18 @@
             border-radius: 4px;
             margin: 15px auto;
             overflow: auto;
+            max-width: 100%;
             border: 2px solid #333;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             width: fit-content;
+        }
+
+        #input2d-grid .grid-cell {
+            min-width: 0;
+            min-height: 0;
+            width: var(--cell-size);
+            height: var(--cell-size);
+            font-size: calc(var(--cell-size) * 0.3);
         }
         
         #output2d-grid {
@@ -434,11 +449,36 @@
             font-size: 0.9em;
         }
         
+        /* 재생 버튼과 속도 슬라이더는 한 덩어리로 묶어 시선이 나뉘지 않게 한다 */
+        .playback-block {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 16px 18px;
+            background: white;
+            border-radius: 12px;
+            border: 1.5px solid rgba(99, 102, 241, 0.15);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.07);
+        }
+
+        .playback-block .control-group {
+            flex: 1;
+            min-width: 200px;
+            margin: 0;
+        }
+
         .playback-controls {
             display: flex;
             justify-content: center;
             gap: 12px;
             margin: 25px 0;
+        }
+
+        .playback-block .playback-controls {
+            margin: 0;
         }
         
         .playback-controls button {
@@ -558,13 +598,14 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            width: 130px;
+            width: 216px;
             flex-shrink: 0;
         }
 
+        /* 6개를 세로로 세우면 커널 그리드보다 두 배 이상 길어져 패널이 늘어난다 */
         .kernel-preset {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 7px;
         }
 
@@ -672,6 +713,16 @@
             box-shadow: 0 4px 14px rgba(99, 102, 241, 0.1);
         }
         
+        .checkbox-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .checkbox-row .checkbox-group {
+            margin: 10px 0 0 0;
+        }
+
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -781,23 +832,47 @@
             transform: scale(1.1);
         }
         
+        @media (max-width: 1500px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            /* 2열에서는 출력 패널이 둘째 줄에 혼자 남아 오른쪽 절반이 통째로 빈다 */
+            .main-content > .panel:last-child {
+                grid-column: 1 / -1;
+            }
+        }
+
         @media (max-width: 1200px) {
             .main-content {
                 grid-template-columns: 1fr;
             }
         }
+
+        /* 좁은 화면에서는 절대배치된 '다음 단계' 버튼이 부제목 위로 겹친다 */
+        @media (max-width: 1100px) {
+            .next-step-btn {
+                position: static;
+                transform: none;
+                margin: 16px auto 4px;
+            }
+
+            .next-step-btn:hover {
+                transform: translateY(-2px);
+            }
+        }
         
         .zoom-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
             align-items: center;
-            margin: 15px 0;
+            margin: 0;
         }
 
         .zoom-controls button {
-            width: 42px;
-            height: 42px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             font-size: 1.2em;
             background: #f8fafc;
@@ -817,13 +892,18 @@
         }
         
         .matrix-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
             text-align: center;
             font-weight: 700;
             font-family: 'Courier New', monospace;
             color: #1e293b;
-            margin: 18px 0 12px 0;
+            margin: 14px 0 10px 0;
             font-size: 1.15em;
-            padding: 10px;
+            padding: 8px 10px;
             background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
             border-radius: 8px;
             border: 2px solid #dbeafe;
@@ -838,27 +918,38 @@
 
     <aside class="sidebar">
         <nav>
+            <div class="nav-sec">시작</div>
             <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
             <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
             <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
             <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
             <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
             <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
             <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성
                     원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
             <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
             <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
             <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
             <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
             <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
             <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
             <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
                     변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
             <a href="activity17_kernel.html" class="active"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터
                     체험</span></a>
+            <a href="activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+            <a href="activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+            <a href="activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
         </nav>
     </aside>
 
@@ -868,7 +959,7 @@
                 <span class="h1-conv">합성곱 (Convolution)</span>
                 <span class="h1-viz">시각화</span>
             </h1>
-            <a href="./cnn_visualizer.html" class="next-step-btn">다음 단계 →</a>
+            <a href="./activity17_cnn_visualizer.html" class="next-step-btn">다음 단계 →</a>
             <p class="subtitle">커널이 이미지를 순회하며 계산하는 과정을 체험하세요</p>
             <div class="mode-toggle">
                 <button class="mode-btn" onclick="setMode('1d')">벡터 모드</button>
@@ -926,13 +1017,14 @@
                         </div>
                     </div>
                     
-                    <div class="matrix-label">입력 행렬 [<span id="input-size-label">9×9</span>]</div>
-                    
-                    <div class="zoom-controls">
-                        <button onclick="adjustZoom(-0.1)">➖</button>
-                        <button onclick="adjustZoom(0.1)">➕</button>
+                    <div class="matrix-label">
+                        <span>입력 행렬 [<span id="input-size-label">9×9</span>]</span>
+                        <span class="zoom-controls">
+                            <button onclick="adjustZoom(-0.1)" title="축소">➖</button>
+                            <button onclick="adjustZoom(0.1)" title="확대">➕</button>
+                        </span>
                     </div>
-                    
+
                     <div id="input2d-grid"></div>
                     
                     <div class="btn-group">
@@ -970,16 +1062,18 @@
                     </div>
                 </div>
                 
-                <div class="playback-controls">
-                    <button onclick="stepBackward()">⏮</button>
-                    <button id="play-btn" onclick="togglePlay()">▶</button>
-                    <button onclick="stepForward()">⏭</button>
-                </div>
-                
-                <div class="control-group">
-                    <label>재생 속도</label>
-                    <input type="range" min="0.25" max="2" step="0.25" value="1" oninput="setSpeed(this.value)">
-                    <div class="speed-display" id="speed-display">1.0&times;</div>
+                <div class="playback-block">
+                    <div class="playback-controls">
+                        <button onclick="stepBackward()" title="이전 단계">⏮</button>
+                        <button id="play-btn" onclick="togglePlay()" title="재생/일시정지">▶</button>
+                        <button onclick="stepForward()" title="다음 단계">⏭</button>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="speed-range">재생 속도</label>
+                        <input type="range" id="speed-range" title="재생 속도" min="0.25" max="2" step="0.25" value="1" oninput="setSpeed(this.value)">
+                        <div class="speed-display" id="speed-display">1.0&times;</div>
+                    </div>
                 </div>
                 
                 <div class="computation-display" id="computation"></div>
@@ -1011,14 +1105,16 @@
                     </div>
                 </div>
                 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="normalize" onchange="updateConvolution()" checked>
-                    <label for="normalize">커널 합으로 나누기</label>
-                </div>
-                
-                <div class="checkbox-group">
-                    <input type="checkbox" id="clip" onchange="updateConvolution()" checked>
-                    <label for="clip">0-255로 클리핑</label>
+                <div class="checkbox-row">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="normalize" onchange="updateConvolution()" checked>
+                        <label for="normalize">커널 합으로 나누기</label>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="clip" onchange="updateConvolution()" checked>
+                        <label for="clip">0-255로 클리핑</label>
+                    </div>
                 </div>
                 
                 <div class="matrix-label">출력 행렬 [<span id="output-size-label">7×7</span>]</div>
@@ -1063,6 +1159,9 @@
           </div>
       </footer>
     <script>
+        // 줌 배율 1.0 일 때의 입력 셀 한 변 길이 (CSS #input2d-grid 의 --cell-size 기본값과 맞춘다)
+        const BASE_CELL_SIZE = 40;
+
         // 상태 관리
         const state = {
             mode: '2d',
@@ -1567,15 +1666,16 @@
             const cols = rows && matrix[0] ? matrix[0].length : 0;
 
             const inputSizeLabel = document.getElementById('input-size-label');
-            if (inputSizeLabel) {
-                if (usePadded) {
-                    inputSizeLabel.textContent = `${rows}\u00D7${cols}`;
-                } else if (state.input2d.length && state.input2d[0]) {
-                    inputSizeLabel.textContent = `${state.input2d.length}\u00D7${state.input2d[0].length}`;
-                }
+            if (inputSizeLabel && state.input2d.length && state.input2d[0]) {
+                // \uD328\uB529\uC774 \uCF1C\uC838 \uC788\uC73C\uBA74 \uC6D0\uBCF8 \uD06C\uAE30\uC640 \uD328\uB529 \uD6C4 \uD06C\uAE30\uB97C \uD568\uAED8 \uBCF4\uC5EC\uC900\uB2E4.
+                // \uD328\uB529 \uD06C\uAE30\uB9CC \uC4F0\uBA74 \uC704\uCABD '\uC785\uB825 \uD06C\uAE30' \uC120\uD0DD\uAC12\uACFC \uB2EC\uB77C \uBCF4\uC5EC \uD5F7\uAC08\uB9B0\uB2E4.
+                const base = `${state.input2d.length}\u00D7${state.input2d[0].length}`;
+                inputSizeLabel.textContent = usePadded
+                    ? `${base} \u2192 \uD328\uB529 ${rows}\u00D7${cols}`
+                    : base;
             }
 
-            inputGrid.style.gridTemplateColumns = `repeat(${cols || state.inputSize}, 40px)`;
+            inputGrid.style.gridTemplateColumns = `repeat(${cols || state.inputSize}, var(--cell-size))`;
             inputGrid.innerHTML = '';
 
             if (!rows || !cols) {
@@ -1999,8 +2099,8 @@
         function adjustZoom(delta) {
             state.zoom = Math.max(0.5, Math.min(2, state.zoom + delta));
             const grid = document.getElementById('input2d-grid');
-            grid.style.transform = `scale(${state.zoom})`;
-            grid.style.transformOrigin = 'center center';
+            // 셀 크기를 바꿔야 그리드가 실제로 리플로우된다 (transform 은 겹침 발생)
+            grid.style.setProperty('--cell-size', `${(BASE_CELL_SIZE * state.zoom).toFixed(1)}px`);
         }
         
         function downloadCSV() {

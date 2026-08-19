@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- 🔍 SEO (검색엔진 최적화) -->
-    <title>손글씨 숫자 to 28x28 행렬 변환기</title>
+    <title>손글씨 숫자의 28×28 행렬 | 인공지능 수학 웹앱</title>
     <meta name="description" content="손글씨로 그린 숫자를 28x28 행렬로 변환하여 MNIST 데이터셋 형식으로 확인할 수 있는 웹 도구입니다.">
     <meta name="keywords" content="손글씨 인식, MNIST, 행렬 변환, 28x28, 이미지 처리, 인공지능 수학, 교육용 웹사이트">
     <meta name="author" content="황성현">
@@ -50,6 +50,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="nav.css">
+  <script src="backguard.js"></script>
     <script src="nav.js"></script>
     <style>
         body {
@@ -57,14 +58,9 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 100%);
-            background-size: 400% 400%;
-            animation: gradientMove 12s ease-in-out infinite;
-        }
-        @keyframes gradientMove {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
+            /* 배경을 계속 왕복시키던 gradientMove 애니메이션을 걷어냈다.
+               스크롤과 상관없이 무늬가 흘러 눈이 어지러웠다. 배경색·무늬는
+               quiz-theme.css 가 정한다. */
         }
 
         .container {
@@ -369,7 +365,7 @@
         }
 
         .instructions {
-            background: linear-gradient(90deg, #e3f0ff 0%, #f8faff 100%);
+            background: #e3f0ff;
             border-left: 6px solid #6c8cff;
             padding: 18px 24px;
             margin-bottom: 24px;
@@ -437,38 +433,49 @@
             }
         }
     </style>
+  <link rel="stylesheet" href="quiz-theme.css" />
 </head>
 
-<body>
+<body class="theme-pixel">
     <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
         <i class="fas fa-bars"></i>
       </div>
 
     <aside class="sidebar">
         <nav>
+            <div class="nav-sec">시작</div>
             <a href="indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
             <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
             <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
             <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
             <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
             <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
             <a href="activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
             <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
             <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
             <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
             <a href="activity10_hamming_distance.html" class="active"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
             <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
             <a href="activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
             <a href="activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
             <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
             <a href="activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
             <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
             <a href="activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
       <a href="activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
         </nav>
     </aside>
     <div class="container">
-        <h1>🖊️ 손글씨 숫자 → 28×28 행렬 변환기</h1>
+        <h1>손글씨 숫자 → 28×28 행렬 변환기</h1>
 
         <div class="instructions">
             <h3>사용법</h3>

@@ -549,6 +549,163 @@
             margin-left: 8px;
         }
 
+        /* ── 직접 학습 ── */
+        #customSection { display: none; }
+
+        .train-source {
+            display: flex;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .train-source .src-chip {
+            flex: 1;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 700;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .train-source .src-chip.on {
+            border-color: #10b981;
+            background: #f0fdf4;
+            color: #059669;
+        }
+
+        .trained-list {
+            margin: 14px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .trained-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 2px solid #d1fae5;
+            border-radius: 12px;
+            background: #f0fdf4;
+            font-size: 15px;
+        }
+
+        .trained-item .t-name { font-weight: 700; color: #065f46; }
+        .trained-item .t-count { color: #64748b; font-size: 13px; margin-left: auto; }
+
+        .trained-item button {
+            width: auto;
+            margin: 0;
+            padding: 8px 14px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .trained-empty {
+            padding: 14px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            color: #64748b;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .train-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+        .train-tools button { width: auto; flex: 1; margin: 0; min-width: 120px; }
+
+        /* ── 학습 팝업 ── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .modal-backdrop[hidden] { display: none; }
+
+        .modal-card {
+            background: white;
+            border-radius: 24px;
+            border: 2px solid #d1fae5;
+            padding: 28px;
+            width: 100%;
+            max-width: 460px;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-card h2 { margin-top: 0; }
+
+        .train-stage {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+        }
+
+        #trainPreview { width: 100%; height: auto; display: block; }
+
+        .train-big {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 88px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+            pointer-events: none;
+        }
+
+        .train-big.small { font-size: 34px; }
+
+        .train-progress {
+            height: 10px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+            margin: 14px 0 10px;
+        }
+
+        .train-progress > div {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        }
+
+        .train-msg {
+            font-size: 15px;
+            color: #475569;
+            min-height: 44px;
+            line-height: 1.5;
+        }
+
+        .train-name-row {
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            gap: 10px;
+            align-items: center;
+            margin: 8px 0 4px;
+        }
+
+        .train-name-row label { font-weight: 600; color: #475569; }
+        .train-name-row input { margin: 0; }
+
+        .train-actions { display: flex; gap: 8px; margin-top: 14px; }
+        .train-actions button { width: auto; flex: 1; margin: 0; }
+
         #textSection {
             display: none;
         }
@@ -660,6 +817,41 @@
                         <div class="desc">자세 인식</div>
                     </label>
                 </div>
+
+                <div class="radio-option">
+                    <input type="radio" name="modelType" id="customModel" value="custom">
+                    <label for="customModel" class="radio-label">
+                        <div class="icon">🎓</div>
+                        <div class="title">직접 학습</div>
+                        <div class="desc">손·얼굴로 바로 학습</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 직접 학습 -->
+            <div id="customSection">
+                <h2>🎓 동작 직접 학습하기</h2>
+                <div class="info">
+                    티처블머신 없이 이 화면에서 바로 학습합니다. <strong>손 모양과 얼굴(고개 방향·표정)을 함께</strong> 봅니다.
+                    학습할 동작을 취할 준비를 하고 <strong>직접 학습하기</strong>를 누르면
+                    <strong>3 · 2 · 1</strong> 뒤 <strong>5초 동안</strong> 그 동작을 기억합니다.
+                    동작마다 한 번씩 반복하고, 동작은 2개 이상 만드세요.
+                </div>
+
+                <div class="train-source" role="status" aria-live="polite">
+                    <span class="src-chip" id="chipHand">✋ 손 —</span>
+                    <span class="src-chip" id="chipFace">🙂 얼굴 —</span>
+                </div>
+
+                <button type="button" id="openTrain">🎓 직접 학습하기</button>
+
+                <div id="trainedList" class="trained-list"></div>
+
+                <div class="train-tools">
+                    <button type="button" class="secondary" id="saveTrained">💾 저장</button>
+                    <button type="button" class="secondary" id="loadTrained">📂 불러오기</button>
+                    <button type="button" class="secondary" id="clearTrained">🗑 전체 지우기</button>
+                </div>
             </div>
             
             <h2>🔗 티처블머신 모델 URL</h2>
@@ -753,6 +945,30 @@
         </div>
     </div>
     
+    <!-- 학습 팝업 -->
+    <div id="trainModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="trainTitle" hidden>
+        <div class="modal-card">
+            <h2 id="trainTitle">🎓 동작 학습</h2>
+            <div class="train-stage">
+                <canvas id="trainPreview" width="360" height="270"></canvas>
+                <div id="trainBig" class="train-big"></div>
+            </div>
+            <div class="train-progress"><div id="trainBar"></div></div>
+            <div id="trainMsg" class="train-msg" role="status" aria-live="polite">카메라를 준비하는 중입니다…</div>
+
+            <div id="trainNameRow" class="train-name-row" hidden>
+                <label for="trainName">동작 이름</label>
+                <input type="text" id="trainName" maxlength="40" value="class1">
+            </div>
+
+            <div class="train-actions">
+                <button type="button" id="trainStart" disabled>▶ 시작</button>
+                <button type="button" id="trainSave" hidden>✅ 저장</button>
+                <button type="button" class="secondary" id="trainClose">닫기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Teachable Machine 라이브러리 -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
@@ -774,8 +990,18 @@
         let mappingsApplied = false;
         let testMode = false;
         let savedModelURL = '';
-        let lastCommand = '';
-        let lastSendTime = 0;
+        // ── 신호 지연을 줄이기 위한 설정 ──
+        const SEND_THRESHOLD = 0.8;   // 이 확률을 넘어야 명령 후보가 된다
+        const HOLD_MS = 0;            // 자세가 잡히면 바로 보낸다. 로봇이 깜빡거리며 덜컹대면 100~200 으로 올린다
+        const FAST_FRAME_MS = 150;    // 이보다 빠르게 도는 기기에서만 확인 시간을 준다
+        const UI_INTERVAL_MS = 120;   // 막대그래프 갱신 간격 (추론을 방해하지 않도록)
+
+        // 전송 대기열: 한 번에 하나만 보내고, 밀린 명령은 버리고 항상 최신 것만 남긴다.
+        let pendingCommand = null, pendingClass = '', sending = false;
+        let lastSentCommand = '', lastSentAt = 0;
+        // 자세 유지 판단 · 이 기기의 추론 속도
+        let holdClass = '', holdSince = 0;
+        let lastPredictAt = 0, frameMs = 0;
         let currentStep = 1;
         let modelType = 'pose'; // Maqueen 활동 기본값: pose
         
@@ -793,6 +1019,7 @@
             row.style.color = color;
             row.textContent = `[${time}] ${icon} ${msg}`;
             logDiv.appendChild(row);
+            while (logDiv.children.length > 100) logDiv.removeChild(logDiv.firstChild);
             logDiv.scrollTop = logDiv.scrollHeight;
         }
         
@@ -902,23 +1129,63 @@
             }
         }
         
+        function resetCommandQueue() {
+            pendingCommand = null;
+            pendingClass = '';
+            lastSentCommand = '';
+            holdClass = '';
+        }
+
+        // 예측 루프에서는 이 함수만 부른다. 기다리지 않으므로 화면이 멈추지 않는다.
+        function queueCommand(command, className) {
+            if (command === lastSentCommand) return;   // 같은 명령은 다시 보내지 않는다
+            pendingCommand = command;                  // 밀린 명령은 버리고 최신 것만 남긴다
+            pendingClass = className;
+            flushCommand();
+        }
+
+        async function flushCommand() {
+            if (sending || pendingCommand === null) return;
+            sending = true;
+            const command = pendingCommand;
+            const className = pendingClass;
+            pendingCommand = null;
+            lastSentCommand = command;   // 보내는 중에도 같은 명령이 다시 쌓이지 않게 먼저 기록
+            const startedAt = performance.now();
+            const success = await sendToMicrobit(command, 'log2');
+            const took = Math.round(performance.now() - startedAt);
+            if (success) {
+                lastSentAt = performance.now();
+                document.getElementById('commandDisplay').textContent =
+                    `🤖 ${className}: ${command} · 전송 ${took}ms`;
+            } else {
+                lastSentCommand = '';    // 실패했으면 다시 보낼 수 있게 되돌린다
+            }
+            sending = false;
+            if (pendingCommand !== null) flushCommand();   // 그사이 바뀐 명령이 있으면 바로 이어서
+        }
+
         // 모델 타입 변경 감지
         document.querySelectorAll('input[name="modelType"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 modelType = e.target.value;
                 updateModelTypeDisplay();
                 
-                // 모델이 이미 로드되어 있으면 경고
+                // 모델이 이미 로드되어 있으면 경고 (직접 학습으로 바꿀 때는 조용히 정리한다)
                 if (model) {
-                    alert('모델 타입을 변경했습니다. 모델을 다시 로드해주세요!');
+                    if (modelType !== 'custom') alert('모델 타입을 변경했습니다. 모델을 다시 로드해주세요!');
                     clearLoadedModel();
                 }
+                resetCommandQueue();
+                resetPredictionUI();
             });
         });
         
         function updateModelTypeDisplay() {
-            const displayText = modelType === 'image' ? '🖼️ Image' : '🧘 Pose';
+            const displayText = modelType === 'image' ? '🖼️ Image'
+                : modelType === 'custom' ? '🎓 직접 학습' : '🧘 Pose';
             document.getElementById('modelTypeDisplay').textContent = displayText;
+            if (typeof updateCustomSections === 'function') updateCustomSections();
         }
 
         function setMappingStatus(message, kind = '') {
@@ -1095,7 +1362,7 @@
             }
 
             classCommands = commands;
-            lastCommand = '';
+            resetCommandQueue();
             mappingsApplied = validateMappingsAgainstModel(showAlert);
             return mappingsApplied;
         }
@@ -1121,6 +1388,67 @@
             }
         }
 
+        // 막대는 클래스가 바뀔 때만 새로 만들고, 그 뒤에는 값만 갱신한다.
+        let barRows = new Map(), barRowsKey = '', lastUiAt = 0;
+
+        function resetPredictionUI() {
+            barRows = new Map();
+            barRowsKey = '';
+        }
+
+        function buildPredictionRows(prediction) {
+            labelContainer.textContent = '';
+            barRows = new Map();
+            for (const item of prediction) {
+                const div = document.createElement('div');
+                div.className = 'prediction';
+                const barContainer = document.createElement('div');
+                barContainer.className = 'prediction-bar-container';
+                const bar = document.createElement('div');
+                bar.className = 'prediction-bar';
+                const label = document.createElement('div');
+                label.className = 'prediction-label-in-bar';
+                const value = document.createElement('div');
+                value.className = 'prediction-value-in-bar';
+                barContainer.append(bar, label, value);
+                div.appendChild(barContainer);
+                labelContainer.appendChild(div);
+                barRows.set(item.className, { div, bar, label, value, labelText: '', width: -1 });
+            }
+            barRowsKey = prediction.map(item => item.className).join('\u0000');
+        }
+
+        function updatePredictionUI(prediction, maxClass) {
+            if (!labelContainer) return;
+            const now = performance.now();
+            if (now - lastUiAt < UI_INTERVAL_MS) return;
+            lastUiAt = now;
+
+            const key = prediction.map(item => item.className).join('\u0000');
+            if (key !== barRowsKey) buildPredictionRows(prediction);
+
+            for (const item of prediction) {
+                const row = barRows.get(item.className);
+                if (!row) continue;
+                const probability = item.probability;
+                const percent = Math.max(0, Math.min(100, probability * 100));
+                if (Math.abs(percent - row.width) > 0.5) {
+                    row.bar.style.width = percent + '%';
+                    row.value.textContent = percent.toFixed(0) + '%';
+                    row.width = percent;
+                }
+                const command = classCommands[item.className] || '';
+                const labelText = `${item.className}${command ? ' → ' + command : ''}`;
+                if (labelText !== row.labelText) {
+                    row.label.textContent = labelText;
+                    row.labelText = labelText;
+                }
+                row.div.classList.toggle('active', item.className === maxClass && probability > 0.5);
+                row.div.setAttribute('data-covered-label', probability > 0.6);
+                row.div.setAttribute('data-covered-value', probability > 0.9);
+            }
+        }
+
         function clearLoadedModel() {
             if (webcam && isWebcamRunning) webcam.stop();
             webcam = null;
@@ -1129,6 +1457,8 @@
             const predictionContainer = document.getElementById('label-container');
             if (webcamContainer) webcamContainer.textContent = '';
             if (predictionContainer) predictionContainer.textContent = '';
+            resetPredictionUI();
+            resetCommandQueue();
             document.getElementById('startWebcam').disabled = false;
             document.getElementById('stopWebcam').disabled = true;
             model = null;
@@ -1365,6 +1695,39 @@
         
         // 웹캠 시작
         document.getElementById('startWebcam').addEventListener('click', async () => {
+            if (modelType === 'custom') {
+                if (trained.length < 2) {
+                    alert('동작을 2개 이상 학습해야 서로 구분할 수 있습니다!');
+                    return;
+                }
+                if (!mappingsApplied && !applyClassMappings(true)) return;
+                try {
+                    log('카메라 시작 중...', false, 'log2');
+                    const container = document.getElementById('webcam-container');
+                    container.textContent = '';
+                    const canvas = document.createElement('canvas');
+                    canvas.id = 'canvas';
+                    canvas.width = 400;
+                    canvas.height = 300;
+                    container.appendChild(canvas);
+                    customCtx = canvas.getContext('2d');
+
+                    await ensureCamera();
+                    await ensureLandmarkers();
+
+                    isWebcamRunning = true;
+                    labelContainer = document.getElementById('label-container');
+                    document.getElementById('startWebcam').disabled = true;
+                    document.getElementById('stopWebcam').disabled = false;
+                    log('✅ 카메라 시작 완료! 학습한 동작을 해 보세요.', false, 'log2');
+                    window.requestAnimationFrame(loop);
+                } catch (error) {
+                    log('❌ 카메라 시작 실패: ' + error.message, true, 'log2');
+                    console.error(error);
+                }
+                return;
+            }
+
             if (!model) {
                 alert('먼저 모델을 로드하세요!');
                 return;
@@ -1419,6 +1782,19 @@
         });
         
         document.getElementById('stopWebcam').addEventListener('click', () => {
+            if (modelType === 'custom') {
+                isWebcamRunning = false;
+                customCtx = null;
+                if (trainModal.hidden) stopCamera();
+                document.getElementById('startWebcam').disabled = false;
+                document.getElementById('stopWebcam').disabled = true;
+                document.getElementById('webcam-container').textContent = '';
+                document.getElementById('label-container').textContent = '';
+                resetPredictionUI();
+                resetCommandQueue();
+                log('카메라 중지', false, 'log2');
+                return;
+            }
             if (webcam) {
                 webcam.stop();
                 isWebcamRunning = false;
@@ -1426,6 +1802,8 @@
                 document.getElementById('stopWebcam').disabled = true;
                 document.getElementById('webcam-container').textContent = '';
                 document.getElementById('label-container').textContent = '';
+                resetPredictionUI();
+                resetCommandQueue();
                 log('웹캠 중지', false, 'log2');
             }
         });
@@ -1435,24 +1813,50 @@
                 webcam.stop();
                 isWebcamRunning = false;
             }
+            if (modelType === 'custom' && isWebcamRunning) {
+                isWebcamRunning = false;
+                customCtx = null;
+                if (trainModal.hidden) stopCamera();
+                document.getElementById('startWebcam').disabled = false;
+                document.getElementById('stopWebcam').disabled = true;
+            }
             showStep(1);
         });
         
         // 예측 루프
         async function loop() {
             if (!isWebcamRunning) return;
-            webcam.update();
+            if (webcam) webcam.update();
             await predict();
             window.requestAnimationFrame(loop);
         }
         
         // 예측 함수
         async function predict() {
-            if (!model || !webcam) return;
             
             let prediction;
             
-            if (modelType === 'image') {
+            if (modelType === 'custom') {
+                if (!mpVideo) return;
+                const detection = detectBoth(mpVideo, performance.now());
+                if (customCtx) {                     // 카메라 화면과 인식한 점을 함께 보여 준다
+                    const W = customCtx.canvas.width, H = customCtx.canvas.height;
+                    customCtx.save();
+                    customCtx.translate(W, 0);
+                    customCtx.scale(-1, 1);          // 거울처럼 보이게
+                    if (mpVideo.videoWidth) customCtx.drawImage(mpVideo, 0, 0, W, H);
+                    drawDots(customCtx, W, H, detection);
+                    customCtx.restore();
+                }
+                renderSeenChips();
+                prediction = classifyVector(combinedFeature(detection));
+                if (!prediction.length) {            // 손도 얼굴도 안 보이면 명령을 보내지 않는다
+                    holdClass = '';
+                    return;
+                }
+            } else if (!model || !webcam) {
+                return;
+            } else if (modelType === 'image') {
                 // Image 모델 예측
                 prediction = await model.predict(webcam.canvas);
                 
@@ -1472,8 +1876,6 @@
                 }
             }
             
-            // 예측 결과 표시
-            labelContainer.textContent = '';
             
             let maxProb = 0;
             let maxClass = '';
@@ -1485,60 +1887,478 @@
                 }
             }
 
-            for (let i = 0; i < prediction.length; i++) {
-                const className = prediction[i].className;
-                const probability = prediction[i].probability;
-                
-                const div = document.createElement('div');
-                div.className = 'prediction';
-                
-                if (className === maxClass && probability > 0.5) {
-                    div.classList.add('active');
-                }
-                
-                const command = classCommands[className] || '';
-                const labelText = `${className}${command ? ' → ' + command : ''}`;
-                
-                const labelCovered = probability > 0.6;
-                const valueCovered = probability > 0.9;
-                
-                div.setAttribute('data-covered-label', labelCovered);
-                div.setAttribute('data-covered-value', valueCovered);
-
-                const barContainer = document.createElement('div');
-                barContainer.className = 'prediction-bar-container';
-                const bar = document.createElement('div');
-                bar.className = 'prediction-bar';
-                bar.style.width = `${Math.max(0, Math.min(100, probability * 100))}%`;
-                const label = document.createElement('div');
-                label.className = 'prediction-label-in-bar';
-                label.textContent = labelText;
-                const value = document.createElement('div');
-                value.className = 'prediction-value-in-bar';
-                value.textContent = `${(probability * 100).toFixed(0)}%`;
-                barContainer.append(bar, label, value);
-                div.appendChild(barContainer);
-                labelContainer.appendChild(div);
+            // ① 명령 판단이 먼저다. 화면을 그리기 전에 신호를 내보내야 반응이 빠르다.
+            const nowMs = performance.now();
+            if (lastPredictAt) {                       // 이 기기가 얼마나 빨리 도는지 재 둔다
+                const interval = nowMs - lastPredictAt;
+                frameMs = frameMs ? frameMs * 0.8 + interval * 0.2 : interval;
             }
-            
-            // 명령 전송 (확률 80% 이상)
-            if (maxProb > 0.8) {
-                const now = Date.now();
+            lastPredictAt = nowMs;
+            // 빠른 기기에서는 깜빡임을 한 번 걸러내고, 느린 기기에서는 곧바로 보낸다.
+            const holdNeeded = (frameMs && frameMs < FAST_FRAME_MS) ? HOLD_MS : 0;
+            if (maxProb > SEND_THRESHOLD) {
+                if (maxClass !== holdClass) {          // 자세가 바뀐 순간을 기록해 둔다
+                    holdClass = maxClass;
+                    holdSince = nowMs;
+                }
                 const command = classCommands[maxClass];
-                
-                if (command && command !== lastCommand && (now - lastSendTime) > 500) {
-                    const success = await sendToMicrobit(command, 'log2');
-                    if (success) {
-                        document.getElementById('commandDisplay').textContent = `🤖 ${maxClass}: ${command}`;
-                        lastCommand = command;
-                        lastSendTime = now;
+                if (command && nowMs - holdSince >= holdNeeded) queueCommand(command, maxClass);
+            } else {
+                holdClass = '';                        // 애매한 구간에서는 후보를 비운다
+            }
+
+            // ② 화면(막대그래프)은 값만 바꿔 갱신한다.
+            updatePredictionUI(prediction, maxClass);
+        }
+
+        // ═══════════════════════════════════════════
+        //  직접 학습 — 손과 얼굴을 함께 보고 최근접 이웃으로 판정
+        // ═══════════════════════════════════════════
+        const MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+        const MP_MODELS = {
+            hand: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+            face: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
+        };
+        const TRAIN_KEY = 'maqueen_custom_training_v2';
+        const COUNTDOWN_SEC = 3;      // 3 · 2 · 1
+        const COLLECT_MS = 5000;      // 5초 동안 동작을 기억한다
+        const KNN_K = 5;              // 가까운 이웃 몇 개를 볼지
+        const FACE_STEP = 6;          // 얼굴 점은 478개라 일정 간격으로 골라 쓴다
+        const HAND_DIM = 42;          // 손 21점 × (x, y)
+        const FACE_DIM = 160;         // 얼굴 80점 × (x, y)
+        const FACE_WEIGHT = 0.5;      // 얼굴 값이 손보다 개수가 많아, 영향력을 비슷하게 맞춘다
+
+        let mpVision = null, mpFileset = null;
+        const landmarkers = { hand: null, face: null };
+        let mpVideo = null, mpStream = null;
+        let trained = [];             // [{ name, vecs: [[...]] }]
+        let customCtx = null;         // 인식 화면 캔버스
+        let lastSeen = { hand: false, face: false };
+
+        // ── 모델·카메라 준비 ──
+        async function ensureLandmarker(kind) {
+            if (landmarkers[kind]) return landmarkers[kind];
+            if (!mpVision) mpVision = await import(MP_BASE + '/vision_bundle.mjs');
+            if (!mpFileset) mpFileset = await mpVision.FilesetResolver.forVisionTasks(MP_BASE + '/wasm');
+            const options = { baseOptions: { modelAssetPath: MP_MODELS[kind] }, runningMode: 'VIDEO' };
+            landmarkers[kind] = kind === 'hand'
+                ? await mpVision.HandLandmarker.createFromOptions(mpFileset, Object.assign(options, { numHands: 1 }))
+                : await mpVision.FaceLandmarker.createFromOptions(mpFileset, Object.assign(options, { numFaces: 1 }));
+            return landmarkers[kind];
+        }
+
+        async function ensureLandmarkers() {
+            await ensureLandmarker('hand');
+            await ensureLandmarker('face');
+        }
+
+        async function ensureCamera() {
+            if (mpVideo) return mpVideo;
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('이 브라우저에서는 카메라를 쓸 수 없습니다. 파일을 직접 연 경우(file://) 웹 주소(https)로 열어 주세요.');
+            }
+            mpStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+            mpVideo = document.createElement('video');
+            mpVideo.playsInline = true;
+            mpVideo.muted = true;
+            mpVideo.srcObject = mpStream;
+            // play() 가 끝나지 않는 브라우저가 있어, 첫 화면이 들어오면 넘어간다(최대 4초 대기).
+            await new Promise(resolve => {
+                let done = false;
+                const finish = () => { if (!done) { done = true; resolve(); } };
+                if (mpVideo.readyState >= 2) finish();
+                mpVideo.addEventListener('loadeddata', finish, { once: true });
+                setTimeout(finish, 4000);
+                mpVideo.play().then(finish).catch(() => {});
+            });
+            return mpVideo;
+        }
+
+        function stopCamera() {
+            if (mpStream) mpStream.getTracks().forEach(track => track.stop());
+            mpStream = null;
+            mpVideo = null;
+        }
+
+        // ── 손과 얼굴을 한 번에 인식한다 ──
+        function detectBoth(video, timeMs) {
+            const result = { hand: null, face: null };
+            if (!video) return result;
+            try {
+                if (landmarkers.hand) {
+                    const r = landmarkers.hand.detectForVideo(video, timeMs);
+                    result.hand = (r.landmarks && r.landmarks[0]) || null;
+                }
+                if (landmarkers.face) {
+                    const r = landmarkers.face.detectForVideo(video, timeMs + 1);
+                    result.face = (r.faceLandmarks && r.faceLandmarks[0]) || null;
+                }
+            } catch (error) { /* 한 프레임 실패는 넘어간다 */ }
+            lastSeen = { hand: !!result.hand, face: !!result.face };
+            return result;
+        }
+
+        // ── 좌표에서 특징 뽑기 ──
+        // 손: 손목을 원점으로 옮기고 손바닥 길이로 나눈다 → 화면 어디에 있든 같은 숫자가 된다.
+        // 얼굴: 코끝을 원점으로, 두 눈 사이 거리로 나눈다 → 고개 방향과 표정이 숫자로 남는다.
+        function partFeature(kind, points) {
+            if (!points || !points.length) return null;
+            const anchor = kind === 'hand' ? points[0] : points[1];
+            const a = kind === 'hand' ? points[0] : points[33];
+            const b = kind === 'hand' ? points[9] : points[263];
+            if (!anchor || !a || !b) return null;
+            const scale = Math.hypot(a.x - b.x, a.y - b.y) || 1e-6;
+            const step = kind === 'hand' ? 1 : FACE_STEP;
+            const weight = kind === 'hand' ? 1 : FACE_WEIGHT;
+            const vec = [];
+            for (let i = 0; i < points.length; i += step) {
+                vec.push((points[i].x - anchor.x) / scale * weight, (points[i].y - anchor.y) / scale * weight);
+            }
+            return vec;
+        }
+
+        // 손과 얼굴을 이어 붙여 하나의 특징으로 만든다.
+        // 안 보이는 쪽은 0으로 채우고 맨 앞에 "보였는지" 표시를 둔다 → 손만 든 동작과 얼굴만 쓴 동작이 섞이지 않는다.
+        function combinedFeature(detection) {
+            const hand = partFeature('hand', detection.hand);
+            const face = partFeature('face', detection.face);
+            if (!hand && !face) return null;
+            const vec = [hand ? 1 : 0];
+            for (let i = 0; i < HAND_DIM; i++) vec.push(hand ? (hand[i] || 0) : 0);
+            vec.push(face ? 1 : 0);
+            for (let i = 0; i < FACE_DIM; i++) vec.push(face ? (face[i] || 0) : 0);
+            return vec;
+        }
+
+        // ── 최근접 이웃으로 판정 ──
+        function classifyVector(vec) {
+            if (!vec || !trained.length) return [];
+            const scored = [];
+            trained.forEach((cls, classIndex) => {
+                for (const sample of cls.vecs) {
+                    let sum = 0;
+                    const n = Math.min(sample.length, vec.length);
+                    for (let i = 0; i < n; i++) {
+                        const d = sample[i] - vec[i];
+                        sum += d * d;
                     }
+                    scored.push({ classIndex, dist: Math.sqrt(sum) });
+                }
+            });
+            if (!scored.length) return [];
+            scored.sort((x, y) => x.dist - y.dist);
+            const k = Math.min(KNN_K, scored.length);
+            const weights = new Array(trained.length).fill(0);
+            let total = 0;
+            for (let i = 0; i < k; i++) {
+                const w = 1 / (scored[i].dist + 0.05);   // 가까울수록 큰 표를 준다
+                weights[scored[i].classIndex] += w;
+                total += w;
+            }
+            return trained.map((cls, i) => ({
+                className: cls.name,
+                probability: total ? weights[i] / total : 0
+            }));
+        }
+
+        // ── 인식 상태 표시 ──
+        function renderSeenChips() {
+            const hand = document.getElementById('chipHand');
+            const face = document.getElementById('chipFace');
+            if (hand) {
+                hand.classList.toggle('on', lastSeen.hand);
+                hand.textContent = lastSeen.hand ? '✋ 손 보임' : '✋ 손 —';
+            }
+            if (face) {
+                face.classList.toggle('on', lastSeen.face);
+                face.textContent = lastSeen.face ? '🙂 얼굴 보임' : '🙂 얼굴 —';
+            }
+        }
+
+        // ── 학습한 동작 목록 ──
+        function renderTrainedList() {
+            const box = document.getElementById('trainedList');
+            box.textContent = '';
+            if (!trained.length) {
+                const empty = document.createElement('div');
+                empty.className = 'trained-empty';
+                empty.textContent = '아직 학습한 동작이 없습니다. 위의 「직접 학습하기」를 눌러 시작하세요.';
+                box.appendChild(empty);
+                return;
+            }
+            trained.forEach((cls, index) => {
+                const item = document.createElement('div');
+                item.className = 'trained-item';
+
+                const name = document.createElement('span');
+                name.className = 't-name';
+                name.textContent = cls.name;
+
+                const count = document.createElement('span');
+                count.className = 't-count';
+                count.textContent = cls.vecs.length + '장 학습됨';
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.textContent = '삭제';
+                remove.addEventListener('click', () => {
+                    trained.splice(index, 1);
+                    syncTrainedToMappings();
+                });
+
+                item.append(name, count, remove);
+                box.appendChild(item);
+            });
+        }
+
+        // 학습한 이름을 아래 클래스-명령 표에 그대로 넣어 준다(명령은 선생님이 정한다).
+        function syncTrainedToMappings() {
+            renderTrainedList();
+            modelClassLabels = trained.map(cls => cls.name);
+            renderModelClassInfo();
+            if (modelClassLabels.length) populateMappingRowsFromModel(modelClassLabels);
+            resetCommandQueue();
+            resetPredictionUI();
+            setMappingStatus(trained.length
+                ? `학습한 동작 ${trained.length}개를 아래 표에 넣었습니다. 각 동작에 보낼 명령을 입력하고 적용하세요.`
+                : '학습한 동작이 없습니다.', trained.length ? '' : 'warning');
+        }
+
+        // ── 학습 팝업 ──
+        const trainModal = document.getElementById('trainModal');
+        const trainPreview = document.getElementById('trainPreview');
+        const trainBig = document.getElementById('trainBig');
+        const trainBar = document.getElementById('trainBar');
+        const trainMsg = document.getElementById('trainMsg');
+        const trainNameRow = document.getElementById('trainNameRow');
+        const trainNameInput = document.getElementById('trainName');
+        const trainStartBtn = document.getElementById('trainStart');
+        const trainSaveBtn = document.getElementById('trainSave');
+        let trainPhase = 'idle';      // idle · count · collect · done
+        let trainSamples = [];
+        let trainRaf = 0;
+        let trainPhaseUntil = 0;
+        let trainMissed = 0;
+
+        function setTrainMessage(text) { trainMsg.textContent = text; }
+
+        function drawDots(ctx, W, H, detection) {
+            if (detection.face) {
+                ctx.fillStyle = '#60a5fa';
+                for (const p of detection.face) {
+                    ctx.beginPath();
+                    ctx.arc(p.x * W, p.y * H, 1.4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            if (detection.hand) {
+                ctx.fillStyle = '#34d399';
+                for (const p of detection.hand) {
+                    ctx.beginPath();
+                    ctx.arc(p.x * W, p.y * H, 4, 0, Math.PI * 2);
+                    ctx.fill();
                 }
             }
         }
-        
+
+        function drawPreview(detection) {
+            const ctx = trainPreview.getContext('2d');
+            const W = trainPreview.width, H = trainPreview.height;
+            ctx.save();
+            ctx.translate(W, 0);
+            ctx.scale(-1, 1);                       // 거울처럼 보이게
+            if (mpVideo && mpVideo.videoWidth) ctx.drawImage(mpVideo, 0, 0, W, H);
+            else { ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, W, H); }
+            drawDots(ctx, W, H, detection);
+            ctx.restore();
+        }
+
+        function trainLoop() {
+            if (trainModal.hidden) return;
+            const now = performance.now();
+            const detection = detectBoth(mpVideo, now);
+            drawPreview(detection);
+            renderSeenChips();
+
+            if (trainPhase === 'count') {
+                const left = Math.ceil((trainPhaseUntil - now) / 1000);
+                trainBig.classList.remove('small');
+                trainBig.textContent = left > 0 ? String(left) : '';
+                trainBar.style.width = '0%';
+                if (now >= trainPhaseUntil) startCollecting();
+            } else if (trainPhase === 'collect') {
+                const remain = Math.max(0, trainPhaseUntil - now);
+                trainBar.style.width = ((1 - remain / COLLECT_MS) * 100).toFixed(0) + '%';
+                trainBig.classList.add('small');
+                trainBig.textContent = '기억하는 중 ' + Math.ceil(remain / 1000) + '초';
+                const vec = combinedFeature(detection);
+                if (vec) trainSamples.push(vec); else trainMissed++;
+                if (now >= trainPhaseUntil) finishCollecting();
+            } else {
+                trainBig.textContent = '';
+            }
+            trainRaf = requestAnimationFrame(trainLoop);
+        }
+
+        function startCollecting() {
+            trainPhase = 'collect';
+            trainPhaseUntil = performance.now() + COLLECT_MS;
+            trainSamples = [];
+            trainMissed = 0;
+            setTrainMessage('그 동작을 그대로 유지하세요. 손과 얼굴이 함께 보이면 더 잘 알아봅니다.');
+        }
+
+        function finishCollecting() {
+            trainPhase = 'done';
+            trainBig.textContent = '';
+            trainBar.style.width = '100%';
+            if (trainSamples.length < 5) {
+                setTrainMessage('손도 얼굴도 화면에 거의 보이지 않았습니다. 카메라 앞에서 다시 시도하세요.');
+                trainStartBtn.hidden = false;
+                trainStartBtn.disabled = false;
+                trainStartBtn.textContent = '↻ 다시 시도';
+                return;
+            }
+            const skipped = trainMissed ? ` (놓친 장면 ${trainMissed}회)` : '';
+            setTrainMessage(`${trainSamples.length}장을 기억했습니다${skipped}. 이름을 정하고 저장하세요.`);
+            trainNameRow.hidden = false;
+            trainNameInput.value = 'class' + (trained.length + 1);
+            trainSaveBtn.hidden = false;
+            trainStartBtn.hidden = true;
+            trainNameInput.focus();
+            trainNameInput.select();
+        }
+
+        async function openTrainModal() {
+            trainModal.hidden = false;
+            trainPhase = 'idle';
+            trainSamples = [];
+            trainBar.style.width = '0%';
+            trainBig.textContent = '';
+            trainNameRow.hidden = true;
+            trainSaveBtn.hidden = true;
+            trainStartBtn.hidden = false;
+            trainStartBtn.disabled = true;
+            trainStartBtn.textContent = '▶ 시작';
+            setTrainMessage('카메라와 인식 파일을 준비하는 중입니다. 처음 한 번은 조금 걸립니다…');
+            if (!trainRaf) trainLoop();
+            try {
+                await ensureCamera();
+                await ensureLandmarkers();
+                trainStartBtn.disabled = false;
+                setTrainMessage('학습할 동작을 취한 뒤 「시작」을 누르세요. 3 · 2 · 1 뒤 5초 동안 기억합니다.');
+            } catch (error) {
+                setTrainMessage('준비 실패: ' + error.message);
+                log('직접 학습 준비 실패: ' + error.message, true, 'log2');
+            }
+        }
+
+        function closeTrainModal() {
+            trainModal.hidden = true;
+            trainPhase = 'idle';
+            if (trainRaf) cancelAnimationFrame(trainRaf);
+            trainRaf = 0;
+            if (!isWebcamRunning) stopCamera();
+        }
+
+        document.getElementById('openTrain').addEventListener('click', openTrainModal);
+        document.getElementById('trainClose').addEventListener('click', closeTrainModal);
+        trainModal.addEventListener('click', (event) => {
+            if (event.target === trainModal) closeTrainModal();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !trainModal.hidden) closeTrainModal();
+        });
+
+        trainStartBtn.addEventListener('click', () => {
+            trainPhase = 'count';
+            trainPhaseUntil = performance.now() + COUNTDOWN_SEC * 1000;
+            trainNameRow.hidden = true;
+            trainSaveBtn.hidden = true;
+            trainStartBtn.hidden = true;
+            setTrainMessage('준비하세요! 숫자가 사라지면 5초 동안 기억합니다.');
+        });
+
+        trainSaveBtn.addEventListener('click', () => {
+            if (!trainSamples.length) {
+                alert('아직 기억한 장면이 없습니다. 다시 학습해 주세요!');
+                return;
+            }
+            const name = trainNameInput.value.trim();
+            if (!name) {
+                alert('동작 이름을 입력하세요!');
+                trainNameInput.focus();
+                return;
+            }
+            const existing = trained.find(cls => cls.name === name);
+            if (existing) existing.vecs = trainSamples;   // 같은 이름이면 다시 학습한 것으로 본다
+            else trained.push({ name, vecs: trainSamples });
+            log(`동작 학습: ${name} (${trainSamples.length}장)`, false, 'log2');
+            syncTrainedToMappings();
+            closeTrainModal();
+        });
+
+        // ── 저장 · 불러오기 ──
+        document.getElementById('saveTrained').addEventListener('click', () => {
+            if (!trained.length) { alert('저장할 학습 결과가 없습니다!'); return; }
+            try {
+                localStorage.setItem(TRAIN_KEY, JSON.stringify({
+                    classes: trained.map(cls => ({
+                        name: cls.name,
+                        vecs: cls.vecs.map(v => v.map(x => Math.round(x * 1000) / 1000))
+                    }))
+                }));
+                log('학습 결과를 이 컴퓨터에 저장했습니다.', false, 'log2');
+                alert('저장했습니다. 같은 컴퓨터·같은 브라우저에서 불러올 수 있습니다.');
+            } catch (error) {
+                alert('저장 실패: ' + error.message);
+            }
+        });
+
+        document.getElementById('loadTrained').addEventListener('click', () => {
+            try {
+                const raw = localStorage.getItem(TRAIN_KEY);
+                if (!raw) { alert('저장된 학습 결과가 없습니다.'); return; }
+                const data = JSON.parse(raw);
+                if (!data || !Array.isArray(data.classes) || !data.classes.length) throw new Error('내용이 비어 있습니다');
+                trained = data.classes.map(cls => ({ name: String(cls.name), vecs: cls.vecs }));
+                syncTrainedToMappings();
+                log(`저장된 학습 결과를 불러왔습니다: ${trained.length}개 동작`, false, 'log2');
+            } catch (error) {
+                alert('불러오기 실패: ' + error.message);
+            }
+        });
+
+        document.getElementById('clearTrained').addEventListener('click', () => {
+            if (!trained.length) return;
+            if (!confirm('학습한 동작을 모두 지울까요?')) return;
+            trained = [];
+            syncTrainedToMappings();
+        });
+
+        // ── 모델 타입에 따라 화면 바꾸기 ──
+        function updateCustomSections() {
+            const isCustom = modelType === 'custom';
+            document.getElementById('customSection').style.display = isCustom ? 'block' : 'none';
+            document.getElementById('urlInputSection').style.display =
+                isCustom ? 'none' : (savedModelURL ? 'none' : 'block');
+            document.getElementById('urlDisplaySection').style.display =
+                isCustom ? 'none' : (savedModelURL ? 'block' : 'none');
+            document.getElementById('loadModel').style.display = isCustom ? 'none' : 'block';
+            document.querySelectorAll('#step2 h2').forEach(heading => {
+                if (heading.textContent.indexOf('티처블머신 모델 URL') >= 0) {
+                    heading.style.display = isCustom ? 'none' : 'block';
+                    const info = heading.nextElementSibling;
+                    if (info && info.classList.contains('info')) info.style.display = isCustom ? 'none' : 'block';
+                }
+            });
+            if (isCustom) renderTrainedList();
+        }
+
         // 초기 모델 타입 표시
         updateModelTypeDisplay();
+        renderTrainedList();
+        updateCustomSections();
     </script>
 </body>
 </html>

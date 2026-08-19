@@ -1,0 +1,2692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>COLOR MIX RELAY QUIZ | 색 섞기 이어달리기 퀴즈</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ff7a00'/%3E%3Cpath d='M16 2a14 14 0 0 0-14 14h14z' fill='%23ff3b30'/%3E%3Cpath d='M16 2a14 14 0 0 1 14 14h-14z' fill='%23ffe600'/%3E%3C/svg%3E">
+
+<!-- 글꼴: 실패해도 시스템 글꼴로 그대로 동작한다 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Do+Hyeon&display=swap">
+
+<!-- CDN: 실패해도 아래 내장 CSS/JS만으로 전체 기능이 동작합니다 (폭죽은 자체 폴백 있음) -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<style>
+
+/* ============ 테마 ============ */
+:root{
+  --bg1:#a6c7fd; --bg2:#c5eafb; /* Bright sky blue gradient (흰색 쪽으로 5%) */
+  --card:#ffffff;
+  --ink:#1e293b; --muted:#64748b;
+  --line:#1e293b; /* Thick dark outline for cute blocky look */
+  --primary:#ff477e; --primary-soft:#ffd0e0; --primary-ink:#ff477e; /* Candy pink */
+  --accent:#ff9e00; --accent-soft:#ffeaad;
+  --good:#00e676; --good-soft:#b9f6ca;
+  --bad:#ff1744; --bad-soft:#ff8a80;
+  --warn:#ffea00; --warn-soft:#ffff8d;
+  --paint:#ff6600; --paint-soft:#ffe0b2;
+  --light:#00b4d8; --light-soft:#caf0f8;
+  --col-left:296px;  /* 라운드 카드와 재료 카드의 공통 폭 — 왼쪽 열을 세로로 정렬한다 */
+  --r-lg:16px; --r-md:12px; --r-sm:8px;
+  --sh:0 4px 0 var(--line);
+  --sh-hover:0 0 0 var(--line);
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;
+  background:linear-gradient(160deg,var(--bg1) 0%, var(--bg2) 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:'Bebas Neue', 'Do Hyeon', 'VT323', monospace, sans-serif;
+  font-weight:600;
+  -webkit-text-size-adjust:100%;
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:var(--r-md)}
+
+/* ============ 뼈대 ============ */
+.app{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:14px 14px 40px}
+
+/* 바닥에 물감이 떨어져 퍼진 자국 — 도구보다 뒤, 움직이지 않아 성능 부담이 없다 */
+.bg-splats{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-splats svg{position:absolute;width:var(--s,240px);height:auto;opacity:var(--op,.16);transform:rotate(var(--rot,0deg))}
+.splat1{left:-5%; top:3%;  --s:320px;--op:.17;--rot:-14deg}
+.splat2{right:-4%;top:30%; --s:260px;--op:.14;--rot:22deg}
+.splat3{left:1%;  bottom:2%;--s:290px;--op:.15;--rot:8deg}
+.splat4{right:6%; bottom:6%;--s:210px;--op:.13;--rot:-26deg}
+.splat5{left:26%; top:-6%; --s:230px;--op:.12;--rot:16deg}
+/* 튄 물방울 무리 — 얼룩 사이 빈 곳을 채운다 */
+.drops1{left:12%; top:34%; --s:150px;--op:.15;--rot:-18deg}
+.drops2{right:14%;top:8%;  --s:130px;--op:.13;--rot:26deg}
+.drops3{left:4%;  top:56%; --s:120px;--op:.13;--rot:6deg}
+.drops4{right:8%; bottom:34%;--s:140px;--op:.12;--rot:-32deg}
+/* 가운데도 비우지 않는다 — 카드에 가려지는 자리는 살짝만 보이면 된다 */
+.mid1{left:34%; top:9%;   --s:250px;--op:.13;--rot:-20deg}
+.mid2{left:52%; top:41%;  --s:180px;--op:.12;--rot:14deg}
+.mid3{left:29%; bottom:14%;--s:210px;--op:.12;--rot:32deg}
+.mid4{right:34%;top:66%;  --s:160px;--op:.11;--rot:-8deg}
+.mid5{left:61%; top:4%;   --s:200px;--op:.12;--rot:44deg}
+.mid6{left:43%; bottom:-5%;--s:230px;--op:.11;--rot:-36deg}
+/* 남은 빈 자리 채우기 */
+.splat6{left:47%; top:23%;  --s:200px;--op:.12;--rot:-24deg}
+.drops5{left:69%; bottom:15%;--s:150px;--op:.13;--rot:12deg}
+.drops6{right:25%;top:50%;  --s:130px;--op:.12;--rot:-40deg}
+.drops7{left:20%; bottom:38%;--s:120px;--op:.12;--rot:28deg}
+@media (max-width:900px){
+  .bg-splats svg{opacity:.1}
+  .splat2,.splat5,.splat6,.drops2,.drops4,.drops6,.drops7,.mid2,.mid4,.mid5{display:none}
+}
+/* ============ 배경 장식 — 미술 도구가 천천히 떠다닌다 ============
+   저사양 기기를 고려해 개수를 8개로 제한하고 transform만 애니메이션한다. */
+
+.bg-toys{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-toys svg{
+  position:absolute;width:var(--s,56px);height:auto;opacity:var(--op,.9);
+  /* 카드와 같은 '아래로 뚝 떨어지는 단단한 그림자' — 흐려지지 않게 번짐은 최소로 */
+  filter:drop-shadow(0 var(--sh,4px) 0 #1e293b) drop-shadow(0 6px 3px rgba(30,41,59,.14));
+  /* 단축 속성에 var()를 섞으면 브라우저에 따라 통째로 무시될 수 있어 개별 속성으로 쓴다 */
+  animation-name:toyFloat;
+  animation-duration:var(--d,10s);
+  animation-timing-function:ease-in-out;
+  animation-delay:var(--t,0s);
+  animation-iteration-count:infinite;
+  animation-fill-mode:both;
+}
+/* 위아래로 둥둥 뜨면서 살짝 좌우로 흔들린다 */
+@keyframes toyFloat{
+  0%,100%{transform:translate3d(0,0,0) rotate(var(--r0,-6deg))}
+  50%    {transform:translate3d(var(--x,6px),var(--y,-18px),0) rotate(var(--r1,6deg))}
+}
+/* 가까운 것(큰 것)은 진하고 빠르게, 먼 것(작은 것)은 옅고 느리게 — 원근감 */
+.toy1{left:2%; top:10%;--s:110px;--d:7.5s;--y:-30px;--x:10px;--op:1;  --sh:5px;--r0:-9deg;--r1:5deg}
+.toy2{left:6%; top:48%;--s:58px;--d:9.5s;--t:-3s;--y:-22px;--x:-8px;--op:.82;--sh:4px;--r0:11deg;--r1:-5deg}
+.toy3{left:3%; top:74%;--s:56px;--d:8.5s;--t:-6s;--y:-24px;--x:7px; --op:.86;--sh:4px;--r0:-13deg;--r1:3deg}
+.toy4{right:3%;top:16%;--s:92px;--d:7s;  --t:-2s;--y:-28px;--x:-9px;--op:1;  --sh:5px;--r0:7deg;--r1:-7deg}
+.toy5{right:7%;top:44%;--s:54px;--d:9s;  --t:-5s;--y:-21px;--x:8px; --op:.82;--sh:4px;--r0:-5deg;--r1:9deg}
+.toy6{right:4%;top:70%;--s:52px;--d:10s; --t:-8s;--y:-23px;--x:-7px;--op:.8; --sh:4px;--r0:9deg;--r1:-9deg}
+.toy7{left:15%;top:86%;--s:52px;--d:8s;  --t:-4s;--y:-25px;--x:8px; --op:.86;--sh:4px;--r0:-3deg;--r1:11deg}
+.toy8{right:16%;top:88%;--s:46px;--d:9.8s;--t:-7s;--y:-20px;--x:-6px;--op:.78;--sh:4px;--r0:13deg;--r1:-3deg}
+@media (max-width:900px){
+  .bg-toys svg{opacity:.7;filter:drop-shadow(0 3px 0 #1e293b)}
+  .toy2,.toy5,.toy7,.toy8{display:none}
+}
+
+/* ============ 팝업 ============ */
+.modal-overlay{position:fixed;inset:0;background:rgba(255,255,255,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s ease;padding:20px}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-content{background:var(--card);border:4px solid var(--line);border-radius:var(--r-lg);box-shadow:8px 8px 0 rgba(30,41,59,0.2);padding:24px;width:100%;max-width:480px;transform:translateY(20px);transition:transform .2s cubic-bezier(.175,.885,.32,1.275)}
+.modal-overlay.open .modal-content{transform:translateY(0)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:3px dashed #cbd5e1;padding-bottom:10px}
+.modal-hd h2{margin:0;font-size:20px;font-weight:900;letter-spacing:.02em;color:var(--primary)}
+.info-text{margin:0;font-size:17px;font-weight:500;line-height:1.6;color:var(--ink)}
+.info-never{display:flex;align-items:center;gap:10px;margin-top:18px;padding:10px 12px;border-radius:var(--r-md);background:#f1f5f9;border:3px solid var(--line);font-size:15px;font-weight:700;color:var(--muted);cursor:pointer;min-height:44px}
+.info-never input{width:20px;height:20px;flex:none;accent-color:var(--primary);cursor:pointer}
+.btn-close{width:36px;height:36px;border-radius:var(--r-md);background:#f1f5f9;border:3px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .12s;box-shadow:var(--sh)}
+.btn-close:hover{background:#e2e8f0;transform:translateY(2px);box-shadow:0 2px 0 var(--line)}
+.btn-close:active{transform:translateY(4px);box-shadow:var(--sh-hover)}
+.btn-close svg{width:16px;height:16px}
+
+/* ============ 시작 화면 · 대기실 ============ */
+.intro{max-width:560px;margin:24px auto 0;background:var(--card);border:4px solid var(--line);border-radius:var(--r-lg);box-shadow:8px 8px 0 rgba(30,41,59,0.15);padding:26px 22px}
+.intro-mark{display:block;width:72px;height:72px;margin:0 auto}
+.intro h1{margin:12px 0 0;text-align:center;font-size:clamp(30px,5.5vw,42px);font-weight:900;letter-spacing:.03em;line-height:1;color:var(--primary);text-shadow:2px 2px 0 #ffd0e0}
+.intro-sub{margin:8px 0 0;text-align:center;font-size:17px;font-weight:700;color:var(--muted);line-height:1.5}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+@media (max-width:480px){.mode-grid{grid-template-columns:1fr}}
+.mode-btn{display:flex;flex-direction:column;align-items:center;gap:11px;padding:31px 18px;border-radius:var(--r-lg);border:3px solid var(--line);background:#f8fafc;transition:transform .12s ease;box-shadow:var(--sh)}
+.mode-btn:hover{transform:translateY(2px);background:#fff;border-color:var(--primary);box-shadow:0 2px 0 var(--line)}
+.mode-btn[aria-pressed="true"]{border-color:var(--primary);background:var(--primary-soft);box-shadow:inset 0 4px 0 rgba(0,0,0,0.05), var(--sh-hover);transform:translateY(4px)}
+.mode-btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+#multi-choice .mode-grid{margin-top:16px}
+.mode-btn svg{width:53px;height:53px;color:var(--primary)}
+/* 자간을 넓게 준다. 마지막 글자 뒤에도 자간이 붙어 가운데 정렬이 왼쪽으로 밀리므로 음수 여백으로 상쇄한다 */
+.mode-en,.mode-ko,.mode-desc{letter-spacing:.1em;margin-right:-.1em}
+.mode-en{font-size:29px;font-weight:900;color:var(--primary-ink);line-height:1}
+.mode-ko{font-size:23px;font-weight:900}
+.mode-desc{font-size:15.5px;font-weight:500;color:var(--muted);line-height:1.5;text-align:center}
+
+.form-row{display:grid;gap:8px;margin-top:16px}
+.form-row label{font-size:13px;font-weight:900;letter-spacing:.04em;color:var(--muted)}
+.field{width:100%;min-height:54px;padding:0 16px;border-radius:var(--r-md);border:3px solid var(--line);background:#fff;font-size:16px;font-weight:800;color:var(--ink);box-shadow:inset 0 3px 0 rgba(0,0,0,0.05);text-align:center}
+.solo-start-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;align-items:end}
+.solo-start-row label{font-size:13px;font-weight:900;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+.solo-start-row .btn-main{font-size:20px;min-height:54px}
+.field::placeholder{color:#94a3b8;font-weight:600}
+.field:focus{outline:none;border-color:var(--primary);background:#fffafc}
+.field.code{letter-spacing:.32em;text-align:center;font-size:24px;font-variant-numeric:tabular-nums;color:var(--primary)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;padding:0 18px;border-radius:var(--r-md);font-size:16px;font-weight:900;letter-spacing:.02em}
+.btn svg{width:20px;height:20px;flex:none}
+.btn-main{background:var(--accent);color:#fff;box-shadow:0 4px 0 #cc7e00, 0 4px 0 var(--line);border:3px solid var(--line);text-shadow:1px 1px 0 #cc7e00}
+.btn-main:active{transform:translateY(4px);box-shadow:0 0 0 #cc7e00, 0 0 0 var(--line)}
+.btn-main:hover{background:#ffad33}
+.btn-main:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+.btn-sub{background:#f1f5f9;border:3px solid var(--line);color:var(--muted);box-shadow:var(--sh)}
+.btn-sub:hover{border-color:var(--primary);color:var(--primary);background:#fff}
+.btn-sub:active{transform:translateY(4px);box-shadow:var(--sh-hover)}
+.or-line{display:flex;align-items:center;gap:10px;margin:20px 0 8px;font-size:13px;font-weight:900;color:#94a3b8;letter-spacing:.1em}
+.or-line::before,.or-line::after{content:"";flex:1;height:3px;background:#e2e8f0;border-radius:3px}
+.net-msg{margin:12px 0 0;min-height:20px;font-size:14px;font-weight:800;line-height:1.5;text-align:center;color:var(--muted)}
+.net-msg.err{color:var(--bad);animation:shake 0.4s}
+.net-msg.ok{color:var(--good)}
+
+.room-code{margin-top:18px;padding:16px;border-radius:var(--r-md);background:var(--primary-soft);border:3px dashed var(--primary);text-align:center}
+.room-code .rc-label{font-size:18px;font-weight:900;letter-spacing:.14em;color:var(--primary-ink)}
+.room-code .rc-num{margin-top:4px;font-size:clamp(48px,12vw,64px);line-height:1;font-weight:900;letter-spacing:.16em;color:var(--primary-ink);font-variant-numeric:tabular-nums;text-shadow:2px 2px 0 #fff}
+.room-code .rc-help{margin-top:4px;font-size:13px;font-weight:700;color:var(--primary-ink)}
+.lobby-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;max-height:280px;overflow-y:auto;padding-right:6px}
+.lobby-p{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;min-width:0;padding:10px 12px;border:3px solid var(--line);border-radius:var(--r-md);background:#f8fafc;box-shadow:var(--sh)}
+.lobby-p .st-avatar{flex:none;width:34px;height:34px;font-size:15px;border-radius:50%;border:3px solid var(--line);display:flex;align-items:center;justify-content:center;background:#fff;color:var(--ink);box-shadow:0 2px 0 var(--line)}
+.lobby-p b{font-size:15px;font-weight:900;min-width:0;overflow-wrap:anywhere}
+.tag{font-size:11px;font-weight:900;letter-spacing:.06em;padding:4px 8px;border-radius:var(--r-sm);background:#e2e8f0;color:var(--muted);border:2px solid var(--line)}
+.tag.host{background:var(--accent);color:#fff}
+.tag.me{background:var(--primary);color:#fff}
+.lobby-count{display:block;font-size:16px;font-weight:900;line-height:1.2;color:var(--primary-ink)}
+.lobby-count b{margin:0 4px;font-size:34px;font-weight:900;line-height:1;vertical-align:-3px;font-variant-numeric:tabular-nums;color:var(--primary);text-shadow:2px 2px 0 #ffd0e0}
+.lobby-guide{display:block;margin-top:6px;font-size:14px;font-weight:800;color:var(--muted)}
+.lobby-actions{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-top:20px}
+.lobby-actions #host-settings{flex:1 1 150px}
+.lobby-actions .form-row{margin-top:0;gap:6px}
+.lobby-actions .btn-main{flex:2 1 180px}
+.lobby-actions .btn-sub{flex:1 1 120px}
+
+.card{background:var(--card);border:4px solid var(--line);border-radius:var(--r-lg);box-shadow:6px 6px 0 rgba(30,41,59,0.1)}
+.card-hd{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:4px solid var(--line);background:#f8fafc;border-radius:12px 12px 0 0}
+.card-hd h2{margin:0;font-size:22px;font-weight:900;letter-spacing:.06em;line-height:1}
+.card-bd{padding:14px 16px}
+
+/* ============ 헤더 ============ */
+.hdr{background:var(--card);border:4px solid var(--line);border-radius:var(--r-lg);box-shadow:6px 6px 0 rgba(30,41,59,0.1);padding:14px 18px;margin-bottom:16px}
+.hdr-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 320px}
+.brand-mark{width:42px;height:42px;flex:none}
+.brand h1{margin:0;font-size:clamp(22px,3vw,30px);font-weight:900;letter-spacing:.03em;line-height:1;color:var(--primary);text-shadow:1px 1px 0 #ffd0e0}
+.brand p{margin:4px 0 0;font-size:13px;color:var(--muted);font-weight:600}
+.hdr-tools{display:flex;gap:8px;flex:none}
+.tool-btn{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border-radius:var(--r-md);border:3px solid var(--line);background:#f8fafc;font-size:14px;font-weight:800;color:var(--muted);box-shadow:var(--sh)}
+.tool-btn:hover{background:#fff;color:var(--primary);transform:translateY(2px);box-shadow:0 2px 0 var(--line)}
+.tool-btn:active{transform:translateY(4px);box-shadow:var(--sh-hover)}
+.tool-btn svg{width:18px;height:18px;flex:none}
+
+/* ============ 라운드 · 모드 (헤더와 분리된 별도 영역) ============ */
+/* 위쪽 두 카드는 보조 정보라 높이를 최소로 잡는다 */
+.ctl{background:var(--card);border:4px solid var(--line);border-radius:var(--r-lg);box-shadow:6px 6px 0 rgba(30,41,59,0.1);padding:11px 16px}
+.ctl-label{display:block;font-size:16px;font-weight:900;letter-spacing:.14em;color:var(--muted);margin-bottom:8px;line-height:1}
+
+/* 라운드 카드 */
+/* 옆의 난이도 카드에 맞춰 늘어나므로, 남는 세로 공간은 아래로 몰지 말고 가운데로 모은다 */
+.ctl-round{background:#fffafc;display:flex;flex-direction:column;justify-content:center}
+.round-body{display:flex;align-items:center;gap:16px}
+/* 숫자 옆 칸(배지 + 설명)은 가운데로 모은다 */
+.round-body > div{display:flex;flex-direction:column;align-items:center}
+/* 라운드 숫자 칸은 이 영역의 기준점이라 다른 요소보다 크게 잡되, 카드 높이를 좌우하므로 과하지 않게 */
+.round-num{
+  width:62px;height:62px;flex:none;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;
+  background:var(--primary);color:#fff;font-size:40px;font-weight:900;
+  font-variant-numeric:tabular-nums;box-shadow:0 4px 0 #d91c5c, 0 4px 0 var(--line);letter-spacing:-.02em;border:3px solid var(--line);text-shadow:2px 2px 0 #d91c5c;padding-top:4px;
+}
+.mix-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:var(--r-md);font-size:14px;font-weight:900;letter-spacing:.02em;border:3px solid var(--line);background:#fff;box-shadow:0 3px 0 var(--line)}
+.mix-badge svg{width:18px;height:18px;flex:none}
+.mix-badge[data-mix="paint"]{background:#fff3e0;color:#e65100}
+.mix-badge[data-mix="light"]{background:#e1f5fe;color:#0277bd}
+.round-sub{margin:5px 0 0;font-size:13px;font-weight:700;color:var(--muted)}
+
+/* 모드 세그먼트 컨트롤 */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;background:#f1f5f9;border:3px solid var(--line);border-radius:var(--r-lg);box-shadow:inset 0 3px 0 rgba(0,0,0,0.1)}
+@media (max-width:560px){.seg{grid-template-columns:minmax(0,1fr)}}
+.seg-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;min-height:60px;padding:8px 14px;border-radius:var(--r-md);
+  background:transparent;color:var(--muted);text-align:center;transition:transform .12s ease;
+}
+.seg-btn svg{width:22px;height:22px;flex:none}
+.seg-txt{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.seg-en{display:block;font-size:22px;font-weight:900;letter-spacing:.02em;line-height:1}
+.seg-btn[aria-pressed="true"]{background:#fff;color:var(--primary);box-shadow:0 4px 0 var(--line);border:3px solid var(--line);transform:translateY(-2px)}
+.seg-btn[data-locked="true"]{color:#cbd5e1}
+.seg-btn.shake{animation:shake .4s}
+.lock-badge{flex:none;font-size:11px;font-weight:900;letter-spacing:.08em;background:#e2e8f0;color:var(--muted);padding:4px 8px;border-radius:var(--r-sm);border:2px solid var(--line)}
+
+/* 난이도 카드: 제목 + 둥근 정사각형 버튼 두 칸 (해금 안내는 시작 팝업이 담당)
+   좌우 카드 높이를 맞추려고 둘 다 행 높이만큼 늘리고 내용은 세로 가운데에 둔다 */
+.ctl-round,.ctl-mode{align-self:stretch}
+.ctl-mode{display:flex;flex-direction:column;justify-content:center}
+.ctl-mode .ctl-label{margin-bottom:12px}
+.ctl-mode .seg{grid-template-columns:1fr 1fr;gap:6px;padding:6px}
+/* 윗줄: 자물쇠 + LOCKED, 아랫줄: 이름 — 높이는 내용만큼만 */
+.ctl-mode .seg-btn{
+  flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;align-content:center;
+  gap:4px 6px;min-height:0;padding:8px 6px;text-align:center;
+}
+.ctl-mode .seg-btn svg{width:22px;height:22px;order:0}
+.ctl-mode .lock-badge{order:1;margin:0;font-size:10px;padding:2px 6px}
+.ctl-mode .seg-txt{order:2;flex:0 0 100%}
+.ctl-mode .seg-en{font-size:15px;line-height:1.2}
+
+/* ============ 보드 ============ */
+/* 좌: 라운드·재료 / 가운데: 무대(두 행에 걸침) / 우: 난이도·점수판 */
+.board{
+  display:grid;gap:16px;align-items:start;
+  grid-template-columns:var(--col-left) minmax(0,1fr) 290px;
+  /* 무대가 두 행에 걸치는데, 행을 둘 다 auto로 두면 무대의 큰 높이가 1행에도 나뉘어
+     라운드·난이도 카드가 쓸데없이 길어진다. 2행을 유연하게 잡아 무대 높이를 그쪽으로만 보낸다. */
+  grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:
+    "round  stage mode"
+    "paints stage score";
+}
+.ctl-round{grid-area:round}
+.ctl-mode{grid-area:mode}
+.a-paints{grid-area:paints}
+.a-stage{grid-area:stage}
+.a-info{grid-area:score;display:grid;gap:16px}
+@media (max-width:1080px){
+  .board{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:none;
+    grid-template-areas:
+      "round  mode"
+      "stage  stage"
+      "paints score";
+  }
+}
+@media (max-width:640px){
+  .app{padding:12px 12px 32px}
+  .board{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:none;
+    grid-template-areas:"round" "mode" "stage" "paints" "score";
+  }
+}
+
+/* ============ 좌측: 재료(물감/빛) 카드 ============ */
+.src-list{display:grid;gap:12px}
+@media (max-width:1080px) and (min-width:641px){.src-list{grid-template-columns:1fr 1fr}}
+/* 위: 물감통 + 이름, 아래: RGB 칩이 카드 폭 전체를 쓴다 */
+.src-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 14px;align-items:center;padding:12px;border:3px solid var(--line);border-radius:var(--r-md);background:#fff;box-shadow:0 4px 0 var(--line)}
+.src-item > div{min-width:0}
+.src-item .mini-src{width:36px;height:72px;flex:none;margin-left:6px}
+/* 이름은 영문 · 한글 · RGB 세 줄로 나눠 쌓는다 */
+.src-item .si-name{font-size:28px;font-weight:900;letter-spacing:.1em;line-height:1.15}
+.src-item .si-ko{font-size:17px;color:var(--muted);font-weight:700;letter-spacing:.1em;margin-top:3px;line-height:1.2}
+.rgb-chips{grid-column:1 / -1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.rgb-chip{font-size:18px;font-weight:800;padding:7px 2px;border-radius:var(--r-sm);text-align:center;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;border:2px solid var(--line);box-shadow:0 2px 0 var(--line);letter-spacing:.1em;line-height:1}
+.rgb-chip.r{background:#ffebee}
+.rgb-chip.g{background:#e8f5e9}
+.rgb-chip.b{background:#e3f2fd}
+.mix-tip{margin:12px 0 0;font-size:16.5px;letter-spacing:.02em;text-align:center;font-weight:500;line-height:1.5;border-radius:var(--r-md);padding:10px;border:3px dashed #cbd5e1;background:#f8fafc}
+.mix-tip[data-mix="paint"]{border-color:#ffb74d;background:#fff8e1;color:#f57c00}
+.mix-tip[data-mix="light"]{border-color:#4fc3f7;background:#e1f5fe;color:#0288d1}
+
+/* ============ 중앙: 무대 ============ */
+.stage-bd{padding:14px 16px 20px}
+.vat-stage{position:relative;width:100%;max-width:640px;margin:0 auto;aspect-ratio:5/4}
+.scene{position:absolute;inset:0}
+.vat-stage[data-mix="light"] .scene-paint{display:none}
+.vat-stage[data-mix="paint"] .scene-light{display:none}
+.vat-layer{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* 물감 튜브 / 조명 */
+.emitters{position:absolute;inset:0;pointer-events:none}
+.emitter{position:absolute;width:14%;transform:rotate(var(--rot,0deg));transform-origin:50% 20%}
+.emitter-svg{display:block;width:100%;height:auto;animation:squeeze 1.6s ease-in-out infinite;animation-delay:var(--d,0s)}
+.drop{position:absolute;left:50%;bottom:2%;width:12px;height:14px;margin-left:-6px;border-radius:50% 50% 50% 50%/62% 62% 40% 40%;animation:dropFall 1.6s linear infinite;animation-delay:var(--dd,0s)}
+.revealed .emitter-svg,.revealed .drop{animation-play-state:paused}
+.revealed .drop{opacity:0}
+
+/* 솥 안 액체 */
+.liquid{position:absolute;left:22%;top:39.4%;width:56%;height:15%;border-radius:50%;overflow:hidden;box-shadow:inset 0 4px 10px rgba(0,0,0,.15)}
+.swirl{position:absolute;left:-50%;top:-200%;width:200%;height:500%;animation:spin 9s linear infinite}
+.liquid-result{position:absolute;inset:0;opacity:0;transition:opacity .5s ease}
+.revealed .liquid-result{opacity:1}
+.revealed .swirl{animation-play-state:paused}
+
+/* 빛 무대 — 트러스에 매달린 조명이 가운데 스크린을 비춘다 */
+.beam{animation:flicker 3.4s ease-in-out infinite}
+.revealed .beam{animation-play-state:paused}
+.pool{
+  position:absolute;left:33.5%;top:37.5%;width:33%;aspect-ratio:1;border-radius:50%;overflow:hidden;
+  -webkit-mask-image:radial-gradient(circle closest-side,#000 58%,rgba(0,0,0,.55) 84%,transparent 100%);
+  mask-image:radial-gradient(circle closest-side,#000 58%,rgba(0,0,0,.55) 84%,transparent 100%);
+}
+.pool-swirl{position:absolute;left:-25%;top:-25%;width:150%;height:150%;border-radius:50%;animation:spin 11s linear infinite}
+.pool-result{position:absolute;inset:0;opacity:0;transition:opacity .5s ease}
+.revealed .pool-result{opacity:1}
+.revealed .pool-swirl{animation-play-state:paused}
+.vat-stage[data-mix="light"] .qwrap{top:58.1%}
+
+/* 물음표 / 정답 라벨 */
+.qwrap{position:absolute;left:50%;top:46.8%;transform:translate(-50%,-50%);z-index:4;text-align:center}
+.qmark{
+  width:72px;height:72px;border-radius:50%;background:#fff;border:4px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;color:var(--primary);
+  box-shadow:0 6px 0 var(--line);animation:bob 2.4s ease-in-out infinite;text-shadow:2px 2px 0 #ffd0e0;
+}
+.revealed .qmark{display:none}
+.answer-tag{display:none;padding:10px 18px;border-radius:var(--r-lg);background:#fff;border:4px solid var(--line);box-shadow:0 6px 0 var(--line);animation:pop .38s ease-out}
+.revealed .answer-tag{display:block}
+.answer-tag .at-en{font-size:30px;font-weight:900;letter-spacing:.04em;color:var(--good);text-shadow:1px 1px 0 #b9f6ca;line-height:1}
+.answer-tag .at-ko{font-size:15px;font-weight:800;color:var(--ink);margin-top:4px}
+.answer-tag .at-rgb{font-size:18px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px}
+
+/* 질문 / 피드백 */
+.ask{text-align:center;margin-top:8px}
+.ask h3{margin:0;font-size:clamp(22px,3.5vw,30px);font-weight:900;letter-spacing:.03em;color:var(--ink);line-height:1}
+.ask p{margin:6px 0 0;font-size:15.5px;letter-spacing:.03em;font-weight:400;color:var(--muted)}
+.feedback{
+  margin:12px auto 0;max-width:560px;min-height:50px;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:10px 16px;border-radius:var(--r-md);border:3px solid var(--line);background:#fff;
+  font-size:17.5px;letter-spacing:.03em;font-weight:500;color:var(--ink);text-align:center;line-height:1.45;
+  box-shadow:var(--sh);
+}
+.feedback svg{width:22px;height:22px;flex:none}
+/* 문장은 반드시 한 덩어리로 넣는다 — 조각을 그대로 넣으면 각 조각이 flex 아이템이 되어 세로로 쪼개진다.
+   색은 색 이름(.cname)만 쓰고, 설명 글자는 어떤 상태에서든 검은색으로 통일한다(아이콘은 상태색 유지). */
+.fb-text{min-width:0;color:var(--ink)}
+/* RGB 계산 줄 — 정답 문장과 분리해 길어져도 피드백 박스가 흔들리지 않게 한다 */
+.mix-calc{
+  margin:10px auto 0;max-width:560px;padding:8px 14px;
+  border:3px dashed #cbd5e1;border-radius:var(--r-md);background:#f8fafc;
+  font-size:16px;font-weight:500;letter-spacing:.02em;line-height:1.5;
+  color:var(--ink);text-align:center;font-variant-numeric:tabular-nums;
+}
+.mix-calc b{font-weight:900}
+/* 색 이름은 그 색 그대로 칠하고 테두리로 대비를 만든다.
+   어두운 색이면 밝은 테두리, 밝은 색이면 어두운 테두리를 JS가 --oc로 넣어 준다. */
+.cname{
+  font-weight:500;
+  text-shadow:-1px -1px 0 var(--oc,#1e293b), 1px -1px 0 var(--oc,#1e293b),
+              -1px 1px 0 var(--oc,#1e293b), 1px 1px 0 var(--oc,#1e293b);
+}
+.feedback.ok{background:var(--good-soft);color:#00c853;border-color:var(--line)}
+.feedback.no{background:var(--bad-soft);color:#d50000;border-color:var(--line)}
+.feedback.turn{background:var(--primary-soft);color:var(--primary);border-color:var(--line)}
+
+/* 점수 획득은 문장에 섞지 않고 따로 띄운다 — 설명 문구가 길어져도 레이아웃이 흔들리지 않는다 */
+.score-pop{
+  position:fixed;left:50%;top:14%;z-index:120;pointer-events:none;
+  padding:10px 24px;border-radius:var(--r-lg);white-space:nowrap;
+  background:var(--good-soft);color:#00994d;border:4px solid var(--line);box-shadow:0 6px 0 var(--line);
+  font-size:clamp(26px,5vw,34px);font-weight:900;letter-spacing:.06em;line-height:1.1;
+  opacity:0;transform:translate(-50%,10px);transition:opacity .18s ease, transform .18s ease;
+}
+.score-pop.show{opacity:1;transform:translate(-50%,0)}
+
+/* 제한 시간 (같이하기 전용) */
+.timer{display:flex;align-items:center;gap:12px;margin:16px auto 0;max-width:560px;padding:12px 16px;border-radius:var(--r-md);border:4px solid var(--line);background:#fff;box-shadow:0 6px 0 var(--line)}
+.timer-label{font-size:14px;font-weight:900;letter-spacing:.06em;color:var(--primary);flex:none}
+.timer-num{font-size:28px;font-weight:900;color:var(--primary);font-variant-numeric:tabular-nums;flex:none;min-width:30px;text-align:center}
+.timer-track{flex:1 1 auto;height:16px;border-radius:8px;background:#f1f5f9;overflow:hidden;border:3px solid var(--line);box-shadow:inset 0 3px 0 rgba(0,0,0,0.1)}
+.timer-fill{height:100%;background:var(--primary);border-radius:4px;width:100%}
+.timer-count{font-size:14px;font-weight:800;color:var(--primary);flex:none;font-variant-numeric:tabular-nums}
+.timer.urgent{background:var(--bad-soft)}
+.timer.urgent .timer-label,.timer.urgent .timer-num,.timer.urgent .timer-count{color:var(--bad)}
+.timer.urgent .timer-fill{background:var(--bad)}
+.timer.urgent .timer-num{animation:blink 0.5s ease-in-out infinite}
+
+/* 정답 선택 — 색 자체가 배경, 2행 4열 */
+.picker{margin-top:16px;padding:0 4px}
+.rail{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.chip{
+  position:relative;min-height:90px;padding:14px 8px;border-radius:var(--r-md);text-align:center;
+  border:4px solid var(--line);box-shadow:0 6px 0 var(--line);
+  transition:transform .12s ease;
+}
+.chip:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 0 var(--line)}
+.chip:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 var(--line)}
+.chip-en{display:block;font-size:24px;font-weight:900;letter-spacing:.02em;line-height:1;word-break:break-word}
+.chip-ko{display:block;font-size:17px;font-weight:800;line-height:1.25;margin-top:6px;opacity:.9}
+/* 어두운 배경 위 흰 글자는 같은 굵기여도 더 두꺼워 보여서 한 단계 낮춘다 */
+.chip[data-ink="light"] .chip-en{font-weight:700}
+.chip[data-ink="light"] .chip-ko{font-weight:500}
+.chip-badge{position:absolute;top:-10px;right:-10px;width:30px;height:30px;border-radius:50%;border:3px solid var(--line);display:none;align-items:center;justify-content:center;color:#fff;box-shadow:0 3px 0 var(--line)}
+.chip-badge svg{width:16px;height:16px}
+.chip-votes{display:block;margin:8px -4px -4px;padding:6px;border-radius:var(--r-sm);border:3px solid var(--line);background:#fff;color:var(--ink);font-size:12px;font-weight:800;line-height:1.35;word-break:break-word}
+.chip-votes[hidden]{display:none!important}
+.chip.picked{box-shadow:0 0 0 4px #fff, 0 0 0 8px var(--primary)}
+.chip.correct{box-shadow:0 0 0 4px #fff, 0 0 0 8px var(--good)}
+.chip.correct .chip-badge{display:flex;background:var(--good)}
+.chip.wrong{opacity:.6;box-shadow:0 0 0 4px #fff, 0 0 0 8px var(--bad)}
+.chip.wrong .chip-en,.chip.wrong .chip-ko{text-decoration:line-through}
+.chip.wrong .chip-badge{display:flex;background:var(--bad)}
+.chip.shake{animation:shake .4s}
+.chip:disabled{cursor:default}
+@media (max-width:430px){
+  .rail{gap:8px}
+  .chip{min-height:80px;padding:10px 4px}
+  .chip-en{font-size:20px}
+  .chip-ko{font-size:15px}
+}
+
+.next-row{display:flex;justify-content:center;margin-top:16px}
+.next-btn{
+  display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:var(--r-md);
+  background:var(--primary);color:#fff;font-size:18px;font-weight:900;letter-spacing:.02em;
+  border:4px solid var(--line); box-shadow:0 6px 0 var(--line); text-shadow:2px 2px 0 #d91c5c;
+}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--line)}
+.next-btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--line)}
+.next-btn svg{width:22px;height:22px}
+
+/* ============ 우측: 점수판 ============ */
+/* max-height는 JS(syncScoreMax)가 왼쪽 재료 카드 높이에 맞춰 --score-max로 채워 넣는다. */
+.score-list{display:grid;gap:12px;max-height:var(--score-max,480px);overflow-y:auto;padding-right:6px}
+.student{display:flex;align-items:center;gap:12px;padding:12px;border:3px solid var(--line);border-radius:var(--r-md);background:#fff;box-shadow:var(--sh)}
+.student.active{background:var(--primary-soft);border-color:var(--primary);box-shadow:0 4px 0 var(--primary)}
+.st-avatar{width:40px;height:40px;flex:none;border-radius:50%;border:3px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;background:#fff;color:var(--ink);box-shadow:0 2px 0 var(--line)}
+.st-name{font-size:15px;font-weight:900;letter-spacing:.03em;color:var(--ink)}
+.st-ko{font-size:13px;color:var(--muted);font-weight:700;margin-top:2px}
+.st-turn{display:none;font-size:11px;font-weight:900;letter-spacing:.06em;color:#fff;background:var(--primary);border:2px solid var(--line);border-radius:var(--r-sm);padding:2px 6px;margin-left:6px;vertical-align:2px}
+.student.active .st-turn{display:inline-block;animation:blink 1.6s ease-in-out infinite}
+.st-score{margin-left:auto;text-align:right}
+.st-num{font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;color:var(--primary);text-shadow:1px 1px 0 #ffd0e0}
+.st-unit{font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--muted)}
+
+/* ============ 결과 화면 — 다 같이 보는 화면이라 글자를 한 단계 크게 ============ */
+#screen-result h1{font-size:clamp(33px,5.5vw,45px)}
+#screen-result .intro-sub{font-size:20px}
+#screen-result .card-hd h2{font-size:25px}
+#screen-result .st-name{font-size:18px}
+#screen-result .st-ko{font-size:16px}
+#screen-result .st-num{font-size:39px}
+#screen-result .st-unit{font-size:19px}
+#screen-result .st-avatar{width:44px;height:44px;font-size:20px}
+
+/* 폴백 폭죽 */
+.fx{position:absolute;left:50%;top:46%;width:12px;height:12px;border-radius:50%;pointer-events:none;z-index:9;animation:fxFly .95s ease-out forwards;border:3px solid var(--line)}
+
+/* ============ 애니메이션 ============ */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes squeeze{0%,100%{transform:scale(1,1)}45%{transform:scale(.94,1.03)}}
+@keyframes dropFall{0%{transform:translateY(0) scale(.5);opacity:0}18%{opacity:1}100%{transform:translateY(60px) scale(1);opacity:0}}
+@keyframes flicker{0%,100%{opacity:.86}50%{opacity:1}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes fxFly{to{transform:translate(var(--fx),var(--fy)) rotate(320deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<a href="activity1_intro.html" style="position:fixed;top:14px;left:14px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;text-decoration:none;background:rgba(255,255,255,.94);color:#2E2A33;border:2px solid #3B3557;box-shadow:0 3px 0 #3B3557;font-family:'Pretendard','Malgun Gothic',sans-serif;font-size:13px;font-weight:800;">← 활동 목록</a>
+
+
+<!-- 배경: 물감이 떨어져 퍼진 자국 (도구보다 뒤에 깔린다) -->
+
+<div class="bg-splats" aria-hidden="true">
+  <svg class="splat1" viewBox="0 0 200 200" fill="#ff477e">
+    <path d="M104 16c19 2 27 20 41 32s37 15 42 34-9 36-19 51-21 33-40 37-37-9-54-19-38-19-45-37 3-38 11-54 15-31 27-38 22-8 37-6Z"/>
+    <circle cx="166" cy="26" r="11"/><circle cx="186" cy="52" r="6"/><circle cx="178" cy="76" r="3.5"/>
+    <circle cx="24" cy="150" r="8.5"/><circle cx="10" cy="170" r="4.5"/><circle cx="40" cy="176" r="3"/>
+    <circle cx="140" cy="182" r="6.5"/><circle cx="162" cy="196" r="3.5"/>
+    <ellipse cx="30" cy="34" rx="7" ry="4.5" transform="rotate(-32 30 34)"/>
+    <ellipse cx="192" cy="120" rx="4" ry="7" transform="rotate(18 192 120)"/>
+  </svg>
+  <svg class="splat2" viewBox="0 0 200 200" fill="#00b4d8">
+    <path d="M96 22c22-4 36 12 51 25s31 20 33 39-14 33-26 47-24 29-43 30-34-14-49-26-31-22-33-40 12-32 22-47 23-24 45-28Z"/>
+    <circle cx="28" cy="38" r="9.5"/><circle cx="12" cy="60" r="5"/><circle cx="34" cy="16" r="3.5"/>
+    <circle cx="176" cy="150" r="7"/><circle cx="190" cy="172" r="4"/>
+    <circle cx="104" cy="188" r="5.5"/><circle cx="82" cy="196" r="3"/>
+    <ellipse cx="182" cy="46" rx="6.5" ry="4" transform="rotate(24 182 46)"/>
+    <ellipse cx="8" cy="122" rx="4" ry="6.5" transform="rotate(-14 8 122)"/>
+  </svg>
+  <svg class="splat3" viewBox="0 0 200 200" fill="#ff9e00">
+    <path d="M100 18c20 0 31 16 45 28s36 17 40 36-7 37-18 52-23 31-42 33-36-10-52-21-35-21-40-40 5-37 14-53 15-30 27-33 15-2 26-2Z"/>
+    <circle cx="22" cy="44" r="8"/><circle cx="8" cy="26" r="4"/><circle cx="40" cy="22" r="3"/>
+    <circle cx="172" cy="166" r="9"/><circle cx="150" cy="186" r="5"/><circle cx="188" cy="188" r="3.5"/>
+    <circle cx="192" cy="94" r="6"/>
+    <ellipse cx="14" cy="120" rx="4.5" ry="7.5" transform="rotate(12 14 120)"/>
+    <ellipse cx="96" cy="6" rx="7" ry="4" transform="rotate(-8 96 6)"/>
+  </svg>
+  <svg class="splat4" viewBox="0 0 200 200" fill="#00e676">
+    <path d="M92 20c24-2 40 14 54 28s28 24 28 43-16 32-29 45-25 26-44 26-33-15-48-27-30-24-30-43 14-31 25-46 20-24 44-26Z"/>
+    <circle cx="174" cy="32" r="8.5"/><circle cx="190" cy="14" r="4"/><circle cx="158" cy="12" r="3"/>
+    <circle cx="18" cy="126" r="6.5"/><circle cx="6" cy="148" r="3.5"/>
+    <circle cx="120" cy="190" r="6"/><circle cx="146" cy="182" r="3"/>
+    <ellipse cx="186" cy="106" rx="4" ry="7" transform="rotate(-20 186 106)"/>
+  </svg>
+  <svg class="splat5" viewBox="0 0 200 200" fill="#ffe600">
+    <path d="M104 20c21 3 30 20 43 33s34 18 37 37-11 35-22 50-23 30-42 32-35-12-51-23-33-22-38-41 6-37 15-52 17-29 29-33 18-5 29-3Z"/>
+    <circle cx="26" cy="48" r="9"/><circle cx="10" cy="72" r="4.5"/><circle cx="44" cy="20" r="3.5"/>
+    <circle cx="180" cy="138" r="6"/><circle cx="192" cy="160" r="3.5"/>
+    <circle cx="88" cy="190" r="5.5"/>
+    <ellipse cx="168" cy="30" rx="6" ry="4" transform="rotate(28 168 30)"/>
+  </svg>
+  <!-- 여기저기 튄 작은 물방울 무리 -->
+  <svg class="drops1" viewBox="0 0 120 120" fill="#ff477e">
+    <circle cx="30" cy="26" r="9"/><circle cx="62" cy="14" r="5"/><circle cx="86" cy="38" r="6.5"/>
+    <circle cx="46" cy="58" r="3.5"/><circle cx="94" cy="72" r="4"/><circle cx="22" cy="82" r="5.5"/>
+    <circle cx="66" cy="96" r="3"/>
+    <ellipse cx="104" cy="16" rx="5.5" ry="3.5" transform="rotate(-24 104 16)"/>
+  </svg>
+  <svg class="drops2" viewBox="0 0 120 120" fill="#00b4d8">
+    <circle cx="34" cy="34" r="8"/><circle cx="70" cy="22" r="4.5"/><circle cx="90" cy="52" r="6"/>
+    <circle cx="52" cy="70" r="3.5"/><circle cx="18" cy="60" r="5"/><circle cx="78" cy="94" r="4"/>
+    <ellipse cx="106" cy="80" rx="3.5" ry="6" transform="rotate(16 106 80)"/>
+  </svg>
+  <svg class="drops3" viewBox="0 0 120 120" fill="#ff9e00">
+    <circle cx="40" cy="30" r="7.5"/><circle cx="16" cy="48" r="4"/><circle cx="74" cy="44" r="5.5"/>
+    <circle cx="56" cy="76" r="4.5"/><circle cx="96" cy="88" r="3.5"/><circle cx="28" cy="94" r="6"/>
+  </svg>
+  <svg class="drops4" viewBox="0 0 120 120" fill="#00e676">
+    <circle cx="46" cy="24" r="7"/><circle cx="80" cy="40" r="4.5"/><circle cx="24" cy="52" r="5.5"/>
+    <circle cx="62" cy="72" r="3.5"/><circle cx="98" cy="66" r="3"/><circle cx="38" cy="92" r="4.5"/>
+  </svg>
+  <!-- 화면 가운데에도 색을 섞어 뿌린다 -->
+  <svg class="mid1" viewBox="0 0 200 200" fill="#a259ff">
+    <path d="M98 22c23-3 33 18 47 31s35 17 37 36-12 34-24 48-24 30-43 31-34-13-50-24-32-23-35-42 9-33 19-49 26-28 49-31Z"/>
+    <circle cx="24" cy="34" r="9"/><circle cx="8" cy="58" r="4.5"/><circle cx="178" cy="164" r="7"/>
+    <circle cx="196" cy="186" r="3.5"/><circle cx="112" cy="192" r="5"/>
+    <ellipse cx="184" cy="40" rx="6" ry="4" transform="rotate(30 184 40)"/>
+  </svg>
+  <svg class="mid2" viewBox="0 0 120 120" fill="#00c2a8">
+    <circle cx="42" cy="30" r="10"/><circle cx="74" cy="18" r="5"/><circle cx="92" cy="46" r="6.5"/>
+    <circle cx="58" cy="62" r="4"/><circle cx="20" cy="66" r="5.5"/><circle cx="84" cy="88" r="4.5"/>
+    <circle cx="44" cy="100" r="3"/>
+    <ellipse cx="106" cy="72" rx="4" ry="6.5" transform="rotate(-18 106 72)"/>
+  </svg>
+  <svg class="mid3" viewBox="0 0 200 200" fill="#ffe600">
+    <path d="M104 24c19 4 26 21 39 34s33 19 35 38-13 33-25 46-24 28-42 28-33-14-48-26-30-24-32-42 11-32 21-47 33-35 52-31Z"/>
+    <circle cx="28" cy="150" r="8"/><circle cx="12" cy="172" r="4"/><circle cx="168" cy="30" r="7"/>
+    <circle cx="188" cy="14" r="3.5"/>
+  </svg>
+  <svg class="mid4" viewBox="0 0 120 120" fill="#ff477e">
+    <circle cx="36" cy="36" r="9"/><circle cx="68" cy="24" r="4.5"/><circle cx="88" cy="54" r="6"/>
+    <circle cx="50" cy="70" r="3.5"/><circle cx="16" cy="72" r="5"/><circle cx="76" cy="96" r="4"/>
+  </svg>
+  <!-- 길게 튄 자국 -->
+  <svg class="mid5" viewBox="0 0 200 140" fill="#ff7043">
+    <path d="M52 28c22-14 46-8 62 6s22 34 14 48-28 22-48 20-38-12-46-26-4-34 18-48Z"/>
+    <circle cx="140" cy="24" r="8"/><circle cx="162" cy="14" r="4.5"/><circle cx="182" cy="30" r="3"/>
+    <circle cx="26" cy="104" r="6.5"/><circle cx="10" cy="124" r="3.5"/>
+    <ellipse cx="120" cy="112" rx="9" ry="5" transform="rotate(-16 120 112)"/>
+    <ellipse cx="152" cy="96" rx="5" ry="3" transform="rotate(-16 152 96)"/>
+  </svg>
+  <svg class="mid6" viewBox="0 0 200 200" fill="#00b4d8">
+    <path d="M100 20c22 0 34 17 48 30s33 18 35 37-10 35-21 50-24 31-43 31-35-13-51-25-31-23-34-42 8-34 18-50 26-31 48-31Z"/>
+    <circle cx="22" cy="42" r="8.5"/><circle cx="176" cy="158" r="7"/><circle cx="192" cy="178" r="4"/>
+    <circle cx="96" cy="194" r="5"/>
+    <ellipse cx="10" cy="118" rx="4" ry="7" transform="rotate(20 10 118)"/>
+  </svg>
+  <svg class="splat6" viewBox="0 0 200 200" fill="#00c2a8">
+    <path d="M98 24c21-2 32 16 45 29s34 18 36 37-12 34-23 48-25 30-44 30-33-14-48-26-31-23-33-42 10-33 20-49 26-25 47-27Z"/>
+    <circle cx="26" cy="40" r="8"/><circle cx="10" cy="62" r="4"/><circle cx="174" cy="160" r="7"/>
+    <circle cx="192" cy="180" r="3.5"/><circle cx="104" cy="192" r="5"/>
+    <ellipse cx="186" cy="44" rx="6" ry="4" transform="rotate(26 186 44)"/>
+  </svg>
+  <svg class="drops5" viewBox="0 0 120 120" fill="#a259ff">
+    <circle cx="38" cy="28" r="9"/><circle cx="70" cy="18" r="4.5"/><circle cx="90" cy="48" r="6"/>
+    <circle cx="54" cy="66" r="3.5"/><circle cx="18" cy="58" r="5"/><circle cx="80" cy="92" r="4"/>
+    <circle cx="42" cy="102" r="3"/>
+    <ellipse cx="106" cy="76" rx="4" ry="6.5" transform="rotate(14 106 76)"/>
+  </svg>
+  <svg class="drops6" viewBox="0 0 120 120" fill="#ffe600">
+    <circle cx="44" cy="32" r="8.5"/><circle cx="76" cy="46" r="5"/><circle cx="22" cy="56" r="5.5"/>
+    <circle cx="60" cy="74" r="4"/><circle cx="96" cy="82" r="3.5"/><circle cx="34" cy="96" r="4.5"/>
+  </svg>
+  <svg class="drops7" viewBox="0 0 120 120" fill="#ff9e00">
+    <circle cx="32" cy="36" r="7.5"/><circle cx="66" cy="26" r="4"/><circle cx="88" cy="58" r="5.5"/>
+    <circle cx="48" cy="68" r="3.5"/><circle cx="70" cy="94" r="4.5"/><circle cx="16" cy="86" r="3"/>
+  </svg>
+</div>
+
+<!-- 배경 장식 (장식 전용이라 화면 낭독기에서는 숨긴다) -->
+<div class="bg-toys" aria-hidden="true">
+  <!-- 팔레트 (아래쪽 그늘 + 위쪽 하이라이트로 볼록해 보이게) -->
+  <svg class="toy1" viewBox="0 0 48 40" fill="none">
+    <path d="M24 2.5C11.6 2.5 3 9.9 3 19.5c0 8.6 7.4 15 16.4 15 2.9 0 4.2-2 3.3-4.2-1-2.7.8-4.8 3.7-4.8h5.9c8 0 13.2-4.7 13.2-11C45.5 8.6 36.4 2.5 24 2.5Z" fill="#fff" stroke="#1e293b" stroke-width="2.6"/>
+    <path d="M3.4 22c1.6 7 8.4 12.5 16 12.5 2.9 0 4.2-2 3.3-4.2-1-2.7.8-4.8 3.7-4.8h5.9c4.6 0 8.3-1.6 10.6-4.1-3.4 2-8.3 3-13.9 3C18.6 24.4 9 23.6 3.4 22Z" fill="#1e293b" opacity=".09"/>
+    <path d="M9 12.5C12 8 17.5 5.2 24 5.2" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
+    <circle cx="13" cy="14" r="3.2" fill="#ff477e"/>
+    <circle cx="23" cy="9.5" r="3.2" fill="#ff9e00"/>
+    <circle cx="33" cy="13" r="3.2" fill="#00b4d8"/>
+    <circle cx="12.5" cy="24.5" r="3.2" fill="#00e676"/>
+  </svg>
+  <!-- 물감 튜브 (분홍) -->
+  <svg class="toy2" viewBox="0 0 24 44" fill="none">
+    <rect x="9" y="3" width="6" height="7" rx="1.5" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.4"/>
+    <rect x="4.5" y="10" width="15" height="30" rx="3.5" fill="#ff477e" stroke="#1e293b" stroke-width="2.4"/>
+    <path d="M15.6 13v24" stroke="#1e293b" stroke-width="3" opacity=".18" stroke-linecap="round"/>
+    <path d="M8.2 13.5v11" stroke="#fff" stroke-width="2.4" opacity=".5" stroke-linecap="round"/>
+    <path d="M7 34.5h10" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+  <!-- 붓 -->
+  <svg class="toy3" viewBox="0 0 20 44" fill="none">
+    <path d="M10 2.5c3 0 5.2 3.8 5.2 8.5H4.8C4.8 6.3 7 2.5 10 2.5Z" fill="#ff9e00" stroke="#1e293b" stroke-width="2.4"/>
+    <path d="M12.4 5.6c1.3 1.4 2.1 3.4 2.3 5.4h-2.4c-.1-2-.5-3.9-1.1-5.4Z" fill="#1e293b" opacity=".16"/>
+    <rect x="4.8" y="11" width="10.4" height="5" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.4"/>
+    <rect x="6.5" y="16" width="7" height="25" rx="3" fill="#fff" stroke="#1e293b" stroke-width="2.4"/>
+    <path d="M11.8 19v18" stroke="#1e293b" stroke-width="2.4" opacity=".14" stroke-linecap="round"/>
+  </svg>
+  <!-- 색 원반 -->
+  <svg class="toy4" viewBox="0 0 32 32" fill="none">
+    <circle cx="16" cy="16" r="13.5" fill="#ff9e00"/>
+    <path d="M16 2.5A13.5 13.5 0 0 0 2.5 16H16Z" fill="#ff477e"/>
+    <path d="M16 2.5A13.5 13.5 0 0 1 29.5 16H16Z" fill="#ffe600"/>
+    <path d="M16 29.5A13.5 13.5 0 0 0 29.5 16H16Z" fill="#1e293b" opacity=".12"/>
+    <path d="M7.5 9.5A11 11 0 0 1 15 5.2" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".75"/>
+    <circle cx="16" cy="16" r="13.5" stroke="#1e293b" stroke-width="2.6"/>
+    <circle cx="16" cy="16" r="3.6" fill="#fff" stroke="#1e293b" stroke-width="2.6"/>
+  </svg>
+  <!-- 물감 방울 (하늘) -->
+  <svg class="toy5" viewBox="0 0 24 30" fill="none">
+    <path d="M12 2.5c5 6.8 7.8 11 7.8 15.6A7.8 7.8 0 0 1 4.2 18.1C4.2 13.5 7 9.3 12 2.5Z" fill="#00b4d8" stroke="#1e293b" stroke-width="2.4"/>
+    <path d="M18.6 13.6c.8 1.6 1.2 3 1.2 4.5a7.8 7.8 0 0 1-11 7.1c5.6.4 10.4-4.9 9.8-11.6Z" fill="#1e293b" opacity=".16"/>
+    <ellipse cx="9" cy="16.5" rx="1.9" ry="3" fill="#fff" opacity=".62"/>
+  </svg>
+  <!-- 크레용 -->
+  <svg class="toy6" viewBox="0 0 16 40" fill="none">
+    <path d="M8 2.2 12.2 8.4V35a2.6 2.6 0 0 1-2.6 2.6H6.4A2.6 2.6 0 0 1 3.8 35V8.4Z" fill="#00e676" stroke="#1e293b" stroke-width="2.4"/>
+    <path d="M10.6 10.5V36a2 2 0 0 1-1 1.5h.1A2.6 2.6 0 0 0 12.2 35V10.5Z" fill="#1e293b" opacity=".2"/>
+    <path d="M5.7 11.5v22" stroke="#fff" stroke-width="1.8" opacity=".5" stroke-linecap="round"/>
+    <path d="M4 14.5h8" stroke="#1e293b" stroke-width="2.2"/>
+  </svg>
+  <!-- 물감 튜브 (주황) -->
+  <svg class="toy7" viewBox="0 0 24 44" fill="none">
+    <rect x="9" y="3" width="6" height="7" rx="1.5" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.4"/>
+    <rect x="4.5" y="10" width="15" height="30" rx="3.5" fill="#ff9e00" stroke="#1e293b" stroke-width="2.4"/>
+    <path d="M15.6 13v24" stroke="#1e293b" stroke-width="3" opacity=".18" stroke-linecap="round"/>
+    <path d="M8.2 13.5v11" stroke="#fff" stroke-width="2.4" opacity=".5" stroke-linecap="round"/>
+    <path d="M7 34.5h10" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+  <!-- 물감 방울 (분홍) -->
+  <svg class="toy8" viewBox="0 0 24 30" fill="none">
+    <path d="M12 2.5c5 6.8 7.8 11 7.8 15.6A7.8 7.8 0 0 1 4.2 18.1C4.2 13.5 7 9.3 12 2.5Z" fill="#ff477e" stroke="#1e293b" stroke-width="2.4"/>
+    <path d="M18.6 13.6c.8 1.6 1.2 3 1.2 4.5a7.8 7.8 0 0 1-11 7.1c5.6.4 10.4-4.9 9.8-11.6Z" fill="#1e293b" opacity=".16"/>
+    <ellipse cx="9" cy="16.5" rx="1.9" ry="3" fill="#fff" opacity=".62"/>
+  </svg>
+</div>
+
+<div class="app">
+
+<!-- ==================== 시작 화면 ==================== -->
+<section id="screen-home">
+  <div class="intro">
+    <svg class="intro-mark" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="18" fill="#fff" stroke="#d5cdff" stroke-width="2"/>
+      <path d="M20 4a16 16 0 0 0-16 16h16z" fill="#ff3b30"/>
+      <path d="M20 4a16 16 0 0 1 16 16h-16z" fill="#ffe600"/>
+      <path d="M4 20a16 16 0 0 0 32 0z" fill="#ff7a00"/>
+      <circle cx="20" cy="20" r="5" fill="#fff"/>
+    </svg>
+    <h1>COLOR MIX RELAY QUIZ</h1>
+    <p class="intro-sub">같은 색을 <b>물감</b>으로 섞을 때와 <b>빛</b>으로 섞을 때<br>결과가 어떻게 달라지는지 맞혀 보세요.</p>
+
+    <div class="mode-grid" role="group" aria-label="놀이 방법 선택">
+      <button type="button" class="mode-btn" id="btn-solo" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+        </svg>
+        <span class="mode-en">SOLO</span>
+        <span class="mode-ko">혼자하기</span>
+        <span class="mode-desc">내 속도로 풀고<br>점수를 쌓아요</span>
+      </button>
+      <button type="button" class="mode-btn" id="btn-multi" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="9" cy="8" r="3.4"/><path d="M2.5 19a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9.5" r="2.8"/><path d="M15 19a5.5 5.5 0 0 1 6.5-4.6"/>
+        </svg>
+        <span class="mode-en">TOGETHER</span>
+        <span class="mode-ko">같이하기</span>
+        <span class="mode-desc">방을 만들어<br>다 같이 풀어요</span>
+      </button>
+    </div>
+
+    <div id="multi-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-hd">
+          <h2>같이하기</h2>
+          <button type="button" class="btn-close" id="btn-close-multi" aria-label="닫기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div id="multi-panel" hidden>
+          <!-- 1단계: 방 만들기 / 참여하기 -->
+          <div id="multi-choice">
+        <div class="mode-grid">
+          <button type="button" class="mode-btn" id="btn-create">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M12 9.5v5M9.5 12h5"/>
+            </svg>
+            <span class="mode-en">CREATE</span>
+            <span class="mode-ko">방 만들기</span>
+            <span class="mode-desc">새 방을 열고<br>방 코드를 받아요</span>
+          </button>
+          <button type="button" class="mode-btn" id="btn-join-step">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l4 4-4 4"/><path d="M13 12H3"/>
+            </svg>
+            <span class="mode-en">JOIN</span>
+            <span class="mode-ko">참여하기</span>
+            <span class="mode-desc">받은 방 코드를<br>입력해 들어가요</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2단계: 참여하기를 고른 경우에만 -->
+      <div id="join-form" hidden>
+        <div class="form-row">
+          <label for="in-name">내 이름</label>
+          <input class="field" type="text" id="in-name" maxlength="10" placeholder="예: 김민서" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label for="in-code">방 코드 4자리</label>
+          <input class="field code" type="text" id="in-code" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="0000" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <button type="button" class="btn btn-main" id="btn-join">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"/><path d="m12 5 7 7-7 7"/></svg>
+            <span>들어가기</span>
+          </button>
+          <button type="button" class="btn btn-sub" id="btn-join-back">← 뒤로</button>
+        </div>
+      </div>
+
+          <p class="net-msg" id="net-msg" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="solo-panel" class="solo-start-row">
+      <div>
+        <label for="sel-rounds-solo">게임 길이</label>
+        <select id="sel-rounds-solo" class="field">
+          <option value="10">10 문제 (기본)</option>
+          <option value="20">20 문제</option>
+          <option value="999">무한 모드</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-main" id="btn-start-solo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
+        <span>시작하기</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 대기실 ==================== -->
+<section id="screen-lobby" hidden>
+  <div class="intro">
+    <h1>같이하기 대기실</h1>
+    <div class="room-code">
+      <div class="rc-label">ROOM CODE · 방 코드</div>
+      <div class="rc-num" id="lobby-code">----</div>
+      <div class="rc-help">친구에게 이 번호를 알려 주세요.</div>
+    </div>
+    <div class="lobby-list" id="lobby-list"></div>
+    <p class="net-msg" id="lobby-msg" role="status" aria-live="polite"></p>
+    <div class="lobby-actions">
+      <div id="host-settings" hidden style="text-align:left">
+        <div class="form-row">
+          <label for="sel-rounds-multi">문제 수</label>
+          <select id="sel-rounds-multi" class="field">
+            <option value="10">10 문제 (기본)</option>
+            <option value="20">20 문제</option>
+            <option value="999">무한 모드 (계속하기)</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="btn btn-main" id="btn-host-start" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
+        <span>퀴즈 시작하기</span>
+      </button>
+      <button type="button" class="btn btn-sub" id="btn-leave-lobby">방 나가기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 결과 화면 ==================== -->
+<section id="screen-result" hidden>
+  <div class="intro">
+    <h1>GAME OVER</h1>
+    <p class="intro-sub">모든 문제가 끝났습니다!</p>
+    <div class="card" style="margin-top:24px;text-align:left">
+      <div class="card-hd"><h2>최종 결과</h2></div>
+      <div class="card-bd" id="final-score-list" style="max-height:420px;overflow-y:auto;padding-right:6px"></div>
+    </div>
+    <div class="form-row" style="margin-top:24px">
+      <button type="button" class="btn btn-main" id="btn-home-from-result" style="font-size:25px;min-height:64px">
+        <span>홈으로 돌아가기</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 게임 화면 ==================== -->
+<section id="screen-game" hidden>
+
+  <!-- ==================== 헤더 ==================== -->
+  <header class="hdr">
+    <div class="hdr-top">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="20" r="18" fill="#fff" stroke="#d5cdff" stroke-width="2"/>
+          <path d="M20 4a16 16 0 0 0-16 16h16z" fill="#ff3b30"/>
+          <path d="M20 4a16 16 0 0 1 16 16h-16z" fill="#ffe600"/>
+          <path d="M4 20a16 16 0 0 0 32 0z" fill="#ff7a00"/>
+          <circle cx="20" cy="20" r="5" fill="#fff"/>
+        </svg>
+        <div>
+          <h1>COLOR MIX RELAY QUIZ <span style="color:var(--muted);font-weight:800">| IMAGE UNIT</span></h1>
+          <p>같은 색을 물감으로 섞을 때와 빛으로 섞을 때 · 영상 이미지 단원</p>
+        </div>
+      </div>
+      <div class="hdr-tools">
+        <button type="button" class="tool-btn" id="btn-sound" aria-pressed="true">
+          <svg id="ico-sound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+          </svg>
+          <span id="txt-sound">소리 켬</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-reset">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>
+          </svg>
+          <span>다시 시작</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-exit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4"/><path d="M19 12H9"/>
+          </svg>
+          <span id="txt-exit">나가기</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 보드 ====================
+       좌: 라운드 → 재료 / 가운데: 문제(무대) / 우: 난이도 → 점수판 -->
+  <main class="board">
+
+    <div class="ctl ctl-round">
+      <span class="ctl-label">ROUND · 라운드</span>
+      <div class="round-body">
+        <span class="round-num" id="round-num">01</span>
+        <div>
+          <span class="mix-badge" id="mix-badge" data-mix="paint">
+            <svg id="mix-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 3h6v4H9z"/><path d="M8 7h8l1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"/><path d="M7.5 12h9"/>
+            </svg>
+            <span id="mix-text">물감으로 섞기</span>
+          </span>
+          <p class="round-sub" id="round-sub">물감 2개 · 쉬움 단계</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctl ctl-mode">
+      <span class="ctl-label">MODE · 난이도</span>
+      <div class="seg" role="group" aria-label="난이도 선택">
+        <button type="button" class="seg-btn" id="tab-easy" data-level="easy" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9.5" stroke-width="2"/><path d="m8 12.5 2.7 2.7L16.5 9.4"/>
+          </svg>
+          <span class="seg-txt">
+            <span class="seg-en">2 COLORS (EASY)</span>
+          </span>
+        </button>
+        <button type="button" class="seg-btn" id="tab-medium" data-level="medium" aria-pressed="false" data-locked="true">
+          <svg id="ico-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+          </svg>
+          <span class="seg-txt">
+            <span class="seg-en">3 COLORS (MEDIUM)</span>
+          </span>
+          <span class="lock-badge" id="lock-badge">LOCKED</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 좌측: 사용한 재료 -->
+    <section class="card a-paints" aria-labelledby="h-src">
+      <div class="card-hd">
+        <svg id="src-icon" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px" aria-hidden="true">
+          <path d="M9 3h6v4H9z"/><path d="M8 7h8l1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"/><path d="M7.5 12h9"/>
+        </svg>
+        <h2 id="h-src">PAINTS · 사용한 물감</h2>
+      </div>
+      <div class="card-bd">
+        <div class="src-list" id="src-list"></div>
+        <p class="mix-tip" id="mix-tip" data-mix="paint"></p>
+      </div>
+    </section>
+
+    <!-- 중앙: 무대 + 정답 선택 -->
+    <section class="card a-stage" aria-labelledby="h-ask">
+      <div class="card-hd">
+        <svg id="stage-icon" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px" aria-hidden="true">
+          <path d="M4 9h16l-1.4 9.2A3 3 0 0 1 15.6 21H8.4a3 3 0 0 1-3-2.8z"/><path d="M2.5 9h19"/><path d="M15 9V5"/>
+        </svg>
+        <h2 id="h-stage">MIXING VAT · 물감 솥</h2>
+      </div>
+      <div class="card-bd stage-bd">
+
+        <div class="vat-stage" id="vat-stage" data-mix="paint">
+
+          <!-- 물감 장면 -->
+          <div class="scene scene-paint">
+            <svg class="vat-layer" viewBox="0 0 400 320" aria-hidden="true">
+              <defs>
+                <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#c9d1e6"/><stop offset=".35" stop-color="#eef1fa"/>
+                  <stop offset=".65" stop-color="#dee4f2"/><stop offset="1" stop-color="#bfc8e0"/>
+                </linearGradient>
+              </defs>
+              <path d="M78 178q-27 9-23 33 4 21 27 23" fill="none" stroke="#b6c0da" stroke-width="10" stroke-linecap="round"/>
+              <path d="M322 178q27 9 23 33-4 21-27 23" fill="none" stroke="#b6c0da" stroke-width="10" stroke-linecap="round"/>
+              <rect x="118" y="292" width="164" height="14" rx="7" fill="#b0badb"/>
+              <path d="M74 150c0 0 10 100 18 124 5 16 18 24 36 24h144c18 0 31-8 36-24 8-24 18-124 18-124z" fill="url(#metal)"/>
+              <rect x="128" y="196" width="14" height="86" rx="7" fill="#fff" opacity=".45"/>
+              <rect x="140" y="236" width="120" height="32" rx="16" fill="#fff" stroke="#c2cadf" stroke-width="2"/>
+              <text x="200" y="257" text-anchor="middle" font-size="13.5" font-weight="800" letter-spacing="1.2" fill="#5b6cff" font-family="system-ui,sans-serif">MIXING VAT</text>
+              <ellipse cx="200" cy="150" rx="126" ry="31" fill="#dfe5f4" stroke="#b6c0da" stroke-width="3"/>
+              <ellipse cx="200" cy="150" rx="113" ry="24" fill="#aab4cf"/>
+            </svg>
+
+            <div class="liquid" id="liquid">
+              <div class="swirl" id="swirl"></div>
+              <div class="liquid-result" id="liquid-result"></div>
+            </div>
+          </div>
+
+          <!-- 빛 장면 (무대·트러스·조명은 JS로 생성) -->
+          <div class="scene scene-light">
+            <svg class="vat-layer" id="light-svg" viewBox="0 0 400 320" aria-hidden="true"></svg>
+            <div class="pool" id="pool">
+              <div class="pool-swirl" id="pool-swirl"></div>
+              <div class="pool-result" id="pool-result"></div>
+            </div>
+          </div>
+
+          <!-- 물음표 / 정답 -->
+          <div class="qwrap">
+            <div class="qmark" id="qmark" aria-hidden="true">?</div>
+            <div class="answer-tag" id="answer-tag">
+              <div class="at-en" id="at-en"></div>
+              <div class="at-ko" id="at-ko"></div>
+              <div class="at-rgb" id="at-rgb"></div>
+            </div>
+          </div>
+
+          <!-- 물감 튜브 / 조명 (JS로 생성) -->
+          <div class="emitters" id="emitters"></div>
+        </div>
+
+        <div class="ask">
+          <h3 id="h-ask">WHAT COLOR IS THIS?</h3>
+          <p id="ask-sub">무슨 색일까요? 아래에서 골라 보세요.</p>
+        </div>
+
+        <p class="feedback turn" id="feedback" role="status" aria-live="polite"></p>
+
+        <!-- RGB 계산 등 부가 설명은 정답 문장과 분리해서 이 줄에만 표시한다 -->
+        <p class="mix-calc" id="mix-calc" hidden></p>
+
+        <div class="timer" id="timer" hidden>
+          <span class="timer-label">남은 시간</span>
+          <span class="timer-num" id="timer-num">10</span>
+          <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+          <span class="timer-count" id="timer-count">0명</span>
+        </div>
+
+        <div class="picker">
+          <div class="rail" id="rail" role="group" aria-label="정답 색 선택"></div>
+        </div>
+
+        <div class="next-row">
+          <button type="button" class="next-btn" id="btn-next" hidden>
+            <span id="next-text">다음 라운드</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 우측: 점수판 -->
+    <div class="a-info">
+      <section class="card" aria-labelledby="h-score">
+        <div class="card-hd">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px" aria-hidden="true">
+            <path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M2.5 20h19"/>
+          </svg>
+          <h2 id="h-score">SCOREBOARD · 점수판</h2>
+        </div>
+        <div class="card-bd">
+          <div class="score-list" id="score-list"></div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+</section>
+</div>
+
+<!-- 점수 획득 알림 (설명 문구와 분리) -->
+<div class="score-pop" id="score-pop" role="status" aria-live="polite"></div>
+
+<!-- 게임 시작 안내 팝업 -->
+<div class="modal-overlay" id="info-modal" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" aria-hidden="true">
+  <div class="modal-content">
+    <div class="modal-hd">
+      <h2 id="info-modal-title">난이도 안내</h2>
+      <button type="button" class="btn-close" id="info-modal-close" aria-label="안내 닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
+    </div>
+    <p class="info-text" id="info-modal-text"></p>
+    <label class="info-never" for="info-modal-never">
+      <input type="checkbox" id="info-modal-never">
+      <span>다시 보지 않기</span>
+    </label>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   1. 데이터
+   ------------------------------------------------------------
+   물감(감산 혼합)과 빛(가산 혼합)에 같은 RGB 값을 그대로 사용한다.
+   같은 색을 두 방식으로 섞으면 결과가 어떻게 달라지는지가 이 활동의 핵심.
+   ============================================================ */
+const SOURCES = {
+  red:      { en:'RED',        ko:'빨강',        rgb:[255,0,0]   },
+  green:    { en:'GREEN',      ko:'초록',        rgb:[0,255,0]   },
+  blue:     { en:'BLUE',       ko:'파랑',        rgb:[0,0,255]   },
+  yellow:   { en:'YELLOW',     ko:'노랑',        rgb:[255,255,0] },
+  magenta:  { en:'MAGENTA',    ko:'마젠타',      rgb:[255,0,255] },
+  /* 밝기를 절반쯤 낮춘 색 — 덧셈 결과가 0/255로만 떨어지지 않게 한다 */
+  dimred:   { en:'DIM RED',    ko:'어두운 빨강', rgb:[140,0,0]   },
+  dimgreen: { en:'DIM GREEN',  ko:'어두운 초록', rgb:[0,140,0]   },
+  dimblue:  { en:'DIM BLUE',   ko:'어두운 파랑', rgb:[0,0,140]   }
+};
+
+const RESULTS = {
+  /* 물감(감산) 쪽 결과 */
+  orange:    { en:'ORANGE',       ko:'주황',     rgb:[255,140,0]   },
+  brown:     { en:'BROWN',        ko:'갈색',     rgb:[138,90,43]   },
+  darkbrown: { en:'DARK BROWN',   ko:'진갈색',   rgb:[92,58,33]    },
+  maroon:    { en:'MAROON',       ko:'밤색',     rgb:[122,31,31]   },
+  teal:      { en:'TEAL',         ko:'청록',     rgb:[19,119,128]  },
+  green:     { en:'GREEN',        ko:'초록',     rgb:[26,118,52]   },
+  deeppurple:{ en:'DEEP PURPLE',  ko:'진보라',   rgb:[86,30,130]   },
+  olive:     { en:'OLIVE',        ko:'올리브',   rgb:[140,140,0]   },
+  red:       { en:'RED',          ko:'빨강',     rgb:[228,24,34]   },
+  nearblack: { en:'NEAR BLACK',   ko:'검정',     rgb:[38,36,42]    },
+  slate:     { en:'SLATE',        ko:'회청색',   rgb:[91,100,114]  },
+  /* 빛(가산) 쪽 결과 — RGB 덧셈 결과와 정확히 일치해야 한다 */
+  yellow:    { en:'YELLOW',       ko:'노랑',     rgb:[255,255,0]   },
+  rose:      { en:'ROSE',         ko:'장미분홍', rgb:[255,0,140]   },
+  azure:     { en:'AZURE',        ko:'하늘색',   rgb:[0,140,255]   },
+  spring:    { en:'SPRING GREEN', ko:'봄초록',   rgb:[0,255,140]   },
+  violet:    { en:'VIOLET',       ko:'보라',     rgb:[140,0,255]   },
+  paleyellow:{ en:'PALE YELLOW',  ko:'연노랑',   rgb:[255,255,140] },
+  white:     { en:'WHITE',        ko:'하양',     rgb:[255,255,255] },
+  gray:      { en:'GRAY',         ko:'회색',     rgb:[140,140,140] },
+  coral:     { en:'CORAL',        ko:'산호빛',   rgb:[255,140,140] },
+  palegreen: { en:'PALE GREEN',   ko:'연초록',   rgb:[140,255,140] },
+  paleblue:  { en:'PALE BLUE',    ko:'연파랑',   rgb:[140,140,255] },
+  /* 오답 후보 */
+  pink:      { en:'PINK',         ko:'분홍',     rgb:[255,155,181] },
+  cream:     { en:'CREAM',        ko:'크림색',   rgb:[255,239,168] },
+  lime:      { en:'LIME',         ko:'연두',     rgb:[155,215,59]  },
+  peach:     { en:'PEACH',        ko:'살구색',   rgb:[255,192,138] },
+  lavender:  { en:'LAVENDER',     ko:'연보라',   rgb:[183,155,224] },
+  indigo:    { en:'INDIGO',       ko:'남색',     rgb:[59,42,90]    },
+  bronze:    { en:'BRONZE',       ko:'청동색',   rgb:[156,107,30]  },
+  magenta:   { en:'MAGENTA',      ko:'마젠타',   rgb:[255,0,255]   },
+  cyan:      { en:'CYAN',         ko:'사이안',   rgb:[0,255,255]   },
+  charcoal:  { en:'CHARCOAL',     ko:'진회색',   rgb:[70,74,88]    },
+  gold:      { en:'GOLD',         ko:'황금색',   rgb:[212,175,55]  }
+};
+
+/* 한 조합(colors)을 물감으로 섞을 때와 빛으로 섞을 때의 정답.
+   light 값은 반드시 RGB 덧셈(255에서 자름) 결과와 같아야 한다. */
+const RECIPES = {
+  easy: [
+    { colors:['red','yellow'],        paint:'orange',     light:'yellow'     },
+    { colors:['red','dimgreen'],      paint:'brown',      light:'orange'     },
+    { colors:['red','dimblue'],       paint:'maroon',     light:'rose'       },
+    { colors:['dimgreen','blue'],     paint:'teal',       light:'azure'      },
+    { colors:['green','dimblue'],     paint:'green',      light:'spring'     },
+    { colors:['dimred','blue'],       paint:'deeppurple', light:'violet'     },
+    { colors:['yellow','dimblue'],    paint:'olive',      light:'paleyellow' },
+    { colors:['dimred','dimgreen'],   paint:'darkbrown',  light:'olive'      },
+    { colors:['magenta','yellow'],    paint:'red',        light:'white'      },
+    { colors:['red','blue'],          paint:'deeppurple', light:'magenta'    },
+    { colors:['green','blue'],        paint:'teal',       light:'cyan'       },
+    { colors:['red','green'],         paint:'brown',      light:'yellow'     },
+    { colors:['yellow','blue'],       paint:'green',      light:'white'      },
+    { colors:['magenta','green'],     paint:'darkbrown',  light:'white'      }
+  ],
+  medium: [
+    { colors:['red','green','blue'],           paint:'darkbrown', light:'white'      },
+    { colors:['dimred','dimgreen','dimblue'],  paint:'nearblack', light:'gray'       },
+    { colors:['red','dimgreen','dimblue'],     paint:'maroon',    light:'coral'      },
+    { colors:['dimred','green','dimblue'],     paint:'olive',     light:'palegreen'  },
+    { colors:['dimred','dimgreen','blue'],     paint:'slate',     light:'paleblue'   },
+    { colors:['red','green','dimblue'],        paint:'brown',     light:'paleyellow' },
+    { colors:['blue','dimblue','dimred'],      paint:'deeppurple',light:'violet'     },
+    { colors:['green','dimgreen','dimblue'],   paint:'teal',      light:'spring'     },
+    { colors:['blue','dimblue','dimgreen'],    paint:'teal',      light:'azure'      },
+    { colors:['red','dimred','dimgreen'],      paint:'brown',     light:'orange'     }
+  ]
+};
+
+const UNLOCK_AT = 3;          // 쉬움 정답 3개 → 보통 해금
+const CHOICE_COUNT = 8;       // 정답 후보 개수 (2행 4열)
+
+const MIX_INFO = {
+  paint: {
+    ko:'물감', label:'물감으로 섞기',
+    stage:'MIXING VAT · 물감 솥',
+    src:'PAINTS · 사용한 물감',
+    tip:'물감은 섞을수록 빛을 더 많이 흡수해서 <b>어두워집니다</b>. (감산 혼합)',
+    icon:'<path d="M9 3h6v4H9z"/><path d="M8 7h8l1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"/><path d="M7.5 12h9"/>'
+  },
+  light: {
+    ko:'빛', label:'빛으로 섞기',
+    stage:'LIGHT STAGE · 빛 무대',
+    src:'LIGHTS · 사용한 빛',
+    tip:'빛은 겹칠수록 밝기가 더해져서 <b>밝아집니다</b>. (가산 혼합)',
+    icon:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M4.6 4.6l1.9 1.9M17.5 17.5l1.9 1.9M2.5 12h2.6M18.9 12h2.6M4.6 19.4l1.9-1.9M17.5 6.5l1.9-1.9"/>'
+  }
+};
+
+/* ============================================================
+   2. 상태
+   ============================================================ */
+const ANSWER_MS = 10000;       // 같이하기: 라운드당 선택 시간
+const AVATAR_COLORS = ['#5b6cff','#e0568a','#12925c','#c2790b','#9b6bff','#0f8fa3','#d9534f','#5a6b8c'];
+
+const game = {
+  mode: 'solo',             // solo(혼자하기) | multi(같이하기)
+  level: 'easy',            // easy(색 2개) | medium(색 3개)
+  mix: 'paint',             // paint(물감) | light(빛) — 라운드마다 번갈아 바뀜
+  mediumUnlocked: false,
+  round: 1,
+  maxRounds: 10,
+  recipeIdx: 0,
+  recipe: null,
+  answerKey: null,
+  choices: [],
+  players: [],              // [{id,name,score,host}]
+  myPick: null,
+  deadline: 0,
+  answered: false,
+  locked: false,
+  easyClears: 0,
+  used: { easy:new Set(), medium:new Set() },
+  sound: true,
+  timer: null,
+  tick: null
+};
+
+/* ============================================================
+   3. 유틸
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const rgbCss = (a) => 'rgb(' + a[0] + ',' + a[1] + ',' + a[2] + ')';
+const randInt = (n) => Math.floor(Math.random() * n);
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = randInt(i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function colorDist(a, b){
+  return Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
+}
+/* 빛의 혼합 = RGB 성분끼리 더하고 255에서 자름 */
+function addLight(rgbList){
+  return [0,1,2].map(i => Math.min(255, rgbList.reduce((s, c) => s + c[i], 0)));
+}
+function shade(rgb, k){
+  return rgbCss(rgb.map(v => Math.max(0, Math.min(255, Math.round(v * k)))));
+}
+/* 배경색 위에서 대비가 더 큰 글자색을 고른다 (WCAG 상대휘도 기준) */
+const INK_DARK = '#16192b', INK_LIGHT = '#ffffff';
+function luminance(rgb){
+  const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+}
+const L_INK_DARK = luminance([0x16, 0x19, 0x2b]);
+function readableInk(rgb){
+  const L = luminance(rgb);
+  return (L + 0.05) / (L_INK_DARK + 0.05) >= 1.05 / (L + 0.05) ? INK_DARK : INK_LIGHT;
+}
+function svgEl(tag, attrs){
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+/* ============================================================
+   4. 효과음 (WebAudio 합성 — 외부 파일 없음)
+   ============================================================ */
+let audioCtx = null;
+function beep(kind){
+  if (!game.sound) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  try {
+    audioCtx = audioCtx || new AC();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const plan = {
+      ok:  { freqs:[660, 880, 1180], dur:0.16, type:'sine',   vol:0.14 },
+      no:  { freqs:[190, 140],       dur:0.20, type:'square', vol:0.09 },
+      tap: { freqs:[520],            dur:0.06, type:'sine',   vol:0.08 },
+      up:  { freqs:[520, 700, 940, 1240], dur:0.13, type:'triangle', vol:0.13 }
+    }[kind];
+    if (!plan) return;
+    plan.freqs.forEach((f, i) => {
+      const t0 = audioCtx.currentTime + i * plan.dur;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = plan.type;
+      osc.frequency.setValueAtTime(f, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(plan.vol, t0 + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + plan.dur);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(t0); osc.stop(t0 + plan.dur + 0.02);
+    });
+  } catch (e) { /* 소리 실패해도 게임은 계속 */ }
+}
+
+/* ============================================================
+   5. 폭죽 (canvas-confetti, 실패 시 자체 폴백)
+   ============================================================ */
+function celebrate(){
+  if (reduceMotion()) return;
+  if (window.confetti){
+    try {
+      const rect = $('vat-stage').getBoundingClientRect();
+      window.confetti({
+        particleCount: 90, spread: 78, startVelocity: 38, ticks: 120,
+        origin: {
+          x: (rect.left + rect.width / 2) / window.innerWidth,
+          y: (rect.top + rect.height * 0.45) / window.innerHeight
+        },
+        colors: ['#ff7a00','#ffd400','#5b6cff','#9b6bff','#12925c','#ff5c8a']
+      });
+      return;
+    } catch (e) { /* 폴백으로 진행 */ }
+  }
+  domBurst();
+}
+function domBurst(){
+  const stage = $('vat-stage');
+  const colors = ['#ff7a00','#ffd400','#5b6cff','#9b6bff','#12925c','#ff5c8a'];
+  for (let i = 0; i < 20; i++){
+    const p = document.createElement('span');
+    p.className = 'fx';
+    const ang = (Math.PI * 2 * i) / 20 + Math.random() * 0.3;
+    const dist = 70 + Math.random() * 90;
+    p.style.setProperty('--fx', Math.cos(ang) * dist + 'px');
+    p.style.setProperty('--fy', (Math.sin(ang) * dist - 30) + 'px');
+    p.style.background = colors[i % colors.length];
+    stage.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+/* ============================================================
+   6. 그리기 — 물감 튜브 / 조명 SVG
+   ============================================================ */
+function tubeSvg(key, cls){
+  const c = SOURCES[key];
+  const body = rgbCss(c.rgb);
+  const dark = shade(c.rgb, 0.78);
+  const pale = luminance(c.rgb) > 0.55;     // 밝은 색은 테두리를 넣어야 보인다
+  const edge = pale ? ' stroke="#b9c1d6" stroke-width="2"' : '';
+  return ''
+    + '<svg class="' + cls + '" viewBox="0 0 60 130" role="img" aria-label="' + c.ko + ' 물감 튜브">'
+    +   '<rect x="10" y="2" width="40" height="11" rx="3" fill="#c3cbe0"/>'
+    +   '<path d="M18 2v11M26 2v11M34 2v11M42 2v11" stroke="#aab3cc" stroke-width="1.6"/>'
+    +   '<rect x="8" y="10" width="44" height="88" rx="15" fill="' + body + '"' + edge + '/>'
+    +   '<rect x="15" y="22" width="7" height="54" rx="3.5" fill="#fff" opacity="' + (pale ? '.0' : '.5') + '"/>'
+    +   '<rect x="8" y="54" width="44" height="15" fill="#fff" opacity=".88"/>'
+    +   '<path d="M14 94l10 12h12l10-12z" fill="' + dark + '"' + edge + '/>'
+    +   '<rect x="21" y="102" width="18" height="6" rx="2.5" fill="#7f889c"/>'
+    +   '<rect x="24" y="106" width="12" height="18" rx="3" fill="#9aa3b2"/>'
+    + '</svg>';
+}
+
+function lampSvg(key, cls){
+  const c = SOURCES[key];
+  const body = rgbCss(c.rgb);
+  return ''
+    + '<svg class="' + cls + '" viewBox="0 0 60 130" role="img" aria-label="' + c.ko + ' 조명">'
+    +   '<rect x="27" y="0" width="6" height="16" rx="3" fill="#8b93a8"/>'
+    +   '<path d="M16 16h28l8 44H8z" fill="#6f7893"/>'
+    +   '<path d="M16 16h9l-5 44H8z" fill="#848da6"/>'
+    +   '<ellipse cx="30" cy="60" rx="22" ry="7" fill="' + body + '"/>'
+    +   '<ellipse cx="30" cy="60" rx="22" ry="7" fill="none" stroke="#5c6480" stroke-width="2"/>'
+    +   '<path d="M12 63h36l8 58H4z" fill="' + body + '" opacity=".38"/>'
+    + '</svg>';
+}
+const sourceSvg = (key, cls) => (game.mix === 'light' ? lampSvg(key, cls) : tubeSvg(key, cls));
+
+/* 좌측 패널 */
+function renderSources(){
+  const box = $('src-list');
+  box.textContent = '';
+  game.recipe.colors.forEach((key, i) => {
+    const c = SOURCES[key];
+    const item = document.createElement('div');
+    item.className = 'src-item';
+    item.innerHTML = sourceSvg(key, 'mini-src');
+
+    const info = document.createElement('div');
+    /* 1행 영문 이름, 2행 한글 이름, 3행 RGB 칩 */
+    const name = document.createElement('div');
+    name.className = 'si-name';
+    name.textContent = (i + 1) + '. ' + c.en;
+    const ko = document.createElement('div');
+    ko.className = 'si-ko';
+    ko.textContent = c.ko + (game.mix === 'light' ? ' 빛' : ' 물감');
+    const chips = document.createElement('div');
+    chips.className = 'rgb-chips';
+    ['r','g','b'].forEach((ch, ci) => {
+      const s = document.createElement('span');
+      s.className = 'rgb-chip ' + ch;
+      s.textContent = ch.toUpperCase() + ': ' + c.rgb[ci];
+      chips.appendChild(s);
+    });
+    info.append(name, ko);
+    item.append(info, chips);   /* 칩은 물감통 아래까지 쓰도록 카드의 직계 자식으로 둔다 */
+    box.appendChild(item);
+  });
+  $('mix-tip').dataset.mix = game.mix;
+  $('mix-tip').innerHTML = MIX_INFO[game.mix].tip;
+}
+
+/* 무대 위 튜브 / 조명 배치 */
+const EMITTER_POS = {
+  2: [ { left:15, top:2, rot:-32 }, { left:71, top:2, rot:32 } ],
+  3: [ { left:5,  top:5, rot:-44 }, { left:43, top:0, rot:0 }, { left:79, top:5, rot:44 } ]
+};
+function renderEmitters(){
+  const box = $('emitters');
+  box.textContent = '';
+  if (game.mix === 'light') return;      // 빛 모드는 조명을 SVG 무대 안에 그린다
+  const keys = game.recipe.colors;
+  const pos = EMITTER_POS[keys.length] || EMITTER_POS[2];
+  keys.forEach((key, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'emitter';
+    wrap.style.left = pos[i].left + '%';
+    wrap.style.top = pos[i].top + '%';
+    wrap.style.setProperty('--rot', pos[i].rot + 'deg');
+    wrap.innerHTML = tubeSvg(key, 'emitter-svg');
+    wrap.querySelector('.emitter-svg').style.setProperty('--d', (i * 0.35) + 's');
+    for (let d = 0; d < 2; d++){
+      const drop = document.createElement('span');
+      drop.className = 'drop';
+      drop.style.background = rgbCss(SOURCES[key].rgb);
+      drop.style.setProperty('--dd', (i * 0.35 + d * 0.8) + 's');
+      wrap.appendChild(drop);
+    }
+    box.appendChild(wrap);
+  });
+}
+
+/* 솥 안 액체 */
+function renderLiquid(){
+  const cols = game.recipe.colors.map(k => rgbCss(SOURCES[k].rgb));
+  const loop = cols.concat(cols, [cols[0]]);
+  $('swirl').style.background = 'conic-gradient(' + loop.join(',') + ')';
+  $('liquid-result').style.background = rgbCss(RESULTS[game.recipe.paint].rgb);
+}
+
+/* 빛 무대: 무대 패널 → 빔 → 트러스 → 조명 → 바닥 라벨
+   (가운데 스크린은 HTML의 .pool 이 담당하며 이 SVG 위에 겹쳐진다) */
+const POOL = { cx:200, cy:186, r:66 };          /* CSS의 .pool 위치와 같은 값 */
+function renderLightStage(){
+  const svg = $('light-svg');
+  svg.textContent = '';
+  if (game.mix !== 'light') return;
+
+  const keys = game.recipe.colors;
+  const n = keys.length;
+  /* 빔이 스크린 밖에서 서로 겹치면 잘못된 혼합색이 보이므로
+     조명 위치와 빔 폭은 겹치지 않도록 계산해 둔 값을 쓴다 */
+  const xs = (n === 2) ? [96, 304] : [60, 200, 340];
+  const w0 = (n === 2) ? 22 : 18;               /* 렌즈 쪽 빔 반폭 */
+  const w1 = (n === 2) ? 46 : 34;               /* 스크린 쪽 빔 반폭 */
+  const MOUNT_Y = 52, LENS = 44;                /* 조명 매다는 높이 / 렌즈까지 거리 */
+  const defs = svgEl('defs', {});
+  svg.appendChild(defs);
+
+  /* 무대 패널 */
+  svg.appendChild(svgEl('rect', { x:14, y:8, width:372, height:304, rx:30, fill:'#1d2450' }));
+  svg.appendChild(svgEl('rect', { x:14, y:8, width:372, height:304, rx:30, fill:'none', stroke:'#8fa0e8', 'stroke-width':'4' }));
+  svg.appendChild(svgEl('circle', { cx:POOL.cx, cy:POOL.cy, r:POOL.r + 18, fill:'#ffffff', opacity:'.05' }));
+
+  /* 빔 (조명보다 뒤) */
+  keys.forEach((key, i) => {
+    const col = rgbCss(SOURCES[key].rgb);
+    const mx = xs[i], my = MOUNT_Y;
+    const ang = Math.atan2(POOL.cy - my, POOL.cx - mx);
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    const sx = mx + dx * LENS, sy = my + dy * LENS;          /* 렌즈 위치 */
+    const len = Math.hypot(POOL.cx - sx, POOL.cy - sy);      /* 스크린 중심까지 */
+    const ex = sx + dx * len, ey = sy + dy * len;
+    const px = -dy, py = dx;
+
+    const gid = 'beam' + i;
+    const grad = svgEl('linearGradient', { id:gid, gradientUnits:'userSpaceOnUse', x1:sx, y1:sy, x2:ex, y2:ey });
+    grad.appendChild(svgEl('stop', { offset:'0', 'stop-color':col, 'stop-opacity':'.88' }));
+    grad.appendChild(svgEl('stop', { offset:'1', 'stop-color':col, 'stop-opacity':'.22' }));
+    defs.appendChild(grad);
+
+    const pts = [
+      [sx + px * w0, sy + py * w0], [sx - px * w0, sy - py * w0],
+      [ex - px * w1, ey - py * w1], [ex + px * w1, ey + py * w1]
+    ].map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const beam = svgEl('polygon', { points:pts, fill:'url(#' + gid + ')', class:'beam' });
+    beam.style.animationDelay = (i * 0.6) + 's';
+    svg.appendChild(beam);
+  });
+
+  /* 트러스 */
+  const T1 = 26, T2 = 52, X0 = 30, X1 = 370;
+  svg.appendChild(svgEl('rect', { x:X0, y:T1, width:X1 - X0, height:7, rx:3, fill:'#b3bde4' }));
+  svg.appendChild(svgEl('rect', { x:X0, y:T2 - 7, width:X1 - X0, height:7, rx:3, fill:'#8e9ac9' }));
+  svg.appendChild(svgEl('rect', { x:X0, y:T1, width:7, height:T2 - T1, rx:3, fill:'#9aa6d2' }));
+  svg.appendChild(svgEl('rect', { x:X1 - 7, y:T1, width:7, height:T2 - T1, rx:3, fill:'#9aa6d2' }));
+  let zig = '';
+  const seg = 24;
+  for (let x = X0 + 4; x < X1 - seg * 2; x += seg * 2){
+    zig += 'M' + x + ' ' + (T2 - 6) + 'L' + (x + seg) + ' ' + (T1 + 6) + 'L' + (x + seg * 2) + ' ' + (T2 - 6);
+  }
+  svg.appendChild(svgEl('path', { d:zig, fill:'none', stroke:'#9aa6d2', 'stroke-width':'4', 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+
+  /* 조명 */
+  keys.forEach((key, i) => {
+    const col = rgbCss(SOURCES[key].rgb);
+    const x = xs[i], y = MOUNT_Y;
+    const deg = Math.atan2(POOL.cy - y, POOL.cx - x) * 180 / Math.PI - 90;
+    const g = svgEl('g', { transform:'rotate(' + deg.toFixed(1) + ' ' + x + ' ' + y + ')' });
+    const put = (tag, a) => g.appendChild(svgEl(tag, a));
+    put('rect',    { x:x - 4,  y:y - 8,  width:8,  height:14, rx:3, fill:'#8e9ac9' });
+    put('rect',    { x:x - 14, y:y + 4,  width:28, height:24, rx:7, fill:'#b7c1e4' });
+    put('rect',    { x:x - 10, y:y + 8,  width:5,  height:16, rx:2.5, fill:'#ffffff', opacity:'.45' });
+    put('rect',    { x:x - 16, y:y + 26, width:32, height:5,  rx:2, fill:'#8e9ac9' });
+    put('path',    { d:'M' + (x - 17) + ' ' + (y + 30) + 'h34l6 13h-46z', fill:'#9aa6d2' });
+    put('ellipse', { cx:x, cy:y + LENS, rx:23, ry:6, fill:col, stroke:'#7c88b8', 'stroke-width':'2' });
+    put('ellipse', { cx:x, cy:y + LENS, rx:11, ry:3, fill:'#ffffff', opacity:'.55' });
+    svg.appendChild(g);
+  });
+
+  /* 바닥 라벨 */
+  svg.appendChild(svgEl('rect', { x:138, y:266, width:124, height:28, rx:14, fill:'#2e3660', stroke:'#8fa0e8', 'stroke-width':'2' }));
+  const cap = svgEl('text', {
+    x:200, y:285, 'text-anchor':'middle', 'font-size':'12.5', 'font-weight':'800',
+    'letter-spacing':'1.4', fill:'#d3daff', 'font-family':'system-ui,sans-serif'
+  });
+  cap.textContent = 'LIGHT SCREEN';
+  svg.appendChild(cap);
+}
+
+/* 스크린에 비치는 빛 소용돌이 */
+function renderPool(){
+  const cols = game.recipe.colors.map(k => rgbCss(SOURCES[k].rgb));
+  const loop = cols.concat(cols, [cols[0]]);
+  $('pool-swirl').style.background = 'conic-gradient(' + loop.join(',') + ')';
+  $('pool-result').style.background = rgbCss(RESULTS[game.recipe.light].rgb);
+}
+
+/* ============================================================
+   7. 정답 후보
+   ============================================================ */
+function buildChoices(answerKey){
+  const ans = RESULTS[answerKey].rgb;
+  const others = Object.keys(RESULTS).filter(k => k !== answerKey);
+  others.sort((a, b) => colorDist(RESULTS[a].rgb, ans) - colorDist(RESULTS[b].rgb, ans));
+  const near = others.slice(0, 3);                       // 헷갈리는 비슷한 색
+  const far = shuffle(others.slice(3)).slice(0, CHOICE_COUNT - 1 - near.length);
+  return shuffle([answerKey].concat(near, far));
+}
+
+/* ============================================================
+   8. 정답 칩 (색이 곧 배경, 2행 4열)
+   ============================================================ */
+function renderChips(){
+  const rail = $('rail');
+  rail.textContent = '';
+  game.choices.forEach(key => {
+    const c = RESULTS[key];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip';
+    btn.dataset.key = key;
+    btn.style.background = rgbCss(c.rgb);
+    const ink = readableInk(c.rgb);
+    btn.style.color = ink;
+    btn.dataset.ink = (ink === INK_LIGHT) ? 'light' : 'dark';   /* 흰 글자는 굵기를 낮춘다 */
+    btn.setAttribute('aria-label', c.ko + ' ' + c.en + ' 고르기');
+
+    const en = document.createElement('span');
+    en.className = 'chip-en';
+    en.textContent = c.en;
+    const ko = document.createElement('span');
+    ko.className = 'chip-ko';
+    ko.textContent = c.ko;
+    const votes = document.createElement('span');
+    votes.className = 'chip-votes';
+    votes.hidden = true;
+    const badge = document.createElement('span');
+    badge.className = 'chip-badge';
+    badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg>';
+
+    btn.append(en, ko, votes, badge);
+    rail.appendChild(btn);
+  });
+}
+
+/* 5초가 지난 뒤: 각 선택지 아래에 그 색을 고른 사람 이름을 표시 */
+function renderVotes(){
+  const byKey = {};
+  Object.keys(net.answers).forEach(pid => {
+    const a = net.answers[pid];
+    if (!a || a.round !== game.round || !a.key) return;
+    const p = net.players[pid];
+    (byKey[a.key] = byKey[a.key] || []).push(p ? p.name : '?');
+  });
+  Array.prototype.forEach.call($('rail').children, c => {
+    const box = c.querySelector('.chip-votes');
+    const list = byKey[c.dataset.key] || [];
+    box.textContent = list.join(', ');
+    box.hidden = (list.length === 0);
+  });
+}
+function markChip(btn, ok){
+  btn.classList.add(ok ? 'correct' : 'wrong');
+  if (!ok){
+    btn.querySelector('.chip-badge svg').innerHTML =
+      '<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>';
+  }
+}
+
+/* ============================================================
+   9. 점수판 / 헤더 / 피드백
+   ============================================================ */
+function renderScores(){
+  const box = $('score-list');
+  box.textContent = '';
+  const list = game.players.slice().sort((a, b) => (b.score - a.score) || a.name.localeCompare(b.name));
+  list.forEach((p, i) => {
+    const mine = (p.id === net.playerId) || game.mode === 'solo';
+    const row = document.createElement('div');
+    row.className = 'student' + (mine ? ' active' : '');
+
+    const av = document.createElement('span');
+    av.className = 'st-avatar';
+    av.style.background = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    av.textContent = String(i + 1);
+    av.setAttribute('aria-hidden', 'true');
+
+    const nameWrap = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'st-name';
+    name.textContent = p.name;
+    if (p.host){
+      const t = document.createElement('span');
+      t.className = 'st-turn'; t.style.display = 'inline-block'; t.textContent = '방장';
+      name.appendChild(t);
+    } else if (mine && game.mode === 'multi'){
+      const t = document.createElement('span');
+      t.className = 'st-turn'; t.style.display = 'inline-block'; t.textContent = '나';
+      name.appendChild(t);
+    }
+    const sub = document.createElement('div');
+    sub.className = 'st-ko';
+    sub.textContent = (i + 1) + '위';
+    nameWrap.append(name, sub);
+
+    const scoreWrap = document.createElement('div');
+    scoreWrap.className = 'st-score';
+    const num = document.createElement('div');
+    num.className = 'st-num';
+    num.textContent = String(p.score);
+    const unit = document.createElement('div');
+    unit.className = 'st-unit';
+    unit.textContent = 'POINTS';
+    scoreWrap.append(num, unit);
+
+    row.append(av, nameWrap, scoreWrap);
+    box.appendChild(row);
+  });
+  renderUnlock();
+  queueScoreSync();
+}
+
+/* ---- 점수판 높이 ----
+   인원이 늘면 점수판도 같이 늘어나되, 오른쪽 열(난이도 + 점수판)이 가운데 무대 칸보다
+   길어지지 않게 막고 그 이상은 내부 스크롤로 처리한다.
+   3열(≥1081px): 무대 높이 − 난이도 카드 − 세로 간격이 쓸 수 있는 높이.
+   2열(641~1080px): 옆에 놓이는 재료 카드 높이가 기준.
+   한 열로 쌓이는 좁은 화면(≤640px): CSS 기본값(480px)을 그대로 쓴다. */
+const SCORE_MIN_H = 280;
+const BOARD_GAP = 16;
+let scoreSyncPending = false;
+function syncScoreMax(){
+  scoreSyncPending = false;
+  const list = $('score-list');
+  const paints = document.querySelector('.a-paints');
+  const stage = document.querySelector('.a-stage');
+  const mode = document.querySelector('.ctl-mode');
+  const card = list && list.closest('.card');
+  if (!list || !card || !paints || !stage || !mode) return;
+  if ($('screen-game').hidden || !window.matchMedia('(min-width:641px)').matches){
+    list.style.removeProperty('--score-max');
+    return;
+  }
+  const wide = window.matchMedia('(min-width:1081px)').matches;
+  const room = wide
+    ? stage.offsetHeight - mode.offsetHeight - BOARD_GAP
+    : paints.offsetHeight;
+  const chrome = card.offsetHeight - list.offsetHeight;   /* 카드 헤더·여백·테두리 */
+  list.style.setProperty('--score-max', Math.max(SCORE_MIN_H, Math.round(room - chrome)) + 'px');
+}
+function queueScoreSync(){
+  if (scoreSyncPending) return;
+  scoreSyncPending = true;
+  requestAnimationFrame(syncScoreMax);
+}
+window.addEventListener('resize', queueScoreSync);
+if (window.ResizeObserver){
+  const ro = new ResizeObserver(queueScoreSync);
+  ['.a-paints', '.a-stage', '.ctl-mode'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) ro.observe(el);
+  });
+}
+
+/* 보통 단계 해금 진행 — 모드 카드 안에 표시 */
+/* 해금 진행은 별도 안내 줄 대신 LOCKED 배지에 표시한다 (안내 문구는 시작 팝업으로) */
+function renderUnlock(){
+  const badge = $('lock-badge');
+  if (!badge) return;
+  badge.textContent = game.mediumUnlocked
+    ? 'LOCKED'
+    : 'LOCKED ' + Math.min(game.easyClears, UNLOCK_AT) + '/' + UNLOCK_AT;
+}
+
+/* ---- 시작 안내 팝업 ----
+   '다시 보지 않기'는 이 기기에만 남는 표시라 localStorage에 저장한다(개인정보 아님).
+   저장이 막힌 환경(시크릿 모드 등)에서도 팝업 자체는 그대로 동작한다. */
+const INFO_SKIP_KEY = 'colorMix.skipStartInfo';
+let infoTimer = null;
+let startInfoShown = false;
+function infoSkipped(){
+  try { return localStorage.getItem(INFO_SKIP_KEY) === '1'; } catch (e) { return false; }
+}
+function openInfo(text, autoMs){
+  if (infoSkipped()) return;
+  const m = $('info-modal');
+  $('info-modal-text').textContent = text;
+  $('info-modal-never').checked = false;
+  m.classList.add('open');
+  m.setAttribute('aria-hidden', 'false');
+  clearTimeout(infoTimer);
+  if (autoMs) infoTimer = setTimeout(closeInfo, autoMs);
+}
+function closeInfo(){
+  clearTimeout(infoTimer);
+  const m = $('info-modal');
+  if (!m.classList.contains('open')) return;
+  if ($('info-modal-never').checked){
+    try { localStorage.setItem(INFO_SKIP_KEY, '1'); } catch (e) { /* 저장 못 해도 무시 */ }
+  }
+  m.classList.remove('open');
+  m.setAttribute('aria-hidden', 'true');
+}
+
+function renderHeader(){
+  const info = MIX_INFO[game.mix];
+  const nColors = game.level === 'easy' ? 2 : 3;
+
+  $('round-num').textContent = String(game.round).padStart(2, '0');
+  $('mix-badge').dataset.mix = game.mix;
+  $('mix-icon').innerHTML = info.icon;
+  $('mix-text').textContent = info.label;
+  const progress = game.maxRounds < 999 ? ' · ' + game.round + ' / ' + game.maxRounds : '';
+  $('round-sub').textContent = game.mix === 'light'
+    ? '같은 색 그대로, 이번엔 빛으로!' + progress
+    : '색 ' + nColors + '개 · ' + (game.level === 'easy' ? '쉬움' : '보통') + ' 단계' + progress;
+
+  $('h-stage').textContent = info.stage;
+  $('h-src').textContent = info.src;
+  $('src-icon').innerHTML = info.icon;
+  $('ask-sub').textContent = game.mix === 'light'
+    ? '빛을 겹치면 무슨 색이 될까요?'
+    : '물감을 섞으면 무슨 색이 될까요?';
+  $('next-text').textContent = game.mix === 'paint' ? '같은 색을 빛으로 →' : '다음 색 조합 →';
+
+  $('tab-easy').setAttribute('aria-pressed', String(game.level === 'easy'));
+  const med = $('tab-medium');
+  med.setAttribute('aria-pressed', String(game.level === 'medium'));
+  med.dataset.locked = String(!game.mediumUnlocked);
+  $('lock-badge').hidden = game.mediumUnlocked;
+  if (game.mediumUnlocked){
+    $('ico-lock').innerHTML =
+      '<rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 7.6-1.7"/>';
+  }
+  renderUnlock();
+}
+
+const ICONS = {
+  ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5" stroke-width="2"/><path d="m8 12.5 2.7 2.7L16.5 9.4"/></svg>',
+  no:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5" stroke-width="2"/><path d="M9 9l6 6M15 9l-6 6"/></svg>',
+  turn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13"/><path d="m13 4 4 4-4 4"/><path d="M20 16H7"/><path d="m11 12-4 4 4 4"/></svg>'
+};
+/* ---- 색 이름을 그 색으로 보여 주기 ----
+   색을 많이 어둡게 하면 노랑이 올리브처럼 보여 색 퀴즈에서 오히려 헷갈린다.
+   그래서 색감은 살리고, 대비는 테두리로 만든다.
+   빨강·파랑처럼 어두운 색에는 밝은 테두리를, 노랑처럼 밝은 색에는 어두운 테두리를 두른다. */
+function srgbLin(v){ v = v / 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+function relLum(rgb){ return 0.2126 * srgbLin(rgb[0]) + 0.7152 * srgbLin(rgb[1]) + 0.0722 * srgbLin(rgb[2]); }
+function inkColor(rgb){
+  let c = rgb.slice(), s = 1;
+  while (relLum(c) > 0.45 && s > 0.4){
+    s -= 0.05;
+    c = rgb.map(v => Math.round(v * s));
+  }
+  return 'rgb(' + c.join(',') + ')';
+}
+/* 글자색 + 테두리색을 함께 담은 조각 하나 */
+function colorPart(text, rgb){
+  const c = inkColor(rgb);
+  const lum = relLum(c.slice(4, -1).split(',').map(Number));
+  return { t: text, c: c, o: lum < 0.25 ? '#ffffff' : '#1e293b' };
+}
+/* '빨강 + 파랑' 처럼 색 이름마다 색을 입힌 조각 배열 */
+function namePartsOf(keys, table){
+  const src = table || SOURCES;
+  const parts = [];
+  keys.forEach((k, i) => {
+    if (i) parts.push(' + ');
+    parts.push(colorPart(src[k].ko, src[k].rgb));
+  });
+  return parts;
+}
+
+/* RGB 계산 줄 — 정답 문장과 분리해서 따로 표시한다 */
+function showCalc(res){
+  const el = $('mix-calc');
+  el.textContent = '';
+  if (game.mix === 'light'){
+    const eq = game.recipe.colors.map(k => '(' + SOURCES[k].rgb.join(', ') + ')').join(' + ');
+    const b = document.createElement('b');
+    b.textContent = '(' + res.rgb.join(', ') + ')';
+    el.append('RGB를 더하면 ' + eq + ' → ', b);
+  } else {
+    el.textContent = '물감은 섞을수록 빛을 더 많이 흡수해서 어두워져요.';
+  }
+  el.hidden = false;
+}
+function hideCalc(){ $('mix-calc').hidden = true; }
+
+/* 점수 획득 알림 — 설명 문구와 섞지 않고 화면 위쪽에 잠깐 띄운다 */
+let scorePopTimer = null;
+function popScore(text){
+  const el = $('score-pop');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(scorePopTimer);
+  scorePopTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+/* text 자리에는 문자열 또는 ['문자열', {t:'빨강', c:'rgb(...)'}, ...] 배열을 넣는다 */
+function say(kind, text){
+  const box = $('feedback');
+  box.className = 'feedback ' + kind;
+  box.innerHTML = ICONS[kind] || '';
+  const line = document.createElement('span');
+  line.className = 'fb-text';
+  (Array.isArray(text) ? text : [text]).forEach(p => {
+    if (typeof p === 'string'){ line.appendChild(document.createTextNode(p)); return; }
+    const s = document.createElement('span');
+    s.className = 'cname';
+    s.style.color = p.c;
+    if (p.o) s.style.setProperty('--oc', p.o);
+    s.textContent = p.t;
+    line.appendChild(s);
+  });
+  box.appendChild(line);
+}
+
+/* ============================================================
+   10. 라운드 진행
+   ------------------------------------------------------------
+   홀수 라운드 = 물감, 짝수 라운드 = 같은 색을 빛으로.
+   물감 → 빛 두 라운드가 끝나면 새 색 조합으로 넘어간다.
+   ============================================================ */
+function pickRecipeIdx(){
+  const pool = RECIPES[game.level];
+  const used = game.used[game.level];
+  if (used.size >= pool.length) used.clear();
+  const candidates = pool.map((_, i) => i).filter(i => !used.has(i));
+  const idx = candidates[randInt(candidates.length)];
+  used.add(idx);
+  return idx;
+}
+
+/* 다음 라운드의 조합·혼합 방식을 정한다 (홀수=물감 / 짝수=같은 색을 빛으로) */
+function advance(firstEver){
+  if (firstEver){
+    game.round = 1; game.mix = 'paint'; 
+    game.recipeIdx = pickRecipeIdx();
+  } else if (game.mix === 'paint'){
+    game.round += 1; game.mix = 'light';                      // 같은 색 조합을 빛으로
+  } else {
+    game.round += 1; game.mix = 'paint'; game.recipeIdx = pickRecipeIdx();
+  }
+  game.recipe = RECIPES[game.level][game.recipeIdx];
+  game.choices = buildChoices(game.recipe[game.mix]);
+}
+
+/* 정해진 라운드 정보로 화면을 구성 */
+function applyRound(){
+  clearTimeout(game.timer);
+  stopCountdown();
+  game.answered = false;
+  game.locked = false;
+  game.myPick = null;
+  game.answerKey = game.recipe[game.mix];
+
+  $('vat-stage').classList.remove('revealed');
+  $('vat-stage').dataset.mix = game.mix;
+  $('btn-next').hidden = true;
+  hideCalc();
+
+  renderHeader();
+  renderSources();
+  renderEmitters();
+  renderLiquid();
+  renderLightStage();
+  renderPool();
+  renderChips();
+  renderScores();
+
+  /* 첫 문제에서 한 번만 난이도 규칙을 알려 준다 (같이하기는 제한 시간이 있어 짧게) */
+  if (game.round === 1 && !game.mediumUnlocked && !startInfoShown){
+    startInfoShown = true;
+    openInfo('쉬움 ' + UNLOCK_AT + '문제를 맞히면 보통 단계(색 3개)가 열려요.',
+      game.mode === 'multi' ? 3000 : 5000);
+  }
+
+  const ask = namePartsOf(game.recipe.colors)
+    .concat(['을(를) ' + MIX_INFO[game.mix].ko + '으로 섞으면?']);
+  if (game.mode === 'multi'){
+    say('turn', ask.concat([' ' + Math.round(ANSWER_MS / 1000) + '초 안에 골라 주세요!']));
+    startCountdown();
+  } else {
+    $('timer').hidden = true;
+    say('turn', ask);
+  }
+}
+
+/* 라운드 넘기기 — 혼자하기는 바로, 같이하기는 방장만 */
+function nextRound(){
+  clearTimeout(game.timer);
+  /* 최대 라운드 도달 시 결과 화면으로 */
+  if (game.maxRounds < 999 && game.round >= game.maxRounds){
+    if (game.mode === 'multi'){
+      if (!net.isHost) return;
+      netPushGameOver();
+    }
+    showResult();
+    return;
+  }
+  if (game.mode === 'multi'){
+    if (!net.isHost) return;
+    advance(false);
+    netPushRound();
+  } else {
+    advance(false);
+    applyRound();
+  }
+}
+
+/* ---- 제한 시간 (같이하기) ---- */
+function stopCountdown(){
+  if (game.tick){ clearInterval(game.tick); game.tick = null; }
+  $('timer').hidden = true;
+  $('timer').classList.remove('urgent');
+}
+function startCountdown(){
+  stopCountdown();
+  $('timer').hidden = false;
+  const tick = () => {
+    const left = Math.max(0, game.deadline - netNow());
+    const sec = Math.ceil(left / 1000);
+    $('timer-num').textContent = String(sec);
+    $('timer-fill').style.width = Math.min(100, (left / ANSWER_MS) * 100) + '%';
+    $('timer').classList.toggle('urgent', sec <= 2);
+    $('timer-count').textContent = countAnswers() + '명 선택';
+    if (left <= 0){
+      if (game.tick){ clearInterval(game.tick); game.tick = null; }
+      revealRound();
+    }
+  };
+  tick();
+  game.tick = setInterval(tick, 150);
+}
+function countAnswers(){
+  return Object.keys(net.answers).filter(pid => {
+    const a = net.answers[pid];
+    return a && a.round === game.round;
+  }).length;
+}
+
+/* ---- 정답 공개 ---- */
+function revealRound(){
+  if (game.answered) return;
+  game.answered = true;
+  game.locked = true;
+  stopCountdown();
+
+  const res = RESULTS[game.answerKey];
+  $('at-en').textContent = res.en;
+  $('at-ko').textContent = res.ko;
+  $('at-rgb').textContent = 'RGB(' + res.rgb.join(', ') + ')';
+  $('vat-stage').classList.add('revealed');
+
+  Array.prototype.forEach.call($('rail').children, c => {
+    c.disabled = true;
+    c.classList.remove('picked');
+    if (c.dataset.key === game.answerKey) markChip(c, true);
+    else if (c.dataset.key === game.myPick) markChip(c, false);
+  });
+
+  const names = namePartsOf(game.recipe.colors);
+  const resPart = colorPart(res.ko, res.rgb);
+  let why;
+  if (game.mix === 'light'){
+    why = ['빛 '].concat(names, ['을(를) 겹치면 ', resPart, '!']);
+  } else {
+    why = ['물감 '].concat(names, ['을(를) 섞으면 ', resPart, '!']);
+  }
+  showCalc(res);   /* RGB 계산·원리 설명은 아래 별도 줄에서 보여 준다 */
+
+  if (game.mode === 'multi'){
+    renderVotes();
+    const meRight = (game.myPick === game.answerKey);
+    say(meRight ? 'ok' : 'no',
+      [(meRight ? '정답! ' : (game.myPick ? '아쉬워요! ' : '시간 초과! '))].concat(why));
+    beep(meRight ? 'ok' : 'no');
+    if (meRight){ popScore('+1점!'); celebrate(); }
+    if (net.isHost) netScoreRound();
+    $('btn-next').hidden = !net.isHost;
+  } else {
+    const meRight = (game.myPick === game.answerKey);
+    if (meRight){
+      game.players[0].score += 1;
+      say('ok', ['정답! '].concat(why));
+      popScore('+1점!');
+      beep('ok');
+      celebrate();
+      if (game.level === 'easy' && !game.mediumUnlocked){
+        game.easyClears += 1;
+        if (game.easyClears >= UNLOCK_AT){
+          game.mediumUnlocked = true;
+          setTimeout(() => { beep('up'); say('ok', 'LEVEL UP! 색 3개(보통) 단계가 열렸어요.'); renderHeader(); }, 1500);
+        }
+      }
+    }
+    renderScores();
+    $('btn-next').hidden = false;
+    game.timer = setTimeout(nextRound, 4200);
+  }
+}
+
+function onPick(btn){
+  if (game.locked || game.answered) return;
+  const key = btn.dataset.key;
+
+  if (game.mode === 'multi'){
+    game.myPick = key;
+    Array.prototype.forEach.call($('rail').children, c => { c.classList.remove('picked'); });
+    btn.classList.add('picked');
+    beep('tap');
+    netSubmitAnswer(key);
+    say('turn', [colorPart(RESULTS[key].ko, RESULTS[key].rgb),
+      '을(를) 골랐어요. 시간이 끝나기 전까지 언제든 바꿀 수 있습니다.']);
+    return;
+  }
+
+  /* 혼자하기: 정답이면 공개, 틀리면 그 칩만 지우고 다시 도전 */
+  if (key === game.answerKey){
+    game.myPick = key;
+    revealRound();
+  } else {
+    markChip(btn, false);
+    btn.disabled = true;
+    btn.classList.add('shake');
+    setTimeout(() => btn.classList.remove('shake'), 420);
+    beep('no');
+    const wrong = RESULTS[key];
+    say('no', [colorPart(wrong.ko + '(' + wrong.en + ')', wrong.rgb),
+      '은(는) 아니에요. 다시 골라 보세요.']);
+  }
+}
+
+function setLevel(level){
+  if (game.mode === 'multi' && !net.isHost){
+    say('no', '난이도는 방장만 바꿀 수 있어요.');
+    return;
+  }
+  if (level === 'medium' && !game.mediumUnlocked){
+    const t = $('tab-medium');
+    t.classList.add('shake');
+    setTimeout(() => t.classList.remove('shake'), 420);
+    beep('no');
+    say('no', '아직 잠겨 있어요. 쉬움 단계 ' + UNLOCK_AT + '문제를 맞히면 열립니다. ('
+        + game.easyClears + '/' + UNLOCK_AT + ')');
+    return;
+  }
+  if (game.level === level) return;
+  game.level = level;
+  game.mix = 'light';          // advance()가 새 조합의 물감 라운드부터 시작하도록
+  beep('tap');
+  nextRound();
+}
+
+function resetGame(){
+  if (game.mode === 'multi' && !net.isHost){
+    say('no', '다시 시작은 방장만 할 수 있어요.');
+    return;
+  }
+  clearTimeout(game.timer);
+  game.level = 'easy';
+  game.mediumUnlocked = false;
+  game.easyClears = 0;
+  game.used.easy.clear();
+  game.used.medium.clear();
+  $('ico-lock').innerHTML = '<rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>';
+  beep('tap');
+  advance(true);
+  if (game.mode === 'multi'){ netResetScores(); netPushRound(); }
+  else { game.players[0].score = 0; applyRound(); }
+}
+
+/* ============================================================
+   11. 화면 전환 · 혼자하기 시작
+   ============================================================ */
+const SCREENS = ['screen-home', 'screen-lobby', 'screen-game', 'screen-result'];
+function show(id){
+  SCREENS.forEach(s => { $(s).hidden = (s !== id); });
+  window.scrollTo({ top:0, behavior:'smooth' });
+  queueScoreSync();
+}
+function currentScreen(){
+  const cur = SCREENS.find(s => !$(s).hidden);
+  return cur ? cur.replace('screen-', '') : 'home';
+}
+
+/* ---- 브라우저 뒤로가기 ----
+   홈(깊이 0) → 대기실·게임(깊이 1) 두 단계만 쌓는다.
+   대기실에서 게임으로 갈 때는 replace 해서, 게임에서 뒤로가기를 하면
+   대기실이 아니라 홈(같이하기 선택 상태)으로 돌아가게 한다.
+   file:// 에서도 되도록 URL은 바꾸지 않고 상태만 넣는다. */
+let backIntent = false;      // 나가기 버튼으로 나갈 때는 확인창을 건너뛴다
+function histReplace(screen, mode, step){
+  try { history.replaceState({ screen:screen, mode:mode || game.mode, step:step || 'choice' }, ''); }
+  catch (e) { /* 무시 */ }
+}
+function histPush(screen, mode, step){
+  try { history.pushState({ screen:screen, mode:mode || game.mode, step:step || 'choice' }, ''); }
+  catch (e) { /* 무시 */ }
+}
+
+window.addEventListener('popstate', (e) => {
+  const st = (e.state && e.state.screen) ? e.state : { screen:'home', mode:'solo', step:'choice' };
+
+  if (st.screen !== 'home'){          // 앞으로가기 등 — 현재 화면 유지
+    histReplace(currentScreen(), st.mode, st.step);
+    return;
+  }
+  /* 홈 안에서 참여 폼 → 만들기/참여 선택으로 되돌아가는 경우 */
+  if (!net.roomCode && currentScreen() === 'home'){
+    selectMode(st.mode || 'solo');
+    setMultiStep(st.step || 'choice');
+    return;
+  }
+  const inRoom = !!net.roomCode;
+  if (inRoom && !backIntent){
+    const msg = net.isHost
+      ? '방에서 나가면 방이 닫히고 학생들도 모두 나가게 됩니다. 나갈까요?'
+      : '방에서 나갈까요?';
+    if (!window.confirm(msg)){
+      histPush(currentScreen(), st.mode);   // 취소 → 원래 화면 유지
+      return;
+    }
+  }
+  backIntent = false;
+  clearTimeout(game.timer);
+  stopCountdown();
+  if (inRoom){
+    leaveRoom();                      // 방 정리 + 홈(같이하기) 표시
+  } else {
+    show('screen-home');
+    selectMode(st.mode || 'solo');
+    setMultiStep(st.step || 'choice');
+  }
+});
+
+/* 나가기 버튼도 히스토리를 되감아 뒤로가기와 동작을 맞춘다 */
+function exitToHome(){
+  backIntent = true;
+  if (history.state && history.state.screen && history.state.screen !== 'home'){
+    history.back();
+  } else {
+    backIntent = false;
+    clearTimeout(game.timer);
+    stopCountdown();
+    if (net.roomCode) leaveRoom();
+    else { show('screen-home'); selectMode(game.mode); }
+  }
+}
+
+function startSolo(){
+  game.mode = 'solo';
+  game.maxRounds = parseInt($('sel-rounds-solo').value, 10) || 10;
+  game.players = [{ id:'me', name:'나', score:0, host:false }];
+  game.level = 'easy';
+  game.mediumUnlocked = false;
+  game.easyClears = 0;
+  game.used.easy.clear();
+  game.used.medium.clear();
+  $('btn-reset').hidden = false;
+  $('txt-exit').textContent = '나가기';
+  advance(true);
+  show('screen-game');
+  histPush('game', 'solo');
+  applyRound();
+}
+
+function showResult(){
+  clearTimeout(game.timer);
+  stopCountdown();
+  beep('up');
+  show('screen-result');
+  histReplace('result', game.mode);
+  const box = $('final-score-list');
+  box.textContent = '';
+  const sorted = game.players.slice().sort((a,b) => b.score - a.score);
+  sorted.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'student' + (i === 0 ? ' active' : '');
+    const av = document.createElement('span');
+    av.className = 'st-avatar';
+    av.style.background = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    av.textContent = String(i + 1);
+    const info = document.createElement('div');
+    const nm = document.createElement('div');
+    nm.className = 'st-name';
+    nm.textContent = (i === 0 ? '🏆 ' : '') + p.name;
+    const sub = document.createElement('div');
+    sub.className = 'st-ko';
+    sub.textContent = game.maxRounds < 999
+      ? game.maxRounds + '문제 중 ' + p.score + '개 정답'
+      : p.score + '개 정답';
+    info.append(nm, sub);
+    const sc = document.createElement('div');
+    sc.className = 'st-score';
+    sc.innerHTML = '<span class="st-num">' + p.score + '</span><span class="st-unit">점</span>';
+    row.append(av, info, sc);
+    box.appendChild(row);
+  });
+  celebrate();
+}
+
+/* ============================================================
+   12. 같이하기 — Firebase Realtime Database
+   ------------------------------------------------------------
+   · 방장이 라운드 정보를 방에 기록하면 모든 참가자가 같은 문제를 본다.
+   · 참가자는 제한 시간 안에 답을 기록하고, 시간이 끝나면 누가 무엇을
+     골랐는지 선택지 아래에 표시된다. 점수는 방장만 기록한다.
+   · Firebase 로딩에 실패해도 혼자하기는 그대로 동작한다.
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyByINWX--S22R-9bimPBZd_QR9eEv5Zz9Y",
+  authDomain: "math-game-13f34.firebaseapp.com",
+  databaseURL: "https://math-game-13f34-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "math-game-13f34",
+  storageBucket: "math-game-13f34.firebasestorage.app",
+  messagingSenderId: "535602430178",
+  appId: "1:535602430178:web:189013bcddd14bf4885ebb"
+};
+const ROOMS = 'colorMixRooms';
+const SDK = 'https://www.gstatic.com/firebasejs/12.17.0/';
+
+let FB = null;
+const net = {
+  roomCode:null, playerId:null, playerName:'', isHost:false,
+  players:{}, answers:{}, round:null,
+  offset:0, applied:0, unsubs:[]
+};
+const netNow = () => Date.now() + net.offset;
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const rref = (sub) => FB.ref(FB.db, ROOMS + '/' + net.roomCode + (sub ? '/' + sub : ''));
+
+async function loadFirebase(){
+  if (FB) return FB;
+  const [appMod, dbMod] = await Promise.all([
+    import(SDK + 'firebase-app.js'),
+    import(SDK + 'firebase-database.js')
+  ]);
+  const app = appMod.initializeApp(FIREBASE_CONFIG);
+  FB = Object.assign({}, dbMod, { db: dbMod.getDatabase(app) });
+  return FB;
+}
+
+function setMsg(id, text, cls){
+  const el = $(id);
+  el.textContent = text;
+  el.className = 'net-msg' + (cls ? ' ' + cls : '');
+}
+
+async function createRoom(name){
+  await loadFirebase();
+  let code = '';
+  for (let i = 0; i < 8 && !code; i++){
+    const c = String(1000 + randInt(9000));
+    const snap = await FB.get(FB.ref(FB.db, ROOMS + '/' + c + '/meta'));
+    if (!snap.exists()) code = c;
+  }
+  if (!code) throw new Error('방 코드를 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+  net.roomCode = code; net.playerId = uid(); net.playerName = name; net.isHost = true;
+  await FB.set(FB.ref(FB.db, ROOMS + '/' + code), {
+    meta: { host: net.playerId, status:'lobby', createdAt: FB.serverTimestamp() },
+    players: { [net.playerId]: { name:name, score:0, host:true, at: FB.serverTimestamp() } }
+  });
+  game.mode = 'multi';
+  attachRoom();
+  /* 방장이 대기실에서 창을 그냥 닫으면 빈 방이 DB에 남는다 — 연결이 끊기면 방째 지운다.
+     퀴즈가 시작되면 예약을 취소해서, 진행 중에 잠깐 끊겨도 방이 사라지지 않게 한다. */
+  FB.onDisconnect(rref()).remove();
+  show('screen-lobby');
+  histPush('lobby', 'multi');
+  renderLobby();
+}
+
+async function joinRoom(name, code){
+  await loadFirebase();
+  const snap = await FB.get(FB.ref(FB.db, ROOMS + '/' + code + '/meta'));
+  if (!snap.exists()) throw new Error('그 방을 찾을 수 없어요. 코드를 다시 확인해 주세요.');
+  net.roomCode = code; net.playerId = uid(); net.playerName = name; net.isHost = false;
+  await FB.set(FB.ref(FB.db, ROOMS + '/' + code + '/players/' + net.playerId),
+    { name:name, score:0, host:false, at: FB.serverTimestamp() });
+  game.mode = 'multi';
+  attachRoom();
+  show('screen-lobby');
+  histPush('lobby', 'multi');
+  renderLobby();
+}
+
+function attachRoom(){
+  detachRoom();
+  const watch = (r, cb) => { net.unsubs.push(FB.onValue(r, cb)); };
+
+  watch(FB.ref(FB.db, '.info/serverTimeOffset'), s => { net.offset = s.val() || 0; });
+
+  watch(rref('players'), s => {
+    net.players = s.val() || {};
+    game.players = Object.keys(net.players).map(id => ({
+      id: id,
+      name: net.players[id].name || '이름 없음',
+      score: net.players[id].score || 0,
+      host: !!net.players[id].host
+    }));
+    renderLobby();
+    if (!$('screen-game').hidden) renderScores();
+  });
+
+  watch(rref('answers'), s => {
+    net.answers = s.val() || {};
+    if ($('screen-game').hidden) return;
+    if (game.answered) renderVotes();
+    else $('timer-count').textContent = countAnswers() + '명 선택';
+  });
+
+  watch(rref('round'), s => onRoundData(s.val()));
+
+  watch(rref('meta'), s => {
+    const m = s.val();
+    if (!m){ leaveRoom('방이 닫혔어요.'); return; }
+    if (m.status === 'lobby' && $('screen-lobby').hidden && !$('screen-game').hidden){
+      show('screen-lobby');
+      histReplace('lobby', 'multi');
+    }
+  });
+
+  FB.onDisconnect(rref('players/' + net.playerId)).remove();
+}
+
+function detachRoom(){
+  net.unsubs.forEach(u => { try { u(); } catch (e) { /* 무시 */ } });
+  net.unsubs = [];
+}
+
+function onRoundData(d){
+  if (!d) return;
+  net.round = d;
+
+  /* 게임 종료 신호 */
+  if (d.gameOver){
+    game.maxRounds = d.maxRounds || 10;
+    showResult();
+    return;
+  }
+
+  game.mediumUnlocked = !!d.mediumUnlocked;
+  game.easyClears = d.easyClears || 0;
+  if (d.maxRounds) game.maxRounds = d.maxRounds;
+
+  if (net.applied === d.no){        // 같은 라운드의 부가 갱신(점수 기록 등)
+    if (!$('screen-game').hidden){ renderHeader(); }
+    return;
+  }
+  net.applied = d.no;
+  game.mode = 'multi';
+  game.round = d.no;
+  game.level = d.level;
+  game.mix = d.mix;
+  game.recipeIdx = d.recipeIdx;
+  game.recipe = RECIPES[d.level][d.recipeIdx];
+  game.choices = d.choices || [];
+  game.deadline = d.deadline || (netNow() + ANSWER_MS);
+
+  $('btn-reset').hidden = !net.isHost;
+  $('txt-exit').textContent = '방 나가기';
+  const wasLobby = (currentScreen() === 'lobby');
+  show('screen-game');
+  /* 대기실 → 게임은 replace: 게임에서 뒤로가기 하면 대기실이 아니라 홈으로 */
+  if (wasLobby) histReplace('game', 'multi');
+  applyRound();
+}
+
+function netPushRound(){
+  if (!net.isHost || !FB) return Promise.resolve();
+  return Promise.all([
+    FB.set(rref('answers'), null),
+    FB.set(rref('round'), {
+      no: game.round, level: game.level, mix: game.mix, recipeIdx: game.recipeIdx,
+      choices: game.choices, deadline: netNow() + ANSWER_MS,
+      mediumUnlocked: game.mediumUnlocked, easyClears: game.easyClears, scored: false,
+      maxRounds: game.maxRounds
+    })
+  ]);
+}
+
+function netPushGameOver(){
+  if (!net.isHost || !FB) return;
+  FB.set(rref('round'), { gameOver: true, maxRounds: game.maxRounds });
+}
+
+function netSubmitAnswer(key){
+  if (!FB || !net.roomCode) return;
+  FB.set(rref('answers/' + net.playerId), { key:key, round: game.round, at: FB.serverTimestamp() });
+}
+
+/* 점수는 방장 한 사람만 기록한다 (중복 가산 방지) */
+function netScoreRound(){
+  if (!net.isHost || !FB) return;
+  if (net.round && net.round.scored) return;
+  const updates = { 'round/scored': true };
+  let anyRight = false;
+  Object.keys(net.answers).forEach(pid => {
+    const a = net.answers[pid];
+    if (!a || a.round !== game.round || a.key !== game.answerKey) return;
+    anyRight = true;
+    const cur = (net.players[pid] && net.players[pid].score) || 0;
+    updates['players/' + pid + '/score'] = cur + 1;
+  });
+  if (anyRight && game.level === 'easy' && !game.mediumUnlocked){
+    game.easyClears += 1;
+    if (game.easyClears >= UNLOCK_AT) game.mediumUnlocked = true;
+    updates['round/easyClears'] = game.easyClears;
+    updates['round/mediumUnlocked'] = game.mediumUnlocked;
+  }
+  FB.update(rref(), updates);
+}
+
+function netResetScores(){
+  if (!net.isHost || !FB) return;
+  const updates = { answers: null };
+  Object.keys(net.players).forEach(pid => { updates['players/' + pid + '/score'] = 0; });
+  FB.update(rref(), updates);
+}
+
+function leaveRoom(msg){
+  if (!net.roomCode){ show('screen-home'); histReplace('home', 'multi'); return; }
+  const code = net.roomCode, pid = net.playerId, wasHost = net.isHost;
+  detachRoom();
+  if (FB){
+    try {
+      if (wasHost) FB.remove(FB.ref(FB.db, ROOMS + '/' + code));
+      else if (pid) FB.remove(FB.ref(FB.db, ROOMS + '/' + code + '/players/' + pid));
+    } catch (e) { /* 무시 */ }
+  }
+  net.roomCode = null; net.playerId = null; net.isHost = false;
+  net.players = {}; net.answers = {}; net.round = null; net.applied = 0;
+  game.mode = 'solo';
+  clearTimeout(game.timer);
+  stopCountdown();
+  show('screen-home');
+  selectMode('multi');
+  histReplace('home', 'multi');
+  setMsg('net-msg', msg || '방에서 나왔어요.', msg ? 'err' : '');
+}
+
+function renderLobby(){
+  if ($('screen-lobby').hidden) return;
+  $('lobby-code').textContent = net.roomCode || '----';
+  const box = $('lobby-list');
+  box.textContent = '';
+  const ids = Object.keys(net.players);
+  ids.forEach((id, i) => {
+    const p = net.players[id];
+    const row = document.createElement('div');
+    row.className = 'lobby-p';
+    const av = document.createElement('span');
+    av.className = 'st-avatar';
+    av.style.background = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    av.textContent = String(i + 1);
+    av.setAttribute('aria-hidden', 'true');
+    const b = document.createElement('b');
+    b.textContent = p.name || '이름 없음';
+    row.append(av, b);
+    if (p.host){ const t = document.createElement('span'); t.className = 'tag host'; t.textContent = '방장'; row.appendChild(t); }
+    if (id === net.playerId){ const t = document.createElement('span'); t.className = 'tag me'; t.textContent = '나'; row.appendChild(t); }
+    box.appendChild(row);
+  });
+  $('btn-host-start').hidden = !net.isHost;
+  $('host-settings').hidden = !net.isHost;
+  /* 참여 인원은 숫자를 크게 강조해서 한눈에 보이게 한다. */
+  const msg = $('lobby-msg');
+  msg.className = 'net-msg';
+  msg.textContent = '';
+  const cnt = document.createElement('span');
+  cnt.className = 'lobby-count';
+  const num = document.createElement('b');
+  num.textContent = String(ids.length);
+  cnt.append('현재 ', num, '명 참여 중');
+  const guide = document.createElement('span');
+  guide.className = 'lobby-guide';
+  guide.textContent = net.isHost
+    ? '학생들이 모두 들어오면 시작하세요.'
+    : '방장이 시작하기를 기다리는 중이에요.';
+  msg.append(cnt, guide);
+}
+
+/* ============================================================
+   13. 이벤트 배선
+   ============================================================ */
+function selectMode(m){
+  $('btn-solo').setAttribute('aria-pressed', String(m === 'solo'));
+  $('btn-multi').setAttribute('aria-pressed', String(m === 'multi'));
+  $('solo-panel').hidden = (m !== 'solo');
+  
+  if (m === 'multi') {
+    $('multi-modal').classList.add('open');
+    $('multi-panel').hidden = false;
+  } else {
+    const modal = document.getElementById('multi-modal');
+    if (modal) modal.classList.remove('open');
+    const panel = document.getElementById('multi-panel');
+    if (panel) panel.hidden = true;
+  }
+  setMultiStep('choice');
+}
+/* 같이하기 안의 단계: choice(방 만들기/참여하기) → join(코드 입력) */
+function setMultiStep(step){
+  $('multi-choice').hidden = (step !== 'choice');
+  $('join-form').hidden = (step !== 'join');
+  if (step === 'join') setTimeout(() => { try { $('in-name').focus(); } catch (e) { /* 무시 */ } }, 30);
+}
+async function guard(btn, fn){
+  btn.disabled = true;
+  setMsg('net-msg', '연결하는 중…', '');
+  try {
+    await fn();
+    setMsg('net-msg', '', '');
+  } catch (e){
+    setMsg('net-msg', (e && e.message) || '연결에 실패했어요. 인터넷 연결을 확인해 주세요.', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+function readName(){
+  const v = $('in-name').value.trim().slice(0, 10);
+  if (!v) throw new Error('이름을 먼저 입력해 주세요.');
+  return v;
+}
+
+/* 혼자/같이 선택은 현재 히스토리 항목에 기록해 둔다.
+   그래야 코드 입력 화면에서 뒤로가기 했을 때 같이하기 상태로 돌아온다. */
+$('btn-solo').addEventListener('click', () => {
+  selectMode('solo'); histReplace('home', 'solo', 'choice'); setMsg('net-msg', '', '');
+});
+$('btn-multi').addEventListener('click', () => {
+  selectMode('multi'); histReplace('home', 'multi', 'choice'); setMsg('net-msg', '', '');
+});
+$('btn-close-multi').addEventListener('click', () => {
+  $('btn-solo').click();
+});
+$('info-modal-close').addEventListener('click', closeInfo);
+$('info-modal').addEventListener('click', (e) => { if (e.target.id === 'info-modal') closeInfo(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && $('info-modal').classList.contains('open')) closeInfo();
+});
+$('multi-modal').addEventListener('click', (e) => {
+  if(e.target.id === 'multi-modal') $('btn-solo').click();
+});
+$('btn-start-solo').addEventListener('click', startSolo);
+/* 방 만들기 — 누르면 바로 방이 만들어진다 (방장 이름은 '방장') */
+$('btn-create').addEventListener('click', (e) => guard(e.currentTarget, async () => {
+  await createRoom('방장');
+}));
+/* 참여하기 — 코드 입력 단계로 */
+$('btn-join-step').addEventListener('click', () => {
+  setMultiStep('join');
+  histPush('home', 'multi', 'join');
+  setMsg('net-msg', '', '');
+  beep('tap');
+});
+$('btn-join-back').addEventListener('click', () => {
+  if (history.state && history.state.step === 'join') history.back();
+  else { setMultiStep('choice'); setMsg('net-msg', '', ''); }
+});
+$('btn-join').addEventListener('click', (e) => guard(e.currentTarget, async () => {
+  const name = readName();
+  const code = $('in-code').value.replace(/\D/g, '');
+  if (code.length !== 4) throw new Error('방 코드 4자리를 정확히 입력해 주세요.');
+  await joinRoom(name, code);
+}));
+$('in-code').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+});
+[$('in-name'), $('in-code')].forEach(el => {
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btn-join').click(); });
+});
+$('btn-leave-lobby').addEventListener('click', exitToHome);
+$('btn-host-start').addEventListener('click', () => {
+  if (!net.isHost || !FB) return;
+  game.mode = 'multi';
+  game.maxRounds = parseInt($('sel-rounds-multi').value, 10) || 10;
+  game.level = 'easy';
+  game.mediumUnlocked = false;
+  game.easyClears = 0;
+  game.used.easy.clear();
+  game.used.medium.clear();
+  beep('tap');
+  advance(true);
+  /* 시작 신호 쓰기가 막히면(보안 규칙 등) 아무도 시작되지 않으므로 원인을 화면에 알린다. */
+  const btn = $('btn-host-start');
+  btn.disabled = true;
+  try { FB.onDisconnect(rref()).cancel(); } catch (e) { /* 무시 */ }
+  Promise.all([ FB.update(rref('meta'), { status:'playing' }), netPushRound() ])
+    .catch(err => {
+      const why = (err && err.message) ? err.message : '알 수 없는 오류';
+      setMsg('lobby-msg', '시작 신호를 보내지 못했어요. 잠시 뒤 다시 눌러 주세요. (' + why + ')', 'err');
+    })
+    .finally(() => { btn.disabled = false; });
+});
+
+$('rail').addEventListener('click', (e) => {
+  const btn = e.target.closest('.chip');
+  if (btn && !btn.disabled) onPick(btn);
+});
+$('btn-next').addEventListener('click', () => { beep('tap'); nextRound(); });
+$('btn-reset').addEventListener('click', resetGame);
+$('btn-exit').addEventListener('click', exitToHome);
+$('tab-easy').addEventListener('click', () => setLevel('easy'));
+$('tab-medium').addEventListener('click', () => setLevel('medium'));
+
+$('btn-sound').addEventListener('click', () => {
+  game.sound = !game.sound;
+  $('btn-sound').setAttribute('aria-pressed', String(game.sound));
+  $('txt-sound').textContent = game.sound ? '소리 켬' : '소리 끔';
+  $('ico-sound').innerHTML = game.sound
+    ? '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>'
+    : '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M16 9.5 21 15"/><path d="M21 9.5 16 15"/>';
+  if (game.sound) beep('tap');
+});
+
+$('btn-home-from-result').addEventListener('click', () => {
+  clearTimeout(game.timer);
+  stopCountdown();
+  if (net.roomCode) leaveRoom();
+  else { show('screen-home'); selectMode('solo'); histReplace('home', 'solo'); }
+});
+
+/* 시작 */
+selectMode('solo');
+show('screen-home');
+histReplace('home', 'solo');
+</script>
+</body>
+</html>
