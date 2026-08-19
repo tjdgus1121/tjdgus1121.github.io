@@ -5,623 +5,588 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>티처블머신 × 마이크로비트</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* ── 색·간격·모서리를 한 곳에서 정한다 ── */
+        :root {
+            --bg: #f4f6f8;
+            --surface: #ffffff;
+            --line: #e3e7ec;
+            --line-strong: #c9d1da;
+            --ink: #17212b;
+            --ink-2: #4b5a68;
+            --ink-3: #5c6b7a;
+            --accent: #0f7a55;
+            --accent-dark: #0b5c40;
+            --accent-weak: #e9f4ef;
+            --danger: #c0392b;
+            --danger-weak: #fdeceb;
+            --warn: #8a5300;
+            --warn-weak: #fdf4e3;
+            --r-sm: 8px;
+            --r: 12px;
+            --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 2px 8px rgba(16, 24, 40, .05);
         }
-        
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             font-family: 'Segoe UI', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
-            background: #f0fdf4;
+            background: var(--bg);
+            color: var(--ink);
+            font-size: 15px;
+            line-height: 1.55;
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px 20px 48px;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        
-        /* 헤더 */
+
+        .container { max-width: 1180px; margin: 0 auto; }
+
+        /* ── 머리말 ── */
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 40px 20px;
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 2px 12px rgba(16, 185, 129, 0.1);
-            border: 2px solid #d1fae5;
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 0 4px 18px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 18px;
         }
-        
-        .header h1 {
-            color: #2d3748;
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .header p {
-            color: #64748b;
-            font-size: 16px;
-        }
-        
-        .step {
-            background: white;
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 2px 12px rgba(16, 185, 129, 0.1);
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.5s, transform 0.5s;
-            display: none;
-            border: 2px solid #d1fae5;
-        }
-        
-        .step.active {
-            display: block;
-            animation: fadeInUp 0.5s forwards;
-        }
-        
-        .step.hidden {
-            animation: fadeOutDown 0.5s forwards;
-        }
-        
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeOutDown {
-            to {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-        }
-        
-        h1 {
-            color: #2d3748;
-            margin-bottom: 24px;
-            font-size: 26px;
-            font-weight: 700;
-        }
-        
-        h2 {
-            color: #059669;
-            margin: 24px 0 16px 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
+
+        .header h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
+        .header p { color: var(--ink-3); font-size: 14px; }
+
+        /* ── 단계 표시 ── */
         .step-indicator {
             display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 30px;
+            gap: 8px;
+            margin: 0 0 20px;
+            padding: 0 4px;
         }
-        
+
         .step-dot {
-            width: 40px;
-            height: 6px;
-            border-radius: 3px;
-            background: #d1fae5;
-            transition: all 0.3s;
+            flex: 0 0 auto;
+            height: 4px;
+            width: 56px;
+            border-radius: 999px;
+            background: var(--line);
+            transition: background .2s;
         }
-        
-        .step-dot.active {
-            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-            width: 60px;
+
+        .step-dot.active { background: var(--accent); }
+
+        /* ── 카드(단계) ── */
+        .step {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            box-shadow: var(--shadow);
+            padding: 28px;
+            display: none;
+            opacity: 0;
         }
-        
+
+        .step.active { display: block; animation: stepIn .28s ease-out forwards; }
+        .step.hidden { animation: stepOut .2s ease-in forwards; }
+
+        @keyframes stepIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        @keyframes stepOut { to { opacity: 0; } }
+
+        h1 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+        .step > h1 { margin-bottom: 20px; }
+
+        h2 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ink-2);
+            letter-spacing: .01em;
+            margin: 26px 0 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .work-main h2:first-child, .work-side > h2:first-child { margin-top: 0; }
+
+        /* ── 2열 작업 화면 ── */
+        .work-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 400px;
+            gap: 26px;
+            align-items: start;
+        }
+
+        .work-main { position: sticky; top: 20px; min-width: 0; }
+        .work-side { min-width: 0; }
+
+        @media (max-width: 980px) {
+            .work-grid { grid-template-columns: 1fr; gap: 20px; }
+            .work-main { position: static; }
+        }
+
+        /* ── 버튼 ── */
+        button {
+            font: inherit;
+            font-size: 14.5px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 0 18px;
+            border: 1px solid transparent;
+            border-radius: var(--r-sm);
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            transition: background .15s, border-color .15s, color .15s;
+        }
+
+        button:hover:not(:disabled) { background: var(--accent-dark); }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled { background: #eef1f4; color: var(--ink-3); cursor: not-allowed; }
+
+        button.secondary {
+            background: var(--surface);
+            color: var(--ink-2);
+            border-color: var(--line-strong);
+        }
+        button.secondary:hover:not(:disabled) { background: #f7f9fa; color: var(--ink); }
+        button.secondary:disabled { background: #f7f9fa; border-color: var(--line); }
+
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        /* 한 줄을 다 쓰는 주 동작 */
+        #connectBtn, #nextToAI, #openTrain, #applyMappings, #loadModel, #sendTextBtn, #confirmURL {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #sendTextBtn, #confirmURL { background: var(--surface); color: var(--ink-2); border-color: var(--line-strong); }
+        #sendTextBtn:hover:not(:disabled), #confirmURL:hover:not(:disabled) { background: #f7f9fa; color: var(--ink); }
+
+        #stopWebcam { background: var(--surface); color: var(--danger); border-color: #e6b9b3; }
+        #stopWebcam:hover:not(:disabled) { background: var(--danger-weak); }
+        #stopWebcam:disabled { background: #f7f9fa; color: var(--ink-3); border-color: var(--line); }
+
+        button.edit-btn {
+            background: var(--surface);
+            color: var(--ink-2);
+            border-color: var(--line-strong);
+            min-height: 38px;
+            padding: 0 14px;
+            font-size: 13.5px;
+        }
+        button.edit-btn:hover:not(:disabled) { background: #f7f9fa; }
+
+        .actions { display: flex; gap: 8px; margin-bottom: 14px; }
+        .actions button { flex: 1; }
+
+        /* ── 상태 표시 ── */
         .status {
-            padding: 16px 20px;
-            border-radius: 16px;
-            margin: 20px 0;
-            font-weight: 500;
-            font-size: 15px;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-        
-        .status.disconnected {
-            background: #fef2f2;
-            color: #dc2626;
-            border: 2px solid #fecaca;
-        }
-        
-        .status.connected {
-            background: #f0fdf4;
-            color: #059669;
-            border: 2px solid #bbf7d0;
-        }
-        
-        button {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 14px;
-            font-size: 16px;
+            gap: 8px;
+            padding: 12px 14px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--line);
+            background: #f7f9fa;
+            font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin: 8px 4px;
-            width: calc(100% - 8px);
+            color: var(--ink-2);
+            margin-bottom: 14px;
         }
-        
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+
+        .status.disconnected { border-color: #e6b9b3; background: var(--danger-weak); color: var(--danger); }
+        .status.connected { border-color: #b6ddcb; background: var(--accent-weak); color: var(--accent-dark); }
+
+        /* ── 안내 상자 ── */
+        .info, .warning {
+            padding: 12px 14px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--line);
+            background: #f7f9fa;
+            color: var(--ink-2);
+            font-size: 13.5px;
+            line-height: 1.6;
+            margin: 12px 0;
         }
-        
-        button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            background: #cbd5e1;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        button.secondary {
-            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-        }
-        
-        button.secondary:hover:not(:disabled) {
-            box-shadow: 0 8px 20px rgba(100, 116, 139, 0.3);
-        }
-        
-        button.edit-btn {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            width: auto;
-            padding: 10px 20px;
-            font-size: 15px;
-        }
-        
-        button.edit-btn:hover:not(:disabled) {
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
-        }
-        
-        #loadModel {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-        }
-        
-        #loadModel:hover:not(:disabled) {
-            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
-        }
-        
-        #startWebcam {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        }
-        
-        #startWebcam:hover:not(:disabled) {
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-        }
-        
-        #stopWebcam {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
-        
-        #stopWebcam:hover:not(:disabled) {
-            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
-        }
-        
-        #confirmURL {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-        
-        #connectBtn, #sendTextBtn {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-        
-        .info {
-            background: #f0fdf4;
-            padding: 16px 20px;
-            border-radius: 16px;
-            margin: 20px 0;
-            font-size: 14px;
-            color: #047857;
-            border: 2px solid #bbf7d0;
-        }
-        
-        .warning {
-            background: #fef3c7;
-            padding: 16px 20px;
-            border-radius: 16px;
-            margin: 20px 0;
-            font-size: 14px;
-            color: #92400e;
-            border: 2px solid #fde68a;
-        }
-        
+
+        .info { border-left: 3px solid var(--accent); }
+        .warning { border-left: 3px solid var(--warn); background: var(--warn-weak); color: var(--warn); border-color: #ecdcbc; }
+
+        /* ── 입력 ── */
         input[type="text"] {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #d1fae5;
-            border-radius: 12px;
-            font-size: 15px;
-            transition: all 0.2s;
-            margin: 8px 0;
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 1px solid var(--line-strong);
+            border-radius: var(--r-sm);
+            font: inherit;
+            font-size: 14.5px;
+            color: var(--ink);
+            background: var(--surface);
+            transition: border-color .15s, box-shadow .15s;
         }
-        
+
         input[type="text"]:focus {
             outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-weak);
         }
-        
+
+        input[type="text"]::placeholder { color: #a3b1bf; }
+
+        /* ── 기록(로그) ── */
         .log-box {
-            background: #1e293b;
-            color: #94a3b8;
-            padding: 16px 20px;
-            border-radius: 12px;
-            font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 13px;
-            max-height: 200px;
+            background: #10181f;
+            color: #9fb0c0;
+            padding: 12px 14px;
+            border-radius: var(--r-sm);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12.5px;
+            line-height: 1.7;
+            max-height: 180px;
             overflow-y: auto;
-            margin: 20px 0;
+            margin: 14px 0 0;
         }
-        
-        .log-box div {
-            padding: 4px 0;
-        }
-        
+
+        .log-box div { padding: 1px 0; }
+
+        /* ── 카메라 ── */
         #webcam-container {
             display: flex;
             justify-content: center;
-            margin: 20px 0;
-            border-radius: 16px;
+            align-items: center;
+            border-radius: var(--r);
+            border: 1px solid var(--line);
+            background: #eef1f4;
             overflow: hidden;
-            background: #f1f5f9;
-            position: relative;
+            min-height: 220px;
+            margin-bottom: 14px;
         }
-        
-        #webcam-container canvas {
-            max-width: 100%;
-            height: auto;
-            display: block;
+
+        #webcam-container:empty::before {
+            content: '「인식 시작」을 누르면 여기에 카메라 화면이 나옵니다';
+            color: var(--ink-3);
+            font-size: 13.5px;
+            padding: 40px 20px;
+            text-align: center;
         }
-        
-        #label-container {
-            margin-top: 20px;
-        }
-        
-        .prediction {
-            position: relative;
-            margin: 8px 0;
-            height: 36px;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
+
+        #webcam-container canvas { max-width: 100%; height: auto; display: block; }
+
+        /* ── 인식 결과 막대 ── */
+        #label-container { display: flex; flex-direction: column; gap: 6px; }
+
+        .prediction { height: 38px; border-radius: var(--r-sm); overflow: hidden; }
+
         .prediction-bar-container {
             position: relative;
             width: 100%;
             height: 100%;
-            background: #f1f5f9;
+            background: #eef1f4;
+            border-radius: var(--r-sm);
             overflow: hidden;
         }
-        
+
         .prediction-bar {
             position: absolute;
             left: 0;
             top: 0;
             height: 100%;
-            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-            transition: width 0.2s ease;
+            background: #cfe3d9;
+            transition: width .12s linear;
         }
-        
-        .prediction.active .prediction-bar {
-            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
-        }
-        
+
+        .prediction.active .prediction-bar { background: var(--accent); }
+
         .prediction-label-in-bar {
             position: absolute;
             left: 12px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 600;
-            color: #64748b;
-            transition: color 0.2s;
+            color: var(--ink-2);
             white-space: nowrap;
             pointer-events: none;
         }
-        
-        .prediction[data-covered-label="true"] .prediction-label-in-bar {
-            color: white;
-        }
-        
+
         .prediction-value-in-bar {
             position: absolute;
             right: 12px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 14px;
-            font-weight: 700;
-            color: #64748b;
-            transition: color 0.2s;
-            pointer-events: none;
-        }
-        
-        .prediction[data-covered-value="true"] .prediction-value-in-bar {
-            color: white;
-        }
-        
-        .class-input-group {
-            display: grid;
-            grid-template-columns: 72px minmax(180px, 1.4fr) 28px minmax(110px, 0.7fr) auto;
-            gap: 8px;
-            align-items: center;
-            margin: 12px 0;
-        }
-        
-        .class-input-group label {
-            font-weight: 600;
-            color: #475569;
-        }
-        
-        .class-input-group input {
-            flex: 1;
-            margin: 0;
-        }
-        
-        .class-input-group button {
-            width: auto;
-            margin: 0;
-            padding: 10px 20px;
-        }
-
-        .mapping-arrow {
-            color: #059669;
-            font-size: 20px;
-            font-weight: 800;
-            text-align: center;
-        }
-
-        .mapping-guide {
-            display: grid;
-            grid-template-columns: 72px minmax(180px, 1.4fr) 28px minmax(110px, 0.7fr) auto;
-            gap: 8px;
-            padding: 0 0 4px;
-            color: #64748b;
             font-size: 13px;
             font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink-2);
+            pointer-events: none;
         }
 
-        .mapping-guide span:nth-child(2),
-        .mapping-guide span:nth-child(4) {
-            padding-left: 14px;
+        .prediction.active .prediction-label-in-bar,
+        .prediction.active .prediction-value-in-bar { color: #fff; }
+
+        .prediction[data-covered-label="true"] .prediction-label-in-bar,
+        .prediction[data-covered-value="true"] .prediction-value-in-bar { color: var(--ink); }
+
+        .prediction.active[data-covered-label="true"] .prediction-label-in-bar,
+        .prediction.active[data-covered-value="true"] .prediction-value-in-bar { color: #fff; }
+
+        /* ── 지금 보내는 명령 ── */
+        #commandDisplay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 46px;
+            padding: 10px 14px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--line);
+            background: #f7f9fa;
+            color: var(--ink-2);
+            font-size: 14.5px;
+            font-weight: 600;
+            margin-bottom: 14px;
         }
 
-        #applyMappings {
-            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+        /* ── 모델 타입 선택 ── */
+        .radio-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+        .radio-option { position: relative; }
+        .radio-option input[type="radio"] { position: absolute; opacity: 0; }
+
+        .radio-label {
+            display: block;
+            padding: 12px 10px;
+            background: var(--surface);
+            border: 1px solid var(--line-strong);
+            border-radius: var(--r-sm);
+            cursor: pointer;
+            text-align: center;
+            transition: border-color .15s, background .15s;
         }
+
+        .radio-label:hover { background: #f7f9fa; }
+        .radio-option input[type="radio"]:checked + .radio-label { border-color: var(--accent); background: var(--accent-weak); }
+        .radio-option input[type="radio"]:focus-visible + .radio-label { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        .radio-label .icon { font-size: 18px; line-height: 1.2; margin-bottom: 2px; }
+        .radio-label .title { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+        .radio-label .desc { font-size: 12px; color: var(--ink-3); }
+        .radio-option input[type="radio"]:checked + .radio-label .title { color: var(--accent-dark); }
+
+        #modelTypeDisplay {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            border: 1px solid var(--line-strong);
+            background: #f7f9fa;
+            color: var(--ink-2);
+            font-size: 12.5px;
+            font-weight: 700;
+            vertical-align: middle;
+        }
+
+        /* ── 클래스-명령 표 ── */
+        .mapping-guide {
+            display: grid;
+            grid-template-columns: 46px minmax(84px, 1.4fr) 12px minmax(64px, .8fr) auto;
+            gap: 6px;
+            padding: 0 0 6px;
+            color: var(--ink-3);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .class-input-group {
+            display: grid;
+            grid-template-columns: 46px minmax(84px, 1.4fr) 12px minmax(64px, .8fr) auto;
+            gap: 6px;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .class-input-group label { font-size: 13px; font-weight: 600; color: var(--ink-3); }
+        .class-input-group input { min-height: 40px; font-size: 14px; }
+        .mapping-arrow { color: var(--ink-3); font-size: 14px; text-align: center; }
+
+        .test-btn {
+            background: var(--surface);
+            color: var(--ink-2);
+            border-color: var(--line-strong);
+            min-height: 40px;
+            padding: 0 9px;
+            font-size: 12.5px;
+            white-space: nowrap;
+        }
+        .test-btn:hover:not(:disabled) { background: #f7f9fa; }
 
         .mapping-status, .model-class-info {
-            padding: 12px 14px;
-            border-radius: 12px;
-            margin: 10px 0;
-            font-size: 14px;
-            line-height: 1.55;
+            padding: 10px 12px;
+            border-radius: var(--r-sm);
+            margin: 10px 0 0;
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid var(--line);
+            background: #f7f9fa;
+            color: var(--ink-2);
         }
 
-        .mapping-status {
-            color: #475569;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-        }
-
-        .mapping-status.success {
-            color: #047857;
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-        }
-
-        .mapping-status.warning {
-            color: #92400e;
-            background: #fffbeb;
-            border-color: #fde68a;
-        }
-
-        .model-class-info {
-            color: #3730a3;
-            background: #eef2ff;
-            border: 2px solid #c7d2fe;
-        }
+        .mapping-status.success { border-color: #b6ddcb; background: var(--accent-weak); color: var(--accent-dark); }
+        .mapping-status.warning { border-color: #ecdcbc; background: var(--warn-weak); color: var(--warn); }
+        .model-class-info { border-color: var(--line); }
 
         .model-class-chip {
             display: inline-block;
-            margin: 4px 4px 0 0;
-            padding: 3px 9px;
+            margin: 3px 4px 0 0;
+            padding: 2px 8px;
             border-radius: 999px;
-            color: #3730a3;
-            background: white;
-            border: 1px solid #a5b4fc;
-            font-weight: 700;
-        }
-        
-        #commandDisplay {
-            background: #ede9fe;
-            color: #5b21b6;
-            padding: 14px 18px;
-            border-radius: 12px;
-            text-align: center;
+            border: 1px solid var(--line-strong);
+            background: var(--surface);
+            color: var(--ink-2);
+            font-size: 12.5px;
             font-weight: 600;
-            font-size: 15px;
-            margin: 16px 0;
-            border: 2px solid #ddd6fe;
         }
-        
+
         #urlDisplaySection {
-            background: #f0fdf4;
-            padding: 16px;
-            border-radius: 12px;
-            margin: 16px 0;
             display: none;
-            border: 2px solid #bbf7d0;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: var(--r-sm);
+            background: #f7f9fa;
+            margin: 12px 0;
         }
-        
-        #displayURL {
-            word-break: break-all;
-            color: #047857;
-            font-size: 14px;
-            margin-bottom: 12px;
-        }
-        
-        /* 라디오 버튼 스타일 */
-        .radio-group {
-            display: flex;
-            gap: 20px;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 16px;
-            margin: 20px 0;
-            border: 2px solid #e2e8f0;
-        }
-        
-        .radio-option {
-            flex: 1;
-            position: relative;
-        }
-        
-        .radio-option input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-        }
-        
-        .radio-label {
-            display: block;
-            padding: 20px;
-            background: white;
-            border: 3px solid #e2e8f0;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-        }
-        
-        .radio-option input[type="radio"]:checked + .radio-label {
-            border-color: #10b981;
-            background: #f0fdf4;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-        }
-        
-        .radio-label .icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-        }
-        
-        .radio-label .title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 4px;
-        }
-        
-        .radio-label .desc {
-            font-size: 13px;
-            color: #64748b;
-        }
-        
-        .radio-option input[type="radio"]:checked + .radio-label .title {
-            color: #059669;
-        }
-        
-        #modelTypeDisplay {
-            display: inline-block;
-            padding: 6px 14px;
-            background: #ede9fe;
-            color: #5b21b6;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            margin-left: 8px;
-        }
+
+        #displayURL { word-break: break-all; color: var(--ink-2); font-size: 13px; margin-bottom: 10px; }
 
         /* ── 직접 학습 ── */
         #customSection { display: none; }
 
-        .train-source {
-            display: flex;
-            gap: 10px;
-            margin: 12px 0;
-        }
-
-        .train-source .src-chip {
-            flex: 1;
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            color: #64748b;
-            font-weight: 700;
-            font-size: 14px;
+        /* 준비물 — 무엇을 카메라에 보여야 하는지 한눈에 */
+        .need-box {
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            background: #fbfcfd;
+            padding: 16px 14px 14px;
+            margin: 12px 0 14px;
             text-align: center;
         }
 
-        .train-source .src-chip.on {
-            border-color: #10b981;
-            background: #f0fdf4;
-            color: #059669;
+        .need-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            color: var(--ink-3);
         }
 
-        .trained-list {
-            margin: 14px 0;
+        .need-items {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 10px 0 8px;
+        }
+
+        .need-item {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            gap: 2px;
+            min-width: 84px;
         }
+
+        .need-emoji { font-size: 44px; line-height: 1.05; }
+        .need-name { font-size: 17px; font-weight: 700; color: var(--ink); }
+        .need-plus { font-size: 20px; color: var(--ink-3); }
+        .need-note { font-size: 12.5px; color: var(--ink-3); line-height: 1.6; }
+
+        /* 누르는 버튼이 아니라 '지금 보이는 것'을 알려 주는 표시 줄 */
+        .train-source {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+            padding: 9px 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            cursor: default;
+            user-select: none;
+        }
+
+        .train-source .src-label {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--ink-3);
+            margin-right: auto;
+        }
+
+        .train-source .src-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink-3);
+        }
+
+        .train-source .src-chip::before {
+            content: '';
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--line-strong);
+            flex: 0 0 auto;
+        }
+
+        .train-source .src-chip.on { color: var(--accent-dark); }
+        .train-source .src-chip.on::before { background: var(--accent); }
+
+        .info-more { margin-top: 8px; color: var(--ink-3); }
+
+        .trained-list { margin: 12px 0; display: flex; flex-direction: column; gap: 6px; }
 
         .trained-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 12px 14px;
-            border: 2px solid #d1fae5;
-            border-radius: 12px;
-            background: #f0fdf4;
-            font-size: 15px;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: var(--r-sm);
+            background: var(--surface);
+            font-size: 14px;
         }
 
-        .trained-item .t-name { font-weight: 700; color: #065f46; }
-        .trained-item .t-count { color: #64748b; font-size: 13px; margin-left: auto; }
+        .trained-item .t-name { font-weight: 700; color: var(--ink); }
+        .trained-item .t-count { color: var(--ink-3); font-size: 12.5px; margin-left: auto; }
 
         .trained-item button {
-            width: auto;
-            margin: 0;
-            padding: 8px 14px;
-            font-size: 14px;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: var(--surface);
+            color: var(--danger);
+            border-color: #e6b9b3;
+            min-height: 36px;
+            padding: 0 12px;
+            font-size: 13px;
         }
+        .trained-item button:hover:not(:disabled) { background: var(--danger-weak); }
 
         .trained-empty {
-            padding: 14px;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            color: #64748b;
-            font-size: 14px;
+            padding: 16px 14px;
+            border: 1px dashed var(--line-strong);
+            border-radius: var(--r-sm);
+            color: var(--ink-3);
+            font-size: 13.5px;
             text-align: center;
         }
 
         .train-tools { display: flex; gap: 8px; flex-wrap: wrap; }
-        .train-tools button { width: auto; flex: 1; margin: 0; min-width: 120px; }
+        .train-tools button { flex: 1; min-width: 110px; min-height: 40px; font-size: 13.5px; }
 
         /* ── 학습 팝업 ── */
         .modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.65);
+            background: rgba(15, 23, 32, .55);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -632,29 +597,37 @@
         .modal-backdrop[hidden] { display: none; }
 
         .modal-card {
-            background: white;
-            border-radius: 24px;
-            border: 2px solid #d1fae5;
-            padding: 28px;
+            background: var(--surface);
+            border-radius: var(--r);
+            border: 1px solid var(--line);
+            padding: 22px;
             width: 100%;
-            max-width: 460px;
-            max-height: 92vh;
+            max-width: 680px;
+            max-height: 94vh;
             overflow-y: auto;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 12px 40px rgba(16, 24, 40, .22);
         }
 
-        .modal-card h2 { margin-top: 0; }
+        .modal-card h2 { margin: 0 0 14px; font-size: 16px; color: var(--ink); border: 0; padding: 0; }
 
         .train-stage {
             position: relative;
-            border-radius: 16px;
+            border-radius: var(--r-sm);
             overflow: hidden;
-            background: #0f172a;
+            background: #10181f;
             display: flex;
             justify-content: center;
         }
 
-        #trainPreview { width: 100%; height: auto; display: block; }
+        /* 캔버스는 본래 크기(720px)가 최소 폭이 되어 팝업을 밀어낸다 → min-width:0 으로 줄어들게 한다 */
+        #trainPreview {
+            width: 100%;
+            height: auto;
+            min-width: 0;
+            max-height: 54vh;
+            object-fit: contain;
+            display: block;
+        }
 
         .train-big {
             position: absolute;
@@ -662,91 +635,77 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 88px;
+            font-size: 104px;
             font-weight: 700;
-            color: white;
-            text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+            color: #fff;
+            text-shadow: 0 3px 18px rgba(0, 0, 0, .6);
             pointer-events: none;
         }
 
-        .train-big.small { font-size: 34px; }
+        .train-big.small { font-size: 30px; font-weight: 600; }
 
-        .train-progress {
-            height: 10px;
-            border-radius: 999px;
-            background: #e2e8f0;
-            overflow: hidden;
-            margin: 14px 0 10px;
+        .train-progress { height: 6px; border-radius: 999px; background: #eef1f4; overflow: hidden; margin: 12px 0 10px; }
+        .train-progress > div { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+
+        .train-msg { font-size: 13.5px; color: var(--ink-2); min-height: 42px; line-height: 1.6; }
+        .train-lead {
+            font-size: 15.5px;
+            font-weight: 600;
+            color: var(--ink);
+            margin: -6px 0 6px;
+            line-height: 1.55;
         }
 
-        .train-progress > div {
-            height: 100%;
-            width: 0;
-            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-        }
+        .train-lead strong { color: var(--accent-dark); }
+        .train-sub { font-size: 12.5px; color: var(--ink-3); margin: 0 0 12px; line-height: 1.6; }
 
-        .train-msg {
-            font-size: 15px;
-            color: #475569;
-            min-height: 44px;
-            line-height: 1.5;
-        }
-
-        .train-name-row {
-            display: grid;
-            grid-template-columns: 90px 1fr;
-            gap: 10px;
-            align-items: center;
-            margin: 8px 0 4px;
-        }
-
-        .train-name-row label { font-weight: 600; color: #475569; }
-        .train-name-row input { margin: 0; }
+        .train-name-row { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: center; margin: 10px 0 2px; }
+        .train-name-row label { font-size: 13px; font-weight: 600; color: var(--ink-3); }
 
         .train-actions { display: flex; gap: 8px; margin-top: 14px; }
-        .train-actions button { width: auto; flex: 1; margin: 0; }
+        .train-actions button { flex: 1; }
 
-        #textSection {
-            display: none;
-        }
-
-        #nextToAI {
-            display: none;
-        }
+        #textSection { display: none; }
+        #nextToAI { display: none; }
+        #sentText { text-align: center; color: var(--accent-dark); font-weight: 600; font-size: 13.5px; margin-top: 10px; }
 
         @media (max-width: 760px) {
-            .class-input-group {
-                grid-template-columns: 64px 1fr 28px 90px;
-            }
-
-            .class-input-group button {
-                grid-column: 2 / 5;
-                width: 100%;
-            }
-
-            .mapping-guide {
-                display: none;
-            }
+            body { padding: 14px 12px 32px; }
+            .step { padding: 18px 14px; }
+            .header { gap: 6px; }
+            .header h1 { font-size: 19px; }
+            .modal-card { padding: 16px 14px; border-radius: 14px; }
+            .train-actions { flex-wrap: wrap; }
+            .train-actions button { flex: 1 1 45%; }
+            .need-emoji { font-size: 38px; }
+            .train-source { gap: 10px; }
+            .train-source .src-label { flex: 0 0 100%; margin-bottom: 2px; }
+            .radio-group { grid-template-columns: 1fr; }
+            .mapping-guide { display: none; }
+            .class-input-group { grid-template-columns: 56px 1fr 16px 84px; }
+            .class-input-group .test-btn { grid-column: 2 / 5; }
         }
 
-        @media (max-width: 520px) {
-            .step { padding: 24px 18px; }
-            .class-input-group {
-                grid-template-columns: 1fr;
-                padding: 12px;
-                border: 2px solid #e2e8f0;
-                border-radius: 14px;
-            }
+        @media (max-width: 480px) {
+            .class-input-group { grid-template-columns: 1fr; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); }
             .mapping-arrow { display: none; }
-            .class-input-group button { grid-column: auto; }
+            .class-input-group .test-btn { grid-column: auto; }
         }
-    </style>
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .001ms !important;
+                transition-duration: .001ms !important;
+            }
+            .step { opacity: 1; }
+        }
+        </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 티처블머신 × 마이크로비트</h1>
-            <p>Image / Pose 모델로 마이크로비트 제어하기</p>
+            <h1>마이크로비트 AI 제어</h1>
+            <p>카메라로 동작을 인식해 마이크로비트에 명령을 보냅니다</p>
         </div>
         
         <div class="step-indicator">
@@ -756,24 +715,26 @@
         
         <!-- STEP 1: 블루투스 연결 -->
         <div id="step1" class="step active">
-            <h1>STEP 1️⃣ 마이크로비트 연결</h1>
+            <h1>1단계 · 마이크로비트 연결</h1>
             
             <div class="warning">
-                ⚠️ <strong>중요!</strong> 마이크로비트에 블루투스 UART 코드가 업로드되어 있어야 합니다.
+                <strong>먼저 확인하세요.</strong> 마이크로비트에 블루투스 UART 코드가 업로드되어 있어야 합니다.
             </div>
             
-            <div id="btStatus" class="status disconnected">❌ 블루투스 연결 안됨</div>
+            <div id="btStatus" class="status disconnected">블루투스 연결 안됨</div>
+
+            <div id="supportNote" class="warning" hidden></div>
             
-            <button id="connectBtn">🔗 마이크로비트 연결</button>
+            <button id="connectBtn">마이크로비트 연결</button>
             
             <div id="textSection">
-                <h2>📤 텍스트 명령 전송 테스트</h2>
+                <h2>연결 확인 · 텍스트 전송</h2>
                 <div class="info">
                     블루투스가 정상적으로 작동하는지 먼저 확인하세요.
                 </div>
                 
                 <input type="text" id="textInput" placeholder="전송할 텍스트 입력 (예: F, B, L, R, S)">
-                <button id="sendTextBtn">📤 텍스트 전송</button>
+                <button id="sendTextBtn">텍스트 전송</button>
                 <div id="sentText" style="text-align: center; color: #10b981; font-weight: 600; margin-top: 12px;"></div>
             </div>
             
@@ -784,17 +745,34 @@
         
         <!-- STEP 2: AI 제어 -->
         <div id="step2" class="step">
-            <h1>STEP 2️⃣ AI 제어 <span id="modelTypeDisplay"></span></h1>
-            
+            <h1>2단계 · 동작으로 제어하기 <span id="modelTypeDisplay"></span></h1>
+
+            <div class="work-grid">
+            <div class="work-main">
             <div class="status connected">
                 <span>✅</span>
                 <span id="deviceName">연결된 기기</span>
             </div>
+            <h2>카메라 인식</h2>
+            
+            <div class="actions">
+                <button id="startWebcam">인식 시작</button>
+                <button class="secondary" id="stopWebcam" disabled>인식 중지</button>
+            </div>
+            
+            <div id="webcam-container"></div>
+            <div id="label-container"></div>
+            <div id="commandDisplay">🤖 AI 제어 대기 중...</div>
+            </div>
+
+            <div class="work-side">
+            
+
             
             <button class="secondary" id="backToConnect">← STEP 1로 돌아가기</button>
             
             <!-- 모델 타입 선택 -->
-            <h2>🎯 모델 타입 선택</h2>
+            <h2>인식 방식</h2>
             <div class="info">
                 티처블머신에서 학습시킨 모델 타입을 선택하세요.
             </div>
@@ -830,31 +808,54 @@
 
             <!-- 직접 학습 -->
             <div id="customSection">
-                <h2>🎓 동작 직접 학습하기</h2>
+                <h2>동작 직접 학습</h2>
+
+                <div class="need-box">
+                    <div class="need-title">준비물</div>
+                    <div class="need-items">
+                        <div class="need-item">
+                            <span class="need-emoji" aria-hidden="true">✋</span>
+                            <span class="need-name">손</span>
+                        </div>
+                        <span class="need-plus" aria-hidden="true">＋</span>
+                        <div class="need-item">
+                            <span class="need-emoji" aria-hidden="true">🙂</span>
+                            <span class="need-name">얼굴</span>
+                        </div>
+                    </div>
+                    <p class="need-note">둘 다 카메라에 보이면 가장 잘 됩니다. 하나만 써도 학습할 수 있어요.</p>
+                </div>
+
                 <div class="info">
-                    티처블머신 없이 이 화면에서 바로 학습합니다. <strong>양손과 얼굴(고개 방향·표정)을 함께</strong> 봅니다.
-                    학습할 동작을 취할 준비를 하고 <strong>직접 학습하기</strong>를 누르면
-                    <strong>3 · 2 · 1</strong> 뒤 <strong>5초 동안</strong> 그 동작을 기억합니다.
-                    동작마다 한 번씩 반복하고, 동작은 2개 이상 만드세요.
+                    <p><strong>양손과 얼굴을 함께 보고 배웁니다.</strong>
+                    카메라가 손 한 짝마다 마디 21곳, 얼굴 478곳의 위치를 숫자로 읽어 그대로 기억합니다.
+                    그래서 <strong>손 모양</strong>뿐 아니라 <strong>손을 얼굴 어디쯤에 두었는지</strong>,
+                    <strong>고개 방향과 표정</strong>까지 함께 구분합니다.</p>
+                    <p class="info-more">한 손만 써도, 손 없이 얼굴만 써도 됩니다. 다만 학습할 때와 조종할 때가 같아야 잘 맞습니다.
+                    동작을 정하고 <strong>동작 학습하기</strong>를 누르면 <strong>3 · 2 · 1</strong> 뒤
+                    <strong>5초 동안</strong> 그 자세를 기억합니다. 이렇게 <strong>2개 이상</strong> 만들면 서로 구분하기 시작합니다.</p>
+                    <p class="info-more">잘 되게 하려면 — 동작끼리 확실히 다르게 정하고(예: 주먹 / 손바닥 / 손을 머리 위로),
+                    5초 동안 각도를 조금씩 바꿔 주세요.</p>
                 </div>
 
                 <div class="train-source" role="status" aria-live="polite">
-                    <span class="src-chip" id="chipHand">✋ 손 —</span>
-                    <span class="src-chip" id="chipFace">🙂 얼굴 —</span>
+                    <span class="src-label">지금 카메라에 보이는 것</span>
+                    <span class="src-chip" id="chipHand">손 확인 전</span>
+                    <span class="src-chip" id="chipFace">얼굴 확인 전</span>
                 </div>
 
-                <button type="button" id="openTrain">🎓 직접 학습하기</button>
+                <button type="button" id="openTrain">동작 학습하기</button>
 
                 <div id="trainedList" class="trained-list"></div>
 
                 <div class="train-tools">
-                    <button type="button" class="secondary" id="saveTrained">💾 저장</button>
-                    <button type="button" class="secondary" id="loadTrained">📂 불러오기</button>
-                    <button type="button" class="secondary" id="clearTrained">🗑 전체 지우기</button>
+                    <button type="button" class="secondary" id="saveTrained">저장</button>
+                    <button type="button" class="secondary" id="loadTrained">불러오기</button>
+                    <button type="button" class="secondary" id="clearTrained">전체 지우기</button>
                 </div>
             </div>
             
-            <h2>🔗 티처블머신 모델 URL</h2>
+            <h2>티처블머신 모델 URL</h2>
             <div class="info">
                 티처블머신에서 프로젝트를 만들고, 'Export Model'에서 URL을 복사하세요.<br>
                 예: https://teachablemachine.withgoogle.com/models/your-model/
@@ -862,17 +863,17 @@
             
             <div id="urlInputSection">
                 <input type="text" id="modelURL" placeholder="티처블머신 모델 URL 입력">
-                <button id="confirmURL">✅ URL 확인</button>
+                <button id="confirmURL">URL 확인</button>
             </div>
             
             <div id="urlDisplaySection">
                 <div id="displayURL"></div>
-                <button class="edit-btn" id="editURL">✏️ URL 수정</button>
+                <button class="edit-btn" id="editURL">URL 수정</button>
             </div>
 
-            <button id="loadModel">🧠 모델 로드 및 클래스 확인</button>
+            <button id="loadModel">모델 불러오기</button>
             
-            <h2>⚙️ 클래스별 명령어 설정</h2>
+            <h2>동작 → 명령 연결</h2>
             <div class="info">
                 티처블머신에서 만든 <strong>클래스명을 직접 입력</strong>하고, 인식됐을 때 마이크로비트로 보낼 명령을 연결하세요.<br>
                 모델을 먼저 로드하면 학생이 학습한 클래스명이 자동으로 입력됩니다. 클래스명은 <strong>대소문자와 띄어쓰기까지 정확히 같아야</strong> 합니다.<br>
@@ -891,7 +892,7 @@
                 <input type="text" id="className1" class="class-name-input" list="modelClassOptions" maxlength="100" placeholder="예: Class 1 또는 왼팔 들기">
                 <span class="mapping-arrow" aria-hidden="true">→</span>
                 <input type="text" id="classCommand1" class="command-input" maxlength="40" aria-label="매핑 1 전송 명령" placeholder="예: F">
-                <button class="test-btn" data-row="1" disabled>📤 테스트</button>
+                <button class="test-btn" data-row="1" disabled>보내기</button>
             </div>
             
             <div class="class-input-group">
@@ -927,30 +928,28 @@
             </div>
             </div>
 
-            <button id="applyMappings" type="button">✅ 클래스-명령 설정 적용</button>
+            <button id="applyMappings" type="button">명령 연결 적용</button>
             <div id="mappingStatus" class="mapping-status" role="status" aria-live="polite">클래스명과 명령을 한 쌍 이상 입력해 주세요.</div>
             <div id="modelClassInfo" class="model-class-info" hidden></div>
             
-            <div id="commandDisplay">🤖 AI 제어 대기 중...</div>
+
             
-            <h2>🎬 웹캠 실행</h2>
-            
-            <button id="startWebcam">🎥 웹캠 시작</button>
-            <button id="stopWebcam" disabled>⏹ 웹캠 중지</button>
-            
-            <div id="webcam-container"></div>
-            <div id="label-container"></div>
+
             
             <div class="log-box" id="log2"></div>
+            </div>
+            </div>
         </div>
     </div>
     
     <!-- 학습 팝업 -->
     <div id="trainModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="trainTitle" hidden>
         <div class="modal-card">
-            <h2 id="trainTitle">🎓 동작 학습</h2>
+            <h2 id="trainTitle">동작 학습</h2>
+            <p class="train-lead"><strong>시작</strong>을 누르면 <strong>3초 뒤</strong>에 ✋ 손과 🙂 얼굴로 포즈를 인식합니다!</p>
+            <p class="train-sub">인식이 시작되면 <strong>5초 동안</strong> 그 자세를 기억합니다. 조종할 때와 같은 자세로 서 주세요.</p>
             <div class="train-stage">
-                <canvas id="trainPreview" width="360" height="270"></canvas>
+                <canvas id="trainPreview" width="720" height="540"></canvas>
                 <div id="trainBig" class="train-big"></div>
             </div>
             <div class="train-progress"><div id="trainBar"></div></div>
@@ -1087,6 +1086,56 @@
                     : (isBluetoothConnected() ? '✅ 연결됨: ' + device.name : '연결된 기기 없음');
             }
             updateTestButtonState();
+        }
+
+        // ── 이 기기에서 무엇이 되는지 먼저 확인한다 ──
+        // 아이폰·아이패드는 브라우저 종류와 관계없이 웹 블루투스를 지원하지 않는다.
+        function checkSupport() {
+            const note = document.getElementById('supportNote');
+            const connect = document.getElementById('connectBtn');
+            const hasBluetooth = !!(navigator.bluetooth && navigator.bluetooth.requestDevice);
+            const hasCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            const secure = window.isSecureContext;
+            const isApple = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (!note) return;
+
+            if (!secure) {
+                note.hidden = false;
+                note.innerHTML = '<strong>주소를 확인해 주세요.</strong> 블루투스와 카메라는 <strong>https 주소</strong>에서만 쓸 수 있습니다. ' +
+                    '파일을 직접 열었거나 http 주소라면 연결이 되지 않습니다.';
+                connect.disabled = true;
+                return;
+            }
+
+            if (!hasBluetooth) {
+                note.hidden = false;
+                note.innerHTML = isApple
+                    ? '<strong>아이폰·아이패드에서는 마이크로비트 연결이 되지 않습니다.</strong> ' +
+                      'iOS는 브라우저(사파리·크롬 모두)에서 블루투스를 지원하지 않습니다. ' +
+                      '<strong>갤럭시 등 안드로이드 기기의 크롬</strong>이나 노트북 크롬을 쓰세요. ' +
+                      '카메라로 동작을 학습해 보는 것은 이 기기에서도 됩니다.'
+                    : '<strong>이 브라우저는 마이크로비트 연결을 지원하지 않습니다.</strong> ' +
+                      '<strong>크롬</strong>(안드로이드·윈도우·맥)에서 열어 주세요.';
+                connect.disabled = true;
+                log('이 기기에서는 블루투스 연결을 쓸 수 없습니다.', true, 'log1');
+                return;
+            }
+
+            if (!hasCamera) {
+                note.hidden = false;
+                note.innerHTML = '<strong>카메라를 쓸 수 없는 환경입니다.</strong> 마이크로비트 연결과 텍스트 전송은 됩니다.';
+                return;
+            }
+
+            // 안드로이드에서는 블루투스가 꺼져 있으면 검색이 되지 않는다 — 미리 알려 준다.
+            if (/Android/.test(navigator.userAgent)) {
+                note.hidden = false;
+                note.className = 'info';
+                note.innerHTML = '<strong>휴대전화에서 여는 경우</strong> 블루투스를 켜고, 연결을 누른 뒤 나오는 ' +
+                    '<strong>근처 기기·위치 권한</strong>을 허용해야 마이크로비트가 목록에 나타납니다.';
+            }
         }
 
         // 화면에는 노출하지 않는 교사용 단축키: Ctrl + Shift + M
@@ -1270,7 +1319,7 @@
             testButton.className = 'test-btn';
             testButton.dataset.row = String(rowNumber);
             testButton.disabled = !(testMode || isBluetoothConnected());
-            testButton.textContent = '📤 테스트';
+            testButton.textContent = '보내기';
 
             group.append(label, classInput, arrow, commandInput, testButton);
             return group;
@@ -1615,9 +1664,9 @@
                 if (success) {
                     document.getElementById('commandDisplay').textContent = `🧪 테스트: ${className} → ${command}`;
                     
-                    button.textContent = '✅ 완료';
+                    button.textContent = '보냈습니다';
                     setTimeout(() => {
-                        button.textContent = '📤 테스트';
+                        button.textContent = '보내기';
                     }, 1000);
                 }
         });
@@ -1842,11 +1891,14 @@
                 const detection = detectBoth(mpVideo);
                 if (customCtx) {                     // 카메라 화면과 인식한 점을 함께 보여 준다
                     const W = customCtx.canvas.width, H = customCtx.canvas.height;
+                    const rect = fitRect(mpVideo, W, H);
                     customCtx.save();
+                    customCtx.fillStyle = '#10181f';
+                    customCtx.fillRect(0, 0, W, H);
                     customCtx.translate(W, 0);
                     customCtx.scale(-1, 1);          // 거울처럼 보이게
-                    if (mpVideo.videoWidth) customCtx.drawImage(mpVideo, 0, 0, W, H);
-                    drawDots(customCtx, W, H, detection);
+                    if (mpVideo.videoWidth) customCtx.drawImage(mpVideo, rect.x, rect.y, rect.w, rect.h);
+                    drawDots(customCtx, rect, detection);
                     customCtx.restore();
                 }
                 renderSeenChips();
@@ -1960,7 +2012,15 @@
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error('이 브라우저에서는 카메라를 쓸 수 없습니다. 파일을 직접 연 경우(file://) 웹 주소(https)로 열어 주세요.');
             }
-            mpStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+            // 휴대전화는 기본이 뒷면 카메라라, 앞면(얼굴 쪽)을 먼저 요청한다.
+            try {
+                mpStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false
+                });
+            } catch (error) {
+                mpStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            }
             mpVideo = document.createElement('video');
             mpVideo.playsInline = true;
             mpVideo.muted = true;
@@ -2106,11 +2166,11 @@
             const face = document.getElementById('chipFace');
             if (hand) {
                 hand.classList.toggle('on', lastSeen.hands > 0);
-                hand.textContent = lastSeen.hands ? '✋ 손 ' + lastSeen.hands + '개 보임' : '✋ 손 —';
+                hand.textContent = lastSeen.hands ? '손 ' + lastSeen.hands + '개' : '손 안 보임';
             }
             if (face) {
                 face.classList.toggle('on', lastSeen.face);
-                face.textContent = lastSeen.face ? '🙂 얼굴 보임' : '🙂 얼굴 —';
+                face.textContent = lastSeen.face ? '얼굴 보임' : '얼굴 안 보임';
             }
         }
 
@@ -2173,6 +2233,7 @@
         const trainNameInput = document.getElementById('trainName');
         const trainStartBtn = document.getElementById('trainStart');
         const trainSaveBtn = document.getElementById('trainSave');
+        const trainCloseBtn = document.getElementById('trainClose');
         let trainPhase = 'idle';      // idle · count · collect · done
         let trainSamples = [];
         let trainRaf = 0;
@@ -2181,22 +2242,37 @@
 
         function setTrainMessage(text) { trainMsg.textContent = text; }
 
-        function drawDots(ctx, W, H, detection) {
+        // 카메라 화면 비율을 지켜 캔버스 안에 넣을 자리를 구한다(휴대전화는 세로로 찍힌다).
+        function fitRect(video, W, H) {
+            const vw = (video && video.videoWidth) || W;
+            const vh = (video && video.videoHeight) || H;
+            const scale = Math.min(W / vw, H / vh);
+            const w = vw * scale, h = vh * scale;
+            return { x: (W - w) / 2, y: (H - h) / 2, w, h };
+        }
+
+        function drawDots(ctx, rect, detection) {
+            // 화면이 커지면 점도 같이 커져야 같은 크기로 보인다
+            const faceR = Math.max(1.2, rect.w / 260);
+            const handR = Math.max(3, rect.w / 90);
             if (detection.face) {
-                ctx.fillStyle = '#60a5fa';
+                ctx.fillStyle = '#5aa9f8';
                 for (const p of detection.face) {
                     ctx.beginPath();
-                    ctx.arc(p.x * W, p.y * H, 1.4, 0, Math.PI * 2);
+                    ctx.arc(rect.x + p.x * rect.w, rect.y + p.y * rect.h, faceR, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
-            [[detection.handL, '#34d399'], [detection.handR, '#fbbf24']].forEach(pair => {
+            [[detection.handL, '#2fd39b'], [detection.handR, '#f7b731']].forEach(pair => {
                 if (!pair[0]) return;
                 ctx.fillStyle = pair[1];
+                ctx.strokeStyle = 'rgba(0,0,0,.35)';
+                ctx.lineWidth = Math.max(1, handR / 4);
                 for (const p of pair[0]) {
                     ctx.beginPath();
-                    ctx.arc(p.x * W, p.y * H, 4, 0, Math.PI * 2);
+                    ctx.arc(rect.x + p.x * rect.w, rect.y + p.y * rect.h, handR, 0, Math.PI * 2);
                     ctx.fill();
+                    ctx.stroke();
                 }
             });
         }
@@ -2204,12 +2280,14 @@
         function drawPreview(detection) {
             const ctx = trainPreview.getContext('2d');
             const W = trainPreview.width, H = trainPreview.height;
+            const rect = fitRect(mpVideo, W, H);
             ctx.save();
+            ctx.fillStyle = '#10181f';
+            ctx.fillRect(0, 0, W, H);
             ctx.translate(W, 0);
             ctx.scale(-1, 1);                       // 거울처럼 보이게
-            if (mpVideo && mpVideo.videoWidth) ctx.drawImage(mpVideo, 0, 0, W, H);
-            else { ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, W, H); }
-            drawDots(ctx, W, H, detection);
+            if (mpVideo && mpVideo.videoWidth) ctx.drawImage(mpVideo, rect.x, rect.y, rect.w, rect.h);
+            drawDots(ctx, rect, detection);
             ctx.restore();
         }
 
@@ -2280,13 +2358,14 @@
             trainStartBtn.hidden = false;
             trainStartBtn.disabled = true;
             trainStartBtn.textContent = '▶ 시작';
+            trainCloseBtn.textContent = trained.length ? '닫기 (' + trained.length + '개 저장됨)' : '닫기';
             setTrainMessage('카메라와 인식 파일을 준비하는 중입니다. 처음 한 번은 조금 걸립니다…');
             if (!trainRaf) trainLoop();
             try {
                 await ensureCamera();
                 await ensureLandmarkers();
                 trainStartBtn.disabled = false;
-                setTrainMessage('학습할 동작을 취한 뒤 「시작」을 누르세요. 3 · 2 · 1 뒤 5초 동안 기억합니다.');
+                setTrainMessage('준비됐습니다. 자세를 잡고 「시작」을 누르세요.');
             } catch (error) {
                 setTrainMessage('준비 실패: ' + error.message);
                 log('직접 학습 준비 실패: ' + error.message, true, 'log2');
@@ -2303,7 +2382,7 @@
         }
 
         document.getElementById('openTrain').addEventListener('click', openTrainModal);
-        document.getElementById('trainClose').addEventListener('click', closeTrainModal);
+        trainCloseBtn.addEventListener('click', closeTrainModal);
         trainModal.addEventListener('click', (event) => {
             if (event.target === trainModal) closeTrainModal();
         });
@@ -2317,7 +2396,7 @@
             trainNameRow.hidden = true;
             trainSaveBtn.hidden = true;
             trainStartBtn.hidden = true;
-            setTrainMessage('준비하세요! 숫자가 사라지면 5초 동안 기억합니다.');
+            setTrainMessage('3 · 2 · 1 — 숫자가 사라지면 5초 동안 그 자세를 기억합니다.');
         });
 
         trainSaveBtn.addEventListener('click', () => {
@@ -2336,7 +2415,20 @@
             else trained.push({ name, vecs: trainSamples });
             log(`동작 학습: ${name} (${trainSamples.length}장)`, false, 'log2');
             syncTrainedToMappings();
-            closeTrainModal();
+
+            // 팝업을 닫지 않고 이어서 다음 동작을 학습할 수 있게 한다.
+            trainPhase = 'idle';
+            trainSamples = [];
+            trainMissed = 0;
+            trainBar.style.width = '0%';
+            trainNameRow.hidden = true;
+            trainSaveBtn.hidden = true;
+            trainStartBtn.hidden = false;
+            trainStartBtn.disabled = false;
+            trainStartBtn.textContent = '▶ 이어서 학습';
+            trainCloseBtn.textContent = '닫기 (' + trained.length + '개 저장됨)';
+            setTrainMessage(`'${name}' 을(를) 저장했습니다. 지금까지 ${trained.length}개. ` +
+                '다음 동작을 준비하고 「이어서 학습」을, 다 했으면 「닫기」를 누르세요.');
         });
 
         // ── 저장 · 불러오기 ──
@@ -2397,6 +2489,7 @@
         }
 
         // 초기 모델 타입 표시
+        checkSupport();
         updateModelTypeDisplay();
         renderTrainedList();
         updateCustomSections();
