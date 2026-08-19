@@ -832,7 +832,7 @@
             <div id="customSection">
                 <h2>🎓 동작 직접 학습하기</h2>
                 <div class="info">
-                    티처블머신 없이 이 화면에서 바로 학습합니다. <strong>손 모양과 얼굴(고개 방향·표정)을 함께</strong> 봅니다.
+                    티처블머신 없이 이 화면에서 바로 학습합니다. <strong>양손과 얼굴(고개 방향·표정)을 함께</strong> 봅니다.
                     학습할 동작을 취할 준비를 하고 <strong>직접 학습하기</strong>를 누르면
                     <strong>3 · 2 · 1</strong> 뒤 <strong>5초 동안</strong> 그 동작을 기억합니다.
                     동작마다 한 번씩 반복하고, 동작은 2개 이상 만드세요.
@@ -1178,6 +1178,7 @@
                 }
                 resetCommandQueue();
                 resetPredictionUI();
+                if (typeof stopCamera === 'function' && !isWebcamRunning) stopCamera();
             });
         });
         
@@ -1838,7 +1839,7 @@
             
             if (modelType === 'custom') {
                 if (!mpVideo) return;
-                const detection = detectBoth(mpVideo, performance.now());
+                const detection = detectBoth(mpVideo);
                 if (customCtx) {                     // 카메라 화면과 인식한 점을 함께 보여 준다
                     const W = customCtx.canvas.width, H = customCtx.canvas.height;
                     customCtx.save();
@@ -1919,21 +1920,23 @@
             hand: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
             face: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
         };
-        const TRAIN_KEY = 'maqueen_custom_training_v2';
+        const TRAIN_KEY = 'maqueen_custom_training_v3';
         const COUNTDOWN_SEC = 3;      // 3 · 2 · 1
         const COLLECT_MS = 5000;      // 5초 동안 동작을 기억한다
         const KNN_K = 5;              // 가까운 이웃 몇 개를 볼지
         const FACE_STEP = 6;          // 얼굴 점은 478개라 일정 간격으로 골라 쓴다
-        const HAND_DIM = 42;          // 손 21점 × (x, y)
+        const HAND_DIM = 42;          // 손 한 짝 21점 × (x, y)
         const FACE_DIM = 160;         // 얼굴 80점 × (x, y)
         const FACE_WEIGHT = 0.5;      // 얼굴 값이 손보다 개수가 많아, 영향력을 비슷하게 맞춘다
+        const REL_WEIGHT = 0.6;       // 손이 얼굴 기준으로 어디에 있는지(들었는지 내렸는지)
 
         let mpVision = null, mpFileset = null;
         const landmarkers = { hand: null, face: null };
         let mpVideo = null, mpStream = null;
         let trained = [];             // [{ name, vecs: [[...]] }]
         let customCtx = null;         // 인식 화면 캔버스
-        let lastSeen = { hand: false, face: false };
+        let lastSeen = { hands: 0, face: false };
+        let mpStamp = 0;              // MediaPipe 는 시간이 항상 커져야 한다
 
         // ── 모델·카메라 준비 ──
         async function ensureLandmarker(kind) {
@@ -1942,7 +1945,7 @@
             if (!mpFileset) mpFileset = await mpVision.FilesetResolver.forVisionTasks(MP_BASE + '/wasm');
             const options = { baseOptions: { modelAssetPath: MP_MODELS[kind] }, runningMode: 'VIDEO' };
             landmarkers[kind] = kind === 'hand'
-                ? await mpVision.HandLandmarker.createFromOptions(mpFileset, Object.assign(options, { numHands: 1 }))
+                ? await mpVision.HandLandmarker.createFromOptions(mpFileset, Object.assign(options, { numHands: 2 }))
                 : await mpVision.FaceLandmarker.createFromOptions(mpFileset, Object.assign(options, { numFaces: 1 }));
             return landmarkers[kind];
         }
@@ -1980,21 +1983,38 @@
             mpVideo = null;
         }
 
-        // ── 손과 얼굴을 한 번에 인식한다 ──
-        function detectBoth(video, timeMs) {
-            const result = { hand: null, face: null };
-            if (!video) return result;
+        // ── 두 손과 얼굴을 한 번에 인식한다 ──
+        // 손은 항상 같은 자리에 넣어야 학습이 흔들리지 않으므로, 왼손/오른손을 구분해 담는다.
+        function detectBoth(video) {
+            const result = { handL: null, handR: null, face: null };
+            // 카메라 영상이 아직 준비되지 않았으면 인식을 돌리지 않는다(두 번째 학습에서 멈추던 원인).
+            if (!video || !video.videoWidth || video.readyState < 2) {
+                lastSeen = { hands: 0, face: false };
+                return result;
+            }
+            mpStamp += 2;
             try {
                 if (landmarkers.hand) {
-                    const r = landmarkers.hand.detectForVideo(video, timeMs);
-                    result.hand = (r.landmarks && r.landmarks[0]) || null;
+                    const r = landmarkers.hand.detectForVideo(video, mpStamp);
+                    const list = r.landmarks || [];
+                    const sides = r.handedness || r.handednesses || [];
+                    list.forEach((points, i) => {
+                        const side = sides[i] && sides[i][0] && sides[i][0].categoryName;
+                        if (side === 'Left' && !result.handL) result.handL = points;
+                        else if (side === 'Right' && !result.handR) result.handR = points;
+                        else if (!result.handL) result.handL = points;
+                        else if (!result.handR) result.handR = points;
+                    });
                 }
                 if (landmarkers.face) {
-                    const r = landmarkers.face.detectForVideo(video, timeMs + 1);
+                    const r = landmarkers.face.detectForVideo(video, mpStamp + 1);
                     result.face = (r.faceLandmarks && r.faceLandmarks[0]) || null;
                 }
             } catch (error) { /* 한 프레임 실패는 넘어간다 */ }
-            lastSeen = { hand: !!result.hand, face: !!result.face };
+            lastSeen = {
+                hands: (result.handL ? 1 : 0) + (result.handR ? 1 : 0),
+                face: !!result.face
+            };
             return result;
         }
 
@@ -2017,14 +2037,33 @@
             return vec;
         }
 
-        // 손과 얼굴을 이어 붙여 하나의 특징으로 만든다.
-        // 안 보이는 쪽은 0으로 채우고 맨 앞에 "보였는지" 표시를 둔다 → 손만 든 동작과 얼굴만 쓴 동작이 섞이지 않는다.
+        // 손이 얼굴을 기준으로 어디에 있는지 — 들었는지 내렸는지, 왼쪽인지 오른쪽인지를 담는다.
+        function handPlace(hand, face) {
+            if (!hand || !face) return [0, 0];
+            const nose = face[1], eyeL = face[33], eyeR = face[263];
+            if (!nose || !eyeL || !eyeR) return [0, 0];
+            const scale = Math.hypot(eyeL.x - eyeR.x, eyeL.y - eyeR.y) || 1e-6;
+            return [
+                (hand[0].x - nose.x) / scale * REL_WEIGHT,
+                (hand[0].y - nose.y) / scale * REL_WEIGHT
+            ];
+        }
+
+        // 왼손 · 오른손 · 얼굴을 이어 붙여 하나의 특징으로 만든다.
+        // 안 보이는 쪽은 0으로 채우고 앞에 "보였는지" 표시를 둔다 → 한 손 동작과 두 손 동작이 섞이지 않는다.
         function combinedFeature(detection) {
-            const hand = partFeature('hand', detection.hand);
+            const handL = partFeature('hand', detection.handL);
+            const handR = partFeature('hand', detection.handR);
             const face = partFeature('face', detection.face);
-            if (!hand && !face) return null;
-            const vec = [hand ? 1 : 0];
-            for (let i = 0; i < HAND_DIM; i++) vec.push(hand ? (hand[i] || 0) : 0);
+            if (!handL && !handR && !face) return null;
+            const vec = [];
+            [[handL, detection.handL], [handR, detection.handR]].forEach(pair => {
+                const feature = pair[0];
+                vec.push(feature ? 1 : 0);
+                for (let i = 0; i < HAND_DIM; i++) vec.push(feature ? (feature[i] || 0) : 0);
+                const place = handPlace(pair[1], detection.face);
+                vec.push(place[0], place[1]);
+            });
             vec.push(face ? 1 : 0);
             for (let i = 0; i < FACE_DIM; i++) vec.push(face ? (face[i] || 0) : 0);
             return vec;
@@ -2066,8 +2105,8 @@
             const hand = document.getElementById('chipHand');
             const face = document.getElementById('chipFace');
             if (hand) {
-                hand.classList.toggle('on', lastSeen.hand);
-                hand.textContent = lastSeen.hand ? '✋ 손 보임' : '✋ 손 —';
+                hand.classList.toggle('on', lastSeen.hands > 0);
+                hand.textContent = lastSeen.hands ? '✋ 손 ' + lastSeen.hands + '개 보임' : '✋ 손 —';
             }
             if (face) {
                 face.classList.toggle('on', lastSeen.face);
@@ -2151,14 +2190,15 @@
                     ctx.fill();
                 }
             }
-            if (detection.hand) {
-                ctx.fillStyle = '#34d399';
-                for (const p of detection.hand) {
+            [[detection.handL, '#34d399'], [detection.handR, '#fbbf24']].forEach(pair => {
+                if (!pair[0]) return;
+                ctx.fillStyle = pair[1];
+                for (const p of pair[0]) {
                     ctx.beginPath();
                     ctx.arc(p.x * W, p.y * H, 4, 0, Math.PI * 2);
                     ctx.fill();
                 }
-            }
+            });
         }
 
         function drawPreview(detection) {
@@ -2176,7 +2216,7 @@
         function trainLoop() {
             if (trainModal.hidden) return;
             const now = performance.now();
-            const detection = detectBoth(mpVideo, now);
+            const detection = detectBoth(mpVideo);
             drawPreview(detection);
             renderSeenChips();
 
@@ -2258,7 +2298,8 @@
             trainPhase = 'idle';
             if (trainRaf) cancelAnimationFrame(trainRaf);
             trainRaf = 0;
-            if (!isWebcamRunning) stopCamera();
+            // 카메라는 그대로 켜 둔다. 껐다 바로 다시 켜면 영상이 준비되기 전에 인식이 돌아
+            // 두 번째 동작부터 아무것도 못 잡는 문제가 생긴다. 정리는 웹캠 중지·단계 이동에서 한다.
         }
 
         document.getElementById('openTrain').addEventListener('click', openTrainModal);
