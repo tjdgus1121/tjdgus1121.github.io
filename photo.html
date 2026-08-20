@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수능 응시원서 사진 변환기</title>
+  <meta name="theme-color" content="#14171C">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      /* 인화지 계측대 — 차가운 중성색 + 사이아노타입 틸 */
+      --paper: #F1F3F6;
+      --surface: #FFFFFF;
+      --surface-2: #F7F8FA;
+      --stage: #E4E7EC;
+      --ink: #14171C;
+      --ink-2: #3A414D;
+      --muted: #667085;
+      --faint: #98A2B3;
+      --rule: #D8DDE5;
+      --rule-2: #E8EBF0;
+      --accent: #0F6E7B;
+      --accent-ink: #FFFFFF;
+      --accent-soft: #E2F0F2;
+      --pass: #146C43;
+      --pass-soft: #E3F2E9;
+      --warn: #9A5B08;
+      --warn-soft: #FBF0DF;
+      --fail: #A8321F;
+      --fail-soft: #FBEAE7;
+      --shadow: 0 1px 2px rgba(20, 23, 28, .06), 0 8px 24px rgba(20, 23, 28, .06);
+      --r: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --paper: #0E1116;
+        --surface: #171B22;
+        --surface-2: #1E232B;
+        --stage: #23282F;
+        --ink: #E9ECF1;
+        --ink-2: #C2C9D4;
+        --muted: #96A0AF;
+        --faint: #6E7887;
+        --rule: #2C323B;
+        --rule-2: #232830;
+        --accent: #45B3C0;
+        --accent-ink: #062226;
+        --accent-soft: #14343A;
+        --pass: #62C48D;
+        --pass-soft: #16301F;
+        --warn: #E0A552;
+        --warn-soft: #33260F;
+        --fail: #EF8878;
+        --fail-soft: #351B17;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --paper: #0E1116;
+      --surface: #171B22;
+      --surface-2: #1E232B;
+      --stage: #23282F;
+      --ink: #E9ECF1;
+      --ink-2: #C2C9D4;
+      --muted: #96A0AF;
+      --faint: #6E7887;
+      --rule: #2C323B;
+      --rule-2: #232830;
+      --accent: #45B3C0;
+      --accent-ink: #062226;
+      --accent-soft: #14343A;
+      --pass: #62C48D;
+      --pass-soft: #16301F;
+      --warn: #E0A552;
+      --warn-soft: #33260F;
+      --fail: #EF8878;
+      --fail-soft: #351B17;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    }
+
+    body {
+      font-family: 'IBM Plex Sans KR', system-ui, -apple-system, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono {
+      font-family: 'IBM Plex Mono', ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+
+    /* ── Header ── */
+    .hdr {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    h1 {
+      font-size: clamp(24px, 4.5vw, 33px);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1.2;
+      text-wrap: balance;
+    }
+
+    .sub {
+      font-size: 14.5px;
+      color: var(--muted);
+      max-width: 62ch;
+    }
+
+    .privacy {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      align-self: flex-start;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 5px 13px 5px 10px;
+      font-size: 12.5px;
+      font-weight: 500;
+    }
+
+    .privacy svg {
+      flex-shrink: 0;
+    }
+
+    /* ── Layout ── */
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (min-width: 900px) {
+      .cols {
+        grid-template-columns: minmax(0, 1fr) 372px;
+        gap: 28px;
+      }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-hd {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--rule-2);
+    }
+
+    .panel-ttl {
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+    }
+
+    .panel-note {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--faint);
+      letter-spacing: .02em;
+    }
+
+    .panel-bd {
+      padding: 18px;
+    }
+
+    /* ── Dropzone ── */
+    .drop {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-height: 340px;
+      padding: 40px 24px;
+      border: 1.5px dashed var(--rule);
+      border-radius: var(--r);
+      background: var(--surface-2);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .18s, background .18s;
+    }
+
+    .drop:hover,
+    .drop:focus-visible,
+    .drop.over {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      outline: none;
+    }
+
+    .drop-ico {
+      color: var(--accent);
+    }
+
+    .drop-ttl {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .drop-sub {
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 34ch;
+    }
+
+    .drop-formats {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--faint);
+      letter-spacing: .04em;
+    }
+
+    /* ── Stage ── */
+    .stage-area {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .stage-area.on {
+      display: flex;
+    }
+
+    .stage {
+      position: relative;
+      width: min(100%, 330px);
+      aspect-ratio: 413 / 531;
+      background: var(--stage);
+      border-radius: 4px;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+      box-shadow: 0 0 0 1px var(--rule), var(--shadow);
+    }
+
+    .stage:active {
+      cursor: grabbing;
+    }
+
+    .stage:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .stage canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .stage-ovl {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* 뷰파인더 코너 브래킷 */
+    .bracket {
+      fill: none;
+      stroke: rgba(255, 255, 255, .92);
+      stroke-width: 3;
+      stroke-linecap: square;
+      filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, .55));
+    }
+
+    .guide-line {
+      stroke: #E8552F;
+      stroke-width: 2;
+      stroke-dasharray: 7 6;
+      opacity: .92;
+    }
+
+    .guide-oval {
+      fill: none;
+      stroke: #E8552F;
+      stroke-width: 2.5;
+      stroke-dasharray: 9 8;
+      opacity: .92;
+    }
+
+    .guide-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 17px;
+      font-weight: 500;
+      fill: #E8552F;
+    }
+
+    .guide-hidden {
+      display: none;
+    }
+
+    .stage-cap {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11.5px;
+      color: var(--muted);
+      letter-spacing: .03em;
+      text-align: center;
+    }
+
+    /* ── Controls ── */
+    .ctrls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .ctrl-row {
+      display: grid;
+      grid-template-columns: 62px 1fr 52px;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .ctrl-lbl {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ink-2);
+    }
+
+    .ctrl-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11.5px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 20px;
+      background: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 3px;
+      background: var(--rule);
+      border-radius: 2px;
+    }
+
+    input[type=range]::-moz-range-track {
+      height: 3px;
+      background: var(--rule);
+      border-radius: 2px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 17px;
+      height: 17px;
+      margin-top: -7px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--surface);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--surface);
+    }
+
+    input[type=range]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 8px 13px;
+      border-radius: 8px;
+      border: 1px solid var(--rule);
+      background: var(--surface);
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: border-color .15s, background .15s, color .15s;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .btn[aria-pressed="true"] {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Spec checklist ── */
+    .checks {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 18px 1fr auto;
+      align-items: baseline;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--rule-2);
+    }
+
+    .check:last-child {
+      border-bottom: none;
+    }
+
+    .check-ico {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    .check.pass .check-ico {
+      color: var(--pass);
+    }
+
+    .check.warn .check-ico {
+      color: var(--warn);
+    }
+
+    .check.fail .check-ico {
+      color: var(--fail);
+    }
+
+    .check.idle .check-ico {
+      color: var(--faint);
+    }
+
+    .check-body {
+      min-width: 0;
+    }
+
+    .check-name {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .check-msg {
+      display: block;
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 1px;
+      word-break: keep-all;
+    }
+
+    .check.warn .check-msg {
+      color: var(--warn);
+    }
+
+    .check.fail .check-msg {
+      color: var(--fail);
+    }
+
+    .check-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      color: var(--ink-2);
+      white-space: nowrap;
+    }
+
+    /* ── Name + save ── */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-2);
+    }
+
+    .field input {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--ink);
+      width: 100%;
+    }
+
+    .field input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+      border-color: var(--accent);
+    }
+
+    .btn-save {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px 0;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: var(--accent-ink);
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+
+    .btn-save:hover:not(:disabled) {
+      opacity: .88;
+    }
+
+    .btn-save:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .btn-save:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .save-msg {
+      font-size: 12.5px;
+      margin-top: 9px;
+      min-height: 19px;
+      text-align: center;
+      word-break: keep-all;
+    }
+
+    .save-msg.ok {
+      color: var(--pass);
+    }
+
+    .save-msg.err {
+      color: var(--fail);
+    }
+
+    /* ── Spec reference ── */
+    .spec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .spec-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 12.5px;
+    }
+
+    .spec-k {
+      color: var(--muted);
+    }
+
+    .spec-v {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      color: var(--ink);
+      text-align: right;
+    }
+
+    .spec-v em {
+      font-style: normal;
+      color: var(--faint);
+      font-size: 11px;
+      display: block;
+    }
+
+    .caveat {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: var(--warn-soft);
+      border-radius: 9px;
+      font-size: 12px;
+      line-height: 1.65;
+      color: var(--warn);
+      word-break: keep-all;
+    }
+
+    .caveat b {
+      font-weight: 600;
+    }
+
+    .foot {
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--rule);
+      font-size: 11.5px;
+      color: var(--faint);
+      line-height: 1.7;
+      word-break: keep-all;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header class="hdr">
+      <div class="eyebrow">2026학년도 수능 응시원서</div>
+      <h1>수능 응시원서 사진 변환기</h1>
+      <p class="sub">아무 사진이나 올리면 mycsat.re.kr 업로드 규격(413 × 531 px · 300 dpi · JPG · 500 KB 이하)에 맞춰 잘라
+        줍니다. 얼굴 위치 가이드에 맞추고 저장만 하면 됩니다.</p>
+      <span class="privacy">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        사진은 기기 밖으로 전송되지 않습니다
+      </span>
+    </header>
+
+    <div class="cols">
+      <!-- ── 좌: 계측 스테이지 ── -->
+      <section class="panel">
+        <div class="panel-hd">
+          <span class="panel-ttl">사진 맞추기</span>
+          <span class="panel-note" id="src-note">사진을 올려 주세요</span>
+        </div>
+        <div class="panel-bd">
+          <div class="drop" id="drop" tabindex="0" role="button"
+            aria-label="사진 파일 선택 — 클릭하거나 파일을 끌어다 놓으세요">
+            <svg class="drop-ico" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path>
+              <circle cx="12" cy="13" r="3.5"></circle>
+            </svg>
+            <div>
+              <div class="drop-ttl">사진 선택하기</div>
+              <div class="drop-sub">휴대폰 사진첩의 얼굴 사진이면 됩니다. 정면·상반신 사진이 가장 잘 맞습니다.</div>
+            </div>
+            <div class="drop-formats">JPG · PNG · HEIC · WEBP</div>
+          </div>
+
+          <div class="stage-area" id="stage-area">
+            <div class="stage" id="stage" tabindex="0" role="application"
+              aria-label="사진 위치 조정 — 끌어서 이동, 방향키로 미세 조정">
+              <canvas id="preview"></canvas>
+              <svg class="stage-ovl" viewBox="0 0 413 531" preserveAspectRatio="none" aria-hidden="true">
+                <g id="guide">
+                  <ellipse class="guide-oval" cx="206.5" cy="247" rx="139" ry="200"></ellipse>
+                  <line class="guide-line" x1="24" y1="47" x2="389" y2="47"></line>
+                  <line class="guide-line" x1="24" y1="448" x2="389" y2="448"></line>
+                  <text class="guide-tag" x="30" y="40">머리 끝</text>
+                  <text class="guide-tag" x="30" y="470">턱 끝</text>
+                </g>
+                <g class="bracket">
+                  <path d="M10 34 L10 10 L34 10"></path>
+                  <path d="M379 10 L403 10 L403 34"></path>
+                  <path d="M403 497 L403 521 L379 521"></path>
+                  <path d="M34 521 L10 521 L10 497"></path>
+                </g>
+              </svg>
+            </div>
+            <div class="stage-cap">끌어서 이동 · 두 손가락으로 확대 · 413 × 531 px 영역만 저장됩니다</div>
+
+            <div class="btn-row">
+              <button class="btn" id="btn-guide" aria-pressed="true">얼굴 가이드</button>
+              <button class="btn" id="btn-reset">위치 초기화</button>
+              <button class="btn" id="btn-change">다른 사진</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 우: 조작 + 검사 ── -->
+      <div class="cols-right" style="display:flex;flex-direction:column;gap:20px;">
+        <section class="panel" id="panel-ctrl" hidden>
+          <div class="panel-hd"><span class="panel-ttl">조정</span></div>
+          <div class="panel-bd">
+            <div class="ctrls">
+              <div class="ctrl-row">
+                <label class="ctrl-lbl" for="r-zoom">확대</label>
+                <input type="range" id="r-zoom" min="0" max="1" step="0.001" value="0">
+                <span class="ctrl-val" id="v-zoom">100%</span>
+              </div>
+              <div class="ctrl-row">
+                <label class="ctrl-lbl" for="r-rot">회전</label>
+                <input type="range" id="r-rot" min="-15" max="15" step="0.5" value="0">
+                <span class="ctrl-val" id="v-rot">0°</span>
+              </div>
+              <div class="ctrl-row">
+                <label class="ctrl-lbl" for="r-bri">밝기</label>
+                <input type="range" id="r-bri" min="70" max="145" step="1" value="100">
+                <span class="ctrl-val" id="v-bri">100%</span>
+              </div>
+              <div class="ctrl-row">
+                <label class="ctrl-lbl" for="r-con">대비</label>
+                <input type="range" id="r-con" min="70" max="145" step="1" value="100">
+                <span class="ctrl-val" id="v-con">100%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-check" hidden>
+          <div class="panel-hd">
+            <span class="panel-ttl">규격 검사</span>
+            <span class="panel-note">실시간</span>
+          </div>
+          <div class="panel-bd">
+            <div class="checks" id="checks"></div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-save" hidden>
+          <div class="panel-hd"><span class="panel-ttl">저장</span></div>
+          <div class="panel-bd">
+            <div class="field">
+              <label for="in-name">이름 <span style="color:var(--faint);font-weight:400">(파일명에 들어갑니다 · 선택)</span></label>
+              <input type="text" id="in-name" placeholder="예: 김수능" maxlength="20" autocomplete="off">
+            </div>
+            <button class="btn-save" id="btn-save" disabled>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              규격 사진 저장
+            </button>
+            <div class="save-msg" id="save-msg" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-hd">
+            <span class="panel-ttl">업로드 규격</span>
+            <span class="panel-note">mycsat.re.kr</span>
+          </div>
+          <div class="panel-bd">
+            <div class="spec-list">
+              <div class="spec-item"><span class="spec-k">크기</span><span class="spec-v">413 × 531 px<em>허용 395~431 ×
+                    507~550</em></span></div>
+              <div class="spec-item"><span class="spec-k">형식</span><span class="spec-v">JPG / JPEG</span></div>
+              <div class="spec-item"><span class="spec-k">용량</span><span class="spec-v">500 KB 이하</span></div>
+              <div class="spec-item"><span class="spec-k">해상도</span><span class="spec-v">300 dpi 권장</span></div>
+              <div class="spec-item"><span class="spec-k">촬영 시기</span><span class="spec-v">6개월 이내</span></div>
+            </div>
+            <div class="caveat">
+              <b>이 도구가 못 고쳐 주는 것</b> — 여권용 규격 사진은 배경이 단색(흰색 권장)이고, 정면을 보며, 모자·색안경을 쓰지 않아야 합니다.
+              배경이 지저분하거나 옆을 보는 사진은 크기를 맞춰도 반려될 수 있습니다.
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <p class="foot">
+      규격 출처: 한국교육과정평가원 수능 시행 세부계획 「응시원서 작성 방법 및 접수 방법」.
+      최종 제출 전 mycsat.re.kr에서 실제 업로드가 되는지 반드시 확인하세요.
+    </p>
+  </div>
+
+  <input type="file" id="file" accept="image/*" class="sr-only" tabindex="-1">
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ── 규격 상수 ──
+      const OUT_W = 413, OUT_H = 531, DPI = 300, MAX_BYTES = 500 * 1024;
+      const MONTHS_VALID = 6;
+
+      // ── 상태 ──
+      let img = null;            // ImageBitmap | HTMLImageElement
+      let srcName = '';
+      let shotDate = null;       // EXIF 촬영일
+      let baseScale = 1;         // 프레임을 꽉 채우는 최소 배율
+      let scale = 1, offX = 0, offY = 0, rot = 0, bri = 1, con = 1;
+      let lastBlob = null, lastQuality = 0;
+      let encodeTimer = null;
+
+      const $ = id => document.getElementById(id);
+      const stage = $('stage'), cv = $('preview'), ctx = cv.getContext('2d');
+
+      // ── 파일 선택 ──
+      const drop = $('drop'), fileInput = $('file');
+      drop.addEventListener('click', () => fileInput.click());
+      drop.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+      });
+      $('btn-change').addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', e => {
+        const f = e.target.files && e.target.files[0];
+        if (f) loadFile(f);
+        fileInput.value = '';
+      });
+      ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => {
+        e.preventDefault(); drop.classList.add('over');
+      }));
+      ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => {
+        e.preventDefault(); drop.classList.remove('over');
+      }));
+      drop.addEventListener('drop', e => {
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) loadFile(f);
+      });
+
+      async function loadFile(file) {
+        if (!file.type.startsWith('image/')) {
+          setSaveMsg('이미지 파일만 올릴 수 있습니다.', 'err'); return;
+        }
+        setSaveMsg('');
+        srcName = file.name.replace(/\.[^.]+$/, '');
+
+        const buf = await file.arrayBuffer();
+        shotDate = readExifDate(buf);
+
+        try {
+          // EXIF 회전 정보를 반영해서 디코딩
+          img = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        } catch (err) {
+          img = await loadViaImgTag(file);
+          if (!img) { setSaveMsg('이 사진은 열 수 없습니다. 다른 사진을 선택해 주세요.', 'err'); return; }
+        }
+
+        drop.style.display = 'none';
+        $('stage-area').classList.add('on');
+        ['panel-ctrl', 'panel-check', 'panel-save'].forEach(id => $(id).hidden = false);
+        $('src-note').textContent = img.width + ' × ' + img.height + ' px';
+
+        resetTransform();
+        sizeCanvas();
+        render();
+      }
+
+      function loadViaImgTag(file) {
+        return new Promise(res => {
+          const url = URL.createObjectURL(file);
+          const el = new Image();
+          el.onload = () => { URL.revokeObjectURL(url); res(el); };
+          el.onerror = () => { URL.revokeObjectURL(url); res(null); };
+          el.src = url;
+        });
+      }
+
+      // ── 변형 ──
+      function resetTransform() {
+        baseScale = Math.max(OUT_W / img.width, OUT_H / img.height);
+        scale = baseScale; offX = 0; offY = 0; rot = 0; bri = 1; con = 1;
+        $('r-zoom').value = 0; $('r-rot').value = 0;
+        $('r-bri').value = 100; $('r-con').value = 100;
+        syncCtrlLabels();
+      }
+
+      // 확대 슬라이더 0~1 → baseScale ~ baseScale*3
+      const zoomFromSlider = t => baseScale * (1 + t * 2);
+      const sliderFromZoom = s => Math.min(1, Math.max(0, (s / baseScale - 1) / 2));
+
+      function syncCtrlLabels() {
+        $('v-zoom').textContent = Math.round(scale / baseScale * 100) + '%';
+        $('v-rot').textContent = (rot > 0 ? '+' : '') + rot.toFixed(1).replace(/\.0$/, '') + '°';
+        $('v-bri').textContent = Math.round(bri * 100) + '%';
+        $('v-con').textContent = Math.round(con * 100) + '%';
+      }
+
+      $('r-zoom').addEventListener('input', e => {
+        scale = zoomFromSlider(parseFloat(e.target.value)); syncCtrlLabels(); render();
+      });
+      $('r-rot').addEventListener('input', e => {
+        rot = parseFloat(e.target.value); syncCtrlLabels(); render();
+      });
+      $('r-bri').addEventListener('input', e => {
+        bri = parseInt(e.target.value, 10) / 100; syncCtrlLabels(); render();
+      });
+      $('r-con').addEventListener('input', e => {
+        con = parseInt(e.target.value, 10) / 100; syncCtrlLabels(); render();
+      });
+      $('btn-reset').addEventListener('click', () => { if (img) { resetTransform(); render(); } });
+
+      $('btn-guide').addEventListener('click', e => {
+        const on = e.currentTarget.getAttribute('aria-pressed') === 'true';
+        e.currentTarget.setAttribute('aria-pressed', String(!on));
+        $('guide').classList.toggle('guide-hidden', on);
+      });
+
+      // ── 포인터: 이동 + 핀치 확대 ──
+      const pts = new Map();
+      let pinchStart = 0, pinchScale0 = 1;
+
+      stage.addEventListener('pointerdown', e => {
+        if (!img) return;
+        stage.setPointerCapture(e.pointerId);
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pts.size === 2) { pinchStart = pinchDist(); pinchScale0 = scale; }
+      });
+      stage.addEventListener('pointermove', e => {
+        if (!img || !pts.has(e.pointerId)) return;
+        const prev = pts.get(e.pointerId);
+        const k = stage.clientWidth / OUT_W;   // 화면px → 출력px
+        if (pts.size === 1) {
+          offX += (e.clientX - prev.x) / k;
+          offY += (e.clientY - prev.y) / k;
+          render();
+        }
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pts.size === 2 && pinchStart > 0) {
+          const d = pinchDist();
+          scale = clampScale(pinchScale0 * (d / pinchStart));
+          $('r-zoom').value = sliderFromZoom(scale);
+          syncCtrlLabels(); render();
+        }
+      });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(t =>
+        stage.addEventListener(t, e => { pts.delete(e.pointerId); if (pts.size < 2) pinchStart = 0; })
+      );
+      stage.addEventListener('wheel', e => {
+        if (!img) return;
+        e.preventDefault();
+        scale = clampScale(scale * (e.deltaY < 0 ? 1.06 : 1 / 1.06));
+        $('r-zoom').value = sliderFromZoom(scale);
+        syncCtrlLabels(); render();
+      }, { passive: false });
+
+      stage.addEventListener('keydown', e => {
+        if (!img) return;
+        const step = e.shiftKey ? 12 : 4;
+        const map = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+        if (map[e.key]) {
+          e.preventDefault();
+          offX += map[e.key][0]; offY += map[e.key][1]; render();
+        }
+      });
+
+      function pinchDist() {
+        const a = [...pts.values()];
+        return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+      }
+      const clampScale = s => Math.min(baseScale * 3, Math.max(baseScale, s));
+
+      // ── 렌더 ──
+      function sizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        const w = stage.clientWidth, h = stage.clientHeight;
+        cv.width = Math.round(w * dpr);
+        cv.height = Math.round(h * dpr);
+      }
+      window.addEventListener('resize', () => { if (img) { sizeCanvas(); render(); } });
+
+      function paint(c, w, h) {
+        const k = w / OUT_W;
+        c.save();
+        c.fillStyle = '#FFFFFF';
+        c.fillRect(0, 0, w, h);
+        if (bri !== 1 || con !== 1) {
+          c.filter = 'brightness(' + bri + ') contrast(' + con + ')';
+        }
+        c.translate((OUT_W / 2 + offX) * k, (OUT_H / 2 + offY) * k);
+        c.rotate(rot * Math.PI / 180);
+        c.scale(scale * k, scale * k);
+        c.imageSmoothingQuality = 'high';
+        c.drawImage(img, -img.width / 2, -img.height / 2);
+        c.restore();
+      }
+
+      function render() {
+        if (!img) return;
+        paint(ctx, cv.width, cv.height);
+        scheduleEncode();
+      }
+
+      // ── JPEG 인코딩 (500KB 이하 + 300dpi) ──
+      const QUALITIES = [0.95, 0.92, 0.88, 0.84, 0.8, 0.74, 0.68, 0.6, 0.5, 0.42];
+
+      function toBlob(canvas, q) {
+        return new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+      }
+
+      async function encode() {
+        const off = document.createElement('canvas');
+        off.width = OUT_W; off.height = OUT_H;
+        paint(off.getContext('2d'), OUT_W, OUT_H);
+
+        let blob = null, q = 0;
+        for (const cand of QUALITIES) {
+          blob = await toBlob(off, cand); q = cand;
+          if (blob && blob.size <= MAX_BYTES) break;
+        }
+        if (!blob) return null;
+
+        const patched = setJpegDpi(await blob.arrayBuffer(), DPI);
+        lastBlob = new Blob([patched], { type: 'image/jpeg' });
+        lastQuality = q;
+        return lastBlob;
+      }
+
+      function scheduleEncode() {
+        clearTimeout(encodeTimer);
+        encodeTimer = setTimeout(async () => {
+          await encode();
+          renderChecks();
+          $('btn-save').disabled = !lastBlob;
+        }, 220);
+      }
+
+      // JFIF APP0의 밀도 필드를 300dpi로 교체 (canvas는 기본 72dpi로 기록)
+      function setJpegDpi(buffer, dpi) {
+        const b = new Uint8Array(buffer);
+        if (b[0] !== 0xFF || b[1] !== 0xD8) return b;
+        const isJfif = b[2] === 0xFF && b[3] === 0xE0 &&
+          b[6] === 0x4A && b[7] === 0x46 && b[8] === 0x49 && b[9] === 0x46 && b[10] === 0x00;
+        if (isJfif) {
+          b[13] = 1;                                    // units = dots per inch
+          b[14] = (dpi >> 8) & 0xFF; b[15] = dpi & 0xFF; // X density
+          b[16] = (dpi >> 8) & 0xFF; b[17] = dpi & 0xFF; // Y density
+          return b;
+        }
+        // APP0 세그먼트가 없으면 새로 끼워 넣음
+        const app0 = new Uint8Array([
+          0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01,
+          (dpi >> 8) & 0xFF, dpi & 0xFF, (dpi >> 8) & 0xFF, dpi & 0xFF, 0x00, 0x00
+        ]);
+        const out = new Uint8Array(b.length + app0.length);
+        out.set(b.subarray(0, 2), 0);
+        out.set(app0, 2);
+        out.set(b.subarray(2), 2 + app0.length);
+        return out;
+      }
+
+      // ── EXIF 촬영일 ──
+      function readExifDate(buffer) {
+        try {
+          const dv = new DataView(buffer);
+          if (dv.getUint16(0) !== 0xFFD8) return null;
+          let off = 2;
+          while (off + 4 <= dv.byteLength) {
+            const marker = dv.getUint16(off);
+            if ((marker & 0xFF00) !== 0xFF00) break;
+            if (marker === 0xFFDA) break;               // 이미지 데이터 시작
+            const size = dv.getUint16(off + 2);
+            if (marker === 0xFFE1 && off + 10 < dv.byteLength &&
+              dv.getUint32(off + 4) === 0x45786966) {   // "Exif"
+              return parseTiff(dv, off + 10);
+            }
+            off += 2 + size;
+          }
+        } catch (e) { }
+        return null;
+      }
+
+      function parseTiff(dv, base) {
+        const le = dv.getUint16(base) === 0x4949;
+        const u16 = o => dv.getUint16(o, le), u32 = o => dv.getUint32(o, le);
+        if (u16(base + 2) !== 42) return null;
+
+        const findTag = (ifd, tag) => {
+          const n = u16(ifd);
+          for (let i = 0; i < n; i++) {
+            const e = ifd + 2 + i * 12;
+            if (u16(e) !== tag) continue;
+            const type = u16(e + 2), count = u32(e + 4);
+            if (type === 4) return u32(e + 8);           // LONG (포인터)
+            const vo = count > 4 ? base + u32(e + 8) : e + 8;
+            let s = '';
+            for (let j = 0; j < count - 1; j++) s += String.fromCharCode(dv.getUint8(vo + j));
+            return s;
+          }
+          return null;
+        };
+
+        const ifd0 = base + u32(base + 4);
+        const exifPtr = findTag(ifd0, 0x8769);
+        let raw = null;
+        if (typeof exifPtr === 'number') raw = findTag(base + exifPtr, 0x9003); // DateTimeOriginal
+        if (!raw) raw = findTag(ifd0, 0x0132);                                   // DateTime
+        if (typeof raw !== 'string') return null;
+
+        const m = raw.match(/^(\d{4}):(\d{2}):(\d{2})/);
+        if (!m) return null;
+        const d = new Date(+m[1], +m[2] - 1, +m[3]);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      // ── 규격 검사 패널 ──
+      function renderChecks() {
+        const rows = [];
+
+        rows.push({
+          s: 'pass', name: '사진 크기',
+          val: OUT_W + ' × ' + OUT_H,
+          msg: '권장 규격에 정확히 맞춰 잘립니다.'
+        });
+        rows.push({ s: 'pass', name: '파일 형식', val: 'JPEG', msg: '' });
+        rows.push({ s: 'pass', name: '해상도', val: DPI + ' dpi', msg: '' });
+
+        if (lastBlob) {
+          const kb = lastBlob.size / 1024;
+          rows.push({
+            s: 'pass', name: '파일 크기',
+            val: kb.toFixed(0) + ' KB',
+            msg: '500 KB 이하' + (lastQuality < 0.9 ? ' (품질 ' + Math.round(lastQuality * 100) + '%로 압축)' : '')
+          });
+        } else {
+          rows.push({ s: 'idle', name: '파일 크기', val: '계산 중', msg: '' });
+        }
+
+        // 원본 해상도 — 잘라낼 영역이 413×531보다 작으면 확대 보정이 들어감
+        const srcCropW = OUT_W / scale;
+        const ratio = srcCropW / OUT_W;
+        if (ratio >= 1) {
+          rows.push({
+            s: 'pass', name: '원본 화질', val: Math.round(ratio * 100) + '%',
+            msg: '원본이 충분히 큽니다.'
+          });
+        } else if (ratio >= 0.72) {
+          rows.push({
+            s: 'warn', name: '원본 화질', val: Math.round(ratio * 100) + '%',
+            msg: '원본을 조금 늘려 씁니다. 화질이 약간 떨어질 수 있어요.'
+          });
+        } else {
+          rows.push({
+            s: 'fail', name: '원본 화질', val: Math.round(ratio * 100) + '%',
+            msg: '너무 크게 확대했습니다. 확대를 줄이거나 더 큰 사진을 쓰세요.'
+          });
+        }
+
+        // 촬영 시기
+        if (shotDate) {
+          const limit = new Date();
+          limit.setMonth(limit.getMonth() - MONTHS_VALID);
+          const label = shotDate.getFullYear() + '.' + String(shotDate.getMonth() + 1).padStart(2, '0');
+          if (shotDate >= limit) {
+            rows.push({ s: 'pass', name: '촬영 시기', val: label, msg: '6개월 이내입니다.' });
+          } else {
+            rows.push({
+              s: 'fail', name: '촬영 시기', val: label,
+              msg: '6개월이 지난 사진입니다. 최근에 찍은 사진을 쓰세요.'
+            });
+          }
+        } else {
+          rows.push({
+            s: 'warn', name: '촬영 시기', val: '알 수 없음',
+            msg: '사진에 촬영 날짜 정보가 없습니다. 6개월 이내인지 직접 확인하세요.'
+          });
+        }
+
+        const icons = { pass: '✓', warn: '!', fail: '×', idle: '·' };
+        $('checks').innerHTML = rows.map(r =>
+          '<div class="check ' + r.s + '">' +
+          '<span class="check-ico" aria-hidden="true">' + icons[r.s] + '</span>' +
+          '<span class="check-body"><span class="check-name">' + r.name + '</span>' +
+          (r.msg ? '<span class="check-msg">' + r.msg + '</span>' : '') + '</span>' +
+          '<span class="check-val">' + r.val + '</span>' +
+          '</div>'
+        ).join('');
+      }
+
+      // ── 저장 ──
+      function setSaveMsg(t, cls) {
+        const el = $('save-msg');
+        el.textContent = t;
+        el.className = 'save-msg' + (cls ? ' ' + cls : '');
+      }
+
+      function fileName() {
+        const raw = $('in-name').value.trim();
+        const safe = raw.replace(/[\\/:*?"<>|]/g, '').slice(0, 20);
+        return (safe ? safe + '_응시원서사진' : '응시원서사진_413x531') + '.jpg';
+      }
+
+      $('btn-save').addEventListener('click', async () => {
+        const btn = $('btn-save');
+        btn.disabled = true;
+        setSaveMsg('사진을 만드는 중…');
+        try {
+          clearTimeout(encodeTimer);
+          const blob = await encode();
+          renderChecks();
+          if (!blob) { setSaveMsg('사진을 만들지 못했습니다. 다시 시도해 주세요.', 'err'); return; }
+
+          const name = fileName();
+          const dl = (window.claude && typeof window.claude.use === 'function')
+            ? await window.claude.use('downloads').catch(() => null)
+            : null;
+
+          if (dl) {
+            try {
+              await dl.save({ filename: name, data: blob });
+              setSaveMsg('저장했습니다 — ' + (blob.size / 1024).toFixed(0) + ' KB', 'ok');
+            } catch (err) {
+              const code = err && err.code;
+              if (code === 'declined') setSaveMsg('저장을 취소했습니다.');
+              else if (code === 'rate_limited') setSaveMsg('잠시 후 다시 눌러 주세요.', 'err');
+              else setSaveMsg('저장할 수 없습니다. 페이지를 새로고침해 보세요.', 'err');
+            }
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            setSaveMsg('저장했습니다 — ' + (blob.size / 1024).toFixed(0) + ' KB', 'ok');
+          }
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>
