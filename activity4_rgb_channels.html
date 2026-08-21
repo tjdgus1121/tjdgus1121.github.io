@@ -972,8 +972,13 @@
         }
         .gray-master label { font-size: 13px; font-weight: 700; color: #38424f; white-space: nowrap; }
         .gray-master input[type="range"] { flex: 0 1 260px; min-width: 130px; }
+        .gray-master .gray-step-label {
+            margin-left: 4px;
+            color: #59677a;
+            font-size: 12px;
+        }
         .gray-num {
-            width: 92px;
+            width: 74px;
             height: 42px;
             font-family: inherit;
             font-size: 19px;
@@ -989,7 +994,7 @@
             font-size: 12px;
             font-weight: 700;
             color: #b26a00;
-            min-width: 0;
+            min-width: 64px;
         }
         .gray-step-btns { display: flex; gap: 6px; }
         .gray-step-btn {
@@ -1220,6 +1225,167 @@
         }
         .compare-popup-controls .slider-container label {
             width: 64px;
+        }
+
+        /* 흑백 학습 팝업 전용 레이아웃 — 밝기 비교 팝업과 분리 */
+        body.gray-learning-open { overflow: hidden; }
+
+        #gray-popup-overlay {
+            padding: 24px;
+            background: rgba(20, 27, 40, 0.68);
+            backdrop-filter: blur(6px);
+        }
+
+        .gray-learning-popup {
+            width: min(1180px, calc(100vw - 48px));
+            max-height: min(92vh, 900px);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 22px;
+            box-shadow: 0 24px 80px rgba(12, 20, 35, 0.32);
+        }
+
+        .gray-learning-popup .gray-popup-header {
+            padding: 18px 22px 12px;
+            border-bottom: 0;
+            background: linear-gradient(135deg, #f8faff 0%, #f3f7ff 100%);
+        }
+
+        .gray-popup-title-wrap { display: grid; gap: 3px; }
+        .gray-popup-eyebrow {
+            color: #5471ad;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+        }
+        .gray-learning-popup .gray-popup-title { font-size: 21px; }
+
+        .gray-learning-popup .gray-popup-close {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 1px solid #dce3ef;
+            border-radius: 12px;
+            background: #fff;
+            color: #607086;
+        }
+
+        .gray-learning-popup .gray-progress {
+            gap: 8px;
+            padding: 0 22px 16px;
+            background: linear-gradient(135deg, #f8faff 0%, #f3f7ff 100%);
+        }
+
+        .gray-learning-popup .gray-progress-seg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            height: auto;
+            padding: 8px 10px;
+            border: 1px solid #dfe5ef;
+            border-radius: 10px;
+            background: #fff;
+            color: #738095;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            appearance: none;
+            transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.15s;
+        }
+
+        .gray-learning-popup .gray-progress-seg:hover:not(.current) {
+            border-color: #9eb4df;
+            background: #f4f7ff;
+            color: #3f5f9f;
+            transform: translateY(-1px);
+        }
+
+        .gray-learning-popup .gray-progress-seg:focus-visible {
+            outline: 3px solid rgba(63,111,216,0.28);
+            outline-offset: 2px;
+        }
+
+        .gray-learning-popup .gray-progress-seg.on {
+            border-color: #aebfe6;
+            background: #edf3ff;
+            color: #3f5f9f;
+        }
+
+        .gray-learning-popup .gray-progress-seg.current {
+            border-color: #3f6fd8;
+            background: #3f6fd8;
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(63,111,216,0.22);
+        }
+
+        .gray-progress-num {
+            display: grid;
+            place-items: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(63,111,216,0.12);
+            font-size: 11px;
+            font-weight: 900;
+        }
+        .gray-progress-seg.current .gray-progress-num { background: rgba(255,255,255,0.2); }
+
+        .gray-learning-popup .gray-popup-body {
+            flex: 1;
+            min-height: 0;
+            padding: 20px 22px;
+            background: #f3f5f9;
+        }
+
+        .gray-learning-popup .gray-page.on {
+            padding: 22px;
+            border: 1px solid #e1e6ee;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 5px 18px rgba(35, 50, 75, 0.06);
+        }
+
+        .gray-learning-popup .gray-page h4 { font-size: 21px; }
+        .gray-learning-popup .gray-page .lead { margin-bottom: 16px; }
+
+        .gray-learning-popup .gray-popup-foot {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            padding: 12px 22px;
+            background: #fff;
+        }
+        .gray-learning-popup .gray-popup-foot .gray-nav-btn:first-child { justify-self: start; }
+        .gray-learning-popup .gray-popup-foot .gray-nav-btn:last-child { justify-self: end; }
+        .gray-learning-popup .gray-nav-btn { min-width: 104px; }
+        .gray-learning-popup #gray-page-hint {
+            align-self: center;
+            margin: 0;
+            padding: 5px 11px;
+            border-radius: 999px;
+            background: #eef2f7;
+            color: #59677a;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        @media (max-width: 720px) {
+            #gray-popup-overlay { padding: 8px; }
+            .gray-learning-popup {
+                width: calc(100vw - 16px);
+                max-height: calc(100vh - 16px);
+                border-radius: 16px;
+            }
+            .gray-learning-popup .gray-popup-header { padding: 14px 14px 10px; }
+            .gray-learning-popup .gray-popup-title { font-size: 18px; }
+            .gray-learning-popup .gray-progress { padding: 0 14px 12px; }
+            .gray-learning-popup .gray-progress-seg { padding: 6px; }
+            .gray-progress-label { display: none; }
+            .gray-learning-popup .gray-popup-body { padding: 10px; }
+            .gray-learning-popup .gray-page.on { padding: 15px 12px; }
+            .gray-learning-popup .gray-page h4 { font-size: 18px; }
+            .gray-learning-popup .gray-popup-foot { padding: 10px 12px; }
+            .gray-learning-popup .gray-nav-btn { min-width: 82px; padding-inline: 12px; }
         }
     </style>
 </head>
@@ -1452,23 +1618,35 @@
         </div>
     </div>
 
-    <!-- 밝기 비교 크게 보기 팝업 -->
-    <div id="gray-popup-overlay" class="gray-popup-overlay">
-        <div class="gray-popup-box" role="dialog" aria-modal="true" aria-labelledby="gray-popup-title">
+    <!-- 흑백 방식 비교 학습 팝업 -->
+    <div id="gray-popup-overlay" class="gray-popup-overlay" aria-hidden="true">
+        <div class="gray-popup-box gray-learning-popup" role="dialog" aria-modal="true" aria-labelledby="gray-popup-title">
             <div class="gray-popup-header">
-                <span class="gray-popup-title" id="gray-popup-title">흑백은 어떻게 만들까?</span>
+                <div class="gray-popup-title-wrap">
+                    <span class="gray-popup-eyebrow">RGB CHANNEL LAB</span>
+                    <span class="gray-popup-title" id="gray-popup-title">흑백은 어떻게 만들까?</span>
+                </div>
                 <button type="button" class="gray-popup-close" id="gray-popup-close" aria-label="닫기">&#x2715;</button>
             </div>
 
-            <div class="gray-progress" id="gray-progress" aria-hidden="true">
-                <span class="gray-progress-seg on"></span>
-                <span class="gray-progress-seg"></span>
-                <span class="gray-progress-seg"></span>
+            <div class="gray-progress" id="gray-progress" role="tablist" aria-label="흑백 만들기 학습 단계">
+                <button type="button" class="gray-progress-seg on current" id="gray-tab-1" role="tab"
+                        aria-selected="true" aria-controls="gray-page-1" tabindex="0">
+                    <b class="gray-progress-num">1</b><span class="gray-progress-label">색 밝기 실험</span>
+                </button>
+                <button type="button" class="gray-progress-seg" id="gray-tab-2" role="tab"
+                        aria-selected="false" aria-controls="gray-page-2" tabindex="-1">
+                    <b class="gray-progress-num">2</b><span class="gray-progress-label">가중치 원리</span>
+                </button>
+                <button type="button" class="gray-progress-seg" id="gray-tab-3" role="tab"
+                        aria-selected="false" aria-controls="gray-page-3" tabindex="-1">
+                    <b class="gray-progress-num">3</b><span class="gray-progress-label">사진으로 비교</span>
+                </button>
             </div>
 
             <div class="gray-popup-body">
                 <!-- ── 1단계 ── -->
-                <section class="gray-page on" id="gray-page-1">
+                <section class="gray-page on" id="gray-page-1" role="tabpanel" aria-labelledby="gray-tab-1">
                     <h4>같은 숫자인데, 어느 색이 더 밝아 보이나요?</h4>
                     <p class="lead">빨강·초록·파랑이 모두 <b>255</b>로 켜져 있습니다. 슬라이더를 하나씩 내려 보세요.
                         어느 색을 내릴 때 화면이 가장 크게 어두워지는지 눈으로 확인해 봅시다.</p>
@@ -1476,11 +1654,12 @@
                     <div class="gray-master">
                         <label for="gray-lab-all">세 색 한꺼번에</label>
                         <input type="range" id="gray-lab-all" min="0" max="255" value="255">
-                        <input type="number" id="gray-num-all" class="gray-num" min="0" max="255" step="1" value="255"
-                               inputmode="numeric" aria-label="세 색 값 직접 입력">
+                        <label for="gray-num-all" class="gray-step-label">조정 단위</label>
+                        <input type="number" id="gray-num-all" class="gray-num" min="1" max="255" step="1" value="1"
+                               inputmode="numeric" aria-label="위아래 버튼의 조정 단위">
                         <span class="gray-step-btns">
-                            <button type="button" class="gray-step-btn" id="gray-all-down" aria-label="세 색 값 5 내리기" title="5 내리기">&#x25BC;</button>
-                            <button type="button" class="gray-step-btn" id="gray-all-up" aria-label="세 색 값 5 올리기" title="5 올리기">&#x25B2;</button>
+                            <button type="button" class="gray-step-btn" id="gray-all-down" aria-label="세 색 값 1 내리기" title="1 내리기">&#x25BC;</button>
+                            <button type="button" class="gray-step-btn" id="gray-all-up" aria-label="세 색 값 1 올리기" title="1 올리기">&#x25B2;</button>
                         </span>
                         <span class="gray-master-val" id="gray-val-all"></span>
                     </div>
@@ -1520,7 +1699,7 @@
                 </section>
 
                 <!-- ── 2단계 ── -->
-                <section class="gray-page" id="gray-page-2">
+                <section class="gray-page" id="gray-page-2" role="tabpanel" aria-labelledby="gray-tab-2" hidden>
                     <h4>눈이 느끼는 밝기는 이만큼 다릅니다</h4>
                     <p class="lead">앞 쪽에서 맞춘 값을 그대로 계산한 것입니다. 막대가 길수록 눈에 밝게 느껴지는 정도가 큽니다.</p>
 
@@ -1614,7 +1793,7 @@
                 </section>
 
                 <!-- ── 3단계 ── -->
-                <section class="gray-page" id="gray-page-3">
+                <section class="gray-page" id="gray-page-3" role="tabpanel" aria-labelledby="gray-tab-3" hidden>
                     <h4>올린 사진으로 두 방법 비교하기</h4>
                     <p class="lead">같은 사진을 두 방법으로 흑백으로 바꾼 결과입니다. 잎·풀처럼 초록이 많은 곳과
                         하늘·물처럼 파랑이 많은 곳을 번갈아 보세요.</p>
@@ -2495,10 +2674,12 @@
             const grayAllSlider = document.getElementById('gray-lab-all');
             const grayAllNum = document.getElementById('gray-num-all');
             const grayAllVal = document.getElementById('gray-val-all');
-            function applyGrayAll(v, keepTyping) {
+            const grayAllDownBtn = document.getElementById('gray-all-down');
+            const grayAllUpBtn = document.getElementById('gray-all-up');
+
+            function applyGrayAll(v) {
                 const val = Math.max(0, Math.min(255, v));
                 grayAllSlider.value = val;
-                if (!keepTyping) grayAllNum.value = val;
                 grayLab.R.slider.value = val;
                 grayLab.G.slider.value = val;
                 grayLab.B.slider.value = val;
@@ -2507,20 +2688,33 @@
 
             grayAllSlider.addEventListener('input', () => applyGrayAll(parseInt(grayAllSlider.value, 10)));
 
-            /* 숫자를 직접 쳐 넣어도 세 색이 함께 움직인다 */
-            grayAllNum.addEventListener('input', () => {
-                const raw = grayAllNum.value.trim();
-                if (raw === '') return;                       /* 지우는 중에는 건드리지 않는다 */
-                const v = parseInt(raw, 10);
-                if (isNaN(v)) return;
-                applyGrayAll(v, true);                        /* 입력창은 그대로 두고 나머지만 맞춘다 */
-            });
+            /* 숫자 입력칸은 위아래 버튼이 한 번에 움직일 크기를 정한다. */
+            function getGrayAllStep(normalize) {
+                const parsed = parseInt(grayAllNum.value, 10);
+                const step = isNaN(parsed) ? 1 : Math.max(1, Math.min(255, parsed));
+                if (normalize) grayAllNum.value = step;
+                return step;
+            }
+
+            function updateGrayStepLabels() {
+                const step = getGrayAllStep(false);
+                grayAllDownBtn.setAttribute('aria-label', '세 색 값 ' + step + ' 내리기');
+                grayAllDownBtn.title = step + ' 내리기';
+                grayAllUpBtn.setAttribute('aria-label', '세 색 값 ' + step + ' 올리기');
+                grayAllUpBtn.title = step + ' 올리기';
+            }
+
+            grayAllNum.addEventListener('input', updateGrayStepLabels);
             grayAllNum.addEventListener('change', () => {
-                const v = parseInt(grayAllNum.value, 10);
-                applyGrayAll(isNaN(v) ? 0 : v);               /* 다 치고 나면 0~255로 정리 */
+                getGrayAllStep(true);
+                updateGrayStepLabels();
             });
-            document.getElementById('gray-all-down').addEventListener('click', () => applyGrayAll(parseInt(grayAllSlider.value, 10) - 5));
-            document.getElementById('gray-all-up').addEventListener('click', () => applyGrayAll(parseInt(grayAllSlider.value, 10) + 5));
+            grayAllDownBtn.addEventListener('click', () => {
+                applyGrayAll(parseInt(grayAllSlider.value, 10) - getGrayAllStep(true));
+            });
+            grayAllUpBtn.addEventListener('click', () => {
+                applyGrayAll(parseInt(grayAllSlider.value, 10) + getGrayAllStep(true));
+            });
 
             function grayHex(v) { return 'rgb(' + v + ',' + v + ',' + v + ')'; }
 
@@ -2552,10 +2746,9 @@
                 });
 
                 const allSame = (v.R === v.G && v.G === v.B);
-                grayAllVal.textContent = allSame ? '' : '세 색이 각각 다름';
+                grayAllVal.textContent = allSame ? '현재 ' + v.R : '세 색이 각각 다름';
                 if (allSame) {
                     grayAllSlider.value = v.R;
-                    if (document.activeElement !== grayAllNum) grayAllNum.value = v.R;
                 }
                 document.getElementById('gray-lab-note').innerHTML = allSame
                     ? '세 값이 모두 같습니다 (<b>' + v.R + '</b>). 숫자는 똑같은데 초록이 가장 밝고 파랑이 가장 어둡게 보이지요? ' +
@@ -2605,8 +2798,17 @@
 
             function showGrayPage(i) {
                 grayPageIdx = Math.max(0, Math.min(2, i));
-                grayPages.forEach((p, k) => p.classList.toggle('on', k === grayPageIdx));
-                grayProgressSegs.forEach((d, k) => d.classList.toggle('on', k <= grayPageIdx));
+                grayPages.forEach((p, k) => {
+                    const isCurrent = k === grayPageIdx;
+                    p.classList.toggle('on', isCurrent);
+                    p.hidden = !isCurrent;
+                });
+                grayProgressSegs.forEach((d, k) => {
+                    d.classList.toggle('on', k <= grayPageIdx);
+                    d.classList.toggle('current', k === grayPageIdx);
+                    d.setAttribute('aria-selected', k === grayPageIdx ? 'true' : 'false');
+                    d.tabIndex = k === grayPageIdx ? 0 : -1;
+                });
                 grayPrevBtn.disabled = (grayPageIdx === 0);
                 grayNextBtn.textContent = (grayPageIdx === 2) ? '닫기' : '다음';
                 grayPageHint.textContent = (grayPageIdx + 1) + ' / 3';
@@ -2619,19 +2821,40 @@
                 grayCompareActive = true;
                 grayCompareBtn.classList.add('active');
                 grayPopupOverlay.classList.add('open');
+                grayPopupOverlay.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('gray-learning-open');
                 updateGrayLab();
                 showGrayPage(0);
+                requestAnimationFrame(() => grayPopupCloseBtn.focus());
             }
 
             function closeGrayPopup() {
+                const wasOpen = grayPopupOverlay.classList.contains('open');
                 grayCompareActive = false;
                 grayCompareBtn.classList.remove('active');
                 grayPopupOverlay.classList.remove('open');
+                grayPopupOverlay.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('gray-learning-open');
+                if (wasOpen) grayCompareBtn.focus();
             }
 
             grayCompareBtn.addEventListener('click', openGrayPopup);
             grayPopupCloseBtn.addEventListener('click', closeGrayPopup);
             grayPopupOverlay.addEventListener('click', (e) => { if (e.target === grayPopupOverlay) closeGrayPopup(); });
+            grayProgressSegs.forEach((tab, index) => {
+                tab.addEventListener('click', () => showGrayPage(index));
+                tab.addEventListener('keydown', (e) => {
+                    let nextIndex = null;
+                    if (e.key === 'ArrowRight') nextIndex = (index + 1) % grayProgressSegs.length;
+                    if (e.key === 'ArrowLeft') nextIndex = (index - 1 + grayProgressSegs.length) % grayProgressSegs.length;
+                    if (e.key === 'Home') nextIndex = 0;
+                    if (e.key === 'End') nextIndex = grayProgressSegs.length - 1;
+                    if (nextIndex === null) return;
+                    e.preventDefault();
+                    showGrayPage(nextIndex);
+                    grayProgressSegs[nextIndex].focus();
+                });
+            });
             grayPrevBtn.addEventListener('click', () => showGrayPage(grayPageIdx - 1));
             grayNextBtn.addEventListener('click', () => {
                 if (grayPageIdx === 2) closeGrayPopup();
