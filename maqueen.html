@@ -610,6 +610,27 @@
 
         .modal-card h2 { margin: 0 0 14px; font-size: 16px; color: var(--ink); border: 0; padding: 0; }
 
+        .train-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin: 0 0 14px;
+        }
+
+        .train-step {
+            padding: 7px 6px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #f7f9fa;
+            color: var(--ink-3);
+            text-align: center;
+            font-size: 12.5px;
+            font-weight: 700;
+        }
+
+        .train-step.active { border-color: var(--accent); background: var(--accent-weak); color: var(--accent-dark); }
+        .train-step.done { border-color: #b6ddcb; background: #eefaf4; color: #17795b; }
+
         .train-stage {
             position: relative;
             border-radius: var(--r-sm);
@@ -648,6 +669,14 @@
         .train-progress > div { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
 
         .train-msg { font-size: 13.5px; color: var(--ink-2); min-height: 42px; line-height: 1.6; }
+        .train-msg.success {
+            padding: 11px 12px;
+            border: 1px solid #b6ddcb;
+            border-radius: var(--r-sm);
+            background: #eefaf4;
+            color: #17795b;
+            font-weight: 700;
+        }
         .train-lead {
             font-size: 15.5px;
             font-weight: 600;
@@ -690,6 +719,65 @@
 
         .train-actions { display: flex; gap: 8px; margin-top: 14px; }
         .train-actions button { flex: 1; }
+        #trainSave { flex: 2; min-height: 48px; font-size: 15px; }
+
+        .model-review-card { max-width: 820px; }
+
+        .model-review-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .model-review-head h2 { margin-bottom: 4px; }
+        .model-review-head p { color: var(--ink-3); font-size: 13px; }
+        #modelReviewCloseTop { flex: 0 0 38px; min-height: 38px; padding: 0; }
+
+        .model-review-list { display: grid; gap: 12px; }
+
+        .model-review-class {
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: var(--r-sm);
+            background: #f7f9fa;
+        }
+
+        .model-review-meta {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .model-review-name { color: var(--ink); font-size: 15px; font-weight: 800; }
+        .model-review-count { color: var(--ink-3); font-size: 12.5px; }
+
+        .model-review-images {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .model-review-images img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: #10181f;
+        }
+
+        .model-review-empty {
+            padding: 16px 12px;
+            border: 1px dashed var(--line-strong);
+            border-radius: 8px;
+            color: var(--ink-3);
+            text-align: center;
+            font-size: 13px;
+        }
 
         #textSection { display: none; }
         #nextToAI { display: none; }
@@ -706,6 +794,7 @@
             .need-emoji { font-size: 38px; }
             .train-source { gap: 10px; }
             .train-source .src-label { flex: 0 0 100%; margin-bottom: 2px; }
+            .model-review-images { grid-template-columns: 1fr; }
             .radio-group { grid-template-columns: 1fr; }
             .mapping-guide { display: none; }
             .class-input-group { grid-template-columns: 56px 1fr 16px 84px; }
@@ -875,7 +964,8 @@
                 <div id="trainedList" class="trained-list"></div>
 
                 <div class="train-tools">
-                    <button type="button" class="secondary" id="saveTrained">저장</button>
+                    <button type="button" class="secondary" id="reviewTrained" disabled>학습한 모델 확인</button>
+                    <button type="button" class="secondary" id="saveTrained">지금 저장</button>
                     <button type="button" class="secondary" id="loadTrained">불러오기</button>
                     <button type="button" class="secondary" id="clearTrained">전체 지우기</button>
                 </div>
@@ -972,6 +1062,11 @@
     <div id="trainModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="trainTitle" hidden>
         <div class="modal-card">
             <h2 id="trainTitle">동작 학습</h2>
+            <div class="train-steps" aria-label="학습 진행 단계">
+                <div class="train-step active" data-train-step="capture">1 · 촬영</div>
+                <div class="train-step" data-train-step="name">2 · 클래스명</div>
+                <div class="train-step" data-train-step="save">3 · 저장</div>
+            </div>
             <p class="train-lead"><strong>시작</strong>을 누르면 <strong>3초 뒤</strong>에 ✋ 손과 🙂 얼굴로 포즈를 인식합니다!</p>
             <p class="train-sub">인식이 시작되면 <strong>5초 동안</strong> 그 자세를 기억합니다. 조종할 때와 같은 자세로 서 주세요.</p>
             <div class="train-stage">
@@ -984,14 +1079,31 @@
             <div class="train-learned" id="trainLearned"></div>
 
             <div id="trainNameRow" class="train-name-row" hidden>
-                <label for="trainName">동작 이름</label>
-                <input type="text" id="trainName" maxlength="40" value="class1">
+                <label for="trainName">클래스명</label>
+                <input type="text" id="trainName" maxlength="40" value="class1" placeholder="예: 왼쪽">
             </div>
 
             <div class="train-actions">
                 <button type="button" id="trainStart" disabled>▶ 시작</button>
-                <button type="button" id="trainSave" hidden>✅ 저장</button>
+                <button type="button" id="trainSave" hidden>✅ 이 클래스 저장하기</button>
                 <button type="button" class="secondary" id="trainClose">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 학습한 클래스와 대표 포즈 확인 팝업 -->
+    <div id="modelReviewModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modelReviewTitle" hidden>
+        <div class="modal-card model-review-card">
+            <div class="model-review-head">
+                <div>
+                    <h2 id="modelReviewTitle">학습한 모델 확인</h2>
+                    <p>클래스별 대표 포즈와 학습 장면 수를 확인하세요. 사진은 이 브라우저에만 저장되며 외부로 전송되지 않습니다.</p>
+                </div>
+                <button type="button" class="secondary" id="modelReviewCloseTop" aria-label="학습한 모델 확인 닫기">✕</button>
+            </div>
+            <div id="modelReviewList" class="model-review-list"></div>
+            <div class="train-actions">
+                <button type="button" class="secondary" id="modelReviewClose">닫기</button>
             </div>
         </div>
     </div>
@@ -1017,18 +1129,21 @@
         let mappingsApplied = false;
         let testMode = false;
         let savedModelURL = '';
-        // ── 신호 지연을 줄이기 위한 설정 ──
+        // ── 순간 오인식을 실제 주행 명령으로 보내지 않기 위한 설정 ──
         const SEND_THRESHOLD = 0.8;   // 이 확률을 넘어야 명령 후보가 된다
-        const HOLD_MS = 0;            // 자세가 잡히면 바로 보낸다. 로봇이 깜빡거리며 덜컹대면 100~200 으로 올린다
-        const FAST_FRAME_MS = 150;    // 이보다 빠르게 도는 기기에서만 확인 시간을 준다
+        const MOVE_HOLD_MS = 350;     // 이동 명령은 이 시간 이상 같은 자세가 유지되어야 한다
+        const MOVE_HOLD_FRAMES = 3;   // 느린 기기에서도 최소 이 프레임 수를 확인한다
+        const STOP_COMMAND = 'S';     // 정지는 안전을 위해 기다리지 않고 즉시 보낸다
+        const NO_RECOGNITION_STOP_MS = 500; // 인식이 이 시간 끊기면 안전 정지한다
+        const MIN_VISIBLE_POSE_POINTS = 5;  // 포즈가 실제로 보인다고 판단할 최소 관절 수
         const UI_INTERVAL_MS = 120;   // 막대그래프 갱신 간격 (추론을 방해하지 않도록)
 
         // 전송 대기열: 한 번에 하나만 보내고, 밀린 명령은 버리고 항상 최신 것만 남긴다.
         let pendingCommand = null, pendingClass = '', sending = false;
         let lastSentCommand = '', lastSentAt = 0;
-        // 자세 유지 판단 · 이 기기의 추론 속도
-        let holdClass = '', holdSince = 0;
-        let lastPredictAt = 0, frameMs = 0;
+        // 이동 명령 후보가 같은 자세로 얼마나 유지됐는지 판단한다.
+        let holdClass = '', holdCommand = '', holdSince = 0, holdFrames = 0;
+        let noRecognitionSince = 0, noRecognitionStopSent = false;
         let currentStep = 1;
         let modelType = 'pose'; // Maqueen 활동 기본값: pose
         
@@ -1239,7 +1354,45 @@
             pendingCommand = null;
             pendingClass = '';
             lastSentCommand = '';
+            resetCommandCandidate();
+            resetRecognitionLoss();
+        }
+
+        function resetCommandCandidate() {
             holdClass = '';
+            holdCommand = '';
+            holdSince = 0;
+            holdFrames = 0;
+        }
+
+        function isStopCommand(command) {
+            return String(command || '').trim().toUpperCase() === STOP_COMMAND;
+        }
+
+        function resetRecognitionLoss() {
+            noRecognitionSince = 0;
+            noRecognitionStopSent = false;
+        }
+
+        function hasUsablePose(pose) {
+            if (!pose || !Array.isArray(pose.keypoints)) return false;
+            return pose.keypoints.filter(point => Number(point.score || 0) >= 0.5).length >= MIN_VISIBLE_POSE_POINTS;
+        }
+
+        function handleRecognitionLoss(nowMs = performance.now()) {
+            resetCommandCandidate();
+            if (!noRecognitionSince) noRecognitionSince = nowMs;
+            if (!noRecognitionStopSent && nowMs - noRecognitionSince >= NO_RECOGNITION_STOP_MS) {
+                noRecognitionStopSent = true;
+                queueCommand(STOP_COMMAND, '인식 없음');
+                document.getElementById('commandDisplay').textContent = '🛑 인식이 끊겨 안전 정지(S)';
+            }
+        }
+
+        function requestSafetyStop(reason) {
+            // 먼저 이전 이동 후보와 대기 명령을 비운 뒤 S를 넣어, 전송 중이어도 다음 명령이 S가 되게 한다.
+            resetCommandQueue();
+            queueCommand(STOP_COMMAND, reason);
         }
 
         // 예측 루프에서는 이 함수만 부른다. 기다리지 않으므로 화면이 멈추지 않는다.
@@ -1281,8 +1434,9 @@
                 if (model) {
                     if (modelType !== 'custom') alert('모델 타입을 변경했습니다. 모델을 다시 로드해주세요!');
                     clearLoadedModel();
+                } else {
+                    resetCommandQueue();
                 }
-                resetCommandQueue();
                 resetPredictionUI();
                 if (typeof stopCamera === 'function' && !isWebcamRunning) stopCamera();
             });
@@ -1557,7 +1711,9 @@
         }
 
         function clearLoadedModel() {
-            if (webcam && isWebcamRunning) webcam.stop();
+            const wasRunning = isWebcamRunning;
+            if (wasRunning) requestSafetyStop('모델 변경');
+            if (webcam && wasRunning) webcam.stop();
             webcam = null;
             isWebcamRunning = false;
             const webcamContainer = document.getElementById('webcam-container');
@@ -1565,7 +1721,7 @@
             if (webcamContainer) webcamContainer.textContent = '';
             if (predictionContainer) predictionContainer.textContent = '';
             resetPredictionUI();
-            resetCommandQueue();
+            if (!wasRunning) resetCommandQueue();
             document.getElementById('startWebcam').disabled = false;
             document.getElementById('stopWebcam').disabled = true;
             model = null;
@@ -1897,6 +2053,7 @@
         
         document.getElementById('stopWebcam').addEventListener('click', () => {
             if (modelType === 'custom') {
+                requestSafetyStop('카메라 중지');
                 isWebcamRunning = false;
                 customCtx = null;
                 if (trainModal.hidden) stopCamera();
@@ -1905,11 +2062,11 @@
                 document.getElementById('webcam-container').textContent = '';
                 document.getElementById('label-container').textContent = '';
                 resetPredictionUI();
-                resetCommandQueue();
                 log('카메라 중지', false, 'log2');
                 return;
             }
             if (webcam) {
+                requestSafetyStop('카메라 중지');
                 webcam.stop();
                 isWebcamRunning = false;
                 document.getElementById('startWebcam').disabled = false;
@@ -1917,12 +2074,12 @@
                 document.getElementById('webcam-container').textContent = '';
                 document.getElementById('label-container').textContent = '';
                 resetPredictionUI();
-                resetCommandQueue();
                 log('웹캠 중지', false, 'log2');
             }
         });
         
         document.getElementById('backToConnect').addEventListener('click', () => {
+            if (isWebcamRunning) requestSafetyStop('제어 화면 종료');
             if (webcam && isWebcamRunning) {
                 webcam.stop();
                 isWebcamRunning = false;
@@ -1967,8 +2124,8 @@
                 }
                 renderSeenChips();
                 prediction = classifyVector(combinedFeature(detection));
-                if (!prediction.length) {            // 손도 얼굴도 안 보이면 명령을 보내지 않는다
-                    holdClass = '';
+                if (!prediction.length) {            // 손도 얼굴도 안 보인 상태가 이어지면 안전 정지한다
+                    handleRecognitionLoss();
                     return;
                 }
             } else if (!model || !webcam) {
@@ -1980,7 +2137,6 @@
             } else { // pose
                 // Pose 모델 예측
                 const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
-                prediction = await model.predict(posenetOutput);
                 
                 // Pose 그리기
                 if (ctx) {
@@ -1991,6 +2147,12 @@
                         tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
                     }
                 }
+
+                if (!hasUsablePose(pose)) {
+                    handleRecognitionLoss();
+                    return;
+                }
+                prediction = await model.predict(posenetOutput);
             }
             
             
@@ -2004,24 +2166,36 @@
                 }
             }
 
-            // ① 명령 판단이 먼저다. 화면을 그리기 전에 신호를 내보내야 반응이 빠르다.
+            // ① 명령 판단이 먼저다. 정지는 즉시, 이동은 안정적으로 유지된 뒤 보낸다.
             const nowMs = performance.now();
-            if (lastPredictAt) {                       // 이 기기가 얼마나 빨리 도는지 재 둔다
-                const interval = nowMs - lastPredictAt;
-                frameMs = frameMs ? frameMs * 0.8 + interval * 0.2 : interval;
-            }
-            lastPredictAt = nowMs;
-            // 빠른 기기에서는 깜빡임을 한 번 걸러내고, 느린 기기에서는 곧바로 보낸다.
-            const holdNeeded = (frameMs && frameMs < FAST_FRAME_MS) ? HOLD_MS : 0;
-            if (maxProb > SEND_THRESHOLD) {
-                if (maxClass !== holdClass) {          // 자세가 바뀐 순간을 기록해 둔다
-                    holdClass = maxClass;
-                    holdSince = nowMs;
-                }
-                const command = classCommands[maxClass];
-                if (command && nowMs - holdSince >= holdNeeded) queueCommand(command, maxClass);
+            const command = classCommands[maxClass];
+            const hasConfidentCommand = maxProb > SEND_THRESHOLD && Boolean(command);
+
+            if (!hasConfidentCommand) {
+                handleRecognitionLoss(nowMs);
             } else {
-                holdClass = '';                        // 애매한 구간에서는 후보를 비운다
+                resetRecognitionLoss();
+
+                if (isStopCommand(command)) {
+                    // 잘못된 정지는 잠깐 멈추는 데 그치지만, 늦은 정지는 충돌로 이어질 수 있다.
+                    resetCommandCandidate();
+                    queueCommand(command, maxClass);
+                } else if (maxClass !== holdClass || command !== holdCommand) {
+                    // F가 한두 프레임 스쳤다가 L로 바뀌면 여기서 후보만 교체되고 전송되지 않는다.
+                    holdClass = maxClass;
+                    holdCommand = command;
+                    holdSince = nowMs;
+                    holdFrames = 1;
+                    if (command !== lastSentCommand) {
+                        document.getElementById('commandDisplay').textContent =
+                            `⏳ ${maxClass}: ${command} · 자세 확인 중...`;
+                    }
+                } else {
+                    holdFrames += 1;
+                    const heldLongEnough = nowMs - holdSince >= MOVE_HOLD_MS;
+                    const seenOftenEnough = holdFrames >= MOVE_HOLD_FRAMES;
+                    if (heldLongEnough && seenOftenEnough) queueCommand(command, maxClass);
+                }
             }
 
             // ② 화면(막대그래프)은 값만 바꿔 갱신한다.
@@ -2039,6 +2213,7 @@
         const TRAIN_KEY = 'maqueen_custom_training_v3';
         const COUNTDOWN_SEC = 3;      // 3 · 2 · 1
         const COLLECT_MS = 5000;      // 5초 동안 동작을 기억한다
+        const TRAIN_PREVIEW_RATIOS = [0.2, 0.5, 0.8]; // 클래스마다 대표 포즈 3장
         const KNN_K = 5;              // 가까운 이웃 몇 개를 볼지
         const FACE_STEP = 6;          // 얼굴 점은 478개라 일정 간격으로 골라 쓴다
         const HAND_DIM = 42;          // 손 한 짝 21점 × (x, y)
@@ -2049,7 +2224,7 @@
         let mpVision = null, mpFileset = null;
         const landmarkers = { hand: null, face: null };
         let mpVideo = null, mpStream = null;
-        let trained = [];             // [{ name, vecs: [[...]] }]
+        let trained = [];             // [{ name, vecs: [[...]], previews: [dataURL] }]
         let customCtx = null;         // 인식 화면 캔버스
         let lastSeen = { hands: 0, face: false };
         let mpStamp = 0;              // MediaPipe 는 시간이 항상 커져야 한다
@@ -2241,6 +2416,8 @@
         // ── 학습한 동작 목록 ──
         function renderTrainedList() {
             const box = document.getElementById('trainedList');
+            const reviewButton = document.getElementById('reviewTrained');
+            if (reviewButton) reviewButton.disabled = !trained.length;
             box.textContent = '';
             if (!trained.length) {
                 const empty = document.createElement('div');
@@ -2267,6 +2444,8 @@
                 remove.addEventListener('click', () => {
                     trained.splice(index, 1);
                     syncTrainedToMappings();
+                    if (trained.length) persistTrained(false);
+                    else localStorage.removeItem(TRAIN_KEY);
                 });
 
                 item.append(name, count, remove);
@@ -2287,6 +2466,71 @@
                 : '학습한 동작이 없습니다.', trained.length ? '' : 'warning');
         }
 
+        // ── 클래스별 대표 포즈 확인 팝업 ──
+        const modelReviewModal = document.getElementById('modelReviewModal');
+        const modelReviewList = document.getElementById('modelReviewList');
+
+        function renderModelReview() {
+            modelReviewList.textContent = '';
+            for (const cls of trained) {
+                const card = document.createElement('section');
+                card.className = 'model-review-class';
+
+                const meta = document.createElement('div');
+                meta.className = 'model-review-meta';
+                const name = document.createElement('div');
+                name.className = 'model-review-name';
+                name.textContent = cls.name;
+                const count = document.createElement('div');
+                count.className = 'model-review-count';
+                count.textContent = `${cls.vecs.length}장 학습 · 대표 포즈 ${(cls.previews || []).length}장`;
+                meta.append(name, count);
+                card.appendChild(meta);
+
+                const previews = Array.isArray(cls.previews) ? cls.previews : [];
+                if (previews.length) {
+                    const images = document.createElement('div');
+                    images.className = 'model-review-images';
+                    previews.forEach((src, index) => {
+                        const image = document.createElement('img');
+                        image.src = src;
+                        image.alt = `${cls.name} 클래스 대표 포즈 ${index + 1}`;
+                        image.loading = 'lazy';
+                        images.appendChild(image);
+                    });
+                    card.appendChild(images);
+                } else {
+                    const empty = document.createElement('div');
+                    empty.className = 'model-review-empty';
+                    empty.textContent = '이 클래스는 대표 사진 저장 기능을 추가하기 전에 학습했습니다. 다시 학습하면 사진이 표시됩니다.';
+                    card.appendChild(empty);
+                }
+                modelReviewList.appendChild(card);
+            }
+        }
+
+        function openModelReview() {
+            if (!trained.length) return;
+            renderModelReview();
+            modelReviewModal.hidden = false;
+            document.getElementById('modelReviewCloseTop').focus();
+        }
+
+        function closeModelReview() {
+            modelReviewModal.hidden = true;
+            document.getElementById('reviewTrained').focus();
+        }
+
+        document.getElementById('reviewTrained').addEventListener('click', openModelReview);
+        document.getElementById('modelReviewCloseTop').addEventListener('click', closeModelReview);
+        document.getElementById('modelReviewClose').addEventListener('click', closeModelReview);
+        modelReviewModal.addEventListener('click', event => {
+            if (event.target === modelReviewModal) closeModelReview();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && !modelReviewModal.hidden) closeModelReview();
+        });
+
         // ── 학습 팝업 ──
         const trainModal = document.getElementById('trainModal');
         const trainPreview = document.getElementById('trainPreview');
@@ -2303,8 +2547,23 @@
         let trainRaf = 0;
         let trainPhaseUntil = 0;
         let trainMissed = 0;
+        let trainPreviews = [];
+        let trainNextPreviewIndex = 0;
 
-        function setTrainMessage(text) { trainMsg.textContent = text; }
+        function setTrainMessage(text, kind = '') {
+            trainMsg.textContent = text;
+            trainMsg.className = `train-msg${kind ? ' ' + kind : ''}`;
+        }
+
+        function setTrainStep(currentStepName) {
+            const order = ['capture', 'name', 'save'];
+            const currentIndex = order.indexOf(currentStepName);
+            document.querySelectorAll('[data-train-step]').forEach(step => {
+                const stepIndex = order.indexOf(step.dataset.trainStep);
+                step.classList.toggle('active', stepIndex === currentIndex);
+                step.classList.toggle('done', currentIndex >= 0 && stepIndex < currentIndex);
+            });
+        }
 
         // class1, class2 … 이미 쓴 이름은 건너뛴다(덮어쓰기 방지)
         function nextClassName() {
@@ -2340,7 +2599,7 @@
 
             const next = document.createElement('div');
             next.className = 'tl-next';
-            next.append('다음에 저장될 이름 ');
+            next.append('다음에 저장될 클래스명 ');
             const name = document.createElement('strong');
             name.textContent = nextClassName();
             next.appendChild(name);
@@ -2396,6 +2655,23 @@
             ctx.restore();
         }
 
+        function captureTrainPreview(progress) {
+            if (trainNextPreviewIndex >= TRAIN_PREVIEW_RATIOS.length ||
+                progress < TRAIN_PREVIEW_RATIOS[trainNextPreviewIndex]) return;
+            try {
+                const thumb = document.createElement('canvas');
+                thumb.width = 240;
+                thumb.height = 180;
+                const thumbCtx = thumb.getContext('2d');
+                thumbCtx.drawImage(trainPreview, 0, 0, thumb.width, thumb.height);
+                trainPreviews.push(thumb.toDataURL('image/jpeg', 0.68));
+                trainNextPreviewIndex += 1;
+            } catch (error) {
+                trainNextPreviewIndex += 1;
+                log('대표 포즈 이미지를 저장하지 못했습니다: ' + error.message, true, 'log2');
+            }
+        }
+
         function trainLoop() {
             if (trainModal.hidden) return;
             const now = performance.now();
@@ -2411,11 +2687,15 @@
                 if (now >= trainPhaseUntil) startCollecting();
             } else if (trainPhase === 'collect') {
                 const remain = Math.max(0, trainPhaseUntil - now);
-                trainBar.style.width = ((1 - remain / COLLECT_MS) * 100).toFixed(0) + '%';
+                const progress = 1 - remain / COLLECT_MS;
+                trainBar.style.width = (progress * 100).toFixed(0) + '%';
                 trainBig.classList.add('small');
                 trainBig.textContent = '기억하는 중 ' + Math.ceil(remain / 1000) + '초';
                 const vec = combinedFeature(detection);
-                if (vec) trainSamples.push(vec); else trainMissed++;
+                if (vec) {
+                    trainSamples.push(vec);
+                    captureTrainPreview(progress);
+                } else trainMissed++;
                 if (now >= trainPhaseUntil) finishCollecting();
             } else {
                 trainBig.textContent = '';
@@ -2425,9 +2705,12 @@
 
         function startCollecting() {
             trainPhase = 'collect';
+            setTrainStep('capture');
             trainPhaseUntil = performance.now() + COLLECT_MS;
             trainSamples = [];
             trainMissed = 0;
+            trainPreviews = [];
+            trainNextPreviewIndex = 0;
             setTrainMessage('그 동작을 그대로 유지하세요. 손과 얼굴이 함께 보이면 더 잘 알아봅니다.');
         }
 
@@ -2437,17 +2720,21 @@
             trainBar.style.width = '100%';
             if (trainSamples.length < 5) {
                 setTrainMessage('손도 얼굴도 화면에 거의 보이지 않았습니다. 카메라 앞에서 다시 시도하세요.');
+                setTrainStep('capture');
                 trainStartBtn.hidden = false;
                 trainStartBtn.disabled = false;
                 trainStartBtn.textContent = '↻ 다시 시도';
                 return;
             }
             const skipped = trainMissed ? ` (놓친 장면 ${trainMissed}회)` : '';
-            setTrainMessage(`${trainSamples.length}장을 기억했습니다${skipped}. 이름을 정하고 저장하세요.`);
+            setTrainMessage(`✅ 학습이 완료되었습니다${skipped}. 클래스명을 지정한 후 저장하세요.`, 'success');
+            setTrainStep('name');
             trainNameRow.hidden = false;
             trainNameInput.value = nextClassName();
             trainSaveBtn.hidden = false;
+            trainSaveBtn.disabled = false;
             trainStartBtn.hidden = true;
+            trainCloseBtn.textContent = '저장하지 않고 닫기';
             trainNameInput.focus();
             trainNameInput.select();
         }
@@ -2463,6 +2750,7 @@
             trainStartBtn.hidden = false;
             trainStartBtn.disabled = true;
             trainStartBtn.textContent = '▶ 시작';
+            setTrainStep('capture');
             trainCloseBtn.textContent = trained.length ? '닫기 (' + trained.length + '개 저장됨)' : '닫기';
             renderTrainLearned();
             setTrainMessage('카메라와 인식 파일을 준비하는 중입니다. 처음 한 번은 조금 걸립니다…');
@@ -2479,7 +2767,21 @@
             }
         }
 
+        function hasUnsavedTraining() {
+            return trainPhase === 'count' || trainPhase === 'collect' ||
+                (trainPhase === 'done' && trainSamples.length > 0);
+        }
+
         function closeTrainModal() {
+            if (hasUnsavedTraining()) {
+                const message = trainPhase === 'done'
+                    ? '학습한 클래스가 아직 저장되지 않았습니다. 저장하지 않고 닫을까요?'
+                    : '학습이 진행 중입니다. 지금 닫으면 이번 학습 내용이 사라집니다. 닫을까요?';
+                if (!confirm(message)) {
+                    if (trainPhase === 'done') trainNameInput.focus();
+                    return;
+                }
+            }
             trainModal.hidden = true;
             trainPhase = 'idle';
             if (trainRaf) cancelAnimationFrame(trainRaf);
@@ -2489,7 +2791,7 @@
         }
 
         document.getElementById('openTrain').addEventListener('click', openTrainModal);
-        trainCloseBtn.addEventListener('click', closeTrainModal);
+        trainCloseBtn.addEventListener('click', () => closeTrainModal());
         trainModal.addEventListener('click', (event) => {
             if (event.target === trainModal) closeTrainModal();
         });
@@ -2499,6 +2801,7 @@
 
         trainStartBtn.addEventListener('click', () => {
             trainPhase = 'count';
+            setTrainStep('capture');
             trainPhaseUntil = performance.now() + COUNTDOWN_SEC * 1000;
             trainNameRow.hidden = true;
             trainSaveBtn.hidden = true;
@@ -2513,19 +2816,31 @@
             }
             const name = trainNameInput.value.trim();
             if (!name) {
-                alert('동작 이름을 입력하세요!');
+                alert('클래스명을 입력하세요!');
                 trainNameInput.focus();
                 return;
             }
             const existing = trained.find(cls => cls.name === name);
-            if (existing) existing.vecs = trainSamples;   // 같은 이름이면 다시 학습한 것으로 본다
-            else trained.push({ name, vecs: trainSamples });
+            if (existing && !confirm(`'${name}' 클래스가 이미 있습니다. 새 학습 내용으로 덮어쓸까요?`)) {
+                trainNameInput.focus();
+                trainNameInput.select();
+                return;
+            }
+            if (existing) {
+                existing.vecs = trainSamples;
+                existing.previews = trainPreviews.slice(0, 3);
+            } else {
+                trained.push({ name, vecs: trainSamples, previews: trainPreviews.slice(0, 3) });
+            }
             log(`동작 학습: ${name} (${trainSamples.length}장)`, false, 'log2');
             syncTrainedToMappings();
+            const autoSaved = persistTrained(false);
 
             // 팝업을 닫지 않고 이어서 다음 동작을 학습할 수 있게 한다.
             trainPhase = 'idle';
             trainSamples = [];
+            trainPreviews = [];
+            trainNextPreviewIndex = 0;
             trainMissed = 0;
             trainBar.style.width = '0%';
             trainNameRow.hidden = true;
@@ -2535,25 +2850,50 @@
             trainStartBtn.textContent = '▶ 이어서 학습';
             trainCloseBtn.textContent = '닫기 (' + trained.length + '개 저장됨)';
             renderTrainLearned();
-            setTrainMessage(`'${name}' 을(를) 저장했습니다. ` +
-                '다음 동작을 준비하고 「이어서 학습」을, 다 했으면 「닫기」를 누르세요.');
+            setTrainStep('save');
+            setTrainMessage(`✅ '${name}' 클래스 저장 완료${autoSaved ? ' · 브라우저에 자동 저장됨' :
+                ' · 자동 저장에 실패했습니다. 팝업을 닫은 뒤 「지금 저장」을 눌러 주세요'}. ` +
+                '다음 클래스를 준비하고 「이어서 학습」을, 다 했으면 「닫기」를 누르세요.',
+                autoSaved ? 'success' : '');
+        });
+
+        trainNameInput.addEventListener('input', () => {
+            trainSaveBtn.disabled = !trainNameInput.value.trim();
+        });
+
+        trainNameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !trainSaveBtn.hidden && !trainSaveBtn.disabled) {
+                event.preventDefault();
+                trainSaveBtn.click();
+            }
         });
 
         // ── 저장 · 불러오기 ──
-        document.getElementById('saveTrained').addEventListener('click', () => {
-            if (!trained.length) { alert('저장할 학습 결과가 없습니다!'); return; }
+        function persistTrained(showAlert = true) {
+            if (!trained.length) {
+                if (showAlert) alert('저장할 학습 결과가 없습니다!');
+                return false;
+            }
             try {
                 localStorage.setItem(TRAIN_KEY, JSON.stringify({
                     classes: trained.map(cls => ({
                         name: cls.name,
-                        vecs: cls.vecs.map(v => v.map(x => Math.round(x * 1000) / 1000))
+                        vecs: cls.vecs.map(v => v.map(x => Math.round(x * 1000) / 1000)),
+                        previews: Array.isArray(cls.previews) ? cls.previews.slice(0, 3) : []
                     }))
                 }));
                 log('학습 결과를 이 컴퓨터에 저장했습니다.', false, 'log2');
-                alert('저장했습니다. 같은 컴퓨터·같은 브라우저에서 불러올 수 있습니다.');
+                if (showAlert) alert('저장했습니다. 같은 컴퓨터·같은 브라우저에서 불러올 수 있습니다.');
+                return true;
             } catch (error) {
-                alert('저장 실패: ' + error.message);
+                log('저장 실패: ' + error.message, true, 'log2');
+                if (showAlert) alert('저장 실패: ' + error.message);
+                return false;
             }
+        }
+
+        document.getElementById('saveTrained').addEventListener('click', () => {
+            persistTrained(true);
         });
 
         document.getElementById('loadTrained').addEventListener('click', () => {
@@ -2562,7 +2902,11 @@
                 if (!raw) { alert('저장된 학습 결과가 없습니다.'); return; }
                 const data = JSON.parse(raw);
                 if (!data || !Array.isArray(data.classes) || !data.classes.length) throw new Error('내용이 비어 있습니다');
-                trained = data.classes.map(cls => ({ name: String(cls.name), vecs: cls.vecs }));
+                trained = data.classes.map(cls => ({
+                    name: String(cls.name),
+                    vecs: cls.vecs,
+                    previews: Array.isArray(cls.previews) ? cls.previews.slice(0, 3) : []
+                }));
                 syncTrainedToMappings();
                 log(`저장된 학습 결과를 불러왔습니다: ${trained.length}개 동작`, false, 'log2');
             } catch (error) {
@@ -2574,6 +2918,7 @@
             if (!trained.length) return;
             if (!confirm('학습한 동작을 모두 지울까요?')) return;
             trained = [];
+            localStorage.removeItem(TRAIN_KEY);
             syncTrainedToMappings();
         });
 

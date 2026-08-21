@@ -365,17 +365,64 @@
             letter-spacing: -0.01em;
         }
 
+        /* 줄이 바뀌어도 한 줄이 늘 꽉 차도록 묶음과 버튼을 함께 늘린다 */
         .effect-controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px 16px;
             margin-bottom: 14px;
             justify-content: center;
+            align-items: flex-end;
+        }
+        .effect-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .effect-group-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #7a8794;
+            text-align: left;
+        }
+        .effect-group-btns {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+        .effect-group-btns .effect-btn {
+            flex: 1 1 auto;
+            max-width: 220px;
+        }
+        /* 묶음 사이를 나누는 은은한 세로선 */
+        .effect-divider {
+            flex: 0 0 1px;
+            height: 34px;
+            align-self: flex-end;
+            margin-bottom: 2px;
+            background: linear-gradient(to bottom,
+                rgba(206, 213, 224, 0) 0%,
+                rgba(206, 213, 224, 0.9) 25%,
+                rgba(206, 213, 224, 0.9) 75%,
+                rgba(206, 213, 224, 0) 100%);
         }
 
+        /* 슬라이더는 자리가 있을 때만 두 열로 나뉘고, 남는 자리는 슬라이더 길이로 간다 */
         .effect-control {
             flex: 1;
             min-width: 200px;
+        }
+        .slider-rows {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0 24px;
+        }
+        .slider-col {
+            flex: 1 1 200px;
+            min-width: 0;
         }
 
         .effect-btn {
@@ -550,12 +597,12 @@
             background-color: #81d4fa;
         }
 
-        /* 교환/반전 등 중립 버튼 */
-        .mapping-btn:not(.red):not(.green):not(.blue) {
+        /* 되돌리기 같은 중립 버튼 (적용 버튼은 따로 색을 준다) */
+        .mapping-btn:not(.map-apply):not(.red):not(.green):not(.blue) {
             background: #e1bee7;
             color: #4527a0;
         }
-        .mapping-btn:not(.red):not(.green):not(.blue):hover {
+        .mapping-btn:not(.map-apply):not(.red):not(.green):not(.blue):hover {
             background-color: #ce93d8;
         }
 
@@ -592,6 +639,73 @@
         #undo-mapping-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
+        }
+
+        /* 드롭다운으로 고르는 채널 매핑 */
+        .map-picker {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 6px;
+        }
+        .map-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+        }
+        .map-field-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #5b6b7a;
+        }
+        .map-field select {
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 8px 10px;
+            min-width: 116px;
+            min-height: 40px;
+            border: 2px solid #cfd8e3;
+            border-radius: 6px;
+            background: #fff;
+            color: #222;
+            cursor: pointer;
+        }
+        .map-field select:focus-visible {
+            outline: 2px solid #4a90d9;
+            outline-offset: 1px;
+        }
+        .map-field select.ch-R { border-color: #e57373; color: #b23b3b; }
+        .map-field select.ch-G { border-color: #66bb6a; color: #2e7d32; }
+        .map-field select.ch-B { border-color: #64b5f6; color: #1565c0; }
+        .map-arrow {
+            font-size: 20px;
+            font-weight: 800;
+            color: #7a8794;
+            padding-bottom: 8px;
+        }
+        .map-apply {
+            min-height: 40px;
+            padding: 0 20px;
+            background: #3f6fd8;
+            color: #fff;
+        }
+        .map-apply:hover { background: #2f5cc0; }
+        .map-desc {
+            margin: 10px 0 0;
+            font-size: 13px;
+            color: #444;
+            line-height: 1.6;
+        }
+        .map-desc b { color: #1d6b1d; }
+
+        @media (max-width: 560px) {
+            .map-picker { flex-direction: column; align-items: stretch; }
+            .map-arrow { display: none; }
+            .map-field select { width: 100%; }
         }
 
         .mapping-controls.undo-row {
@@ -664,202 +778,448 @@
         }
 
         /* 밝기 비교 패널 */
-        .brightness-compare-panel {
-            display: none;
-            margin-top: 14px;
-            padding: 12px;
-            background: #f6f8ff;
-            border-radius: 8px;
-            border: 1px solid #dde3ec;
+        .gray-mode-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 8px 0 2px;
         }
-        .brightness-compare-title {
+        .gray-mode-label {
             font-size: 12px;
             font-weight: 700;
             color: #555;
-            margin-bottom: 10px;
-            text-align: center;
         }
-        .brightness-compare-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
+        .gray-mode-btn {
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 2px solid #dde3ec;
+            background: #fff;
+            color: #555;
+            cursor: pointer;
+            font-family: inherit;
         }
-        .brightness-compare-item {
-            text-align: center;
-            flex: 1;
-            min-width: 110px;
-        }
-        .brightness-compare-item-title {
-            font-size: 11px;
+        .gray-mode-btn:hover { background: #f3f6fb; }
+        .gray-mode-btn.active {
+            border-color: #5b6b7a;
+            background: #eef1f5;
+            color: #222;
             font-weight: 700;
-            margin-bottom: 4px;
         }
-        .brightness-compare-item-title.original { color: #888; }
-        .brightness-compare-item-title.additive  { color: #4a90d9; }
-        .brightness-compare-item-title.scale     { color: #e07b3c; }
-        .brightness-compare-canvas {
-            max-width: 100%;
-            border-radius: 4px;
+        .gray-mode-btn.active.weighted {
+            border-color: #2e9e2e;
+            background: #eaf7ea;
+            color: #1d6b1d;
         }
-        .brightness-compare-canvas.original { border: 1px solid #ddd; }
-        .brightness-compare-canvas.additive  { border: 1px solid #b3d1f7; }
-        .brightness-compare-canvas.scale     { border: 1px solid #f7cba3; }
-        .brightness-compare-canvas.gamma     { border: 1px solid #b3e6b3; }
-        .brightness-compare-label {
-            font-size: 11px;
-            margin-top: 3px;
-        }
-        .brightness-compare-label.additive { color: #4a90d9; }
-        .brightness-compare-label.scale    { color: #e07b3c; }
-        .brightness-compare-label.gamma    { color: #2e9e2e; }
+        /* 계산식은 비교 팝업에서 설명을 본 뒤에 보여 준다 */
+        .gray-formula-text { display: none; }
+        .gray-mode-row.formula-shown .gray-formula-text { display: inline; }
 
-        /* 비교 크게 보기 체크박스 */
-        .brightness-compare-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .brightness-compare-header .brightness-compare-title {
-            margin-bottom: 0;
-        }
-        .compare-expand-all-btn {
+        .gray-mode-hint {
             font-size: 11px;
-            padding: 4px 10px;
+            color: #777;
+            margin-left: 2px;
         }
-        .gamma-label { color: #2e9e2e; font-weight: 700; }
-        .compare-expand-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 5px;
+
+        .gray-stat {
+            margin: 16px auto 0;
+            max-width: 1000px;
+            padding: 8px 10px;
+            background: #fff;
+            border: 1px solid #dde3ec;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #444;
+            line-height: 1.6;
+        }
+        .gray-stat b { color: #1d6b1d; }
+        .gray-legend {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
             font-size: 11px;
             color: #666;
-            cursor: pointer;
-            -webkit-user-select: none;
-            user-select: none;
+            margin-top: 6px;
+            flex-wrap: wrap;
         }
-        .compare-expand-label input[type=checkbox] {
-            accent-color: #4a90d9;
-            cursor: pointer;
+        .gray-legend span::before {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 4px;
+            vertical-align: -1px;
         }
+        .gray-legend .up::before { background: #3ec46b; }
+        .gray-legend .down::before { background: #c06ad0; }
+        .gray-legend .same::before { background: #808080; }
 
-        /* 비교 팝업 모달 */
-        .compare-popup-overlay {
+        .gamma-label { color: #2e9e2e; font-weight: 700; }
+
+        /* ── 흑백 방식 비교 팝업 (3단계) ── */
+        .gray-popup-overlay {
             display: none;
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.65);
-            z-index: 3000;
+            z-index: 3100;
             justify-content: center;
             align-items: center;
+            padding: 12px;
         }
-        .compare-popup-overlay.open { display: flex; }
-        .compare-popup-box {
+        .gray-popup-overlay.open { display: flex; }
+        .gray-popup-box {
             background: #fff;
             border-radius: 16px;
-            padding: 20px 24px 18px;
-            max-width: 96vw;
-            width: 96vw;
-            max-height: 94vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.35);
-            position: relative;
+            width: min(1700px, 98vw);   /* 사진을 되도록 크게 본다 */
+            max-height: 96vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.35);
         }
-        .compare-popup-header {
-            width: 100%;
+        .gray-popup-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 13px 18px;
+            border-bottom: 1px solid #eceff3;
         }
-        .compare-popup-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #333;
+        .gray-popup-title { font-size: 17px; font-weight: 800; color: #1c2430; letter-spacing: -0.2px; }
+        /* 몇 번째 쪽인지 보여 주는 막대 */
+        .gray-progress { display: flex; gap: 4px; padding: 0 18px 12px; }
+        .gray-progress-seg {
+            flex: 1;
+            height: 5px;
+            border-radius: 999px;
+            background: #e6eaf0;
+            transition: background 0.15s;
         }
-        .compare-popup-close {
-            font-size: 22px;
+        .gray-progress-seg.on { background: #3f6fd8; }
+        .gray-popup-close {
+            font-size: 20px;
             line-height: 1;
             cursor: pointer;
             color: #888;
             border: none;
             background: none;
-            padding: 2px 6px;
+            padding: 4px 8px;
             border-radius: 6px;
-            transition: background 0.15s;
+            min-height: 32px;
         }
-        .compare-popup-close:hover { background: #f0f0f0; color: #333; }
-        #compare-popup-canvas {
-            max-width: 100%;
-            max-height: 60vh;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        .compare-popup-canvases {
-            display: flex;
-            gap: 12px;
-            flex-wrap: nowrap;
-            justify-content: center;
-            width: 100%;
-        }
-        @media (max-width: 600px) {
-            .compare-popup-canvases { flex-wrap: wrap; }
-        }
-        .compare-popup-item {
+        .gray-popup-close:hover { background: #f0f0f0; color: #333; }
+        .gray-popup-body { padding: 16px 18px; overflow-y: auto; }
+        .gray-page { display: none; }
+        .gray-page.on { display: block; }
+        .gray-page h4 {
+            margin: 0 0 7px;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            color: #1c2430;
             text-align: center;
-            flex: 1;
-            min-width: 0;
         }
-        .compare-popup-item canvas {
-            width: 100%;
-            height: auto;
-            max-height: calc(80vh - 160px);
-            object-fit: contain;
+        .gray-page .lead {
+            margin: 0 auto 18px;
+            max-width: 860px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.7;
         }
-        .compare-popup-item-title {
+        .gray-page h4 + .lead { text-align: center; }
+        .gray-popup-foot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 18px;
+            border-top: 1px solid #eceff3;
+            background: #fafbfd;
+        }
+        .gray-nav-btn {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 9px 18px;
+            min-height: 40px;
+            border-radius: 8px;
+            border: 1px solid #d5dbe4;
+            background: #fff;
+            color: #445;
+            cursor: pointer;
+        }
+        .gray-nav-btn:hover { background: #f2f5fa; }
+        .gray-nav-btn.primary { background: #3f6fd8; border-color: #3f6fd8; color: #fff; }
+        .gray-nav-btn.primary:hover { background: #2f5cc0; }
+        .gray-nav-btn:disabled { opacity: 0.4; cursor: default; }
+
+        /* 세 색을 한꺼번에 움직이는 슬라이더 */
+        .gray-master {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 12px 14px;
+            max-width: 720px;
+            margin: 0 auto 16px;
+            border: 1px solid #e3e8f0;
+            background: #f6f8fc;
+            border-radius: 10px;
+        }
+        .gray-master label { font-size: 13px; font-weight: 700; color: #38424f; white-space: nowrap; }
+        .gray-master input[type="range"] { flex: 0 1 260px; min-width: 130px; }
+        .gray-num {
+            width: 92px;
+            height: 42px;
+            font-family: inherit;
+            font-size: 19px;
+            font-weight: 800;
+            text-align: center;
+            color: #1c2430;
+            border: 2px solid #cfd8e3;
+            border-radius: 9px;
+            background: #fff;
+        }
+        .gray-num:focus-visible { outline: 2px solid #4a90d9; outline-offset: 1px; border-color: #4a90d9; }
+        .gray-master-val {
             font-size: 12px;
             font-weight: 700;
-            margin-bottom: 5px;
+            color: #b26a00;
+            min-width: 0;
         }
-        .compare-popup-item-title.original { color: #888; }
-        .compare-popup-item-title.additive  { color: #4a90d9; }
-        .compare-popup-item-title.scale     { color: #e07b3c; }
-        .compare-popup-item-title.gamma     { color: #2e9e2e; }
-        .compare-popup-controls {
+        .gray-step-btns { display: flex; gap: 6px; }
+        .gray-step-btn {
+            width: 40px;
+            min-height: 40px;
+            font-family: inherit;
+            font-size: 13px;
+            border-radius: 8px;
+            border: 1px solid #d5dbe4;
+            background: #fff;
+            color: #445;
+            cursor: pointer;
+        }
+        .gray-step-btn:hover { background: #f2f5fa; }
+
+        /* 1단계: 색을 직접 낮춰 보는 실험 */
+        .gray-lab {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+        .gray-lab-col {
+            border: 1px solid #e6e9ef;
+            border-radius: 12px;
+            padding: 14px 14px 16px;
+            text-align: center;
+            background: #fcfdfe;
+        }
+        .gray-lab-name { font-size: 15px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.2px; }
+        .gray-lab-name.R { color: #c0392b; }
+        .gray-lab-name.G { color: #218a21; }
+        .gray-lab-name.B { color: #2f6fd0; }
+        .gray-lab-swatch { height: 128px; border-radius: 10px; border: 1px solid #dfe3ea; }
+        .gray-lab-col input[type="range"] { width: 100%; margin: 10px 0 2px; }
+        .gray-lab-val { font-size: 12px; font-weight: 700; color: #7a8794; margin-top: 2px; }
+        .gray-lab-val span {
+            font-size: 21px;
+            font-weight: 800;
+            color: #1c2430;
+            font-variant-numeric: tabular-nums;
+            margin-left: 3px;
+        }
+        .gray-eye-label { font-size: 11px; color: #667; margin: 9px 0 3px; text-align: left; }
+        .gray-bar-track {
+            height: 16px;
+            background: #f1f3f7;
+            border: 1px solid #e2e6ec;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .gray-bar-fill { height: 100%; width: 0; border-radius: 999px; transition: width 0.12s linear; }
+        .gray-eye-num {
+            font-size: 15px;
+            font-weight: 800;
+            color: #1c2430;
+            font-variant-numeric: tabular-nums;
+            margin-top: 6px;
+            text-align: right;
+        }
+        .gray-mini-row { display: flex; gap: 8px; margin-top: 10px; }
+        .gray-mini { flex: 1; }
+        .gray-mini-sw { height: 42px; border-radius: 7px; border: 1px solid #dfe3ea; }
+        .gray-mini-cap { font-size: 10px; color: #666; margin-top: 3px; line-height: 1.4; }
+        .gray-lab-tools { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+        .gray-tool-btn {
+            font-family: inherit;
+            font-size: 12px;
+            padding: 7px 14px;
+            min-height: 36px;
+            border-radius: 7px;
+            border: 1px solid #d5dbe4;
+            background: #fff;
+            color: #445;
+            cursor: pointer;
+        }
+        .gray-tool-btn:hover { background: #f2f5fa; }
+        .gray-note {
+            margin: 14px auto 0;
+            max-width: 1000px;
+            padding: 11px 13px;
+            background: #f6f8fc;
+            border: 1px solid #e3e8f0;
+            border-radius: 9px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.75;
+        }
+        .gray-note b { color: #1d6b1d; }
+        .gray-note { font-size: 14px; }
+
+        /* 2단계: 눈이 느끼는 밝기 강도 */
+        .gray-eye-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+        .gray-eye-col {
+            border: 1px solid #e6e9ef;
+            border-radius: 10px;
+            padding: 11px 12px 13px;
+            text-align: center;
+        }
+        .gray-eye-strip {
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid #dfe3ea;
+            margin-bottom: 9px;
+        }
+        .gray-h4-gap { margin-top: 22px !important; }
+        @media (max-width: 640px) {
+            .gray-eye-grid { grid-template-columns: 1fr; }
+        }
+
+        /* 2단계: 3 대 6 대 1 */
+        .gray-ratio-row { margin: 6px 0 16px; }
+        .gray-ratio-row { max-width: 1000px; margin: 6px auto 18px; }
+        .gray-ratio-cap { font-size: 13px; font-weight: 700; color: #38424f; margin-bottom: 6px; }
+        .gray-ratio {
+            display: flex;
+            height: 46px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e6ec;
+        }
+        .gray-ratio i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: normal;
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .gray-ratio i.R { background: #d9534f; }
+        .gray-ratio i.G { background: #3aa93a; }
+        .gray-ratio i.B { background: #4a86e8; }
+        .gray-formula {
+            max-width: 1000px;
+            margin: 0 auto;
+            font-size: 25px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            text-align: center;
+            padding: 22px 14px;
+            background: #f6f8fc;
+            border: 1px solid #e3e8f0;
+            border-radius: 10px;
+            color: #222;
+            line-height: 1.6;
+        }
+        .gray-formula .R { color: #c0392b; }
+        .gray-formula .G { color: #218a21; }
+        .gray-formula .B { color: #2f6fd0; }
+        .gray-ex {
+            max-width: 1000px;
+            margin: 16px auto 0;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 12px;
+            border: 1px solid #e6e9ef;
+            border-radius: 10px;
+        }
+        .gray-ex-sw { width: 72px; height: 72px; border-radius: 10px; border: 1px solid #dfe3ea; flex: none; }
+        .gray-ex-text { font-size: 14px; color: #333; line-height: 1.9; flex: 1; min-width: 200px; }
+        .gray-ex-text b { color: #1d6b1d; }
+        .gray-foot-note { margin: 12px auto 0; max-width: 1000px; font-size: 12px; color: #777; line-height: 1.7; }
+
+        /* 3단계: 사진 비교 */
+        .gray-cmp3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        /* 넉 장은 화면이 아주 넓을 때만 한 줄에, 아니면 2×2로 크게 */
+        .gray-cmp4 { grid-template-columns: repeat(2, 1fr); }
+        @media (min-width: 1500px) {
+            .gray-cmp4 { grid-template-columns: repeat(4, 1fr); }
+        }
+        .gray-cmp-item h5.additive { color: #4a90d9; }
+        .gray-cmp-item h5.scale { color: #e07b3c; }
+        .gray-cmp-item h5.gammac { color: #2e9e2e; }
+        .gray-cmp-cap b { color: #333; }
+        .gray-cmp-item { text-align: center; min-width: 0; }
+        .gray-cmp-item h5 { margin: 0 0 7px; font-size: 15px; font-weight: 800; letter-spacing: -0.2px; }
+        .gray-cmp-item h5.original { color: #888; }
+        .gray-cmp-item h5.avgm { color: #7a6ad9; }
+        .gray-cmp-item h5.wgt { color: #2e9e2e; }
+        .gray-cmp-item h5.diff { color: #c0562e; }
+        .gray-cmp-canvas {
+            box-sizing: border-box;   /* 테두리까지 칸 안에 들어오게 */
             width: 100%;
+            height: auto;
+            max-height: 70vh;          /* 사진 자체의 최대 높이 */
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+        }
+        .gray-cmp-cap { font-size: 12px; color: #667; margin-top: 6px; line-height: 1.6; }
+        .gray-diff-wrap { display: none; margin-top: 14px; }
+        .gray-diff-wrap.on { display: block; }
+        .gray-diff-inner { max-width: 560px; margin: 0 auto; }
+
+        @media (max-width: 640px) {
+            .gray-lab { grid-template-columns: 1fr; }
+            .gray-cmp3 { grid-template-columns: 1fr; }
+            .gray-cmp4 { grid-template-columns: repeat(2, 1fr); }   /* 넉 장은 2×2로 */
+            .gray-popup-header { flex-wrap: wrap; }
+        }
+
+        /* 비교 팝업 모달 */
+        .compare-popup-controls {
+            box-sizing: border-box;      /* 테두리·여백까지 폭 안에 */
+            width: 100%;
+            max-width: 680px;            /* 너무 길면 조절이 어렵다 */
             display: flex;
             flex-direction: column;
             gap: 8px;
+            margin: 16px auto 0;         /* 가운데로 */
+            padding: 10px 14px;
+            border: 1px solid #e3e8f0;
+            background: #f6f8fc;
+            border-radius: 10px;
         }
         .compare-popup-controls .slider-container label {
             width: 64px;
-        }
-
-        /* 채널 매핑 버튼 그라데이션 */
-        #r-to-g, #b-to-g {
-            background: #b2fab4;
-            color: #333;
-            border: none;
-        }
-        #r-to-b, #g-to-b {
-            background: #b3e5fc;
-            color: #333;
-            border: none;
-        }
-        #g-to-r, #b-to-r {
-            background: #ffb3b3;
-            color: #333;
-            border: none;
-        }
-        /* 교환/반전 등 중립 버튼 */
-        .mapping-btn:not(#r-to-g):not(#b-to-g):not(#r-to-b):not(#g-to-b):not(#g-to-r):not(#b-to-r):not(.red):not(.green):not(.blue) {
-            background: #e1bee7;
-            color: #4527a0;
         }
     </style>
 </head>
@@ -952,66 +1312,71 @@
                 <div class="sub_container"><div class="image-effects">
                     <h3>이미지 효과</h3>
                     <div class="effect-controls">
-                        <button id="invert-btn" class="effect-btn">반전</button>
-                        <button id="grayscale-btn" class="effect-btn">그레이스케일</button>
-                        <button id="hue-toggle-btn" class="effect-btn hue-toggle">🎨 색조 회전</button>
-                        <button id="brightness-compare-btn" class="effect-btn">⚖ 밝기 비교</button>
-                        <button id="reset-btn" class="effect-btn danger">원본으로 되돌리기</button>
+                        <div class="effect-group">
+                            <span class="effect-group-label">효과 켜기</span>
+                            <div class="effect-group-btns">
+                                <button id="invert-btn" class="effect-btn">반전</button>
+                                <button id="grayscale-btn" class="effect-btn">그레이스케일</button>
+                                <button id="hue-toggle-btn" class="effect-btn hue-toggle">🎨 색조 회전</button>
+                            </div>
+                        </div>
+                        <span class="effect-divider" aria-hidden="true"></span>
+
+                        <div class="effect-group">
+                            <span class="effect-group-label">비교해 보기</span>
+                            <div class="effect-group-btns">
+                                <button id="brightness-compare-btn" class="effect-btn">⚖ 밝기 비교</button>
+                                <button id="gray-compare-btn" class="effect-btn">⚫ 흑백 방식 비교</button>
+                            </div>
+                        </div>
+                        <span class="effect-divider" aria-hidden="true"></span>
+
+                        <div class="effect-group reset-group">
+                            <div class="effect-group-btns">
+                                <button id="reset-btn" class="effect-btn danger">원본으로 되돌리기</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="effect-control">
-                        <div class="slider-container">
-                            <label for="brightness">밝기</label>
-                            <input type="range" id="brightness" min="-100" max="100" value="0">
-                            <span id="brightness-value">0</span>
-                        </div>
-                        <div class="slider-container">
-                            <label for="brightness-scale">배율</label>
-                            <input type="range" id="brightness-scale" min="0.0" max="2.0" step="0.05" value="1.0">
-                            <span id="brightness-scale-value">×1.00</span>
-                        </div>
-                        <div class="slider-container">
-                            <label for="gamma" class="gamma-label">감마 γ</label>
-                            <input type="range" id="gamma" min="0.2" max="1.8" step="0.05" value="1.0">
-                            <span id="gamma-value">1.00</span>
-                        </div>
-                        <div class="slider-container">
-                            <label for="contrast">대비</label>
-                            <input type="range" id="contrast" min="-100" max="100" value="0">
-                            <span id="contrast-value">0</span>
-                        </div>
-                        <div class="slider-container">
-                            <label for="saturation">채도</label>
-                            <input type="range" id="saturation" min="-100" max="100" value="0">
-                            <span id="saturation-value">0</span>
-                        </div>
-                        <div id="brightness-compare-panel" class="brightness-compare-panel">
-                            <div class="brightness-compare-header">
-                                <span class="brightness-compare-title">밝기 조절 방식 비교 (기타 효과 제외)</span>
-                                <button type="button" id="compare-expand-all-btn" class="effect-btn compare-expand-all-btn">🔍 크게 보기</button>
+                        <div class="slider-rows">
+                        <div class="slider-col">
+                            <div class="slider-container">
+                                <label for="brightness">밝기</label>
+                                <input type="range" id="brightness" min="-100" max="100" value="0">
+                                <span id="brightness-value">0</span>
                             </div>
-                            <div class="brightness-compare-row">
-                                <div class="brightness-compare-item">
-                                    <div class="brightness-compare-item-title original">원본</div>
-                                    <canvas id="compare-original" class="brightness-compare-canvas original"></canvas>
-                                </div>
-                                <div class="brightness-compare-item">
-                                    <div class="brightness-compare-item-title additive">덧셈 밝기만</div>
-                                    <canvas id="compare-additive" class="brightness-compare-canvas additive"></canvas>
-                                    <div class="brightness-compare-label additive" id="compare-additive-label">밝기 0</div>
-                                </div>
-                                <div class="brightness-compare-item">
-                                    <div class="brightness-compare-item-title scale">배율 밝기만</div>
-                                    <canvas id="compare-scale" class="brightness-compare-canvas scale"></canvas>
-                                    <div class="brightness-compare-label scale" id="compare-scale-label">배율 ×1.00</div>
-                                </div>
-                                <div class="brightness-compare-item">
-                                    <div class="brightness-compare-item-title gamma">감마 보정</div>
-                                    <canvas id="compare-gamma" class="brightness-compare-canvas gamma"></canvas>
-                                    <div class="brightness-compare-label gamma" id="compare-gamma-label">γ 1.00</div>
-                                </div>
+                            <div class="slider-container">
+                                <label for="brightness-scale">배율</label>
+                                <input type="range" id="brightness-scale" min="0.0" max="2.0" step="0.05" value="1.0">
+                                <span id="brightness-scale-value">×1.00</span>
+                            </div>
+                            <div class="slider-container">
+                                <label for="gamma" class="gamma-label">감마 γ</label>
+                                <input type="range" id="gamma" min="0.2" max="1.8" step="0.05" value="1.0">
+                                <span id="gamma-value">1.00</span>
                             </div>
                         </div>
+                        <div class="slider-col">
+                            <div class="slider-container">
+                                <label for="contrast">대비</label>
+                                <input type="range" id="contrast" min="-100" max="100" value="0">
+                                <span id="contrast-value">0</span>
+                            </div>
+                            <div class="slider-container">
+                                <label for="saturation">채도</label>
+                                <input type="range" id="saturation" min="-100" max="100" value="0">
+                                <span id="saturation-value">0</span>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="gray-mode-row" id="gray-mode-row">
+                            <span class="gray-mode-label">흑백 만드는 방법</span>
+                            <button type="button" id="gray-mode-weighted" class="gray-mode-btn weighted active">가중치<span class="gray-formula-text"> 0.3R + 0.6G + 0.1B</span></button>
+                            <button type="button" id="gray-mode-average" class="gray-mode-btn">평균<span class="gray-formula-text"> (R + G + B) ÷ 3</span></button>
+                            <span class="gray-mode-hint" id="gray-mode-hint">고르면 위 그림에 바로 적용됩니다 · 계산식은 [⚫ 흑백 방식 비교]에서</span>
+                        </div>
+
                         <div class="hue-panel" id="hue-panel">
                             <div class="hue-wheel-wrap">
                                 <canvas id="hue-wheel" width="120" height="120"></canvas>
@@ -1023,28 +1388,37 @@
                 <!-- 채널 매핑 섹션 추가 -->
                 <div class="channel-mapping">
                     <h3>채널 매핑 옵션</h3>
-                    <p>한 채널의 데이터를 다른 채널로 복사하려면 아래 버튼을 사용하세요</p>
+                    <p>무엇을, 어느 채널에 할지 골라서 적용해 보세요</p>
 
-                    <div class="mapping-controls">
-                        <button id="r-to-g" class="mapping-btn red">R→G</button>
-                        <button id="r-to-b" class="mapping-btn red">R→B</button>
-                        <button id="g-to-r" class="mapping-btn green">G→R</button>
-                        <button id="g-to-b" class="mapping-btn green">G→B</button>
-                        <button id="b-to-r" class="mapping-btn blue">B→R</button>
-                        <button id="b-to-g" class="mapping-btn blue">B→G</button>
-                    </div>
+                    <div class="map-picker">
+                        <label class="map-field">
+                            <span class="map-field-label">무엇을</span>
+                            <select id="map-op">
+                                <option value="copy">덮어쓰기</option>
+                                <option value="swap">교환</option>
+                                <option value="invert">반전</option>
+                            </select>
+                        </label>
 
-                    <div class="mapping-controls" style="margin-top: 10px;">
-                        <button id="swap-r-g" class="mapping-btn">R↔G 교환</button>
-                        <button id="swap-r-b" class="mapping-btn">R↔B 교환</button>
-                        <button id="swap-g-b" class="mapping-btn">G↔B 교환</button>
-                    </div>
+                        <label class="map-field" id="map-from-field">
+                            <span class="map-field-label">채널</span>
+                            <select id="map-from">
+                                <option value="R">R (빨강)</option>
+                                <option value="G">G (초록)</option>
+                                <option value="B">B (파랑)</option>
+                            </select>
+                        </label>
 
-                    <div class="mapping-controls" style="margin-top: 10px;">
-                        <button id="invert-r" class="mapping-btn red">R 반전</button>
-                        <button id="invert-g" class="mapping-btn green">G 반전</button>
-                        <button id="invert-b" class="mapping-btn blue">B 반전</button>
+                        <span class="map-arrow" id="map-arrow">→</span>
+
+                        <label class="map-field" id="map-to-field">
+                            <span class="map-field-label">대상 채널</span>
+                            <select id="map-to"></select>
+                        </label>
+
+                        <button type="button" id="map-apply" class="mapping-btn map-apply">적용</button>
                     </div>
+                    <p class="map-desc" id="map-desc"></p>
                     <div class="mapping-controls undo-row">
                         <button id="undo-mapping-btn" class="mapping-btn" disabled>↩ 마지막 매핑 되돌리기</button>
                     </div>
@@ -1079,46 +1453,280 @@
     </div>
 
     <!-- 밝기 비교 크게 보기 팝업 -->
-    <div id="compare-popup-overlay" class="compare-popup-overlay">
-        <div class="compare-popup-box">
-            <div class="compare-popup-header">
-                <span class="compare-popup-title">밝기 방식 비교</span>
-                <button type="button" class="compare-popup-close" id="compare-popup-close">&#x2715;</button>
+    <div id="gray-popup-overlay" class="gray-popup-overlay">
+        <div class="gray-popup-box" role="dialog" aria-modal="true" aria-labelledby="gray-popup-title">
+            <div class="gray-popup-header">
+                <span class="gray-popup-title" id="gray-popup-title">흑백은 어떻게 만들까?</span>
+                <button type="button" class="gray-popup-close" id="gray-popup-close" aria-label="닫기">&#x2715;</button>
             </div>
-            <div class="compare-popup-canvases">
-                <div class="compare-popup-item">
-                    <div class="compare-popup-item-title original">원본</div>
-                    <canvas id="popup-canvas-original" class="brightness-compare-canvas original"></canvas>
+
+            <div class="gray-progress" id="gray-progress" aria-hidden="true">
+                <span class="gray-progress-seg on"></span>
+                <span class="gray-progress-seg"></span>
+                <span class="gray-progress-seg"></span>
+            </div>
+
+            <div class="gray-popup-body">
+                <!-- ── 1단계 ── -->
+                <section class="gray-page on" id="gray-page-1">
+                    <h4>같은 숫자인데, 어느 색이 더 밝아 보이나요?</h4>
+                    <p class="lead">빨강·초록·파랑이 모두 <b>255</b>로 켜져 있습니다. 슬라이더를 하나씩 내려 보세요.
+                        어느 색을 내릴 때 화면이 가장 크게 어두워지는지 눈으로 확인해 봅시다.</p>
+
+                    <div class="gray-master">
+                        <label for="gray-lab-all">세 색 한꺼번에</label>
+                        <input type="range" id="gray-lab-all" min="0" max="255" value="255">
+                        <input type="number" id="gray-num-all" class="gray-num" min="0" max="255" step="1" value="255"
+                               inputmode="numeric" aria-label="세 색 값 직접 입력">
+                        <span class="gray-step-btns">
+                            <button type="button" class="gray-step-btn" id="gray-all-down" aria-label="세 색 값 5 내리기" title="5 내리기">&#x25BC;</button>
+                            <button type="button" class="gray-step-btn" id="gray-all-up" aria-label="세 색 값 5 올리기" title="5 올리기">&#x25B2;</button>
+                        </span>
+                        <span class="gray-master-val" id="gray-val-all"></span>
+                    </div>
+
+                    <div class="gray-lab">
+                        <div class="gray-lab-col">
+                            <div class="gray-lab-name R">빨강 R</div>
+                            <div class="gray-lab-swatch" id="gray-sw-R"></div>
+                            <label for="gray-lab-R" class="sr-only-label gray-eye-label">빨강 값</label>
+                            <input type="range" id="gray-lab-R" min="0" max="255" value="255">
+                            <div class="gray-lab-val">값 <span id="gray-val-R">255</span></div>
+                        </div>
+
+                        <div class="gray-lab-col">
+                            <div class="gray-lab-name G">초록 G</div>
+                            <div class="gray-lab-swatch" id="gray-sw-G"></div>
+                            <label for="gray-lab-G" class="sr-only-label gray-eye-label">초록 값</label>
+                            <input type="range" id="gray-lab-G" min="0" max="255" value="255">
+                            <div class="gray-lab-val">값 <span id="gray-val-G">255</span></div>
+                        </div>
+
+                        <div class="gray-lab-col">
+                            <div class="gray-lab-name B">파랑 B</div>
+                            <div class="gray-lab-swatch" id="gray-sw-B"></div>
+                            <label for="gray-lab-B" class="sr-only-label gray-eye-label">파랑 값</label>
+                            <input type="range" id="gray-lab-B" min="0" max="255" value="255">
+                            <div class="gray-lab-val">값 <span id="gray-val-B">255</span></div>
+                        </div>
+                    </div>
+
+                    <div class="gray-lab-tools">
+                        <button type="button" class="gray-tool-btn" id="gray-lab-full">세 색 모두 255</button>
+                        <button type="button" class="gray-tool-btn" id="gray-lab-drop">초록만 0으로</button>
+                    </div>
+
+                    <div class="gray-note" id="gray-lab-note"></div>
+                </section>
+
+                <!-- ── 2단계 ── -->
+                <section class="gray-page" id="gray-page-2">
+                    <h4>눈이 느끼는 밝기는 이만큼 다릅니다</h4>
+                    <p class="lead">앞 쪽에서 맞춘 값을 그대로 계산한 것입니다. 막대가 길수록 눈에 밝게 느껴지는 정도가 큽니다.</p>
+
+                    <div class="gray-eye-grid">
+                        <div class="gray-eye-col">
+                            <div class="gray-lab-name R">빨강 R</div>
+                            <div class="gray-eye-strip" id="gray-strip-R"></div>
+                            <div class="gray-bar-track"><div class="gray-bar-fill" id="gray-bar-R"></div></div>
+                            <div class="gray-eye-num" id="gray-eye-R"></div>
+                            <div class="gray-mini-row">
+                                <div class="gray-mini">
+                                    <div class="gray-mini-sw" id="gray-avg-sw-R"></div>
+                                    <div class="gray-mini-cap">평균법<br><span id="gray-avg-num-R"></span></div>
+                                </div>
+                                <div class="gray-mini">
+                                    <div class="gray-mini-sw" id="gray-wgt-sw-R"></div>
+                                    <div class="gray-mini-cap">가중치법<br><span id="gray-wgt-num-R"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gray-eye-col">
+                            <div class="gray-lab-name G">초록 G</div>
+                            <div class="gray-eye-strip" id="gray-strip-G"></div>
+                            <div class="gray-bar-track"><div class="gray-bar-fill" id="gray-bar-G"></div></div>
+                            <div class="gray-eye-num" id="gray-eye-G"></div>
+                            <div class="gray-mini-row">
+                                <div class="gray-mini">
+                                    <div class="gray-mini-sw" id="gray-avg-sw-G"></div>
+                                    <div class="gray-mini-cap">평균법<br><span id="gray-avg-num-G"></span></div>
+                                </div>
+                                <div class="gray-mini">
+                                    <div class="gray-mini-sw" id="gray-wgt-sw-G"></div>
+                                    <div class="gray-mini-cap">가중치법<br><span id="gray-wgt-num-G"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gray-eye-col">
+                            <div class="gray-lab-name B">파랑 B</div>
+                            <div class="gray-eye-strip" id="gray-strip-B"></div>
+                            <div class="gray-bar-track"><div class="gray-bar-fill" id="gray-bar-B"></div></div>
+                            <div class="gray-eye-num" id="gray-eye-B"></div>
+                            <div class="gray-mini-row">
+                                <div class="gray-mini">
+                                    <div class="gray-mini-sw" id="gray-avg-sw-B"></div>
+                                    <div class="gray-mini-cap">평균법<br><span id="gray-avg-num-B"></span></div>
+                                </div>
+                                <div class="gray-mini">
+                                    <div class="gray-mini-sw" id="gray-wgt-sw-B"></div>
+                                    <div class="gray-mini-cap">가중치법<br><span id="gray-wgt-num-B"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="gray-note" id="gray-eye-note"></div>
+
+                    <h4 class="gray-h4-gap">그래서 흑백은 3 : 6 : 1로 섞습니다</h4>
+                    <p class="lead">세 채널을 똑같이 나누지 않고, <b>초록에 가장 큰 몫</b>을 줍니다.</p>
+
+                    <div class="gray-ratio-row">
+                        <div class="gray-ratio-cap">평균법 — 셋을 똑같이 나눔 (33 : 33 : 33)</div>
+                        <div class="gray-ratio">
+                            <i class="R" style="width:33.3%">R 33%</i>
+                            <i class="G" style="width:33.3%">G 33%</i>
+                            <i class="B" style="width:33.4%">B 33%</i>
+                        </div>
+                    </div>
+
+                    <div class="gray-ratio-row">
+                        <div class="gray-ratio-cap">가중치법 — 눈의 민감도에 맞춤 (3 : 6 : 1)</div>
+                        <div class="gray-ratio">
+                            <i class="R" style="width:30%">R 30%</i>
+                            <i class="G" style="width:60%">G 60%</i>
+                            <i class="B" style="width:10%">B 10%</i>
+                        </div>
+                    </div>
+
+                    <div class="gray-formula">
+                        흑백 = <span class="R">0.3 × R</span> + <span class="G">0.6 × G</span> + <span class="B">0.1 × B</span>
+                    </div>
+
+                    <div class="gray-ex">
+                        <div class="gray-ex-sw" id="gray-ex-color"></div>
+                        <div class="gray-ex-sw" id="gray-ex-avg"></div>
+                        <div class="gray-ex-sw" id="gray-ex-wgt"></div>
+                        <div class="gray-ex-text" id="gray-ex-text"></div>
+                    </div>
+
+                    <p class="gray-foot-note">3 : 6 : 1은 외우기 쉽게 어림한 값입니다.
+                        방송·사진에서 쓰는 실제 표준값은 0.299 : 0.587 : 0.114 (ITU-R BT.601)로, 비율은 거의 같습니다.</p>
+                </section>
+
+                <!-- ── 3단계 ── -->
+                <section class="gray-page" id="gray-page-3">
+                    <h4>올린 사진으로 두 방법 비교하기</h4>
+                    <p class="lead">같은 사진을 두 방법으로 흑백으로 바꾼 결과입니다. 잎·풀처럼 초록이 많은 곳과
+                        하늘·물처럼 파랑이 많은 곳을 번갈아 보세요.</p>
+
+                    <div class="gray-cmp3">
+                        <div class="gray-cmp-item">
+                            <h5 class="original">원본</h5>
+                            <canvas id="gray-cmp-original" class="gray-cmp-canvas"></canvas>
+                        </div>
+                        <div class="gray-cmp-item">
+                            <h5 class="avgm">평균법</h5>
+                            <canvas id="gray-cmp-average" class="gray-cmp-canvas"></canvas>
+                            <div class="gray-cmp-cap">(R + G + B) ÷ 3</div>
+                        </div>
+                        <div class="gray-cmp-item">
+                            <h5 class="wgt">가중치법</h5>
+                            <canvas id="gray-cmp-weighted" class="gray-cmp-canvas"></canvas>
+                            <div class="gray-cmp-cap">0.3R + 0.6G + 0.1B</div>
+                        </div>
+                    </div>
+
+                    <div class="gray-stat" id="gray-stat"></div>
+
+                    <div class="gray-lab-tools">
+                        <button type="button" class="gray-tool-btn" id="gray-diff-btn">차이 그림 보기</button>
+                    </div>
+
+                    <div class="gray-diff-wrap" id="gray-diff-wrap">
+                        <div class="gray-diff-inner gray-cmp-item">
+                            <h5 class="diff">차이 (가중치 − 평균) · 4배로 부풀려 표시</h5>
+                            <canvas id="gray-cmp-diff" class="gray-cmp-canvas"></canvas>
+                        </div>
+                        <div class="gray-legend">
+                            <span class="up">초록빛 = 가중치법이 더 밝음 (초록이 많은 곳)</span>
+                            <span class="down">보랏빛 = 가중치법이 더 어두움 (파랑·빨강이 많은 곳)</span>
+                            <span class="same">회색 = 두 방법이 같음</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="gray-popup-foot">
+                <button type="button" class="gray-nav-btn" id="gray-prev" disabled>이전</button>
+                <span class="gray-mini-cap" id="gray-page-hint">1 / 3</span>
+                <button type="button" class="gray-nav-btn primary" id="gray-next">다음</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="compare-popup-overlay" class="gray-popup-overlay">
+        <div class="gray-popup-box" role="dialog" aria-modal="true" aria-labelledby="compare-popup-title">
+            <div class="gray-popup-header">
+                <span class="gray-popup-title" id="compare-popup-title">밝게 만드는 세 가지 방법</span>
+                <button type="button" class="gray-popup-close" id="compare-popup-close" aria-label="닫기">&#x2715;</button>
+            </div>
+
+            <div class="gray-popup-body">
+                <p class="lead">같은 사진에 세 방법을 따로 적용한 결과입니다.
+                    아래 슬라이더를 움직이면서 어두운 부분과 밝은 부분이 각각 어떻게 달라지는지 보세요.</p>
+
+                <div class="gray-cmp3 gray-cmp4">
+                    <div class="gray-cmp-item">
+                        <h5 class="original">원본</h5>
+                        <canvas id="popup-canvas-original" class="gray-cmp-canvas"></canvas>
+                        <div class="gray-cmp-cap">손대지 않은 사진</div>
+                    </div>
+                    <div class="gray-cmp-item">
+                        <h5 class="additive">덧셈 밝기</h5>
+                        <canvas id="popup-canvas-additive" class="gray-cmp-canvas"></canvas>
+                        <div class="gray-cmp-cap"><b id="popup-additive-label">밝기 0</b><br>모든 화소에 같은 값을 더함</div>
+                    </div>
+                    <div class="gray-cmp-item">
+                        <h5 class="scale">배율 밝기</h5>
+                        <canvas id="popup-canvas-scale" class="gray-cmp-canvas"></canvas>
+                        <div class="gray-cmp-cap"><b id="popup-scale-label">배율 ×1.00</b><br>모든 화소에 같은 수를 곱함</div>
+                    </div>
+                    <div class="gray-cmp-item">
+                        <h5 class="gammac">감마 보정</h5>
+                        <canvas id="popup-canvas-gamma" class="gray-cmp-canvas"></canvas>
+                        <div class="gray-cmp-cap"><b id="popup-gamma-label">γ 1.00</b><br>어두운 곳을 더 크게 끌어올림</div>
+                    </div>
                 </div>
-                <div class="compare-popup-item">
-                    <div class="compare-popup-item-title additive">덧셈 밝기만</div>
-                    <canvas id="popup-canvas-additive" class="brightness-compare-canvas additive"></canvas>
+
+                <div class="compare-popup-controls">
+                    <div class="slider-container">
+                        <label for="popup-brightness">덧셈 밝기</label>
+                        <input type="range" id="popup-brightness" min="-100" max="100" value="0">
+                        <span id="popup-brightness-val">0</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="popup-scale">배율</label>
+                        <input type="range" id="popup-scale" min="0.0" max="2.0" step="0.05" value="1.0">
+                        <span id="popup-scale-val">×1.00</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="popup-gamma" class="gamma-label">감마 γ</label>
+                        <input type="range" id="popup-gamma" min="0.2" max="1.8" step="0.05" value="1.0">
+                        <span id="popup-gamma-val">1.00</span>
+                    </div>
                 </div>
-                <div class="compare-popup-item">
-                    <div class="compare-popup-item-title scale">배율 밝기만</div>
-                    <canvas id="popup-canvas-scale" class="brightness-compare-canvas scale"></canvas>
-                </div>
-                <div class="compare-popup-item">
-                    <div class="compare-popup-item-title gamma">감마 보정</div>
-                    <canvas id="popup-canvas-gamma" class="brightness-compare-canvas gamma"></canvas>
+
+                <div class="gray-note">
+                    <b>덧셈</b>은 모든 화소에 같은 값을 더해서, 원래 밝던 곳이 먼저 255에 닿아 하얗게 뭉갭니다.
+                    <b>배율</b>은 곱하기라서 어두운 곳(0에 가까운 값)은 거의 그대로이고 밝은 곳만 크게 밝아집니다.
+                    <b>감마 보정</b>은 어두운 곳을 많이, 밝은 곳을 적게 끌어올려서 밝은 부분이 잘 날아가지 않습니다.
+                    사진 앱의 &lsquo;밝기&rsquo; 조절은 대부분 감마 보정 방식입니다.
                 </div>
             </div>
-            <div class="compare-popup-controls">
-                <div class="slider-container">
-                    <label for="popup-brightness">덧셈 밝기</label>
-                    <input type="range" id="popup-brightness" min="-100" max="100" value="0">
-                    <span id="popup-brightness-val">0</span>
-                </div>
-                <div class="slider-container">
-                    <label for="popup-scale">배율</label>
-                    <input type="range" id="popup-scale" min="0.0" max="2.0" step="0.05" value="1.0">
-                    <span id="popup-scale-val">×1.00</span>
-                </div>
-                <div class="slider-container">
-                    <label for="popup-gamma" class="gamma-label">감마 γ</label>
-                    <input type="range" id="popup-gamma" min="0.2" max="1.8" step="0.05" value="1.0">
-                    <span id="popup-gamma-val">1.00</span>
-                </div>
+
+            <div class="gray-popup-foot">
+                <span class="gray-mini-cap">이 슬라이더는 팝업 안에서만 적용됩니다</span>
+                <button type="button" class="gray-nav-btn primary" id="compare-popup-done">닫기</button>
             </div>
         </div>
     </div>
@@ -1186,18 +1794,13 @@
             const contrastValue = document.getElementById('contrast-value');
             const saturationValue = document.getElementById('saturation-value');
 
-            const rToGBtn = document.getElementById('r-to-g');
-            const rToBBtn = document.getElementById('r-to-b');
-            const gToRBtn = document.getElementById('g-to-r');
-            const gToBBtn = document.getElementById('g-to-b');
-            const bToRBtn = document.getElementById('b-to-r');
-            const bToGBtn = document.getElementById('b-to-g');
-            const swapRGBtn = document.getElementById('swap-r-g');
-            const swapRBBtn = document.getElementById('swap-r-b');
-            const swapGBBtn = document.getElementById('swap-g-b');
-            const invertRBtn = document.getElementById('invert-r');
-            const invertGBtn = document.getElementById('invert-g');
-            const invertBBtn = document.getElementById('invert-b');
+            const mapOpSel = document.getElementById('map-op');
+            const mapFromSel = document.getElementById('map-from');
+            const mapToSel = document.getElementById('map-to');
+            const mapToField = document.getElementById('map-to-field');
+            const mapArrow = document.getElementById('map-arrow');
+            const mapApplyBtn = document.getElementById('map-apply');
+            const mapDesc = document.getElementById('map-desc');
 
             const redTooltip = document.getElementById('red-tooltip');
             const greenTooltip = document.getElementById('green-tooltip');
@@ -1221,12 +1824,6 @@
             const colorBCheck = document.getElementById('color-b');
             const undoMappingBtn = document.getElementById('undo-mapping-btn');
             const brightnessCompareBtn = document.getElementById('brightness-compare-btn');
-            const brightnessComparePanel = document.getElementById('brightness-compare-panel');
-            const compareOriginalCanvas = document.getElementById('compare-original');
-            const compareAdditiveCanvas = document.getElementById('compare-additive');
-            const compareScaleCanvas    = document.getElementById('compare-scale');
-            const compareGammaCanvas    = document.getElementById('compare-gamma');
-
             const comparePopupOverlay  = document.getElementById('compare-popup-overlay');
             const comparePopupClose    = document.getElementById('compare-popup-close');
             const popupCanvasOriginal  = document.getElementById('popup-canvas-original');
@@ -1239,6 +1836,9 @@
             const popupScaleVal         = document.getElementById('popup-scale-val');
             const popupGammaSlider      = document.getElementById('popup-gamma');
             const popupGammaVal         = document.getElementById('popup-gamma-val');
+            const popupAdditiveLabel    = document.getElementById('popup-additive-label');
+            const popupScaleLabel       = document.getElementById('popup-scale-label');
+            const popupGammaLabel       = document.getElementById('popup-gamma-label');
 
             function renderAllPopupCanvases() {
                 if (!baseImageData) return;
@@ -1267,6 +1867,10 @@
                 popupCanvasScale.getContext('2d').putImageData(new ImageData(dScale, w, h), 0, 0);
 
                 popupCanvasGamma.getContext('2d').putImageData(new ImageData(applyGammaToData(baseImageData.data, pg), w, h), 0, 0);
+
+                popupAdditiveLabel.textContent = '밝기 ' + (pb >= 0 ? '+' : '') + pb;
+                popupScaleLabel.textContent = '배율 ×' + ps.toFixed(2);
+                popupGammaLabel.textContent = 'γ ' + pg.toFixed(2);
             }
 
             popupBrightnessSlider.addEventListener('input', () => {
@@ -1283,27 +1887,32 @@
                 renderAllPopupCanvases();
             });
 
-            document.getElementById('compare-expand-all-btn').addEventListener('click', () => {
+            function openComparePopup() {
                 if (!baseImageData) return;
+                /* 위 그림에서 쓰던 값 그대로 가져와서 시작한다 */
                 popupBrightnessSlider.value = brightnessSlider.value;
-                popupBrightnessVal.textContent = (parseInt(brightnessSlider.value,10) >= 0 ? '+' : '') + brightnessSlider.value;
+                popupBrightnessVal.textContent = (parseInt(brightnessSlider.value, 10) >= 0 ? '+' : '') + brightnessSlider.value;
                 popupScaleSlider.value = brightnessScaleSlider.value;
                 popupScaleVal.textContent = '×' + parseFloat(brightnessScaleSlider.value).toFixed(2);
                 popupGammaSlider.value = gammaSlider.value;
                 popupGammaVal.textContent = parseFloat(gammaSlider.value).toFixed(2);
                 renderAllPopupCanvases();
                 comparePopupOverlay.classList.add('open');
-            });
+                brightnessCompareBtn.classList.add('active');
+            }
 
             function closeComparePopup() {
                 comparePopupOverlay.classList.remove('open');
+                brightnessCompareBtn.classList.remove('active');
             }
+
+            brightnessCompareBtn.addEventListener('click', openComparePopup);
             comparePopupClose.addEventListener('click', closeComparePopup);
+            document.getElementById('compare-popup-done').addEventListener('click', closeComparePopup);
             comparePopupOverlay.addEventListener('click', e => { if (e.target === comparePopupOverlay) closeComparePopup(); });
             document.addEventListener('keydown', e => { if (e.key === 'Escape') closeComparePopup(); });
 
             // — 상태 변수 —
-            let brightnessCompareActive = false;
             let baseImageData = null;  // 가공의 기준이 되는 데이터
             let trueOriginalImageData = null;  // 업로드 직후의 진짜 원본
             let currentImageData = null;  // 적용 후 화면에 그려지는 데이터
@@ -1311,6 +1920,8 @@
             let greenChannelActive = true;
             let blueChannelActive = true;
             let isGrayscale = false;
+            let grayMode = 'weighted';        /* 'weighted' = 0.3·0.6·0.1 · 'average' = ÷3 */
+            let grayCompareActive = false;
             let isInverted = false;
             let undoStack = [];
             let hueRotation = 0;
@@ -1405,6 +2016,7 @@
                 );
 
                 updateModifiedImage();
+                if (typeof updateGrayCompare === 'function') updateGrayCompare();   /* 새 그림이면 비교도 새로 */
             }
 
             // — 채널 토글 / 효과 모두 적용 후 갱신 —
@@ -1449,7 +2061,10 @@
                         b = (b - 128) * contrast + 128;
                     }
                     if (isGrayscale) {
-                        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                        /* 사람 눈은 초록에 가장 민감해서, 초록에 큰 몫을 주는 쪽이 실제 밝기에 가깝다 */
+                        const gray = (grayMode === 'average')
+                            ? (r + g + b) / 3
+                            : 0.3 * r + 0.6 * g + 0.1 * b;
                         r = g = b = gray;
                     } else if (saturation !== 1) {
                         const gray = 0.299 * r + 0.587 * g + 0.114 * b;
@@ -1756,7 +2371,275 @@
             blueBtn.addEventListener('click', () => { blueChannelActive = !blueChannelActive; updateButtonState(blueBtn, blueChannelActive); updateModifiedImage(); });
 
             invertBtn.addEventListener('click', () => { isInverted = !isInverted; invertBtn.classList.toggle('active', isInverted); updateModifiedImage(); });
-            grayscaleBtn.addEventListener('click', () => { isGrayscale = !isGrayscale; grayscaleBtn.classList.toggle('active', isGrayscale); updateModifiedImage(); });
+            grayscaleBtn.addEventListener('click', () => {
+                isGrayscale = !isGrayscale;
+                grayscaleBtn.classList.toggle('active', isGrayscale);
+                updateModifiedImage();
+            });
+
+            /* ── 흑백 만드는 방법 고르기 ── */
+            const grayModeWeightedBtn = document.getElementById('gray-mode-weighted');
+            const grayModeAverageBtn = document.getElementById('gray-mode-average');
+            const grayCompareBtn = document.getElementById('gray-compare-btn');
+            const grayPopupOverlay = document.getElementById('gray-popup-overlay');
+            const grayPopupCloseBtn = document.getElementById('gray-popup-close');
+            const grayPrevBtn = document.getElementById('gray-prev');
+            const grayNextBtn = document.getElementById('gray-next');
+            const grayPageHint = document.getElementById('gray-page-hint');
+            const grayProgressSegs = document.querySelectorAll('#gray-progress .gray-progress-seg');
+            const grayPages = [
+                document.getElementById('gray-page-1'),
+                document.getElementById('gray-page-2'),
+                document.getElementById('gray-page-3')
+            ];
+
+            function revealGrayFormulas() {
+                const row = document.getElementById('gray-mode-row');
+                if (row.classList.contains('formula-shown')) return;
+                row.classList.add('formula-shown');
+                document.getElementById('gray-mode-hint').textContent = '고르면 위 그림에 바로 적용됩니다';
+            }
+
+            function setGrayMode(mode) {
+                grayMode = mode;
+                grayModeWeightedBtn.classList.toggle('active', mode === 'weighted');
+                grayModeAverageBtn.classList.toggle('active', mode === 'average');
+                isGrayscale = true;                       /* 방법을 고르면 흑백으로 바로 보여 준다 */
+                grayscaleBtn.classList.add('active');
+                updateModifiedImage();
+            }
+
+            grayModeWeightedBtn.addEventListener('click', () => setGrayMode('weighted'));
+            grayModeAverageBtn.addEventListener('click', () => setGrayMode('average'));
+
+            /* ── 두 방법을 나란히 비교하기 ── */
+            function grayValues(data, i) {
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+                return [(r + g + b) / 3, 0.3 * r + 0.6 * g + 0.1 * b];
+            }
+
+            function updateGrayCompare() {
+                if (!baseImageData || !grayCompareActive) return;
+                const w = baseImageData.width, h = baseImageData.height;
+                const src = baseImageData.data;
+                const cOrig = document.getElementById('gray-cmp-original');
+                const cAvg = document.getElementById('gray-cmp-average');
+                const cWgt = document.getElementById('gray-cmp-weighted');
+                const cDiff = document.getElementById('gray-cmp-diff');
+                [cOrig, cAvg, cWgt, cDiff].forEach(c => { c.width = w; c.height = h; });
+
+                cOrig.getContext('2d').putImageData(baseImageData, 0, 0);
+
+                const dAvg = new Uint8ClampedArray(src.length);
+                const dWgt = new Uint8ClampedArray(src.length);
+                const dDiff = new Uint8ClampedArray(src.length);
+                let sumAbs = 0, maxAbs = 0, bigCount = 0, n = 0;
+
+                for (let i = 0; i < src.length; i += 4) {
+                    const gv = grayValues(src, i);
+                    const a = gv[0], wv = gv[1];
+                    dAvg[i] = dAvg[i + 1] = dAvg[i + 2] = a;
+                    dWgt[i] = dWgt[i + 1] = dWgt[i + 2] = wv;
+                    dAvg[i + 3] = dWgt[i + 3] = dDiff[i + 3] = src[i + 3];
+
+                    const d = wv - a;                     /* + 면 가중치법이 더 밝다 */
+                    const amp = d * 4;                    /* 눈에 보이게 부풀린다 */
+                    dDiff[i]     = 128 - amp;
+                    dDiff[i + 1] = 128 + amp;
+                    dDiff[i + 2] = 128 - amp;
+
+                    const ad = Math.abs(d);
+                    sumAbs += ad;
+                    if (ad > maxAbs) maxAbs = ad;
+                    if (ad > 10) bigCount++;
+                    n++;
+                }
+
+                cAvg.getContext('2d').putImageData(new ImageData(dAvg, w, h), 0, 0);
+                cWgt.getContext('2d').putImageData(new ImageData(dWgt, w, h), 0, 0);
+                cDiff.getContext('2d').putImageData(new ImageData(dDiff, w, h), 0, 0);
+
+                const mean = n ? sumAbs / n : 0;
+                const pct = n ? (bigCount / n * 100) : 0;
+                document.getElementById('gray-stat').innerHTML =
+                    '이 사진에서 두 방법의 밝기 차이는 평균 <b>' + mean.toFixed(1) + '</b> ' +
+                    '(가장 큰 곳은 <b>' + maxAbs.toFixed(0) + '</b>), ' +
+                    '10보다 크게 벌어진 화소는 전체의 <b>' + pct.toFixed(1) + '%</b> 입니다. ' +
+                    '초록이 많은 곳은 가중치법이 더 밝게, 파랑이 많은 곳은 더 어둡게 나옵니다. ' +
+                    '사람 눈이 초록을 가장 밝게 느끼기 때문에, 사진·영상에서는 보통 가중치법을 씁니다.';
+            }
+
+            /* ── 1단계: 색을 직접 낮춰 보며 눈의 민감도 확인하기 ── */
+            const GRAY_W = { R: 0.3, G: 0.6, B: 0.1 };          /* 3 : 6 : 1 */
+            const GRAY_BAR_COLOR = { R: '#d9534f', G: '#3aa93a', B: '#4a86e8' };
+            const GRAY_BAR_MAX = 0.6 * 255;                      /* 초록이 가장 셀 때를 가득 찬 막대로 본다 */
+            const grayLab = {};
+
+            ['R', 'G', 'B'].forEach(ch => {
+                grayLab[ch] = {
+                    slider: document.getElementById('gray-lab-' + ch),
+                    sw:     document.getElementById('gray-sw-' + ch),
+                    strip:  document.getElementById('gray-strip-' + ch),   /* 2쪽 색 띠 */
+                    val:    document.getElementById('gray-val-' + ch),
+                    bar:    document.getElementById('gray-bar-' + ch),
+                    eye:    document.getElementById('gray-eye-' + ch),
+                    avgSw:  document.getElementById('gray-avg-sw-' + ch),
+                    avgNum: document.getElementById('gray-avg-num-' + ch),
+                    wgtSw:  document.getElementById('gray-wgt-sw-' + ch),
+                    wgtNum: document.getElementById('gray-wgt-num-' + ch)
+                };
+                grayLab[ch].slider.addEventListener('input', updateGrayLab);
+            });
+
+            /* 세 색을 한꺼번에 올리고 내리는 슬라이더 */
+            const grayAllSlider = document.getElementById('gray-lab-all');
+            const grayAllNum = document.getElementById('gray-num-all');
+            const grayAllVal = document.getElementById('gray-val-all');
+            function applyGrayAll(v, keepTyping) {
+                const val = Math.max(0, Math.min(255, v));
+                grayAllSlider.value = val;
+                if (!keepTyping) grayAllNum.value = val;
+                grayLab.R.slider.value = val;
+                grayLab.G.slider.value = val;
+                grayLab.B.slider.value = val;
+                updateGrayLab();
+            }
+
+            grayAllSlider.addEventListener('input', () => applyGrayAll(parseInt(grayAllSlider.value, 10)));
+
+            /* 숫자를 직접 쳐 넣어도 세 색이 함께 움직인다 */
+            grayAllNum.addEventListener('input', () => {
+                const raw = grayAllNum.value.trim();
+                if (raw === '') return;                       /* 지우는 중에는 건드리지 않는다 */
+                const v = parseInt(raw, 10);
+                if (isNaN(v)) return;
+                applyGrayAll(v, true);                        /* 입력창은 그대로 두고 나머지만 맞춘다 */
+            });
+            grayAllNum.addEventListener('change', () => {
+                const v = parseInt(grayAllNum.value, 10);
+                applyGrayAll(isNaN(v) ? 0 : v);               /* 다 치고 나면 0~255로 정리 */
+            });
+            document.getElementById('gray-all-down').addEventListener('click', () => applyGrayAll(parseInt(grayAllSlider.value, 10) - 5));
+            document.getElementById('gray-all-up').addEventListener('click', () => applyGrayAll(parseInt(grayAllSlider.value, 10) + 5));
+
+            function grayHex(v) { return 'rgb(' + v + ',' + v + ',' + v + ')'; }
+
+            function updateGrayLab() {
+                const v = {
+                    R: parseInt(grayLab.R.slider.value, 10),
+                    G: parseInt(grayLab.G.slider.value, 10),
+                    B: parseInt(grayLab.B.slider.value, 10)
+                };
+                const eye = {}, avg = {};
+
+                ['R', 'G', 'B'].forEach(ch => {
+                    const val = v[ch], o = grayLab[ch];
+                    const pure = 'rgb(' + (ch === 'R' ? val : 0) + ',' + (ch === 'G' ? val : 0) + ',' + (ch === 'B' ? val : 0) + ')';
+                    o.sw.style.backgroundColor = pure;
+                    o.strip.style.backgroundColor = pure;
+                    o.val.textContent = val;
+
+                    eye[ch] = Math.round(GRAY_W[ch] * val);
+                    avg[ch] = Math.round(val / 3);
+                    o.bar.style.width = (GRAY_W[ch] * val / GRAY_BAR_MAX * 100).toFixed(1) + '%';
+                    o.bar.style.backgroundColor = GRAY_BAR_COLOR[ch];
+                    o.eye.textContent = GRAY_W[ch] + ' × ' + val + ' = ' + eye[ch];
+
+                    o.avgSw.style.backgroundColor = grayHex(avg[ch]);
+                    o.wgtSw.style.backgroundColor = grayHex(eye[ch]);
+                    o.avgNum.textContent = avg[ch];
+                    o.wgtNum.textContent = eye[ch];
+                });
+
+                const allSame = (v.R === v.G && v.G === v.B);
+                grayAllVal.textContent = allSame ? '' : '세 색이 각각 다름';
+                if (allSame) {
+                    grayAllSlider.value = v.R;
+                    if (document.activeElement !== grayAllNum) grayAllNum.value = v.R;
+                }
+                document.getElementById('gray-lab-note').innerHTML = allSame
+                    ? '세 값이 모두 같습니다 (<b>' + v.R + '</b>). 숫자는 똑같은데 초록이 가장 밝고 파랑이 가장 어둡게 보이지요? ' +
+                      '왜 그런지는 <b>다음 쪽</b>에서 확인해 봅시다.'
+                    : '지금 값은 R ' + v.R + ' · G ' + v.G + ' · B ' + v.B + ' 입니다. ' +
+                      '어느 색을 내릴 때 화면이 가장 크게 어두워지나요?';
+
+                /* 숫자는 2쪽에서 밝힌다 */
+                document.getElementById('gray-eye-note').innerHTML = allSame
+                    ? '세 값이 모두 같아도 (<b>' + v.R + '</b>) 눈이 느끼는 밝기는 초록 <b>' + eye.G + '</b> · 빨강 <b>' + eye.R +
+                      '</b> · 파랑 <b>' + eye.B + '</b>으로 다릅니다. ' +
+                      '평균법으로 흑백을 만들면 셋 다 똑같은 회색(<b>' + avg.R + '</b>)이 되어 이 차이가 사라집니다.'
+                    : '초록을 100 내리면 느끼는 밝기가 60 줄지만, 파랑은 100을 내려도 10밖에 줄지 않습니다. ' +
+                      '평균법은 이 차이를 무시하고 셋을 똑같이 나눕니다.';
+
+                /* 2단계의 예시 계산도 같은 색으로 맞춰 준다 */
+                const mixAvg = Math.round((v.R + v.G + v.B) / 3);
+                const mixWgt = Math.round(0.3 * v.R + 0.6 * v.G + 0.1 * v.B);
+                document.getElementById('gray-ex-color').style.backgroundColor = 'rgb(' + v.R + ',' + v.G + ',' + v.B + ')';
+                document.getElementById('gray-ex-avg').style.backgroundColor = grayHex(mixAvg);
+                document.getElementById('gray-ex-wgt').style.backgroundColor = grayHex(mixWgt);
+                document.getElementById('gray-ex-text').innerHTML =
+                    '1단계에서 맞춘 색 (R ' + v.R + ' · G ' + v.G + ' · B ' + v.B + ')을 흑백으로 바꾸면<br>' +
+                    '평균법 → (' + v.R + ' + ' + v.G + ' + ' + v.B + ') ÷ 3 = <b>' + mixAvg + '</b><br>' +
+                    '가중치법 → 0.3×' + v.R + ' + 0.6×' + v.G + ' + 0.1×' + v.B + ' = <b>' + mixWgt + '</b>';
+            }
+
+            function setGrayLab(r, g, b) {
+                grayLab.R.slider.value = r;
+                grayLab.G.slider.value = g;
+                grayLab.B.slider.value = b;
+                updateGrayLab();
+            }
+            document.getElementById('gray-lab-full').addEventListener('click', () => setGrayLab(255, 255, 255));
+            document.getElementById('gray-lab-drop').addEventListener('click', () => setGrayLab(255, 0, 255));
+
+            /* ── 3단계: 차이 그림은 눌렀을 때만 ── */
+            const grayDiffBtn = document.getElementById('gray-diff-btn');
+            const grayDiffWrap = document.getElementById('gray-diff-wrap');
+            grayDiffBtn.addEventListener('click', () => {
+                const on = grayDiffWrap.classList.toggle('on');
+                grayDiffBtn.textContent = on ? '차이 그림 숨기기' : '차이 그림 보기';
+            });
+
+            /* ── 팝업 열고 닫기, 쪽 넘기기 ── */
+            let grayPageIdx = 0;
+
+            function showGrayPage(i) {
+                grayPageIdx = Math.max(0, Math.min(2, i));
+                grayPages.forEach((p, k) => p.classList.toggle('on', k === grayPageIdx));
+                grayProgressSegs.forEach((d, k) => d.classList.toggle('on', k <= grayPageIdx));
+                grayPrevBtn.disabled = (grayPageIdx === 0);
+                grayNextBtn.textContent = (grayPageIdx === 2) ? '닫기' : '다음';
+                grayPageHint.textContent = (grayPageIdx + 1) + ' / 3';
+                if (grayPageIdx >= 1) revealGrayFormulas();   /* 설명을 본 뒤에 계산식 공개 */
+                document.querySelector('.gray-popup-body').scrollTop = 0;
+                if (grayPageIdx === 2) updateGrayCompare();
+            }
+
+            function openGrayPopup() {
+                grayCompareActive = true;
+                grayCompareBtn.classList.add('active');
+                grayPopupOverlay.classList.add('open');
+                updateGrayLab();
+                showGrayPage(0);
+            }
+
+            function closeGrayPopup() {
+                grayCompareActive = false;
+                grayCompareBtn.classList.remove('active');
+                grayPopupOverlay.classList.remove('open');
+            }
+
+            grayCompareBtn.addEventListener('click', openGrayPopup);
+            grayPopupCloseBtn.addEventListener('click', closeGrayPopup);
+            grayPopupOverlay.addEventListener('click', (e) => { if (e.target === grayPopupOverlay) closeGrayPopup(); });
+            grayPrevBtn.addEventListener('click', () => showGrayPage(grayPageIdx - 1));
+            grayNextBtn.addEventListener('click', () => {
+                if (grayPageIdx === 2) closeGrayPopup();
+                else showGrayPage(grayPageIdx + 1);
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && grayPopupOverlay.classList.contains('open')) closeGrayPopup();
+            });
 
             function drawHueWheel(deg) {
                 const cx = hueWheel.width / 2, cy = hueWheel.height / 2;
@@ -1824,49 +2707,9 @@
                 return d;
             }
 
-            function updateCompareCanvases() {
-                if (!baseImageData || !brightnessCompareActive) return;
-                const w = baseImageData.width, h = baseImageData.height;
-                const brightness = parseInt(brightnessSlider.value, 10);
-                const scale = parseFloat(brightnessScaleSlider.value);
-                const gv = parseFloat(gammaSlider.value);
-
-                [compareOriginalCanvas, compareAdditiveCanvas, compareScaleCanvas, compareGammaCanvas].forEach(c => { c.width = w; c.height = h; });
-
-                compareOriginalCanvas.getContext('2d').putImageData(baseImageData, 0, 0);
-
-                const dAdd = new Uint8ClampedArray(baseImageData.data);
-                for (let i = 0; i < dAdd.length; i += 4) {
-                    dAdd[i]   = Math.max(0, Math.min(255, dAdd[i]   + brightness));
-                    dAdd[i+1] = Math.max(0, Math.min(255, dAdd[i+1] + brightness));
-                    dAdd[i+2] = Math.max(0, Math.min(255, dAdd[i+2] + brightness));
-                }
-                compareAdditiveCanvas.getContext('2d').putImageData(new ImageData(dAdd, w, h), 0, 0);
-                document.getElementById('compare-additive-label').textContent = `밝기 ${brightness >= 0 ? '+' : ''}${brightness}`;
-
-                const dScale = new Uint8ClampedArray(baseImageData.data);
-                for (let i = 0; i < dScale.length; i += 4) {
-                    dScale[i]   = Math.max(0, Math.min(255, dScale[i]   * scale));
-                    dScale[i+1] = Math.max(0, Math.min(255, dScale[i+1] * scale));
-                    dScale[i+2] = Math.max(0, Math.min(255, dScale[i+2] * scale));
-                }
-                compareScaleCanvas.getContext('2d').putImageData(new ImageData(dScale, w, h), 0, 0);
-                document.getElementById('compare-scale-label').textContent = `배율 ×${scale.toFixed(2)}`;
-
-                compareGammaCanvas.getContext('2d').putImageData(new ImageData(applyGammaToData(baseImageData.data, gv), w, h), 0, 0);
-                document.getElementById('compare-gamma-label').textContent = `γ ${gv.toFixed(2)}`;
-            }
-
-            brightnessCompareBtn.addEventListener('click', () => {
-                brightnessCompareActive = !brightnessCompareActive;
-                brightnessCompareBtn.classList.toggle('active', brightnessCompareActive);
-                brightnessComparePanel.style.display = brightnessCompareActive ? 'block' : 'none';
-                if (brightnessCompareActive) updateCompareCanvases();
-            });
-
-            brightnessSlider.addEventListener('input', () => { brightnessValue.textContent = brightnessSlider.value; updateModifiedImage(); updateCompareCanvases(); });
-            brightnessScaleSlider.addEventListener('input', () => { brightnessScaleValue.textContent = '×' + parseFloat(brightnessScaleSlider.value).toFixed(2); updateModifiedImage(); updateCompareCanvases(); });
-            gammaSlider.addEventListener('input', () => { gammaValue.textContent = parseFloat(gammaSlider.value).toFixed(2); updateModifiedImage(); updateCompareCanvases(); });
+            brightnessSlider.addEventListener('input', () => { brightnessValue.textContent = brightnessSlider.value; updateModifiedImage(); });
+            brightnessScaleSlider.addEventListener('input', () => { brightnessScaleValue.textContent = '×' + parseFloat(brightnessScaleSlider.value).toFixed(2); updateModifiedImage(); });
+            gammaSlider.addEventListener('input', () => { gammaValue.textContent = parseFloat(gammaSlider.value).toFixed(2); updateModifiedImage(); });
             contrastSlider.addEventListener('input', () => { contrastValue.textContent = contrastSlider.value; updateModifiedImage(); });
             saturationSlider.addEventListener('input', () => { saturationValue.textContent = saturationSlider.value; updateModifiedImage(); });
 
@@ -1892,7 +2735,6 @@
                 gammaValue.textContent = '1.00';
                 [redBtn, greenBtn, blueBtn].forEach(btn => updateButtonState(btn, true));
                 updateModifiedImage();
-                updateCompareCanvases();
             });
 
             // — 매핑 되돌리기 —
@@ -1931,20 +2773,67 @@
                 document.getElementById('download-btn').style.display = 'inline-block';
             }
 
-            rToGBtn.addEventListener('click', () => permTransform((d, i) => { d[i + 1] = d[i]; }));
-            rToBBtn.addEventListener('click', () => permTransform((d, i) => { d[i + 2] = d[i]; }));
-            gToRBtn.addEventListener('click', () => permTransform((d, i) => { d[i] = d[i + 1]; }));
-            gToBBtn.addEventListener('click', () => permTransform((d, i) => { d[i + 2] = d[i + 1]; }));
-            bToRBtn.addEventListener('click', () => permTransform((d, i) => { d[i] = d[i + 2]; }));
-            bToGBtn.addEventListener('click', () => permTransform((d, i) => { d[i + 1] = d[i + 2]; }));
+            /* ── 채널 매핑: 드롭다운 세 개로 고른다 ── */
+            const CH_INDEX = { R: 0, G: 1, B: 2 };
+            const CH_LABEL = { R: 'R (빨강)', G: 'G (초록)', B: 'B (파랑)' };
 
-            swapRGBtn.addEventListener('click', () => permTransform((d, i) => { let t = d[i]; d[i] = d[i + 1]; d[i + 1] = t; }));
-            swapRBBtn.addEventListener('click', () => permTransform((d, i) => { let t = d[i]; d[i] = d[i + 2]; d[i + 2] = t; }));
-            swapGBBtn.addEventListener('click', () => permTransform((d, i) => { let t = d[i + 1]; d[i + 1] = d[i + 2]; d[i + 2] = t; }));
+            function fillToOptions() {
+                const from = mapFromSel.value;
+                const keep = mapToSel.value;
+                mapToSel.textContent = '';
+                ['R', 'G', 'B'].forEach(ch => {
+                    if (ch === from) return;                      /* 자기 자신은 고를 수 없다 */
+                    const op = document.createElement('option');
+                    op.value = ch;
+                    op.textContent = CH_LABEL[ch];
+                    mapToSel.appendChild(op);
+                });
+                if (keep && keep !== from) mapToSel.value = keep;  /* 고르던 것을 되도록 유지 */
+            }
 
-            invertRBtn.addEventListener('click', () => permTransform((d, i) => { d[i] = 255 - d[i]; }));
-            invertGBtn.addEventListener('click', () => permTransform((d, i) => { d[i + 1] = 255 - d[i + 1]; }));
-            invertBBtn.addEventListener('click', () => permTransform((d, i) => { d[i + 2] = 255 - d[i + 2]; }));
+            function refreshMapUI() {
+                const op = mapOpSel.value;
+                const needTarget = (op !== 'invert');             /* 반전은 채널 하나면 된다 */
+                if (needTarget) fillToOptions();
+                mapToField.style.display = needTarget ? '' : 'none';
+                mapArrow.style.display = needTarget ? '' : 'none';
+                mapArrow.textContent = (op === 'swap') ? '↔' : '→';
+
+                mapFromSel.className = 'ch-' + mapFromSel.value;
+                mapToSel.className = 'ch-' + mapToSel.value;
+
+                const from = mapFromSel.value, to = mapToSel.value;
+                if (op === 'copy') {
+                    mapDesc.innerHTML = '<b>' + from + '</b> 채널의 값을 <b>' + to + '</b> 채널에 그대로 덮어씁니다. ' +
+                        '(' + to + ' ← ' + from + ')';
+                } else if (op === 'swap') {
+                    mapDesc.innerHTML = '<b>' + from + '</b> 채널과 <b>' + to + '</b> 채널의 값을 서로 바꿉니다. ' +
+                        '(' + from + ' ↔ ' + to + ')';
+                } else {
+                    mapDesc.innerHTML = '<b>' + from + '</b> 채널만 반전합니다. ' +
+                        '(' + from + ' ← 255 − ' + from + ')';
+                }
+            }
+
+            mapOpSel.addEventListener('change', refreshMapUI);
+            mapFromSel.addEventListener('change', refreshMapUI);
+            mapToSel.addEventListener('change', refreshMapUI);
+
+            mapApplyBtn.addEventListener('click', () => {
+                const op = mapOpSel.value;
+                const a = CH_INDEX[mapFromSel.value];
+                const b = CH_INDEX[mapToSel.value];
+                if (op === 'copy') {
+                    permTransform((d, i) => { d[i + b] = d[i + a]; });
+                } else if (op === 'swap') {
+                    permTransform((d, i) => { const t = d[i + a]; d[i + a] = d[i + b]; d[i + b] = t; });
+                } else {
+                    permTransform((d, i) => { d[i + a] = 255 - d[i + a]; });
+                }
+            });
+
+            fillToOptions();
+            refreshMapUI();
 
         });
 

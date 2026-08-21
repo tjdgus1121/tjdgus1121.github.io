@@ -40,7 +40,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&family=Roboto+Mono:wght@500;600;700&display=swap"
         rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,11 +68,12 @@
         }
 
         .container {
-            max-width: fit-content;
+            width: min(100%, 1720px);
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.97);
             border-radius: 24px;
             box-shadow: 0 8px 40px rgba(99, 102, 241, 0.12);
+            overflow: hidden;
         }
 
         header {
@@ -199,8 +200,7 @@
         
         .main-content {
             display: grid;
-            grid-template-columns: auto auto auto;
-            /* 패널마다 내용 길이가 달라서, 늘리지 않고 각자 높이를 갖게 한다 */
+            grid-template-columns: minmax(410px, 1.12fr) minmax(480px, 0.72fr) minmax(310px, 0.86fr);
             align-items: start;
             gap: 20px;
             padding: 30px;
@@ -292,10 +292,21 @@
         }
 
         #kernel-grid .grid-cell {
-            min-width: 50px;
-            min-height: 50px;
+            min-width: 44px;
+            min-height: 44px;
             font-size: 1.15rem;
             font-weight: 700;
+        }
+
+        /* 행렬·커널·출력 칸의 값에만 적용: 자릿수가 흔들리지 않아 비교가 쉽다. */
+        #input2d-grid .grid-cell,
+        #output2d-grid .grid-cell,
+        #kernel-grid .grid-cell,
+        .d1-cell {
+            font-family: 'Roboto Mono', Consolas, monospace;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
+            letter-spacing: -0.03em;
         }
 
         .grid-cell.padded-zone {
@@ -452,12 +463,12 @@
         /* 재생 버튼과 속도 슬라이더는 한 덩어리로 묶어 시선이 나뉘지 않게 한다 */
         .playback-block {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             justify-content: center;
-            gap: 22px;
-            flex-wrap: wrap;
+            gap: 14px;
             margin: 20px 0;
-            padding: 16px 18px;
+            padding: 15px 16px;
             background: white;
             border-radius: 12px;
             border: 1.5px solid rgba(99, 102, 241, 0.15);
@@ -465,8 +476,9 @@
         }
 
         .playback-block .control-group {
-            flex: 1;
-            min-width: 200px;
+            width: 50%;
+            min-width: 0;
+            align-self: center;
             margin: 0;
         }
 
@@ -571,10 +583,10 @@
         /* 커널 2열 레이아웃 */
         .kernel-panel-layout {
             display: grid;
-            grid-template-columns: min-content 1fr;
-            gap: 12px;
-            align-items: start;
-            margin-top: 12px;
+            grid-template-columns: minmax(248px, 0.9fr) minmax(168px, 1fr);
+            gap: 8px;
+            align-items: center;
+            margin-top: 0;
             min-width: 0;
         }
 
@@ -582,13 +594,22 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
             overflow-x: auto;
             max-width: 100%;
         }
 
+        .kernel-size-control {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: 12px;
+            margin: 2px 0 16px;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.92em;
+        }
+
         .kernel-size-select {
-            margin-bottom: 8px;
             width: 100%;
             padding: 7px 10px;
             font-size: 0.88em;
@@ -598,7 +619,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            width: 216px;
+            width: 100%;
             flex-shrink: 0;
         }
 
@@ -606,7 +627,7 @@
         .kernel-preset {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 7px;
+            gap: 6px;
         }
 
         /* 계산 표 */
@@ -626,8 +647,8 @@
         }
 
         .comp-table td {
-            width: 72px;
-            height: 72px;
+            width: 79px;
+            height: 79px;
             padding: 0;
             border: 1px solid #e2e8f0;
             text-align: center;
@@ -646,6 +667,14 @@
             font-family: 'Orbitron', sans-serif;
             font-size: 1.2em;
             display: block;
+        }
+
+        /* 계산식의 숫자만: 작은 소수와 0을 또렷하게 구분한다. */
+        .calc-number {
+            font-family: 'Roboto Mono', Consolas, monospace !important;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
+            letter-spacing: -0.03em;
         }
 
         .comp-table .comp-sum-row td {
@@ -686,8 +715,8 @@
         .comp-table td.pair-24 { border: 2px solid #2f9e44 !important; background: rgba(47,158,68,0.08); }
         
         .kernel-preset button {
-            padding: 11px 8px;
-            font-size: 0.88em;
+            padding: 9px 4px;
+            font-size: 0.78em;
             background: white;
             color: #6366f1;
             border: 1.5px solid rgba(99, 102, 241, 0.25);
@@ -718,6 +747,92 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
+
+        .padding-guide {
+            margin: 16px 0 12px;
+            padding: 16px;
+            background: #fff;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.08);
+        }
+
+        .padding-guide h3 {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 10px;
+            color: #3730a3;
+            font-size: 1em;
+        }
+
+        .padding-steps {
+            display: grid;
+            gap: 8px;
+            list-style: none;
+            counter-reset: padding-step;
+        }
+
+        .padding-steps li {
+            display: grid;
+            grid-template-columns: 24px 1fr;
+            gap: 8px;
+            align-items: start;
+            color: #334155;
+            font-size: 0.88em;
+            line-height: 1.45;
+        }
+
+        .padding-steps li::before {
+            counter-increment: padding-step;
+            content: counter(padding-step);
+            display: grid;
+            place-items: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            color: #4338ca;
+            font-size: 0.8em;
+            font-weight: 800;
+        }
+
+        .padding-status {
+            margin-top: 12px;
+            padding: 10px 11px;
+            border-radius: 8px;
+            background: #eef2ff;
+            color: #312e81;
+            font-size: 0.86em;
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
+        .padding-key {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .padding-key span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78em;
+            color: #475569;
+        }
+
+        .padding-key i {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            border: 1px solid rgba(30, 41, 59, 0.25);
+        }
+
+        .padding-key .key-input { background: #64748b; }
+        .padding-key .key-zero { background: rgba(76, 110, 245, 0.45); border-style: dashed; }
+        .padding-key .key-edge { background: rgba(255, 193, 7, 0.55); border-style: dashed; }
 
         .checkbox-row .checkbox-group {
             margin: 10px 0 0 0;
@@ -831,6 +946,13 @@
         .d1-cell:hover {
             transform: scale(1.1);
         }
+
+        /* 3열 화면에서는 입력·필터·출력 행렬의 시작선을 맞춘다. */
+        @media (min-width: 1501px) {
+            .kernel-panel-layout {
+                margin-top: 32px;
+            }
+        }
         
         @media (max-width: 1500px) {
             .main-content {
@@ -847,6 +969,18 @@
             .main-content {
                 grid-template-columns: 1fr;
             }
+        }
+
+        @media (max-width: 680px) {
+            body { padding: 10px; }
+            .main-content { padding: 14px; gap: 14px; }
+            .panel { padding: 18px; }
+            header { padding: 28px 18px 22px; }
+            h1 { font-size: 1.75em; flex-wrap: wrap; }
+            .input-top-row, .checkbox-row { grid-template-columns: 1fr; }
+            .kernel-panel-layout { grid-template-columns: 1fr; }
+            .kernel-controls-col { width: 100%; }
+            .playback-block .control-group { width: 100%; }
         }
 
         /* 좁은 화면에서는 절대배치된 '다음 단계' 버튼이 부제목 위로 겹친다 */
@@ -1037,15 +1171,19 @@
             <div class="panel">
                 <h2>🔍 커널 & 연산</h2>
 
+                <label class="kernel-size-control" for="kernel-size">
+                    <span>커널 크기</span>
+                    <select id="kernel-size" title="커널 크기 선택" onchange="changeKernelSize(this.value)" class="kernel-size-select">
+                        <option value="1x3">1×3 (수평)</option>
+                        <option value="3x1">3×1 (수직)</option>
+                        <option value="3x3" selected>3×3</option>
+                        <option value="5x5">5×5</option>
+                    </select>
+                </label>
+
                 <div class="kernel-panel-layout">
-                    <!-- 좌: 크기 선택 + 커널 숫자 그리드 -->
+                    <!-- 좌: 수정 가능한 커널 숫자 그리드 -->
                     <div class="kernel-grid-col">
-                        <select id="kernel-size" title="커널 크기 선택" onchange="changeKernelSize(this.value)" class="kernel-size-select">
-                            <option value="1x3">1×3 (수평)</option>
-                            <option value="3x1">3×1 (수직)</option>
-                            <option value="3x3" selected>3×3</option>
-                            <option value="5x5">5×5</option>
-                        </select>
                         <div id="kernel-grid"></div>
                     </div>
 
@@ -1104,7 +1242,11 @@
                         </select>
                     </div>
                 </div>
+
+                <div class="matrix-label">출력 행렬 [<span id="output-size-label">7×7</span>]</div>
                 
+                <div id="output2d-grid"></div>
+
                 <div class="checkbox-row">
                     <div class="checkbox-group">
                         <input type="checkbox" id="normalize" onchange="updateConvolution()" checked>
@@ -1117,13 +1259,24 @@
                     </div>
                 </div>
                 
-                <div class="matrix-label">출력 행렬 [<span id="output-size-label">7×7</span>]</div>
-                
-                <div id="output2d-grid"></div>
-                
                 <div class="btn-group">
                     <button onclick="downloadCSV()">💾 CSV 저장</button>
                 </div>
+
+                <section class="padding-guide" aria-labelledby="padding-guide-title">
+                    <h3 id="padding-guide-title">🧩 패딩을 눈으로 확인해요</h3>
+                    <ol class="padding-steps">
+                        <li><span>커널은 테두리 밖으로 나갈 수 없어서, 패딩이 없으면 가장자리에서 멈춥니다.</span></li>
+                        <li><span>패딩은 입력 주변에 한 겹을 더해 커널이 가장자리 픽셀도 중심으로 계산하게 합니다.</span></li>
+                        <li><span>왼쪽 입력 행렬의 점선 테두리가 새로 추가된 칸입니다. 재생 버튼으로 모서리까지 이동해 보세요.</span></li>
+                    </ol>
+                    <div class="padding-status" id="padding-status" role="status" aria-live="polite"></div>
+                    <div class="padding-key" aria-label="입력 행렬 범례">
+                        <span><i class="key-input"></i>원본 입력</span>
+                        <span><i class="key-zero"></i>0 패딩</span>
+                        <span><i class="key-edge"></i>가장자리 복제</span>
+                    </div>
+                </section>
                 
                 <div class="info-box">
                     💡 패딩: 테두리를 채우는 방법<br>
@@ -1565,7 +1718,34 @@
             }
             
             state.currentPos = 0;
+            updatePaddingGuide();
             render();
+        }
+
+        function updatePaddingGuide() {
+            const status = document.getElementById('padding-status');
+            if (!status) return;
+
+            if (state.mode !== '2d' || !state.input2d.length || !state.input2d[0]) {
+                status.textContent = '벡터 모드에서는 양 끝에 값을 더해, 창이 첫 번째와 마지막 값도 지나갈 수 있게 합니다.';
+                return;
+            }
+
+            const inputRows = state.input2d.length;
+            const inputCols = state.input2d[0].length;
+            const [kernelRows, kernelCols] = state.kernelSize;
+            const outputRows = state.output.length;
+            const outputCols = outputRows && state.output[0] ? state.output[0].length : 0;
+            const padRows = Math.floor(kernelRows / 2);
+            const padCols = Math.floor(kernelCols / 2);
+
+            if (state.padding === 'none') {
+                status.textContent = `패딩 없음: ${inputRows}×${inputCols} 입력에서 테두리를 제외해 ${outputRows}×${outputCols}만 출력됩니다.`;
+                return;
+            }
+
+            const method = state.padding === 'zero' ? '0을 채워' : '가장자리 값을 복제해';
+            status.textContent = `${state.padding === 'zero' ? '0 패딩' : '가장자리 복제'}: 상하 ${padRows}칸, 좌우 ${padCols}칸을 ${method} ${inputRows + padRows * 2}×${inputCols + padCols * 2}로 넓힙니다. 그래서 출력은 ${outputRows}×${outputCols}입니다.`;
         }
         
         // 재생 컨트롤
@@ -1859,8 +2039,10 @@
         function renderKernel() {
             const kernelGrid = document.getElementById('kernel-grid');
             const [kh, kw] = state.kernelSize;
+            // 5×5는 같은 패널 폭에서 가로 스크롤이 생기지 않도록 셀을 조금 더 촘촘히 보인다.
+            const kernelCellSize = kw === 5 ? 44 : 50;
             
-            kernelGrid.style.gridTemplateColumns = `repeat(${kw}, 50px)`;
+            kernelGrid.style.gridTemplateColumns = `repeat(${kw}, ${kernelCellSize}px)`;
             kernelGrid.className = 'grid-container';
             kernelGrid.innerHTML = '';
             
@@ -1943,8 +2125,8 @@
                         const product = inputVal * kernelVal;
                         sum += product;
                         cells += `<td class="pair-${pairIdx}">
-                            <span>${inputVal.toFixed(0)} × ${kernelVal.toFixed(2)}</span>
-                            <strong>= ${product.toFixed(1)}</strong>
+                            <span class="calc-number">${inputVal.toFixed(0)} × ${kernelVal.toFixed(1)}</span>
+                            <strong class="calc-number">= ${product.toFixed(1)}</strong>
                         </td>`;
                     }
                     rows += `<tr>${cells}</tr>`;
@@ -1966,12 +2148,12 @@
                             ${rows}
                             <tr class="comp-sum-row">
                                 <td colspan="${colSpan}" style="text-align:left; padding-left:10px;">
-                                    ${sumLabel}
+                                    <span class="calc-number">${sumLabel}</span>
                                 </td>
                             </tr>
                             <tr class="comp-sum-row">
                                 <td colspan="${colSpan}" style="background:#eef2ff; color:#6366f1; font-size:1.1em;">
-                                    최종 출력값: <strong>${finalVal.toFixed(0)}</strong>
+                                    최종 출력값: <strong class="calc-number">${finalVal.toFixed(0)}</strong>
                                 </td>
                             </tr>
                         </table>
