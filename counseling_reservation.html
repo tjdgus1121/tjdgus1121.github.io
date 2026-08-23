@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15231f">
+  <title>학생 상담 예약 시스템</title>
+  <link rel="icon" type="image/png" sizes="256x256" href="./counseling-favicon.png">
+  <link rel="apple-touch-icon" href="./counseling-favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:#17221f; --muted:#69746f; --line:#dfe5e1; --paper:#fffef9;
+      --mint:#dff3e9; --green:#28765b; --green-dark:#185740; --coral:#ef7d61;
+      --coral-soft:#fff0e9; --yellow:#f8d875; --bg:#edf2ee; --danger:#b9483d;
+      --shadow:0 18px 50px rgba(31,55,45,.12); --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:linear-gradient(145deg,#e9f2ed,#f6efe8);color:var(--ink);font-family:'Noto Sans KR',sans-serif;min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(40,118,91,.25);outline-offset:2px}
+    .shell{width:min(1500px,100%);margin:auto;min-height:100vh;background:var(--paper);box-shadow:var(--shadow)}
+    header{background:var(--ink);color:white;padding:28px clamp(20px,5vw,58px) 22px;position:relative;overflow:hidden}
+    header:after{content:"";position:absolute;width:260px;height:260px;border:1px solid rgba(255,255,255,.12);border-radius:50%;right:-70px;top:-160px;box-shadow:0 0 0 34px rgba(255,255,255,.04)}
+    .topline{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;position:relative;z-index:1}
+    .brand small{display:block;color:#9fd1bd;font-size:12px;font-weight:800;letter-spacing:.16em;margin-bottom:6px}
+    .brand h1{font-size:clamp(21px,2.6vw,28px);font-weight:700;letter-spacing:-.01em;margin:0}
+    .brand p{margin:8px 0 0;color:#c8d3cf;font-size:14px}
+    .connection{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:8px 12px;font-size:12px;white-space:nowrap}
+    .connection i{width:8px;height:8px;border-radius:50%;background:var(--yellow)}
+    .connection.live i{background:#6ee7b7;box-shadow:0 0 0 4px rgba(110,231,183,.12)}
+    .tabs{display:flex;background:#fff;border-bottom:1px solid var(--line);padding:0 clamp(12px,4vw,46px);position:sticky;top:0;z-index:20}
+    .tab{flex:1;max-width:220px;border:0;background:transparent;color:var(--muted);padding:17px 12px;font-weight:700;border-bottom:3px solid transparent}
+    .tab.active{color:var(--green-dark);border-bottom-color:var(--green)}
+    main{padding:clamp(20px,3vw,42px)}
+    .panel{display:none}.panel.active{display:block}
+    .student-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(360px,.75fr);gap:20px;align-items:start}
+    .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 7px 24px rgba(39,64,53,.055)}
+    .calendar-card{width:100%;margin:0}
+    .booking-side{position:sticky;top:82px}
+    .booking-side>.card{padding:20px}
+    .booking-empty{min-height:360px;display:grid;place-items:center;text-align:center;padding:34px 22px;color:var(--muted)}
+    .booking-empty[hidden],.booking-details[hidden]{display:none}
+    .booking-empty-icon{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 14px;border-radius:50%;background:var(--mint);color:var(--green-dark);font-size:22px;font-weight:800}
+    .booking-empty strong{display:block;color:var(--ink);font-size:17px;font-weight:700;margin-bottom:7px}
+    .booking-form-section{border-top:1px solid var(--line);margin-top:20px;padding-top:20px}
+    .booking-side .section-head{margin-bottom:14px}
+    .booking-side .section-head h3{font-size:20px}
+    .card+.card{margin-top:18px}
+    .section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .section-head h2,.section-head h3{margin:0;font-weight:700;letter-spacing:-.01em}
+    .section-head h2{font-size:26px}.section-head h3{font-size:21px}
+    .section-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .step{display:inline-grid;place-items:center;min-width:31px;height:31px;border-radius:50%;background:var(--green);color:white;font-size:13px;font-weight:800}
+    .month-switch{display:flex;gap:7px;background:#f1f5f2;border-radius:13px;padding:4px}
+    .month-btn{border:0;background:transparent;border-radius:10px;padding:8px 17px;font-weight:700;color:var(--muted)}
+    .month-btn.active{background:white;color:var(--green-dark);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .calendar-scroll{overflow-x:auto;padding-bottom:4px}
+    .calendar-week,.calendar{display:grid;grid-template-columns:repeat(7,minmax(90px,1fr));gap:8px;min-width:672px}
+    .calendar-week div{text-align:center;color:#8b948f;font-size:17px;font-weight:800;padding:8px}.calendar-week div:first-child{color:#d46555}
+    .day{border:1px solid transparent;background:#f7f8f6;border-radius:16px;min-height:120px;padding:10px 9px;text-align:left;color:var(--ink);position:relative;transition:.16s;overflow:hidden;display:flex;flex-direction:column;align-items:stretch}
+    .day:not(:disabled):hover{border-color:#9fc8b7;transform:translateY(-2px)}
+    .day.selected{background:var(--green-dark);color:white;box-shadow:0 7px 15px rgba(24,87,64,.23)}
+    .day:disabled,.day.unavailable{color:#bbc1bd;background:#fafafa;cursor:not-allowed}
+    .day.blank{visibility:hidden}
+    .day .num{font-weight:800;font-size:18px}.day .remain{display:block;font-size:11px;color:var(--green);margin-top:auto;padding-top:8px;white-space:nowrap}
+    .day.selected .remain{color:#bce8d5}.day.full .remain{color:var(--danger)}
+    .day.closed-day{background:#fff0ed;border-color:#efb2a7;color:#8f382f}.day.closed-day .remain{color:#a54136;font-weight:800}
+    .closed-reason{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;background:#fbd8d1;color:#8f382f;border-radius:8px;padding:6px 7px;margin-top:9px;font-size:10px;font-weight:800;line-height:1.4;word-break:keep-all}
+    .done-list{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+    .done-person{display:block;background:#e1f3eb;color:var(--green-dark);border-radius:7px;padding:5px 6px;font-size:10px;font-weight:800;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .day.selected .done-person{background:rgba(255,255,255,.17);color:#fff}
+    .notice{background:#f3f8f5;border-left:4px solid var(--green);padding:14px 16px;border-radius:4px 12px 12px 4px;color:#41504a;font-size:13px;line-height:1.65;margin-bottom:18px;white-space:pre-line}
+    .teacher-shortcut{display:flex;align-items:center;gap:8px;background:#fff5df;border:1px solid #ead19c;color:#79571a;border-radius:12px;padding:10px 13px;margin:-6px 0 16px;font-size:12px;font-weight:800}.teacher-shortcut[hidden]{display:none}
+    .teacher-calendar-mode .day{cursor:context-menu}.teacher-calendar-mode .day:hover{border-color:#d3a64e}
+    .date-summary{background:var(--coral-soft);border-radius:16px;padding:15px 17px;margin-bottom:14px}
+    .date-summary small{display:block;color:#a35b49;font-weight:700}.date-summary strong{display:block;margin-top:3px;font-size:19px}
+    .date-summary span{display:block;margin-top:5px;color:#8d5a4d;font-size:12px;font-weight:700}
+    .slots{display:grid;grid-template-columns:1fr;gap:8px}
+    .slot{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 7px;color:var(--ink);font-weight:700;min-height:48px}
+    .slot small{display:block;font-size:10px;font-weight:600;margin-top:2px;opacity:.8;text-decoration:none}
+    .slot:hover{border-color:var(--green)}.slot.selected{background:var(--green);border-color:var(--green);color:#fff}.slot:disabled{text-decoration:line-through;color:#b4bab6;background:#f5f5f5;cursor:not-allowed}
+    .empty{grid-column:1/-1;text-align:center;padding:24px 10px;color:var(--muted);font-size:13px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field{display:flex;flex-direction:column;gap:6px}.field.full,.privacy-note.full,.checkline.full{grid-column:1/-1}
+    label{font-size:12px;color:#52605a;font-weight:800}
+    .required:after{content:' *';color:var(--coral)}
+    input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;background:#fbfcfa;padding:12px 13px;color:var(--ink)}
+    textarea{resize:vertical;min-height:95px;line-height:1.55}
+    .hint{font-size:11px;color:#87908c;line-height:1.5}
+    .checkline{display:flex;align-items:flex-start;gap:9px;background:#f7f8f6;border-radius:12px;padding:12px 13px;font-size:12px;line-height:1.55;color:#53605b}
+    .checkline input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--green);flex:none}
+    .primary{width:100%;border:0;border-radius:14px;background:var(--green);color:#fff;padding:15px;font-weight:800;margin-top:16px;transition:.16s}
+    .primary:hover{background:var(--green-dark);transform:translateY(-1px)}.primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .ghost{border:1px solid var(--line);background:white;color:var(--ink);border-radius:11px;padding:9px 13px;font-weight:700}
+    .danger{border:0;background:#fff0ed;color:var(--danger);border-radius:11px;padding:10px 13px;font-weight:800}
+    .selection-empty{text-align:center;padding:45px 20px;color:#8c9591}.selection-empty b{display:block;color:#53615a;margin-bottom:5px}
+    .my-wrap{max-width:760px;margin:auto}.reservation-card+.reservation-card{margin-top:14px}.lookup{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-top:16px}.lookup .primary{margin:0;padding-inline:24px}
+    .reservation-card{margin-top:18px;border:1px solid #bcd8cc;background:#f7fcf9;border-radius:18px;padding:20px}
+    .reservation-card h3{margin:0 0 13px;font-size:17px;font-weight:700}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .detail{background:white;border-radius:12px;padding:11px 13px}.detail small{display:block;color:var(--muted);margin-bottom:3px}.detail strong{font-size:14px}
+    .code{font-family:ui-monospace,monospace;letter-spacing:.07em;color:var(--green-dark)}
+    .admin-layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}.login-card{max-width:430px;margin:50px auto}
+    .admin-nav{position:sticky;top:84px}.admin-nav button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:12px;border-radius:11px;color:var(--muted);font-weight:700}.admin-nav button.active{background:var(--mint);color:var(--green-dark)}
+    .admin-view{display:none}.admin-view.active{display:block}.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:17px}.stat{background:#f5f7f5;border-radius:14px;padding:15px}.stat b{font-size:27px}.stat span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+    .booking-list{display:flex;flex-direction:column;gap:9px}.booking-row{display:grid;grid-template-columns:110px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:13px}.booking-row .when{font-weight:800;color:var(--green-dark)}.booking-row .who strong{display:block}.booking-row .who small{color:var(--muted)}
+    .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.settings-grid .full{grid-column:1/-1}
+    .schedule-builder{display:flex;flex-direction:column;gap:12px}
+    .schedule-day{border:1px solid var(--line);border-radius:15px;padding:14px;background:#fbfcfa}
+    .schedule-day-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
+    .schedule-day-head strong{font-size:15px;color:var(--green-dark)}
+    .schedule-day-actions{display:flex;gap:6px}.schedule-day-actions button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;color:var(--muted);font-size:10px;font-weight:800}
+    .schedule-times{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+    .schedule-time{position:relative;cursor:pointer}.schedule-time input{position:absolute;opacity:0;pointer-events:none}
+    .schedule-time span{display:block;text-align:center;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:9px 4px;color:var(--muted);font-size:12px;font-weight:800;transition:.15s}
+    .schedule-time input:checked+span{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 3px 9px rgba(40,118,91,.18)}
+    .schedule-time input:focus-visible+span{outline:3px solid rgba(40,118,91,.25);outline-offset:2px}
+    .block-date-row{display:grid;grid-template-columns:minmax(220px,340px) 1fr;gap:14px;align-items:end;margin-bottom:20px}
+    .block-summary{background:#f3f7f4;border-radius:13px;padding:12px 15px;color:var(--muted);font-size:12px;line-height:1.55}
+    .block-times{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .block-time{border:1.5px solid var(--line);background:#fff;border-radius:13px;padding:13px 8px;color:var(--ink);font-weight:800;min-height:66px;transition:.15s}
+    .block-time small{display:block;margin-top:4px;color:var(--green);font-size:10px;font-weight:700}
+    .block-time.blocked{background:#fff0ed;border-color:#e58b7e;color:var(--danger)}.block-time.blocked small{color:var(--danger)}
+    .block-time:disabled{background:#f0f2f1;border-color:#d7dcda;color:#87908c;cursor:not-allowed}.block-time:disabled small{color:#87908c}
+    .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:var(--ink);color:#fff;border-radius:13px;padding:12px 18px;opacity:0;pointer-events:none;transition:.25s;z-index:100;font-size:13px;box-shadow:var(--shadow)}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{background:#8f382f}
+    dialog{border:0;border-radius:24px;padding:0;width:min(440px,calc(100% - 32px));box-shadow:0 24px 80px rgba(0,0,0,.26)}dialog::backdrop{background:rgba(14,28,23,.58)}.modal-body{padding:28px;text-align:center}.modal-icon{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:var(--green-dark);font-size:30px;margin:0 auto 13px}.modal-body h2{font-size:20px;font-weight:700;margin:0 0 8px}.modal-body p{color:var(--muted);font-size:13px;line-height:1.6}.modal-code{background:#f2f5f3;border-radius:12px;padding:12px;margin:15px 0;font-family:ui-monospace,monospace;font-weight:800;color:var(--green-dark);letter-spacing:.08em}
+    .popup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}.popup-head h2{font-weight:700;font-size:20px;margin:0}.popup-head p{font-size:13px;color:var(--muted);margin:4px 0 0}.popup-close{border:0;background:#f0f3f1;border-radius:50%;width:38px;height:38px;font-size:22px;color:var(--muted);flex:none}.privacy-note{display:flex;align-items:center;gap:8px;background:#eef7f3;color:var(--green-dark);border-radius:11px;padding:10px 12px;font-size:11px;font-weight:700;margin-top:12px}
+    .day-block-dialog{width:min(520px,calc(100% - 28px));text-align:left}.day-block-body{padding:24px}.day-block-date{background:var(--coral-soft);border-radius:14px;padding:13px 15px;margin:12px 0 16px;font-size:19px;font-weight:800}.day-block-public{background:#fff7e3;border:1px solid #efd596;color:#79571a;border-radius:11px;padding:10px 12px;margin-top:10px;font-size:11px;font-weight:700}.day-block-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:17px}.day-block-actions .primary{margin:0}.day-block-actions .danger{padding:14px}.day-block-link{width:100%;margin-top:9px}
+    @media(max-width:1120px){.student-layout{grid-template-columns:1fr}.booking-side{position:static}.booking-empty{min-height:190px}}
+    @media(max-width:820px){.calendar-card{width:100%}.admin-layout{grid-template-columns:1fr}.admin-nav{position:static;display:flex;gap:6px;overflow:auto}.admin-nav button{white-space:nowrap}.topline{align-items:center}.booking-row{grid-template-columns:90px 1fr}.booking-row .row-action{grid-column:1/-1}.schedule-times{grid-template-columns:repeat(4,1fr)}}
+    @media(max-width:560px){.booking-side .form-grid{grid-template-columns:1fr}.booking-side .field.full{grid-column:auto}header{padding:22px 18px}.brand p{display:none}.connection span{display:none}.tabs{padding:0}.tab{font-size:13px;padding:15px 5px}main{padding:12px}.card{padding:16px;border-radius:18px}.calendar,.calendar-week{gap:6px;min-width:720px;grid-template-columns:repeat(7,minmax(96px,1fr))}.day{min-height:118px;padding:9px 8px;border-radius:11px}.day .remain{font-size:9px}.day .num{font-size:16px}.done-person{font-size:9px}.form-grid,.settings-grid,.detail-grid,.stat-row,.block-date-row{grid-template-columns:1fr}.block-times,.schedule-times{grid-template-columns:repeat(2,1fr)}.field.full,.settings-grid .full{grid-column:auto}.lookup{grid-template-columns:1fr}.section-head{align-items:center}.section-head h2{font-size:19px}.month-btn{padding:7px 12px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="topline">
+      <div class="brand"><h1>학생 상담 예약 시스템</h1><p>상담 가능한 날짜와 시간을 선택해 예약합니다.</p></div>
+      <div class="connection" id="connection"><i></i><span id="connectionText">데모 모드</span></div>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="주요 메뉴">
+    <button class="tab active" data-tab="booking">상담 예약</button>
+    <button class="tab" data-tab="mine">내 예약</button>
+    <button class="tab" data-tab="teacher">교사 관리</button>
+  </nav>
+
+  <main>
+    <section class="panel active" id="panel-booking">
+      <div class="student-layout">
+        <article class="card calendar-card">
+          <div class="section-head"><div><h2>상담 날짜 선택</h2><p>날짜를 선택하면 오른쪽에 예약 가능한 시간이 표시됩니다.</p></div><span class="step">1</span></div>
+          <div class="notice" id="notice">상담 내용은 담당 교사만 확인합니다. 급한 사안은 예약을 기다리지 말고 담당 교사에게 직접 연락하세요.</div>
+          <div class="teacher-shortcut" id="teacherShortcutHint" hidden>교사 단축 기능 · 날짜 클릭: 하루 전체 예약 불가 설정 · 날짜 우클릭: 시간별 차단 설정</div>
+          <div class="month-switch" style="width:max-content;margin-bottom:15px">
+            <button class="month-btn active" data-month="8">8월</button><button class="month-btn" data-month="9">9월</button>
+          </div>
+          <div class="calendar-scroll">
+            <div class="calendar-week"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div>
+            <div class="calendar" id="calendar" aria-label="상담 예약 달력"></div>
+          </div>
+        </article>
+
+        <aside class="booking-side" id="bookingPanel" aria-live="polite">
+          <article class="card">
+            <div class="booking-empty" id="bookingEmpty">
+              <div><span class="booking-empty-icon">1</span><strong>날짜를 선택하세요</strong><span>달력에서 예약 가능한 날짜를 선택하면<br>예약 가능한 시간과 입력 항목이 표시됩니다.</span></div>
+            </div>
+            <div class="booking-details" id="bookingDetails" hidden>
+              <div class="section-head"><div><h3>선택한 예약 정보</h3><p>예약 가능한 시간을 선택하고 예약자 정보를 입력하세요.</p></div><span class="step">2</span></div>
+              <div id="dateSummary" class="selection-empty"><b>날짜를 먼저 선택하세요</b>선택한 날짜의 예약 가능한 시간이 표시됩니다.</div>
+              <div class="slots" id="slots"></div>
+
+              <div class="booking-form-section">
+                <div class="section-head"><div><h3>예약자 정보</h3><p>상담 주제와 전달 내용은 교사만 확인합니다.</p></div><span class="step">3</span></div>
+                <form id="bookingForm">
+                  <div class="form-grid">
+                    <div class="field"><label class="required" for="studentName">이름</label><input id="studentName" maxlength="20" autocomplete="name" required placeholder="홍길동"></div>
+                    <div class="field"><label class="required" for="studentNo">학번</label><input id="studentNo" maxlength="12" inputmode="numeric" required placeholder="예: 3101"></div>
+                    <div class="field"><label class="required" for="counselType">상담 주제</label><select id="counselType" required></select></div>
+                    <div class="field"><label for="contact">연락처 <span style="font-weight:400">(선택)</span></label><input id="contact" maxlength="20" autocomplete="tel" placeholder="010-0000-0000"></div>
+                    <div class="field full"><label class="required" for="topic">상담 전 전달 사항</label><textarea id="topic" maxlength="300" required placeholder="예시)&#10;희망 학과: 컴퓨터공학과&#10;상담 내용: 1~6지망 대학 선정"></textarea><span class="hint"><span id="topicCount">0</span>/300자 · 상담받고 싶은 내용을 간단히 입력하세요.</span></div>
+                    <div class="field"><label class="required" for="bookPassword">예약 비밀번호</label><input type="password" id="bookPassword" minlength="4" maxlength="20" autocomplete="new-password" required placeholder="4자 이상"></div>
+                    <div class="field"><label class="required" for="bookPassword2">비밀번호 확인</label><input type="password" id="bookPassword2" minlength="4" maxlength="20" autocomplete="new-password" required placeholder="한 번 더 입력"></div>
+                    <div class="privacy-note full">상담 주제와 전달 사항은 공개 달력에 표시되지 않으며, 교사 계정에서만 확인됩니다.</div>
+                    <label class="checkline full"><input type="checkbox" id="privacyAgree" required><span>상담 예약을 위해 이름, 학번, 상담 내용을 수집하는 것에 동의합니다. 예약 후 공개 달력에는 이름이 표시되고, 상담 완료 후에는 학번과 이름이 표시됩니다.</span></label>
+                  </div>
+                  <button class="primary" id="submitBooking" type="submit">시간을 선택해주세요</button>
+                </form>
+              </div>
+            </div>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-mine">
+      <div class="my-wrap">
+        <article class="card">
+          <div class="section-head"><div><h2>내 예약 확인</h2><p>예약할 때 입력한 이름과 비밀번호를 입력하세요.</p></div></div>
+          <div class="lookup"><input id="lookupName" placeholder="이름 (예: 홍길동)" maxlength="20" autocomplete="off"><input id="lookupPassword" type="password" placeholder="예약 비밀번호" autocomplete="current-password"><button class="primary" id="lookupBtn">조회</button></div>
+          <div id="myResult"><div class="selection-empty"><b>이 브라우저에서 예약한 내역만 조회됩니다</b>다른 기기에서 예약했다면 담당 교사에게 문의하세요.</div></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-teacher">
+      <div id="teacherLogin" class="login-card card">
+        <div class="section-head"><div><h2>교사 로그인</h2><p>Firebase Authentication에 등록한 교사 계정으로 로그인하세요.</p></div></div>
+        <div class="field"><label for="teacherEmail">이메일</label><input type="email" id="teacherEmail" autocomplete="username" placeholder="teacher@example.com"></div>
+        <div class="field" style="margin-top:12px"><label for="teacherPassword">비밀번호</label><input type="password" id="teacherPassword" autocomplete="current-password"></div>
+        <button class="primary" id="teacherLoginBtn">로그인</button>
+        <p class="hint" id="loginHint" style="margin-bottom:0">데모 모드에서는 아무 이메일과 비밀번호(4자 이상)로 관리 화면을 체험할 수 있습니다.</p>
+      </div>
+      <div id="teacherDashboard" class="admin-layout" hidden>
+        <aside class="card admin-nav">
+          <button class="active" data-admin="bookings">예약 현황</button><button data-admin="blocking">시간 차단</button><button data-admin="settings">예약 설정</button><button id="teacherLogout">로그아웃</button>
+        </aside>
+        <div>
+          <section class="admin-view active" id="admin-bookings">
+            <article class="card">
+              <div class="section-head"><div><h2>예약 현황</h2><p>학생 상담 예약을 날짜순으로 확인하고 상태를 관리합니다.</p></div><button class="ghost" id="exportCsv">CSV 저장</button></div>
+              <div class="stat-row"><div class="stat"><b id="statAll">0</b><span>전체 예약</span></div><div class="stat"><b id="statActive">0</b><span>예정 상담</span></div><div class="stat"><b id="statDone">0</b><span>완료 상담</span></div></div>
+              <div class="booking-list" id="bookingList"></div>
+            </article>
+          </section>
+          <section class="admin-view" id="admin-blocking">
+            <article class="card">
+              <div class="section-head"><div><h2>날짜별 상담 시간 차단</h2><p>회의, 수업 등으로 상담할 수 없는 시간을 날짜별로 차단합니다.</p></div></div>
+              <div class="block-date-row">
+                <div class="field"><label for="blockDate">차단할 날짜</label><input id="blockDate" type="date"></div>
+                <div class="block-summary" id="blockSummary">날짜를 선택하면 예약 시간 목록이 표시됩니다.</div>
+              </div>
+              <div class="block-times" id="blockTimes"></div>
+              <p class="hint" style="margin:14px 0 0">시간을 누르면 즉시 차단·해제됩니다. 이미 학생 예약이 있는 시간은 차단할 수 없습니다.</p>
+            </article>
+          </section>
+          <section class="admin-view" id="admin-settings">
+            <article class="card">
+              <div class="section-head"><div><h2>예약 항목 설정</h2><p>학생에게 보일 안내, 상담 종류와 시간을 직접 정할 수 있습니다.</p></div></div>
+              <form id="settingsForm" class="settings-grid">
+                <div class="field"><label for="setTeacher">담당 교사</label><input id="setTeacher" maxlength="30"></div>
+                <div class="field"><label for="setRoom">상담 장소</label><input id="setRoom" maxlength="40"></div>
+                <div class="field full"><label for="setNotice">학생 안내문</label><textarea id="setNotice" maxlength="400"></textarea></div>
+                <div class="field full"><label for="setTypes">상담 주제 (쉼표로 구분)</label><input id="setTypes" placeholder="학업·진로, 친구 관계, 학교생활, 개인 고민, 기타"></div>
+                <div class="field full"><label>요일별 상담 가능 시간</label><div class="schedule-builder" id="weeklySchedule"></div><span class="hint">월요일부터 금요일까지, 체크한 시간만 학생 달력에서 예약할 수 있습니다.</span></div>
+                <div class="field full"><label for="setYear">예약 연도</label><input id="setYear" type="number" min="2024" max="2100"><span class="hint">화면에는 해당 연도의 8월과 9월이 표시됩니다.</span></div>
+                <button class="primary full" type="submit">설정 저장</button>
+              </form>
+            </article>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dayBlockDialog" class="day-block-dialog" aria-labelledby="dayBlockTitle">
+  <div class="day-block-body">
+    <div class="popup-head">
+      <div><h2 id="dayBlockTitle">하루 전체 예약 불가</h2><p>학생 달력에 표시할 사유를 입력하세요.</p></div>
+      <button type="button" class="popup-close" id="dayBlockClose" aria-label="하루 차단 창 닫기">×</button>
+    </div>
+    <div class="day-block-date" id="dayBlockDateText"></div>
+    <div class="field"><label class="required" for="dayBlockReason">공개 사유</label><input id="dayBlockReason" maxlength="60" placeholder="예: 출장, 교사 연수, 학교 행사, 회의"><span class="hint">입력한 사유는 모든 학생의 달력에 표시됩니다.</span></div>
+    <div class="day-block-public">학생에게는 날짜와 사유만 공개되며, 교사의 다른 일정 정보는 공개되지 않습니다.</div>
+    <div class="day-block-actions"><button type="button" class="primary" id="saveDayBlock">하루 예약 불가로 설정</button><button type="button" class="danger" id="clearDayBlock">예약 불가 해제</button></div>
+    <button type="button" class="ghost day-block-link" id="openTimeBlocking">이 날짜의 시간만 선택해서 차단</button>
+  </div>
+</dialog>
+
+<dialog id="successDialog">
+  <div class="modal-body"><div class="modal-icon">✓</div><h2>예약 완료</h2><p id="successText"></p><div class="modal-code" id="successCode"></div><p>예약번호를 저장해 두세요. 이 브라우저에서는 「내 예약」 탭에서 다시 조회할 수 있습니다.</p><button class="primary" id="successClose">확인</button></div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js';
+  import { getDatabase, ref, get, set, update, onValue, serverTimestamp, goOnline } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js';
+  import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey: 'AIzaSyC9XqFVLVcSWrar4iQdFivp3RTrsHlXGrc',
+    authDomain: 'word-chain-game-1ce13.firebaseapp.com',
+    databaseURL: 'https://word-chain-game-1ce13-default-rtdb.asia-southeast1.firebasedatabase.app',
+    projectId: 'word-chain-game-1ce13',
+    storageBucket: 'word-chain-game-1ce13.firebasestorage.app',
+    messagingSenderId: '302193237016',
+    appId: '1:302193237016:web:4c09264ac33ce58a18376d'
+  };
+
+  const ROOT = 'consultationBooking';
+  const DEMO = firebaseConfig.apiKey.startsWith('YOUR_');
+  const SCHEDULE_TIMES=['09:30','10:30','11:30','12:30','13:30','14:30','15:30','17:30','18:30','19:30'];
+  const DAY_NAMES={1:'월요일',2:'화요일',3:'수요일',4:'목요일',5:'금요일'};
+  const DEFAULT_ACTIVE_TIMES=['13:30','14:30','15:30','17:30','18:30','19:30'];
+  const defaultSettings = {
+    teacher:'담당 교사', room:'상담실', year:new Date().getFullYear(),
+    notice:'상담 내용은 담당 교사만 확인합니다.\n급한 사안은 예약을 기다리지 말고 담당 교사에게 직접 연락하세요.',
+    types:['학업·진로','친구 관계','학교생활','개인 고민','기타'],
+    scheduleConfigured:true,
+    weeklySchedule:Object.fromEntries([1,2,3,4,5].map(day=>[day,[...DEFAULT_ACTIVE_TIMES]]))
+  };
+
+  let app, db, auth, currentUser = null;
+  let settings = structuredClone(defaultSettings);
+  let slots = {}, blocked = {}, closedDays = {}, availability = {}, reservations = {};
+  let selectedMonth = 8, selectedDate = '', selectedTime = '';
+  let selectedClosedDate = '';
+  let teacherMode = false, availabilityLoaded = false, unsubs = [], teacherReservationsUnsub = null, resyncPromise = null;
+  const $ = id => document.getElementById(id);
+  const qsa = selector => [...document.querySelectorAll(selector)];
+
+  const demoStore = {
+    read(key, fallback){ try{return JSON.parse(localStorage.getItem('maeum_'+key)) ?? fallback}catch{return fallback} },
+    write(key,value){ localStorage.setItem('maeum_'+key,JSON.stringify(value)) }
+  };
+
+  function toast(message,error=false){const el=$('toast');el.textContent=message;el.className='toast show'+(error?' error':'');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.className='toast',2600)}
+  function localDate(dateStr){return new Date(dateStr+'T12:00:00')}
+  function todayYmd(){const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`}
+  function formatDate(dateStr){if(!dateStr)return '';return new Intl.DateTimeFormat('ko-KR',{month:'long',day:'numeric',weekday:'short'}).format(localDate(dateStr))}
+  function formatTimeRange(time){
+    const match=/^(\d{1,2}):(\d{2})$/.exec(String(time||''));if(!match)return String(time||'');
+    const startHour=Number(match[1]),startMinute=Number(match[2]),end=startHour*60+startMinute+50;
+    return `${String(startHour).padStart(2,'0')}:${String(startMinute).padStart(2,'0')} ~ ${String(Math.floor(end/60)%24).padStart(2,'0')}:${String(end%60).padStart(2,'0')}`;
+  }
+  function safe(value=''){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function makeCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let out='MP-';crypto.getRandomValues(new Uint32Array(6)).forEach(n=>out+=chars[n%chars.length]);return out}
+  function makeId(){return crypto.randomUUID ? crypto.randomUUID() : makeCode()+'-'+Date.now()}
+  function slotKey(time){return time.replace(':','-')}
+  function firstActiveKey(active={}){if(!active.slot1)return 'slot1';if(!active.slot2)return 'slot2';return ''}
+  function parseList(value){return value.split(',').map(v=>v.trim()).filter(Boolean)}
+  function buildAvailability(config=settings){
+    const result={};
+    for(const month of [8,9]){
+      const last=new Date(config.year,month,0).getDate();
+      for(let day=1;day<=last;day++){
+        const date=`${config.year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,weekday=localDate(date).getDay();
+        const times=config.weeklySchedule?.[weekday]||config.weeklySchedule?.[String(weekday)]||[];
+        for(const time of times){
+          result[date]??={};
+          result[date][slotKey(time)]={startAt:Date.parse(`${date}T${time}:00+09:00`)};
+        }
+      }
+    }
+    return result;
+  }
+  function mergeLoadedSettings(raw={}){
+    const merged={...structuredClone(defaultSettings),...raw};
+    if(raw.scheduleConfigured===true&&!raw.weeklySchedule){
+      merged.weeklySchedule=Object.fromEntries([1,2,3,4,5].map(day=>[day,[]]));
+    }else if(!raw.weeklySchedule&&(Array.isArray(raw.times)||Array.isArray(raw.days))){
+      const legacyTimes=(Array.isArray(raw.times)?raw.times:DEFAULT_ACTIVE_TIMES).filter(time=>SCHEDULE_TIMES.includes(time));
+      const legacyDays=(Array.isArray(raw.days)?raw.days:[1,2,3,4,5]).map(Number);
+      merged.weeklySchedule=Object.fromEntries([1,2,3,4,5].map(day=>[day,legacyDays.includes(day)?[...legacyTimes]:[]]));
+    }
+    return merged;
+  }
+  function timesForDate(date){
+    if(DEMO||availabilityLoaded)return SCHEDULE_TIMES.filter(time=>Boolean(availability[date]?.[slotKey(time)]));
+    const day=localDate(date).getDay();return settings.weeklySchedule?.[day]||settings.weeklySchedule?.[String(day)]||[];
+  }
+
+  function refreshLiveViews(){renderCalendar();renderSlots();renderBlockTimes();if(teacherMode)renderTeacherReservations()}
+  function setLocalSlot(date,key,value){
+    if(value){slots[date]??={};slots[date][key]=value}
+    else if(slots[date]){delete slots[date][key];if(!Object.keys(slots[date]).length)delete slots[date]}
+  }
+  async function resyncRealtimeData(){
+    if(DEMO||!db||!auth?.currentUser)return;
+    if(resyncPromise)return resyncPromise;
+    resyncPromise=(async()=>{
+      goOnline(db);
+      const [settingsSnap,slotsSnap,blockedSnap,closedSnap,availabilitySnap,reservationsSnap]=await Promise.all([
+        get(ref(db,ROOT+'/settings')),get(ref(db,ROOT+'/slots')),get(ref(db,ROOT+'/blocked')),
+        get(ref(db,ROOT+'/closedDays')),get(ref(db,ROOT+'/availability')),
+        teacherMode?get(ref(db,ROOT+'/reservations')):Promise.resolve(null)
+      ]);
+      if(settingsSnap.exists())settings=mergeLoadedSettings(settingsSnap.val());
+      slots=slotsSnap.val()||{};blocked=blockedSnap.val()||{};closedDays=closedSnap.val()||{};availability=availabilitySnap.val()||{};availabilityLoaded=true;
+      if(reservationsSnap)reservations=reservationsSnap.val()||{};
+      applySettings();refreshLiveViews();
+    })();
+    try{await resyncPromise}catch(error){console.error('Firebase 재동기화 실패',error)}finally{resyncPromise=null}
+  }
+
+  async function hashPassword(password,saltHex=''){
+    const enc=new TextEncoder();
+    let salt;
+    if(saltHex){salt=new Uint8Array(saltHex.match(/.{1,2}/g).map(b=>parseInt(b,16)))}
+    else{salt=crypto.getRandomValues(new Uint8Array(16));saltHex=[...salt].map(b=>b.toString(16).padStart(2,'0')).join('')}
+    const key=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']);
+    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:120000,hash:'SHA-256'},key,256);
+    const hash=[...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    return {salt:saltHex,hash};
+  }
+
+  // ── 화면 이동을 브라우저 기록에 남긴다 ──
+  // 이렇게 해야 뒤로가기가 사이트 밖으로 나가지 않고 이전 화면으로 돌아간다.
+  const TABS=['booking','mine','teacher'];
+  const ADMIN_VIEWS=['bookings','blocking','settings'];
+  let routing=false;   // 기록을 되짚는 중에는 새 기록을 쌓지 않는다
+
+  function currentAdminView(){
+    const active=document.querySelector('[data-admin].active');
+    return active?active.dataset.admin:'bookings';
+  }
+
+  function routeHash(tab,view){
+    return tab==='teacher'?`#teacher/${ADMIN_VIEWS.includes(view)?view:'bookings'}`:`#${tab}`;
+  }
+
+  function readRoute(){
+    const parts=String(location.hash||'').replace(/^#/,'').split('/');
+    return {
+      tab:TABS.includes(parts[0])?parts[0]:'booking',
+      view:ADMIN_VIEWS.includes(parts[1])?parts[1]:'bookings'
+    };
+  }
+
+  function pushRoute(tab,view){
+    if(routing)return;
+    const hash=routeHash(tab,view);
+    if(location.hash===hash)return;
+    history.pushState({tab,view},'',hash);
+  }
+
+  function switchTab(name,push=true){
+    qsa('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+    qsa('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+    if(name==='mine')loadRecentReservation();
+    if(push)pushRoute(name,currentAdminView());
+  }
+
+  function showAdminView(name,push=true){
+    qsa('[data-admin]').forEach(b=>b.classList.toggle('active',b.dataset.admin===name));
+    qsa('.admin-view').forEach(v=>v.classList.toggle('active',v.id==='admin-'+name));
+    if(name==='blocking')renderBlockTimes();
+    if(push)pushRoute('teacher',name);
+  }
+
+  function applyRoute(route){
+    routing=true;
+    switchTab(route.tab,false);
+    if(route.tab==='teacher')showAdminView(route.view,false);
+    routing=false;
+  }
+
+  qsa('.tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+  window.addEventListener('popstate',()=>applyRoute(readRoute()));
+
+  async function init(){
+    if(DEMO){
+      settings=mergeLoadedSettings(demoStore.read('settings',{}));
+      slots=demoStore.read('slots',{});blocked=demoStore.read('blocked',{});closedDays=demoStore.read('closed_days',{});reservations=demoStore.read('reservations',{});availability=buildAvailability(settings);availabilityLoaded=true;
+      currentUser={uid:demoStore.read('uid','')||makeId()};demoStore.write('uid',currentUser.uid);
+      applySettings();renderCalendar();renderTeacherReservations();return;
+    }
+    // Firebase 규칙이나 네트워크에 문제가 있어도 폼의 기본 선택지는 먼저 표시한다.
+    applySettings();
+    try{
+      app=initializeApp(firebaseConfig);db=getDatabase(app);auth=getAuth(app);
+      await setPersistence(auth,browserLocalPersistence);
+      onAuthStateChanged(auth,user=>{currentUser=user;teacherMode=Boolean(user&&!user.isAnonymous);updateTeacherUI()});
+      if(!auth.currentUser)await signInAnonymously(auth);
+      $('connection').classList.add('live');$('connectionText').textContent='Firebase 연결됨';$('loginHint').textContent='Firebase Authentication의 이메일/비밀번호 계정으로 로그인하세요.';
+      const settingSnap=await get(ref(db,ROOT+'/settings'));if(settingSnap.exists())settings=mergeLoadedSettings(settingSnap.val());
+      applySettings();
+      unsubs.push(onValue(ref(db,ROOT+'/settings'),snap=>{if(snap.exists()){settings=mergeLoadedSettings(snap.val());applySettings();renderSlots()}}));
+      unsubs.push(onValue(ref(db,ROOT+'/slots'),snap=>{slots=snap.val()||{};renderCalendar();renderSlots();renderBlockTimes()}));
+      unsubs.push(onValue(ref(db,ROOT+'/blocked'),snap=>{blocked=snap.val()||{};renderCalendar();renderSlots();renderBlockTimes()}));
+      unsubs.push(onValue(ref(db,ROOT+'/closedDays'),snap=>{closedDays=snap.val()||{};renderCalendar();renderSlots();renderBlockTimes()}));
+      unsubs.push(onValue(ref(db,ROOT+'/availability'),snap=>{availability=snap.val()||{};availabilityLoaded=true;renderCalendar();renderSlots();renderBlockTimes();if(teacherMode)migrateActiveMarkers()}));
+    }catch(error){console.error(error);toast('Firebase 연결에 실패했습니다. 설정값을 확인해주세요.',true);$('connectionText').textContent='연결 오류'}
+  }
+
+  function applySettings(){
+    settings.year=Number(settings.year)||new Date().getFullYear();
+    settings.types=Array.isArray(settings.types)&&settings.types.length?settings.types:defaultSettings.types;
+    settings.weeklySchedule=Object.fromEntries([1,2,3,4,5].map(day=>{const values=settings.weeklySchedule?.[day]||settings.weeklySchedule?.[String(day)]||[];return [day,Array.isArray(values)?values.filter(time=>SCHEDULE_TIMES.includes(time)):[]]}));
+    $('notice').textContent=settings.notice;
+    $('counselType').innerHTML=settings.types.map(v=>`<option value="${safe(v)}">${safe(v)}</option>`).join('');
+    $('setTeacher').value=settings.teacher;$('setRoom').value=settings.room;$('setNotice').value=settings.notice;
+    $('setTypes').value=settings.types.join(', ');$('setYear').value=settings.year;renderWeeklyScheduleSettings();
+    const seasonStart=`${settings.year}-08-01`,maxDate=`${settings.year}-09-30`,minDate=todayYmd()>seasonStart?todayYmd():seasonStart;
+    $('blockDate').min=minDate;$('blockDate').max=maxDate;$('blockDate').disabled=minDate>maxDate;
+    if(minDate>maxDate)$('blockDate').value='';
+    else if(!$('blockDate').value||$('blockDate').value<minDate||$('blockDate').value>maxDate)$('blockDate').value=minDate;
+    renderCalendar();renderBlockTimes();
+  }
+
+  function renderWeeklyScheduleSettings(){
+    $('weeklySchedule').innerHTML=[1,2,3,4,5].map(day=>{
+      const active=settings.weeklySchedule[day]||[];
+      const times=SCHEDULE_TIMES.map(time=>`<label class="schedule-time"><input type="checkbox" data-schedule-day="${day}" value="${time}" ${active.includes(time)?'checked':''}><span>${formatTimeRange(time)}</span></label>`).join('');
+      return `<section class="schedule-day"><div class="schedule-day-head"><strong>${DAY_NAMES[day]} · <span id="scheduleCount${day}">${active.length}</span>개 활성화</strong><div class="schedule-day-actions"><button type="button" data-schedule-action="all" data-day="${day}">전체 선택</button><button type="button" data-schedule-action="none" data-day="${day}">전체 해제</button></div></div><div class="schedule-times">${times}</div></section>`;
+    }).join('');
+    qsa('[data-schedule-day]').forEach(box=>box.addEventListener('change',()=>updateScheduleDayCount(Number(box.dataset.scheduleDay))));
+    qsa('[data-schedule-action]').forEach(btn=>btn.addEventListener('click',()=>{const day=Number(btn.dataset.day),checked=btn.dataset.scheduleAction==='all';qsa(`[data-schedule-day="${day}"]`).forEach(box=>box.checked=checked);updateScheduleDayCount(day)}));
+  }
+  function updateScheduleDayCount(day){$('scheduleCount'+day).textContent=qsa(`[data-schedule-day="${day}"]:checked`).length}
+
+  function renderCalendar(){
+    const year=settings.year,month=selectedMonth,first=new Date(year,month-1,1),last=new Date(year,month,0);
+    const today=new Date();today.setHours(0,0,0,0);let html='';
+    for(let i=0;i<first.getDay();i++)html+='<button class="day blank" disabled></button>';
+    for(let day=1;day<=last.getDate();day++){
+      const d=new Date(year,month-1,day,12);const ds=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const daySlots=Object.values(slots[ds]||{}),availableTimes=timesForDate(ds),closedInfo=closedDays[ds];const availableDay=!closedInfo&&availableTimes.length>0&&d>=today;const used=availableTimes.filter(time=>slots[ds]?.[slotKey(time)]||blocked[ds]?.[slotKey(time)]).length;const remain=Math.max(0,availableTimes.length-used);
+      const visiblePeople=daySlots.filter(s=>s.name&&(s.status==='booked'||s.status==='done'));const disabled=Boolean(closedInfo)||!availableDay||remain===0;const label=closedInfo?'예약 불가':(availableDay?(remain?`${remain}자리`:'마감'):'');
+      const doneHtml=visiblePeople.length?`<span class="done-list">${visiblePeople.map(s=>`<span class="done-person">${s.status==='done'&&s.studentNo?safe(s.studentNo)+' ':''}${safe(s.name)}${s.status==='booked'?' · 예약':''}</span>`).join('')}</span>`:'';
+      const closedHtml=closedInfo?`<span class="closed-reason">${safe(closedInfo.reason||'교사 일정')}</span>`:'';
+      html+=`<button class="day ${selectedDate===ds?'selected ':''}${remain===0&&availableDay?'full ':''}${closedInfo?'closed-day ':''}${disabled?'unavailable':''}" data-date="${ds}" data-bookable="${!disabled}" aria-label="${month}월 ${day}일 ${label}${closedInfo?' '+safe(closedInfo.reason):''}" ${disabled&&!teacherMode?'disabled':''}><span class="num">${day}</span>${closedHtml}${doneHtml}<span class="remain">${label}</span></button>`;
+    }
+    $('calendar').innerHTML=html;
+    $('calendar').classList.toggle('teacher-calendar-mode',teacherMode);
+    qsa('.day[data-date]').forEach(btn=>{
+      btn.addEventListener('click',()=>{if(teacherMode)openDayManagement(btn.dataset.date);else if(btn.dataset.bookable==='true')selectDate(btn.dataset.date)});
+      btn.addEventListener('contextmenu',event=>{if(!teacherMode)return;event.preventDefault();openBlockingFromCalendar(btn.dataset.date)});
+    });
+    qsa('.month-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.month)===selectedMonth));
+  }
+  qsa('.month-btn').forEach(btn=>btn.addEventListener('click',()=>{selectedMonth=Number(btn.dataset.month);selectedDate='';selectedTime='';renderCalendar();renderSlots();updateSubmit()}));
+
+  function updateBookingPanelState(){const ready=Boolean(selectedDate);$('bookingEmpty').hidden=ready;$('bookingDetails').hidden=!ready}
+  function selectDate(date){
+    selectedDate=date;selectedTime='';updateBookingPanelState();renderCalendar();renderSlots();updateSubmit();
+    if(window.matchMedia('(max-width:1120px)').matches)requestAnimationFrame(()=>$('bookingPanel').scrollIntoView({behavior:'smooth',block:'start'}));
+  }
+  function renderSlots(){
+    updateBookingPanelState();
+    if(!selectedDate){$('dateSummary').className='selection-empty';$('dateSummary').innerHTML='<b>날짜를 먼저 선택하세요</b>선택한 날짜의 예약 가능한 시간이 표시됩니다.';$('slots').innerHTML='';return}
+    if(closedDays[selectedDate]){selectedTime='';$('dateSummary').className='date-summary';$('dateSummary').innerHTML=`<small>하루 전체 예약 불가</small><strong>${formatDate(selectedDate)}</strong>`;$('slots').innerHTML=`<div class="empty"><b>${safe(closedDays[selectedDate].reason||'교사 일정')}</b><br>이 날짜는 예약할 수 없습니다.</div>`;updateSubmit();return}
+    const availableTimes=timesForDate(selectedDate);
+    if(selectedTime&&(!availableTimes.includes(selectedTime)||slots[selectedDate]?.[slotKey(selectedTime)]||blocked[selectedDate]?.[slotKey(selectedTime)]))selectedTime='';
+    $('dateSummary').className='date-summary';$('dateSummary').innerHTML=`<small>${settings.teacher} · ${settings.room}</small><strong>${formatDate(selectedDate)}</strong><span>${selectedTime?formatTimeRange(selectedTime)+' 선택됨':'아래에서 상담 시간을 선택해주세요.'}</span>`;
+    $('slots').innerHTML=availableTimes.length?availableTimes.map(time=>{const key=slotKey(time),info=slots[selectedDate]?.[key],isBlocked=Boolean(blocked[selectedDate]?.[key]);const occupied=Boolean(info)||isBlocked;const detail=isBlocked?'교사 일정':(info?.status==='done'&&info.studentNo&&info.name?`${safe(info.studentNo)} ${safe(info.name)} · 완료`:(info?.name?`${safe(info.name)} · 예약됨`:(info?'예약됨':'')));return `<button class="slot ${selectedTime===time?'selected':''}" data-time="${time}" ${occupied?'disabled':''}>${formatTimeRange(time)}${detail?`<small>${detail}</small>`:''}</button>`}).join(''):'<div class="empty">이 요일에는 상담 가능한 시간이 없습니다.</div>';
+    qsa('.slot[data-time]').forEach(btn=>btn.addEventListener('click',()=>{selectedTime=btn.dataset.time;renderSlots();updateSubmit()}));
+    updateSubmit();
+  }
+  function updateSubmit(){const btn=$('submitBooking');btn.disabled=!(selectedDate&&selectedTime)||Boolean(closedDays[selectedDate]);btn.textContent=btn.disabled?'날짜와 시간을 선택해주세요':`${formatDate(selectedDate)} ${formatTimeRange(selectedTime)} 예약하기`}
+
+  $('topic').addEventListener('input',e=>$('topicCount').textContent=e.target.value.length);
+  $('bookingForm').addEventListener('submit',async event=>{
+    event.preventDefault();if(!selectedDate||!selectedTime)return toast('날짜와 시간을 먼저 선택해주세요.',true);
+    const password=$('bookPassword').value,password2=$('bookPassword2').value;
+    if(password.length<4)return toast('비밀번호는 4자 이상 입력해주세요.',true);if(password!==password2)return toast('비밀번호가 서로 다릅니다.',true);
+    const studentNo=$('studentNo').value.trim();if(!/^\d{1,12}$/.test(studentNo))return toast('학번은 숫자로 입력해주세요.',true);
+    const btn=$('submitBooking');btn.disabled=true;btn.textContent='예약을 저장하는 중...';
+    try{
+      if(!currentUser)throw new Error('Firebase 로그인을 확인하는 중입니다. 잠시 후 다시 시도해주세요.');
+      const key=slotKey(selectedTime);
+      let activeKey;
+      let startAt;
+      if(DEMO){
+        startAt=availability[selectedDate]?.[key]?.startAt;
+        const activeCount=Object.values(reservations).filter(r=>r.studentNo===studentNo&&r.status==='booked').length;activeKey=activeCount===0?'slot1':activeCount===1?'slot2':'';
+      }else{
+        const [availabilitySnap,slotSnap,blockedSnap,closedSnap,activeSnap]=await Promise.all([
+          get(ref(db,`${ROOT}/availability/${selectedDate}/${key}`)),get(ref(db,`${ROOT}/slots/${selectedDate}/${key}`)),
+          get(ref(db,`${ROOT}/blocked/${selectedDate}/${key}`)),get(ref(db,`${ROOT}/closedDays/${selectedDate}`)),
+          get(ref(db,`${ROOT}/activeByStudent/${studentNo}`))
+        ]);
+        startAt=availabilitySnap.child('startAt').val();
+        if(closedSnap.exists())throw new Error('교사 일정으로 예약할 수 없는 날짜입니다.');
+        if(blockedSnap.exists())throw new Error('교사가 예약 불가로 설정한 시간입니다.');
+        if(slotSnap.exists())throw new Error('다른 학생이 먼저 예약한 시간입니다.');
+        activeKey=firstActiveKey(activeSnap.val()||{});
+      }
+      if(!Number(startAt)||Number(startAt)<=Date.now())throw new Error('이미 지난 시간이거나 교사가 열어두지 않은 예약 시간입니다.');
+      if(!activeKey)throw new Error('학생 한 명당 활성 예약은 최대 2건까지 가능합니다.');
+      const id=makeId(),code=makeCode(),pw=await hashPassword(password);
+      const record={id,code,ownerUid:currentUser.uid,date:selectedDate,time:selectedTime,slotKey:key,activeKey,startAt,name:$('studentName').value.trim(),studentNo,type:$('counselType').value,contact:$('contact').value.trim(),topic:$('topic').value.trim(),passwordHash:pw.hash,passwordSalt:pw.salt,status:'booked',teacher:settings.teacher,room:settings.room,createdAt:DEMO?Date.now():serverTimestamp()};
+      if(closedDays[selectedDate])throw new Error('교사 일정으로 예약할 수 없는 날짜입니다.');
+      if(DEMO){
+        if(slots[selectedDate]?.[slotKey(selectedTime)]||blocked[selectedDate]?.[slotKey(selectedTime)])throw new Error('예약할 수 없는 시간입니다.');
+        slots[selectedDate]??={};slots[selectedDate][key]={ownerUid:currentUser.uid,reservationId:id,status:'booked',name:record.name};reservations[id]=record;demoStore.write('slots',slots);demoStore.write('reservations',reservations);
+      }else{
+        const publicSlot={ownerUid:currentUser.uid,reservationId:id,status:'booked',name:record.name};
+        const writes={};writes[`slots/${selectedDate}/${key}`]=publicSlot;writes[`reservations/${id}`]=record;writes[`activeByStudent/${studentNo}/${activeKey}`]={reservationId:id,ownerUid:currentUser.uid};
+        await update(ref(db,ROOT),writes);
+        setLocalSlot(selectedDate,key,publicSlot);reservations[id]={...record,createdAt:Date.now()};
+      }
+      const codeMap=demoStore.read('code_map',{});codeMap[code]=id;demoStore.write('code_map',codeMap);
+      // 방금 예약한 이름은 화면에만 들고 있는다. 공용 컴퓨터에서 다음 학생에게 남지 않게 저장하지 않는다.
+      lastBookedName=record.name;
+      resetMyLookup(record.name);   // 앞사람의 조회 결과가 남아 있지 않게 비운다
+      $('successText').textContent=`${formatDate(selectedDate)} ${formatTimeRange(selectedTime)}, ${settings.teacher} 상담으로 예약되었습니다.`;$('successCode').textContent=code;$('successDialog').showModal();
+      $('bookingForm').reset();$('topicCount').textContent='0';selectedTime='';refreshLiveViews();
+    }catch(error){console.error(error);const denied=String(error.code||error.message).toLowerCase().includes('permission_denied');toast(denied?'Firebase 규칙을 최신 내용으로 게시했는지와 익명 로그인이 활성화됐는지 확인해주세요.':error.message,true)}finally{updateSubmit()}
+  });
+  $('successClose').addEventListener('click',()=>{$('successDialog').close();switchTab('mine')});
+
+  async function getOwnReservation(id){
+    if(!id)return null;if(DEMO)return reservations[id]||null;
+    const snap=await get(ref(db,`${ROOT}/reservations/${id}`));return snap.exists()?snap.val():null;
+  }
+  // '홍 길동' 과 '홍길동' 을 같은 이름으로 본다(띄어쓰기는 비교에서 빼고, 표시는 저장된 이름 그대로 한다)
+  function normalizeName(value){return String(value||'').replace(/\s+/g,'')}
+
+  // 이 브라우저에서 만든 예약들의 id. 예약할 때마다 code_map 에 쌓인다.
+  function localReservationIds(){
+    const seen={},ids=[];
+    Object.values(demoStore.read('code_map',{})).forEach(id=>{if(id&&!seen[id]){seen[id]=1;ids.push(id)}});
+    return ids;
+  }
+
+  let lastBookedName='';
+  let myLookup={password:'',records:[]};
+
+  function myResultMessage(title,description){
+    $('myResult').innerHTML=`<div class="selection-empty"><b>${safe(title)}</b>${safe(description)}</div>`;
+  }
+
+  function reservationCard(record){
+    const status={booked:'예약 완료',done:'상담 완료',cancelled:'취소됨'}[record.status]||record.status;
+    return `<div class="reservation-card"><h3>${safe(record.name)} 학생 예약 정보</h3><div class="detail-grid"><div class="detail"><small>예약번호</small><strong class="code">${safe(record.code)}</strong></div><div class="detail"><small>상태</small><strong>${status}</strong></div><div class="detail"><small>날짜와 시간</small><strong>${formatDate(record.date)} ${safe(formatTimeRange(record.time))}</strong></div><div class="detail"><small>담당 교사 · 장소</small><strong>${safe(record.teacher)} · ${safe(record.room)}</strong></div><div class="detail"><small>상담 주제</small><strong>${safe(record.type)}</strong></div></div>${record.status==='booked'?`<button class="danger" data-cancel="${safe(record.id)}" style="margin-top:14px">예약 취소</button>`:''}</div>`;
+  }
+
+  function renderMyReservations(){
+    if(!myLookup.records.length)return myResultMessage('예약을 찾지 못했습니다','이름과 비밀번호를 다시 확인하세요.');
+    $('myResult').innerHTML=myLookup.records.map(reservationCard).join('');
+  }
+
+  // 예약이 최대 2건까지 가능하므로 카드가 여러 장 나올 수 있다. 버튼은 위임으로 처리한다.
+  $('myResult').addEventListener('click',event=>{
+    const button=event.target.closest('[data-cancel]');if(!button)return;
+    const record=myLookup.records.find(r=>r.id===button.dataset.cancel);
+    if(record)cancelReservation(record,myLookup.password);
+  });
+
+  // 조회 결과와 입력을 비운다. name 을 주면 그 이름을 채워 둔다(방금 예약한 사람용).
+  function resetMyLookup(name=''){
+    myLookup={password:'',records:[]};
+    $('lookupName').value=name;
+    $('lookupPassword').value='';
+    myResultMessage('이 브라우저에서 예약한 내역만 조회됩니다','다른 기기에서 예약했다면 담당 교사에게 문의하세요.');
+  }
+  function loadRecentReservation(){if(lastBookedName&&!$('lookupName').value)$('lookupName').value=lastBookedName}
+
+  $('lookupBtn').addEventListener('click',async()=>{
+    const name=normalizeName($('lookupName').value),pw=$('lookupPassword').value;
+    if(!name||!pw)return toast('이름과 비밀번호를 입력해주세요.',true);
+    const ids=localReservationIds();
+    if(!ids.length)return myResultMessage('이 브라우저에는 예약 기록이 없습니다','다른 기기에서 예약했다면 담당 교사에게 문의하세요.');
+    const button=$('lookupBtn');button.disabled=true;
+    try{
+      const found=[];let nameMatched=false;
+      for(const id of ids){
+        let record=null;
+        try{record=await getOwnReservation(id)}catch(error){console.error(error);continue}
+        if(!record||normalizeName(record.name)!==name)continue;
+        nameMatched=true;
+        const verify=await hashPassword(pw,record.passwordSalt);
+        if(verify.hash===record.passwordHash)found.push({...record,id:record.id||id});
+      }
+      found.sort((a,b)=>String(a.date+a.time).localeCompare(String(b.date+b.time)));
+      myLookup={password:pw,records:found};
+      if(found.length)return renderMyReservations();
+      if(nameMatched)return myResultMessage('비밀번호가 맞지 않습니다','예약할 때 입력한 비밀번호를 확인하세요.');
+      myResultMessage('예약을 찾지 못했습니다','예약할 때 입력한 이름인지, 예약한 브라우저가 맞는지 확인하세요.');
+    }finally{button.disabled=false}
+  });
+  async function cancelReservation(record,password){
+    if(!confirm(`${formatDate(record.date)} ${formatTimeRange(record.time)} 예약을 취소하시겠습니까?`))return;
+    const check=await hashPassword(password,record.passwordSalt);if(check.hash!==record.passwordHash)return toast('비밀번호가 맞지 않습니다.',true);
+    try{
+      if(DEMO){record.status='cancelled';delete slots[record.date]?.[slotKey(record.time)];demoStore.write('slots',slots);demoStore.write('reservations',reservations);renderCalendar();renderTeacherReservations()}
+      else{const writes={};writes[`reservations/${record.id}/status`]='cancelled';writes[`reservations/${record.id}/cancelledAt`]=serverTimestamp();writes[`slots/${record.date}/${record.slotKey||slotKey(record.time)}`]=null;writes[`activeByStudent/${record.studentNo}/${record.activeKey||'slot1'}`]=null;await update(ref(db,ROOT),writes);setLocalSlot(record.date,record.slotKey||slotKey(record.time),null)}
+      record.status='cancelled';reservations[record.id]=record;refreshLiveViews();
+      const shown=myLookup.records.find(r=>r.id===record.id);if(shown)shown.status='cancelled';
+      toast('예약이 취소되었습니다.');renderMyReservations();
+    }catch(error){console.error(error);toast('취소하지 못했습니다. 담당 교사에게 문의하세요.',true)}
+  }
+
+  function openDayManagement(date){
+    if(date<todayYmd())return toast('이미 지난 날짜는 변경할 수 없습니다.',true);
+    selectedClosedDate=date;const current=closedDays[date];
+    $('dayBlockDateText').textContent=formatDate(date);$('dayBlockReason').value=current?.reason||'';$('clearDayBlock').hidden=!current;
+    if(!$('dayBlockDialog').open)$('dayBlockDialog').showModal();
+  }
+  async function saveClosedDay(){
+    const date=selectedClosedDate,reason=$('dayBlockReason').value.trim();
+    if(!date||date<todayYmd())return toast('지난 날짜는 예약 불가로 설정할 수 없습니다.',true);
+    if(!reason)return toast('학생에게 표시할 사유를 입력해주세요.',true);
+    if(Object.keys(slots[date]||{}).length)return toast('학생 예약이 있는 날입니다. 예약을 먼저 취소하거나 변경해주세요.',true);
+    try{
+      const value={reason};
+      if(DEMO){closedDays[date]=value;demoStore.write('closed_days',closedDays)}
+      else{await set(ref(db,`${ROOT}/closedDays/${date}`),value);closedDays[date]=value}
+      refreshLiveViews();
+      $('dayBlockDialog').close();toast(`${formatDate(date)}을(를) 예약 불가로 설정했습니다.`);
+    }catch(error){console.error(error);const denied=String(error.code||error.message).toLowerCase().includes('permission_denied');toast(denied?'Firebase 규칙을 최신 내용으로 게시해주세요.':'날짜 설정을 저장하지 못했습니다.',true)}
+  }
+  async function clearClosedDay(){
+    const date=selectedClosedDate;if(!date)return;
+    try{
+      if(DEMO){delete closedDays[date];demoStore.write('closed_days',closedDays)}
+      else{await set(ref(db,`${ROOT}/closedDays/${date}`),null);delete closedDays[date]}
+      refreshLiveViews();
+      $('dayBlockDialog').close();toast(`${formatDate(date)} 예약을 다시 열었습니다.`);
+    }catch(error){console.error(error);toast('예약 불가 설정을 해제하지 못했습니다.',true)}
+  }
+  $('saveDayBlock').addEventListener('click',saveClosedDay);$('clearDayBlock').addEventListener('click',clearClosedDay);
+  $('dayBlockClose').addEventListener('click',()=>$('dayBlockDialog').close());
+  $('dayBlockDialog').addEventListener('click',event=>{if(event.target===$('dayBlockDialog'))$('dayBlockDialog').close()});
+  $('openTimeBlocking').addEventListener('click',()=>{const date=selectedClosedDate;$('dayBlockDialog').close();openBlockingFromCalendar(date)});
+
+  function renderBlockTimes(){
+    const date=$('blockDate').value;
+    if(!date){$('blockSummary').textContent='날짜를 선택하면 예약 시간 목록이 표시됩니다.';$('blockTimes').innerHTML='';return}
+    if(date<todayYmd()){$('blockSummary').textContent='이미 지난 날짜는 시간 차단을 설정할 수 없습니다.';$('blockTimes').innerHTML='';return}
+    if(closedDays[date]){$('blockSummary').innerHTML=`<strong>${formatDate(date)}</strong><br>하루 전체 예약 불가 · ${safe(closedDays[date].reason||'교사 일정')}`;$('blockTimes').innerHTML='<div class="empty">달력에서 하루 예약 불가를 해제한 뒤 시간별로 설정해주세요.</div>';return}
+    const availableTimes=timesForDate(date);
+    const bookedCount=availableTimes.filter(time=>slots[date]?.[slotKey(time)]).length;
+    const blockedCount=availableTimes.filter(time=>blocked[date]?.[slotKey(time)]).length;
+    $('blockSummary').innerHTML=`<strong>${formatDate(date)}</strong><br>예약 ${bookedCount}개 · 차단 ${blockedCount}개 · 예약 가능 ${Math.max(0,availableTimes.length-bookedCount-blockedCount)}개`;
+    $('blockTimes').innerHTML=availableTimes.length?availableTimes.map(time=>{
+      const key=slotKey(time),hasBooking=Boolean(slots[date]?.[key]),isBlocked=Boolean(blocked[date]?.[key]);
+      const state=hasBooking?'학생 예약 있음':(isBlocked?'차단됨':'예약 가능');
+      return `<button type="button" class="block-time ${isBlocked?'blocked':''}" data-block-time="${time}" aria-pressed="${isBlocked}" ${hasBooking?'disabled':''}>${formatTimeRange(time)}<small>${state}</small></button>`;
+    }).join(''):'<div class="empty">예약 설정에서 이 요일의 상담 시간을 먼저 활성화해주세요.</div>';
+    qsa('[data-block-time]').forEach(btn=>btn.addEventListener('click',()=>toggleBlockedTime(date,btn.dataset.blockTime)));
+  }
+  function openBlockingFromCalendar(date){
+    if(date<todayYmd())return toast('이미 지난 날짜는 차단할 수 없습니다.',true);
+    $('blockDate').value=date;
+    switchTab('teacher',false);
+    showAdminView('blocking');
+    renderBlockTimes();
+    requestAnimationFrame(()=>$('admin-blocking').scrollIntoView({behavior:'smooth',block:'start'}));
+    toast(`${formatDate(date)} 시간 차단 설정을 열었습니다.`);
+  }
+  async function toggleBlockedTime(date,time){
+    if(date<todayYmd())return toast('이미 지난 날짜는 차단할 수 없습니다.',true);
+    if(closedDays[date])return toast('하루 전체 예약 불가를 먼저 해제해주세요.',true);
+    const key=slotKey(time);if(slots[date]?.[key])return toast('학생 예약이 있는 시간은 차단할 수 없습니다.',true);
+    const willBlock=!blocked[date]?.[key];
+    try{
+      if(DEMO){blocked[date]??={};if(willBlock)blocked[date][key]=true;else delete blocked[date][key];if(!Object.keys(blocked[date]).length)delete blocked[date];demoStore.write('blocked',blocked)}
+      else{await set(ref(db,`${ROOT}/blocked/${date}/${key}`),willBlock?true:null);blocked[date]??={};if(willBlock)blocked[date][key]=true;else delete blocked[date][key];if(!Object.keys(blocked[date]).length)delete blocked[date]}
+      refreshLiveViews();
+      toast(willBlock?`${formatTimeRange(time)} 시간을 차단했습니다.`:`${formatTimeRange(time)} 시간을 다시 열었습니다.`);
+    }catch(error){console.error(error);const denied=String(error.code||error.message).toLowerCase().includes('permission_denied');toast(denied?'Firebase 규칙을 최신 내용으로 게시해주세요.':'시간 설정을 변경하지 못했습니다.',true)}
+  }
+  $('blockDate').addEventListener('change',renderBlockTimes);
+
+  $('teacherLoginBtn').addEventListener('click',async()=>{
+    const email=$('teacherEmail').value.trim(),password=$('teacherPassword').value;
+    if(DEMO){if(!email||password.length<4)return toast('이메일과 4자 이상 비밀번호를 입력해주세요.',true);teacherMode=true;updateTeacherUI();return}
+    try{await signOut(auth);await signInWithEmailAndPassword(auth,email,password);teacherMode=true;updateTeacherUI();startTeacherListener()}catch(error){console.error(error);toast('교사 계정 정보를 확인해주세요.',true)}
+  });
+  function updateTeacherUI(){
+    $('teacherLogin').hidden=teacherMode;$('teacherDashboard').hidden=!teacherMode;
+    $('teacherShortcutHint').hidden=!teacherMode;renderCalendar();
+    if(teacherMode){renderTeacherReservations();if(!DEMO){startTeacherListener();syncAvailability()}}
+  }
+  function startTeacherListener(){
+    if(DEMO||teacherReservationsUnsub)return;
+    teacherReservationsUnsub=onValue(ref(db,ROOT+'/reservations'),snap=>{reservations=snap.val()||{};renderTeacherReservations();migrateActiveMarkers()},error=>{console.error('교사 예약 실시간 구독 실패',error);toast('교사 예약 데이터를 실시간으로 불러오지 못했습니다.',true)});
+  }
+  async function syncAvailability(){
+    if(DEMO||!teacherMode||syncAvailability.running)return;syncAvailability.running=true;
+    try{const next=buildAvailability(settings);await set(ref(db,ROOT+'/availability'),next);availability=next;availabilityLoaded=true;}
+    catch(error){console.error(error);toast('예약 가능 시간표를 동기화하지 못했습니다. Firebase 규칙을 확인해주세요.',true)}
+    finally{syncAvailability.running=false;migrateActiveMarkers()}
+  }
+  async function migrateActiveMarkers(){
+    if(DEMO||migrateActiveMarkers.done||!teacherMode||!availabilityLoaded||syncAvailability.running)return;migrateActiveMarkers.done=true;
+    const usedByStudent={};
+    const jobs=Object.values(reservations).filter(r=>r.id&&r.date&&r.time&&/^\d{1,12}$/.test(r.studentNo||'')).map(r=>{
+      const writes={};
+      const key=r.slotKey||slotKey(r.time),startAt=Number(r.startAt)||Date.parse(`${r.date}T${r.time}:00+09:00`);usedByStudent[r.studentNo]??={};
+      let activeKey=/^slot[12]$/.test(r.activeKey||'')?r.activeKey:'';
+      if(r.status==='booked'&&(!activeKey||usedByStudent[r.studentNo][activeKey]))activeKey=firstActiveKey(usedByStudent[r.studentNo]);
+      if(r.status==='booked'&&!activeKey)return null;
+      if(!activeKey)activeKey='slot1';
+      if(r.status==='booked')usedByStudent[r.studentNo][activeKey]=r.id;
+      if(!r.slotKey)writes[`reservations/${r.id}/slotKey`]=key;
+      if(r.activeKey!==activeKey)writes[`reservations/${r.id}/activeKey`]=activeKey;
+      if(!Number(r.startAt))writes[`reservations/${r.id}/startAt`]=startAt;
+      if(r.status==='booked'||r.status==='done')writes[`slots/${r.date}/${key}`]=r.status==='done'?{ownerUid:r.ownerUid,reservationId:r.id,status:'done',studentNo:r.studentNo,name:r.name}:{ownerUid:r.ownerUid,reservationId:r.id,status:'booked',name:r.name};
+      writes[`activeByStudent/${r.studentNo}/${r.id}`]=null;
+      writes[`activeByStudent/${r.studentNo}/${activeKey}`]=r.status==='booked'?{reservationId:r.id,ownerUid:r.ownerUid}:null;
+      return update(ref(db,ROOT),writes);
+    }).filter(Boolean);
+    if(jobs.length){const results=await Promise.allSettled(jobs),failed=results.filter(result=>result.status==='rejected');if(failed.length)console.warn(`${failed.length}건의 기존 예약 인덱스를 보완하지 못했습니다.`,failed)}
+  }
+  $('teacherLogout').addEventListener('click',async()=>{teacherMode=false;if(!DEMO){if(teacherReservationsUnsub){teacherReservationsUnsub();teacherReservationsUnsub=null}reservations={};await signOut(auth);await signInAnonymously(auth)}updateTeacherUI();switchTab('booking')});
+  qsa('[data-admin]').forEach(btn=>btn.addEventListener('click',()=>showAdminView(btn.dataset.admin)));
+
+  function renderTeacherReservations(){
+    const list=Object.values(reservations).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+    $('statAll').textContent=list.length;$('statActive').textContent=list.filter(r=>r.status==='booked').length;$('statDone').textContent=list.filter(r=>r.status==='done').length;
+    $('bookingList').innerHTML=list.length?list.map(r=>`<div class="booking-row"><div class="when">${safe(r.date.slice(5))}<br>${safe(formatTimeRange(r.time))}</div><div class="who"><strong>${safe(r.name)} · ${safe(r.studentNo)}</strong><small>${safe(r.type)}${r.contact?' / '+safe(r.contact):''}<br>${safe(r.topic)}</small></div><div class="row-action"><select data-status="${safe(r.id)}"><option value="booked" ${r.status==='booked'?'selected':''}>예약</option><option value="done" ${r.status==='done'?'selected':''}>완료</option><option value="cancelled" ${r.status==='cancelled'?'selected':''}>취소</option></select></div></div>`).join(''):'<div class="selection-empty"><b>아직 예약이 없습니다</b>학생이 예약하면 이곳에 바로 표시됩니다.</div>';
+    qsa('[data-status]').forEach(sel=>sel.addEventListener('change',()=>teacherChangeStatus(sel.dataset.status,sel.value)));
+  }
+  async function teacherChangeStatus(id,status){
+    const record=reservations[id];if(!record)return;
+    try{
+      const reopening=status!=='cancelled'&&record.status==='cancelled';
+      if(reopening&&(closedDays[record.date]||slots[record.date]?.[slotKey(record.time)]||blocked[record.date]?.[slotKey(record.time)]))throw new Error('다른 예약 또는 교사 일정이 있는 시간입니다.');
+      let activeKey=record.activeKey||'slot1';
+      if(!DEMO&&status==='booked'){
+        const active=(await get(ref(db,`${ROOT}/activeByStudent/${record.studentNo}`))).val()||{};
+        if(active[activeKey]&&active[activeKey].reservationId!==id)activeKey=firstActiveKey(active);
+        if(!activeKey)throw new Error('이 학생은 이미 활성 예약이 2건입니다.');
+      }
+      const publicSlot=status==='done'?{ownerUid:record.ownerUid,reservationId:record.id,status:'done',studentNo:record.studentNo,name:record.name}:{ownerUid:record.ownerUid,reservationId:record.id,status:'booked',name:record.name};
+      if(DEMO){record.status=status;record.activeKey=activeKey;setLocalSlot(record.date,slotKey(record.time),status==='cancelled'?null:publicSlot);demoStore.write('reservations',reservations);demoStore.write('slots',slots)}
+      else{const writes={};writes[`reservations/${id}/status`]=status;writes[`slots/${record.date}/${record.slotKey||slotKey(record.time)}`]=status==='cancelled'?null:publicSlot;if(record.activeKey&&record.activeKey!==activeKey)writes[`activeByStudent/${record.studentNo}/${record.activeKey}`]=null;writes[`reservations/${id}/activeKey`]=activeKey;writes[`activeByStudent/${record.studentNo}/${activeKey}`]=status==='booked'?{reservationId:id,ownerUid:record.ownerUid}:null;await update(ref(db,ROOT),writes);record.status=status;record.activeKey=activeKey;setLocalSlot(record.date,record.slotKey||slotKey(record.time),status==='cancelled'?null:publicSlot)}refreshLiveViews();toast('상담 상태를 변경했습니다.');
+    }catch(error){console.error(error);toast('상태를 변경하지 못했습니다.',true)}
+  }
+
+  $('settingsForm').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const weeklySchedule=Object.fromEntries([1,2,3,4,5].map(day=>[day,qsa(`[data-schedule-day="${day}"]:checked`).map(box=>box.value)]));
+    const next={teacher:$('setTeacher').value.trim(),room:$('setRoom').value.trim(),notice:$('setNotice').value.trim(),types:parseList($('setTypes').value),scheduleConfigured:true,weeklySchedule,year:Number($('setYear').value)};
+    if(!next.teacher||!next.room||!next.types.length)return toast('모든 설정 항목을 확인해주세요.',true);
+    try{const nextAvailability=buildAvailability(next);if(DEMO)demoStore.write('settings',next);else await update(ref(db,ROOT),{settings:next,availability:nextAvailability});settings=next;availability=nextAvailability;availabilityLoaded=true;selectedDate='';selectedTime='';applySettings();refreshLiveViews();toast('예약 설정을 저장했습니다.')}catch(error){console.error(error);toast('설정을 저장하지 못했습니다.',true)}
+  });
+  $('exportCsv').addEventListener('click',()=>{
+    const rows=[['예약번호','날짜','시간','상태','이름','학번','상담주제','연락처','미리 전할 말'],...Object.values(reservations).map(r=>[r.code,r.date,formatTimeRange(r.time),r.status,r.name,r.studentNo,r.type,r.contact,r.topic])];
+    const csv='\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`상담예약_${settings.year}.csv`;a.click();URL.revokeObjectURL(url);
+  });
+
+  window.addEventListener('pageshow',event=>{if(event.persisted)resyncRealtimeData()});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')resyncRealtimeData()});
+  updateSubmit();applyRoute(readRoute());init();
+</script>
+</body>
+</html>
