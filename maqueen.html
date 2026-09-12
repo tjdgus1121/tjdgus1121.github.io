@@ -275,6 +275,35 @@
 
         #webcam-container canvas { max-width: 100%; height: auto; display: block; }
 
+        [hidden] { display: none !important; }
+        .camera-health { padding: 12px 14px; margin: 12px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 13px; line-height: 1.7; }
+        .camera-health strong { display: block; }
+        .camera-health p { margin: 3px 0 0; }
+        .camera-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; }
+        .camera-pick label { font-size: 13px; color: var(--ink-2); flex: 0 0 auto; }
+        .camera-pick select {
+            flex: 1 1 200px;
+            min-width: 0;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid var(--line-strong);
+            border-radius: var(--r-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .camera-warn {
+            margin: 0 0 10px;
+            padding: 10px 12px;
+            border-radius: var(--r-sm);
+            background: var(--warn-weak);
+            border: 1px solid #e6cfa0;
+            color: var(--warn);
+            font-size: 13.5px;
+            line-height: 1.6;
+        }
+
         /* ── 인식 결과 막대 ── */
         #label-container { display: flex; flex-direction: column; gap: 6px; }
 
@@ -875,6 +904,18 @@
                 <button class="secondary" id="stopWebcam" disabled>인식 중지</button>
             </div>
             
+            <div class="camera-pick" id="cameraPick" hidden>
+                <label for="cameraSelect">카메라</label>
+                <select id="cameraSelect"></select>
+            </div>
+            <p class="camera-warn" id="cameraWarn" role="status" aria-live="polite" hidden></p>
+            <div class="camera-health" id="cameraHealth" hidden>
+                <strong>카메라 · 얼굴 · 손 점검</strong>
+                <div data-camera-metrics>카메라 준비 중</div>
+                <p data-camera-detection>얼굴·손 확인 전</p>
+                <p data-camera-guide>밝은 곳에서 얼굴과 손을 화면 안에 놓아 주세요.</p>
+            </div>
+
             <div id="webcam-container"></div>
             <div id="label-container"></div>
             <div id="commandDisplay">🤖 AI 제어 대기 중...</div>
@@ -1073,6 +1114,13 @@
                 <canvas id="trainPreview" width="720" height="540"></canvas>
                 <div id="trainBig" class="train-big"></div>
             </div>
+            <div class="camera-health">
+                <strong>실시간 인식 점검</strong>
+                <div data-camera-metrics>카메라 준비 중</div>
+                <p data-camera-detection>얼굴·손 확인 전</p>
+                <p data-camera-guide>밝은 곳에서 얼굴과 손을 화면 안에 놓아 주세요.</p>
+            </div>
+            <p class="camera-warn" id="trainCameraWarn" role="status" aria-live="polite" hidden></p>
             <div class="train-progress"><div id="trainBar"></div></div>
             <div id="trainMsg" class="train-msg" role="status" aria-live="polite">카메라를 준비하는 중입니다…</div>
 
@@ -1124,6 +1172,7 @@
         let txCharacteristic;
         let model, webcam, maxPredictions;
         let isWebcamRunning = false;
+        let recognitionGeneration = 0, controlSequence = 0;
         let classCommands = Object.create(null);
         let modelClassLabels = [];
         let mappingsApplied = false;
@@ -1313,6 +1362,9 @@
             if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
                 return '쓸 수 있는 카메라를 찾지 못했습니다. 카메라가 연결돼 있는지 확인해 주세요.';
             }
+            if (name === 'OverconstrainedError' || name === 'ConstraintNotSatisfiedError') {
+                return '골라 둔 카메라를 쓸 수 없습니다. 아래 «카메라» 목록에서 다른 카메라를 선택해 주세요.';
+            }
             if (name === 'NotReadableError' || name === 'TrackStartError') {
                 return '다른 프로그램이 카메라를 쓰고 있습니다. 화상회의나 카메라 앱을 닫고 다시 시도해 주세요.';
             }
@@ -1427,6 +1479,7 @@
         // 모델 타입 변경 감지
         document.querySelectorAll('input[name="modelType"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
+                stopRecognition('인식 방식 변경');
                 modelType = e.target.value;
                 updateModelTypeDisplay();
                 
@@ -1963,14 +2016,34 @@
             }
         });
         
+        // 티처블머신 웹캠도 「카메라」에서 고른 기기를 쓰게 한다.
+        // 고른 카메라가 사라졌으면(USB를 뽑은 경우) 기억을 지우고 기본 카메라로 물러선다.
+        async function setupWebcamWithChosenCamera(cam) {
+            const wanted = savedCameraId();
+            if (wanted) {
+                try {
+                    await cam.setup({ deviceId: { exact: wanted } });
+                    return;
+                } catch (error) {
+                    forgetCamera();
+                    log('골라 둔 카메라를 쓸 수 없어 기본 카메라로 시작합니다.', true, 'log2');
+                }
+            }
+            await cam.setup();
+        }
+
         // 웹캠 시작
         document.getElementById('startWebcam').addEventListener('click', async () => {
+            if (document.getElementById('startWebcam').disabled) return;
             if (modelType === 'custom') {
                 if (trained.length < 2) {
                     alert('동작을 2개 이상 학습해야 서로 구분할 수 있습니다!');
                     return;
                 }
                 if (!mappingsApplied && !applyClassMappings(true)) return;
+                const generation = ++recognitionGeneration;
+                document.getElementById('startWebcam').disabled = true;
+                document.getElementById('stopWebcam').disabled = false;
                 try {
                     log('카메라 시작 중...', false, 'log2');
                     const container = document.getElementById('webcam-container');
@@ -1984,14 +2057,20 @@
 
                     await ensureCamera();
                     await ensureLandmarkers();
+                    if (generation !== recognitionGeneration) return;
 
                     isWebcamRunning = true;
                     labelContainer = document.getElementById('label-container');
                     document.getElementById('startWebcam').disabled = true;
                     document.getElementById('stopWebcam').disabled = false;
-                    log('✅ 카메라 시작 완료! 학습한 동작을 해 보세요.', false, 'log2');
-                    window.requestAnimationFrame(loop);
+                    const camSize = mpVideo && mpVideo.videoWidth
+                        ? ' (카메라 ' + mpVideo.videoWidth + '×' + mpVideo.videoHeight + ')'
+                        : '';
+                    log('✅ 카메라 시작 완료! 학습한 동작을 해 보세요.' + camSize, false, 'log2');
+                    window.requestAnimationFrame(() => loop(generation));
                 } catch (error) {
+                    if (generation !== recognitionGeneration) return;
+                    stopRecognition('인식 준비 실패');
                     log(describeError(error, 'camera'), true, 'log2');
                     console.error(error);
                 }
@@ -2003,6 +2082,9 @@
                 return;
             }
             if (!mappingsApplied && !applyClassMappings(true)) return;
+            const generation = ++recognitionGeneration;
+            document.getElementById('startWebcam').disabled = true;
+            document.getElementById('stopWebcam').disabled = false;
             
             try {
                 log('웹캠 시작 중...', false, 'log2');
@@ -2012,18 +2094,24 @@
                 
                 if (modelType === 'image') {
                     // Image 모델 웹캠
-                    webcam = new tmImage.Webcam(320, 320, true);
-                    await webcam.setup();
-                    await webcam.play();
-                    container.appendChild(webcam.canvas);
+                    const camera = new tmImage.Webcam(320, 320, true);
+                    webcam = camera;
+                    await setupWebcamWithChosenCamera(camera);
+                    if (generation !== recognitionGeneration) { camera.stop(); return; }
+                    await camera.play();
+                    if (generation !== recognitionGeneration) { camera.stop(); return; }
+                    container.appendChild(camera.canvas);
                     
                 } else { // pose
                     // Pose 모델 웹캠
                     const size = 400;
                     const flip = true;
-                    webcam = new tmPose.Webcam(size, size, flip);
-                    await webcam.setup();
-                    await webcam.play();
+                    const camera = new tmPose.Webcam(size, size, flip);
+                    webcam = camera;
+                    await setupWebcamWithChosenCamera(camera);
+                    if (generation !== recognitionGeneration) { camera.stop(); return; }
+                    await camera.play();
+                    if (generation !== recognitionGeneration) { camera.stop(); return; }
                     
                     // Canvas 추가
                     const canvas = document.createElement('canvas');
@@ -2040,85 +2128,100 @@
                 document.getElementById('startWebcam').disabled = true;
                 document.getElementById('stopWebcam').disabled = false;
                 
+                refreshCameraList();          // 권한을 받은 뒤에야 카메라 이름이 보인다
                 log('✅ 웹캠 시작 완료!', false, 'log2');
                 
                 // 예측 루프 시작
-                window.requestAnimationFrame(loop);
+                window.requestAnimationFrame(() => loop(generation));
                 
             } catch (error) {
+                if (generation !== recognitionGeneration) return;
+                stopRecognition('인식 준비 실패');
                 log('❌ 웹캠 시작 실패: ' + error.message, true, 'log2');
                 console.error(error);
             }
         });
         
-        document.getElementById('stopWebcam').addEventListener('click', () => {
+        // 인식을 멈추고 화면을 정리한다. 중지 버튼·화면 이동·카메라 끊김이 모두 이 길을 쓴다.
+        function stopRecognition(reason, message) {
+            recognitionGeneration++;
+            controlSequence = 0;
+            const wasRunning = isWebcamRunning;
+            if (wasRunning) requestSafetyStop(reason);
+            isWebcamRunning = false;
             if (modelType === 'custom') {
-                requestSafetyStop('카메라 중지');
-                isWebcamRunning = false;
                 customCtx = null;
+                // 학습 팝업이 열려 있으면 카메라는 그대로 둔다(껐다 바로 켜면 영상이 준비되기 전에 인식이 돈다).
                 if (trainModal.hidden) stopCamera();
-                document.getElementById('startWebcam').disabled = false;
-                document.getElementById('stopWebcam').disabled = true;
-                document.getElementById('webcam-container').textContent = '';
-                document.getElementById('label-container').textContent = '';
-                resetPredictionUI();
-                log('카메라 중지', false, 'log2');
-                return;
+            } else if (webcam) {
+                try { webcam.stop(); } catch (error) { /* 이미 멈춰 있으면 무시 */ }
             }
-            if (webcam) {
-                requestSafetyStop('카메라 중지');
-                webcam.stop();
-                isWebcamRunning = false;
-                document.getElementById('startWebcam').disabled = false;
-                document.getElementById('stopWebcam').disabled = true;
-                document.getElementById('webcam-container').textContent = '';
-                document.getElementById('label-container').textContent = '';
-                resetPredictionUI();
-                log('웹캠 중지', false, 'log2');
+            document.getElementById('startWebcam').disabled = false;
+            document.getElementById('stopWebcam').disabled = true;
+            document.getElementById('webcam-container').textContent = '';
+            document.getElementById('label-container').textContent = '';
+            resetPredictionUI();
+            if (wasRunning) log(message || '카메라 중지', false, 'log2');
+            return wasRunning;
+        }
+
+        document.getElementById('stopWebcam').addEventListener('click', () => {
+            stopRecognition('카메라 중지', modelType === 'custom' ? '카메라 중지' : '웹캠 중지');
+        });
+
+        document.getElementById('backToConnect').addEventListener('click', () => {
+            stopRecognition('제어 화면 종료', '제어 화면을 나가 인식을 멈췄습니다');
+            showStep(1);
+        });
+
+        // 다른 탭으로 넘어가거나 화면이 꺼지면 그리기 루프가 멈춘다.
+        // 그대로 두면 로봇이 마지막 명령으로 계속 달리므로, 가려지는 순간 정지시킨다.
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (isWebcamRunning) {
+                    requestSafetyStop('화면이 가려짐');
+                    document.getElementById('commandDisplay').textContent =
+                        '🛑 화면이 가려져 안전 정지(S) · 이 창으로 돌아오면 다시 인식합니다';
+                }
+            } else if (isWebcamRunning) {
+                resetCommandCandidate();
+                resetRecognitionLoss();
             }
         });
-        
-        document.getElementById('backToConnect').addEventListener('click', () => {
-            if (isWebcamRunning) requestSafetyStop('제어 화면 종료');
-            if (webcam && isWebcamRunning) {
-                webcam.stop();
-                isWebcamRunning = false;
-            }
-            if (modelType === 'custom' && isWebcamRunning) {
-                isWebcamRunning = false;
-                customCtx = null;
-                if (trainModal.hidden) stopCamera();
-                document.getElementById('startWebcam').disabled = false;
-                document.getElementById('stopWebcam').disabled = true;
-            }
-            showStep(1);
+
+        // 창을 닫거나 새로고침할 때도 마지막으로 정지 명령을 보내 본다(전송이 보장되지는 않는다).
+        window.addEventListener('pagehide', () => {
+            if (isWebcamRunning && isBluetoothConnected()) sendToMicrobit(STOP_COMMAND, 'log2');
         });
         
         // 예측 루프
-        async function loop() {
-            if (!isWebcamRunning) return;
-            if (webcam) webcam.update();
+        async function loop(generation) {
+            if (!isWebcamRunning || generation !== recognitionGeneration) return;
+            if (webcam && modelType !== 'custom') webcam.update();
             await predict();
-            window.requestAnimationFrame(loop);
+            if (generation === recognitionGeneration) window.requestAnimationFrame(() => loop(generation));
         }
         
         // 예측 함수
         async function predict() {
-            
+            const generation = recognitionGeneration;
             let prediction;
             
             if (modelType === 'custom') {
-                if (!mpVideo) return;
+                if (!mpVideo) { handleRecognitionLoss(); return; }   // 카메라를 바꾸는 중에도 로봇은 멈춰 있어야 한다
                 const detection = detectBoth(mpVideo);
+                if (detection.unavailable) { handleRecognitionLoss(); renderSeenChips(); return; }
+                if (detection.sequence === controlSequence) return;
+                controlSequence = detection.sequence;
                 if (customCtx) {                     // 카메라 화면과 인식한 점을 함께 보여 준다
                     const W = customCtx.canvas.width, H = customCtx.canvas.height;
-                    const rect = fitRect(mpVideo, W, H);
+                    const rect = fitRect(mpFrame, W, H);
                     customCtx.save();
                     customCtx.fillStyle = '#10181f';
                     customCtx.fillRect(0, 0, W, H);
                     customCtx.translate(W, 0);
                     customCtx.scale(-1, 1);          // 거울처럼 보이게
-                    if (mpVideo.videoWidth) customCtx.drawImage(mpVideo, rect.x, rect.y, rect.w, rect.h);
+                    if (mpFrame) customCtx.drawImage(mpFrame, rect.x, rect.y, rect.w, rect.h);
                     drawDots(customCtx, rect, detection);
                     customCtx.restore();
                 }
@@ -2156,6 +2259,7 @@
             }
             
             
+            if (generation !== recognitionGeneration || document.hidden) return;
             let maxProb = 0;
             let maxClass = '';
 
@@ -2224,6 +2328,24 @@
         let mpVision = null, mpFileset = null;
         const landmarkers = { hand: null, face: null };
         let mpVideo = null, mpStream = null;
+        let cameraPending = null, cameraGeneration = 0, cancelCameraReady = null;
+        let modelPending = null;
+        // 인식에 넣는 사진은 카메라 해상도와 상관없이 항상 같은 크기로 만든다.
+        // USB 카메라처럼 해상도가 큰 기기에서 점이 엉뚱한 곳에 찍히던 문제를 막는다.
+        const MP_FRAME_W = 640, MP_FRAME_H = 480;
+        let mpFrame = null, mpFrameCtx = null;
+        const CAM_KEY = 'maqueen_camera_device_v1';   // 지난번에 고른 카메라를 기억한다
+        const CAM_FREEZE_MS = 2000;                   // 영상이 이만큼 멈춰 있으면 «멈춤»으로 본다
+        const CAM_DARK_CHECK_MS = 1500;               // 밝기가 회복되는지도 주기적으로 확인한다
+        let camLastTime = -1, camLastTimeAt = 0, camFrozen = false;
+        let camDarkCheckAt = 0, camBrightness = null, cameraMessage = '';
+        let detectionCache = null, detectionSequence = 0, inferenceWindowAt = 0, inferenceCount = 0;
+        let inferenceFps = 0, healthUpdatedAt = -Infinity;
+        let detectorErrors = { hand: false, face: false };
+        // 한 클래스에 담는 장면 수 상한 - 저장 용량과 매 프레임 계산량을 함께 줄인다
+        const MAX_SAMPLES_PER_CLASS = 60;
+        // 한 장면을 나타내는 숫자 개수. 예전 형식으로 저장된 학습 결과를 걸러내는 데 쓴다.
+        const VEC_DIM = 2 * (1 + HAND_DIM + 2) + 1 + FACE_DIM;
         let trained = [];             // [{ name, vecs: [[...]], previews: [dataURL] }]
         let customCtx = null;         // 인식 화면 캔버스
         let lastSeen = { hands: 0, face: false };
@@ -2242,59 +2364,352 @@
         }
 
         async function ensureLandmarkers() {
-            await ensureLandmarker('hand');
-            await ensureLandmarker('face');
+            if (!modelPending) modelPending = (async () => {
+                await ensureLandmarker('hand');
+                await ensureLandmarker('face');
+            })().catch(error => {
+                modelPending = null;
+                throw new Error('얼굴·손 인식 파일을 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 열어 주세요. ' + error.message);
+            });
+            return modelPending;
         }
 
-        async function ensureCamera() {
-            if (mpVideo) return mpVideo;
+        function savedCameraId() {
+            try { return localStorage.getItem(CAM_KEY) || ''; } catch (error) { return ''; }
+        }
+
+        function forgetCamera() {
+            try { localStorage.removeItem(CAM_KEY); } catch (error) { /* 무시 */ }
+        }
+
+        function ensureCamera() {
+            if (cameraPending) return cameraPending;
+            if (mpVideo && mpVideo.readyState >= 2 && mpStream &&
+                mpStream.getVideoTracks().some(track => track.readyState === 'live')) return Promise.resolve(mpVideo);
+            const generation = ++cameraGeneration;
+            const pending = openCamera(generation);
+            cameraPending = pending;
+            pending.finally(() => { if (cameraPending === pending) cameraPending = null; }).catch(() => {});
+            return pending;
+        }
+
+        async function openCamera(generation) {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error('이 브라우저에서는 카메라를 쓸 수 없습니다. 파일을 직접 연 경우(file://) 웹 주소(https)로 열어 주세요.');
             }
-            // 휴대전화는 기본이 뒷면 카메라라, 앞면(얼굴 쪽)을 먼저 요청한다.
-            try {
-                mpStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-                    audio: false
-                });
-            } catch (error) {
-                mpStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            // (1) 지난번에 고른 카메라 → (2) 앞면 카메라(휴대전화는 기본이 뒷면이다) → (3) 아무 카메라
+            const wanted = savedCameraId();
+            const plans = [];
+            const preferred = { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, max: 30 } };
+            if (wanted) plans.push({ video: { ...preferred, deviceId: { exact: wanted } }, audio: false });
+            plans.push({ video: { ...preferred, facingMode: 'user' }, audio: false });
+            plans.push({ video: true, audio: false });
+
+            let lastError = null;
+            let stream = null;
+            for (let i = 0; i < plans.length; i++) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(plans[i]);
+                    lastError = null;
+                    break;
+                } catch (error) {
+                    if (generation !== cameraGeneration) throw new DOMException('카메라 준비 취소', 'AbortError');
+                    lastError = error;
+                    // 권한 자체를 거부당했으면 다른 카메라로 바꿔도 소용없다
+                    const name = error && error.name;
+                    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') throw error;
+                    // 기억해 둔 카메라가 사라졌으면(USB를 뽑은 경우) 기억을 지우고 다음 방법으로 넘어간다
+                    if (i === 0 && wanted && ['NotFoundError', 'OverconstrainedError'].includes(name)) forgetCamera();
+                }
             }
-            mpVideo = document.createElement('video');
-            mpVideo.playsInline = true;
-            mpVideo.muted = true;
-            mpVideo.srcObject = mpStream;
-            // play() 가 끝나지 않는 브라우저가 있어, 첫 화면이 들어오면 넘어간다(최대 4초 대기).
-            await new Promise(resolve => {
-                let done = false;
-                const finish = () => { if (!done) { done = true; resolve(); } };
-                if (mpVideo.readyState >= 2) finish();
-                mpVideo.addEventListener('loadeddata', finish, { once: true });
-                setTimeout(finish, 4000);
-                mpVideo.play().then(finish).catch(() => {});
-            });
-            return mpVideo;
+            if (!stream) throw lastError || new Error('카메라를 켜지 못했습니다.');
+            if (generation !== cameraGeneration) {
+                stream.getTracks().forEach(track => track.stop());
+                throw new DOMException('카메라 준비 취소', 'AbortError');
+            }
+            const video = document.createElement('video');
+            video.playsInline = true;
+            video.muted = true;
+            video.srcObject = stream;
+            mpStream = stream;
+            try {
+                // 재생 요청 성공만으로 준비됐다고 하지 않고, 실제 크기가 있는 첫 영상을 기다린다.
+                await new Promise((resolve, reject) => {
+                    let done = false;
+                    const finish = error => {
+                        if (done) return;
+                        done = true;
+                        clearTimeout(timer);
+                        video.removeEventListener('loadeddata', check);
+                        video.removeEventListener('resize', check);
+                        cancelCameraReady = null;
+                        error ? reject(error) : resolve();
+                    };
+                    const check = () => { if (video.readyState >= 2 && video.videoWidth > 0) finish(); };
+                    const timer = setTimeout(() => finish(new Error('카메라 영상이 도착하지 않았습니다. 다른 카메라를 선택하거나 다시 시도해 주세요.')), 8000);
+                    cancelCameraReady = () => finish(new DOMException('카메라 준비 취소', 'AbortError'));
+                    video.addEventListener('loadeddata', check);
+                    video.addEventListener('resize', check);
+                    video.play().then(check).catch(finish);
+                    check();
+                });
+                if (generation !== cameraGeneration) throw new DOMException('카메라 준비 취소', 'AbortError');
+            } catch (error) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                if (mpStream === stream) mpStream = null;
+                throw error;
+            }
+            mpVideo = video;
+            watchCameraTracks(stream);
+            camLastTime = -1;
+            camLastTimeAt = performance.now();
+            camDarkCheckAt = camLastTimeAt + CAM_DARK_CHECK_MS;
+            setCameraWarn('');
+            renderCameraHealth(true);
+            refreshCameraList();          // 권한을 받은 뒤에야 카메라 이름이 보인다
+            return video;
         }
 
         function stopCamera() {
+            cameraGeneration++;
+            if (cancelCameraReady) cancelCameraReady();
+            cameraPending = null;
             if (mpStream) mpStream.getTracks().forEach(track => track.stop());
+            if (mpVideo) { mpVideo.pause(); mpVideo.srcObject = null; }
             mpStream = null;
             mpVideo = null;
+            camLastTime = -1;
+            camLastTimeAt = 0;
+            camFrozen = false;
+            camDarkCheckAt = 0;
+            camBrightness = null;
+            detectionCache = null;
+            lastSeen = { hands: 0, face: false };
+            inferenceFps = 0;
+            inferenceCount = 0;
+            inferenceWindowAt = 0;
+            detectorErrors = { hand: false, face: false };
+            renderCameraHealth(true);
+        }
+
+        // ── 카메라가 말썽일 때 학생이 알아볼 수 있게 알린다 ──
+        function setCameraWarn(message) {
+            cameraMessage = message || '';
+            for (const id of ['cameraWarn', 'trainCameraWarn']) {
+                const box = document.getElementById(id);
+                if (!box) continue;
+                if (box.textContent !== cameraMessage) box.textContent = cameraMessage;
+                box.hidden = !cameraMessage;
+            }
+        }
+
+        // USB 카메라를 뽑거나 다른 프로그램이 가져가면 영상이 그대로 멈춘다.
+        // 그때 로봇이 마지막 명령으로 계속 달리지 않도록 곧바로 정지시킨다.
+        function handleCameraLost(message) {
+            setCameraWarn(message);
+            log(message, true, 'log2');
+            stopRecognition('카메라 끊김', '카메라가 끊겨 인식을 멈췄습니다');
+            stopCamera();
+            refreshCameraList();
+            if (!trainModal.hidden) {
+                trainPhase = 'idle';
+                trainSamples = [];
+                trainStartBtn.disabled = true;
+                trainSaveBtn.hidden = true;
+                setTrainMessage(message + ' 팝업을 닫고 다시 열어 주세요.');
+            }
+        }
+
+        function watchCameraTracks(stream) {
+            stream.getVideoTracks().forEach(track => {
+                track.addEventListener('ended', () => {
+                    if (mpStream !== stream) return;
+                    handleCameraLost('카메라 연결이 끊겼습니다. USB 카메라를 다시 꽂거나 다른 카메라를 선택해 주세요.');
+                });
+                track.addEventListener('mute', () => {
+                    if (mpStream !== stream) return;
+                    if (isWebcamRunning) requestSafetyStop('카메라 영상 중단');
+                    setCameraWarn('카메라 영상이 잠시 멈췄습니다. 화상회의 등 카메라를 쓰는 다른 프로그램을 닫아 주세요.');
+                });
+                track.addEventListener('unmute', () => { if (mpStream === stream) setCameraWarn(''); });
+            });
+        }
+
+        // 카메라가 여러 대일 때만 고르는 칸을 보여 준다(내장 카메라가 고장 난 노트북 대응).
+        async function refreshCameraList() {
+            const pick = document.getElementById('cameraPick');
+            const select = document.getElementById('cameraSelect');
+            if (!pick || !select || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+            let cams = [];
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                // 권한을 받기 전에는 deviceId가 비어 있어 고를 수 없다
+                cams = devices.filter(device => device.kind === 'videoinput' && device.deviceId);
+            } catch (error) {
+                return;
+            }
+            if (cams.length < 2) { pick.hidden = true; return; }
+            const current = currentCameraId() || savedCameraId();
+            select.textContent = '';
+            cams.forEach((cam, index) => {
+                const option = document.createElement('option');
+                option.value = cam.deviceId;
+                option.textContent = cam.label || ('카메라 ' + (index + 1));
+                if (cam.deviceId && cam.deviceId === current) option.selected = true;
+                select.appendChild(option);
+            });
+            pick.hidden = false;
+        }
+
+        function currentCameraId() {
+            const track = mpStream && mpStream.getVideoTracks()[0];
+            const settings = track && track.getSettings ? track.getSettings() : null;
+            return (settings && settings.deviceId) || '';
+        }
+
+        async function switchCamera(deviceId, label) {
+            try { localStorage.setItem(CAM_KEY, deviceId); } catch (error) { /* 무시 */ }
+            // 티처블머신 웹캠은 켜진 채로 기기를 바꿀 수 없다. 멈춘 뒤 다시 시작하게 안내한다.
+            if (modelType !== 'custom') {
+                const wasRunning = stopRecognition('카메라 변경', '카메라를 바꾸려고 인식을 멈췄습니다');
+                log('카메라를 바꿨습니다: ' + label, false, 'log2');
+                setCameraWarn(wasRunning ? '카메라를 바꿨습니다. 「인식 시작」을 다시 눌러 주세요.' : '');
+                return;
+            }
+            if (!isWebcamRunning && trainModal.hidden) {
+                stopCamera();
+                log('카메라를 바꿨습니다: ' + label + '. 동작 학습 또는 인식을 시작하면 연결됩니다.', false, 'log2');
+                return;
+            }
+            if (isWebcamRunning) requestSafetyStop('카메라 변경');
+            setCameraWarn('카메라를 바꾸는 중입니다…');
+            stopCamera();
+            try {
+                await ensureCamera();
+                setCameraWarn('');
+                log('카메라를 바꿨습니다: ' + label, false, 'log2');
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                const guide = describeError(error, 'camera');
+                setCameraWarn(guide);
+                log(guide, true, 'log2');
+            }
+        }
+
+        // 카메라 화면이 새까맣게 나오면(고장 난 내장 카메라·렌즈 덮개) 이유를 알려 준다.
+        function checkFrameBrightness() {
+            if (!mpFrameCtx) return;
+            try {
+                const rect = fitRect(mpVideo, MP_FRAME_W, MP_FRAME_H);
+                const box = mpFrameCtx.getImageData(Math.ceil(rect.x), Math.ceil(rect.y), Math.floor(rect.w), Math.floor(rect.h)).data;
+                let sum = 0, count = 0;
+                for (let i = 0; i < box.length; i += 64) {
+                    sum += box[i] * 0.2126 + box[i + 1] * 0.7152 + box[i + 2] * 0.0722;
+                    count++;
+                }
+                camBrightness = count ? sum / count : null;
+            } catch (error) { /* 확인에 실패해도 인식은 계속한다 */ }
+        }
+
+        function renderCameraHealth(force = false) {
+            const now = performance.now();
+            if (!force && now - healthUpdatedAt < 500) return;
+            healthUpdatedAt = now;
+            const panel = document.getElementById('cameraHealth');
+            panel.hidden = modelType !== 'custom';
+            const track = mpStream && mpStream.getVideoTracks()[0];
+            const settings = track && track.getSettings ? track.getSettings() : {};
+            const ready = !!mpVideo;
+            const width = ready ? mpVideo.videoWidth : settings.width;
+            const height = ready ? mpVideo.videoHeight : settings.height;
+            const metrics = ready ? `${track.label || '카메라'} · ${width}×${height}` +
+                (settings.frameRate ? ` · 카메라 설정 ${Math.round(settings.frameRate)} fps` : '') +
+                (inferenceFps ? ` · 인식 처리 ${inferenceFps.toFixed(1)}회/초` : ' · 인식 준비 중') : '카메라 연결 대기';
+            const detected = ready ? `손 ${lastSeen.hands}개 · 얼굴 ${lastSeen.face ? '보임' : '안 보임'}` : '얼굴·손 확인 전';
+            const tips = [];
+            if (camFrozen) tips.push('영상이 멈췄습니다. 카메라 연결을 확인해 주세요.');
+            if (detectorErrors.hand || detectorErrors.face) tips.push('인식 처리 오류가 있습니다. 팝업을 닫고 다시 열어 주세요.');
+            if (camBrightness !== null && camBrightness < 12) tips.push('화면이 거의 검습니다. 렌즈 덮개와 조명을 확인해 주세요.');
+            else if (camBrightness !== null && camBrightness < 45) tips.push('화면이 어둡습니다. 얼굴과 손 앞쪽을 밝혀 주세요.');
+            if (ready && Math.min(width, height) < 360) tips.push('영상 크기가 작습니다. 얼굴과 손을 카메라 가까이 두어 주세요.');
+            if (inferenceFps > 0 && inferenceFps < 8) tips.push('인식이 느립니다. 다른 앱을 닫고 동작을 천천히 유지해 주세요.');
+            if (ready && !lastSeen.hands && !lastSeen.face) tips.push('얼굴 또는 손 전체가 화면 안에 보이게 해 주세요.');
+            const guide = tips.join(' ') || (ready ? '학습할 때와 조종할 때 같은 손·얼굴이 보이도록 유지하세요.' :
+                (trainModal.hidden ? '「동작 학습하기」에서 카메라와 인식 상태를 확인할 수 있습니다.' : '카메라 연결과 브라우저의 카메라 권한을 확인해 주세요.'));
+            for (const [selector, value] of [['[data-camera-metrics]', metrics], ['[data-camera-detection]', detected], ['[data-camera-guide]', guide]]) {
+                document.querySelectorAll(selector).forEach(node => { if (node.textContent !== value) node.textContent = value; });
+            }
+        }
+
+        document.getElementById('cameraSelect').addEventListener('change', (event) => {
+            const option = event.target.selectedOptions && event.target.selectedOptions[0];
+            switchCamera(event.target.value, (option && option.textContent) || '선택한 카메라');
+        });
+
+        if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+            // USB 카메라를 꽂거나 뽑으면 목록을 다시 만든다
+            navigator.mediaDevices.addEventListener('devicechange', () => refreshCameraList());
+        }
+
+        // ── 카메라 영상을 고정 크기 캔버스에 비율 그대로 옮겨 담는다 ──
+        // 인식도 화면 표시도 이 캔버스 하나만 쓰므로, 영상과 점이 항상 같은 자리에 놓인다.
+        function grabFrame(video) {
+            if (!video) return null;
+            // 영상이 멈춰 있는지 본다. 멈춘 화면으로 인식을 계속하면 로봇이 그대로 달린다.
+            const now = performance.now();
+            const changed = video.videoWidth > 0 && video.readyState >= 2 && video.currentTime !== camLastTime;
+            if (changed) {
+                camLastTime = video.currentTime;
+                camLastTimeAt = now;
+                if (camFrozen) { camFrozen = false; setCameraWarn(''); }
+            } else if (!camFrozen && camLastTimeAt && now - camLastTimeAt > CAM_FREEZE_MS) {
+                camFrozen = true;
+                setCameraWarn('카메라 영상이 멈췄습니다. USB 카메라를 다시 꽂거나 다른 카메라를 선택해 주세요.');
+                log('카메라 영상이 멈춰 인식을 건너뜁니다.', true, 'log2');
+            }
+            if (camFrozen || !changed) return null;
+            if (!mpFrame) {
+                mpFrame = document.createElement('canvas');
+                mpFrame.width = MP_FRAME_W;
+                mpFrame.height = MP_FRAME_H;
+                mpFrameCtx = mpFrame.getContext('2d');
+            }
+            const rect = fitRect(video, MP_FRAME_W, MP_FRAME_H);
+            mpFrameCtx.fillStyle = '#10181f';
+            mpFrameCtx.fillRect(0, 0, MP_FRAME_W, MP_FRAME_H);
+            mpFrameCtx.drawImage(video, rect.x, rect.y, rect.w, rect.h);
+            if (now >= camDarkCheckAt) {
+                camDarkCheckAt = now + CAM_DARK_CHECK_MS;
+                checkFrameBrightness();
+            }
+            return mpFrame;
         }
 
         // ── 두 손과 얼굴을 한 번에 인식한다 ──
         // 손은 항상 같은 자리에 넣어야 학습이 흔들리지 않으므로, 왼손/오른손을 구분해 담는다.
         function detectBoth(video) {
-            const result = { handL: null, handR: null, face: null };
+            const result = { handL: null, handR: null, face: null, sequence: 0, unavailable: true };
             // 카메라 영상이 아직 준비되지 않았으면 인식을 돌리지 않는다(두 번째 학습에서 멈추던 원인).
-            if (!video || !video.videoWidth || video.readyState < 2) {
+            const frame = grabFrame(video);
+            if (!frame) {
+                const track = mpStream && mpStream.getVideoTracks()[0];
+                if (video && video.readyState >= 2 && !camFrozen && !(track && track.muted) && detectionCache &&
+                    performance.now() - camLastTimeAt < NO_RECOGNITION_STOP_MS) return detectionCache;
                 lastSeen = { hands: 0, face: false };
+                renderCameraHealth();
                 return result;
             }
-            mpStamp += 2;
+            const started = performance.now();
+            mpStamp = Math.max(started, mpStamp + 0.01);
+            result.sequence = ++detectionSequence;
+            result.unavailable = false;
+            const track = mpStream && mpStream.getVideoTracks()[0];
+            if (track && track.muted) return { ...result, unavailable: true };
             try {
                 if (landmarkers.hand) {
-                    const r = landmarkers.hand.detectForVideo(video, mpStamp);
+                    const r = landmarkers.hand.detectForVideo(frame, mpStamp);
+                    detectorErrors.hand = false;
                     const list = r.landmarks || [];
                     const sides = r.handedness || r.handednesses || [];
                     list.forEach((points, i) => {
@@ -2305,15 +2720,35 @@
                         else if (!result.handR) result.handR = points;
                     });
                 }
+            } catch (error) {
+                if (!detectorErrors.hand) log('손 인식 처리에 실패했습니다: ' + error.message, true, 'log2');
+                detectorErrors.hand = true;
+            }
+            try {
                 if (landmarkers.face) {
-                    const r = landmarkers.face.detectForVideo(video, mpStamp + 1);
+                    const r = landmarkers.face.detectForVideo(frame, mpStamp);
+                    detectorErrors.face = false;
                     result.face = (r.faceLandmarks && r.faceLandmarks[0]) || null;
                 }
-            } catch (error) { /* 한 프레임 실패는 넘어간다 */ }
+            } catch (error) {
+                if (!detectorErrors.face) log('얼굴 인식 처리에 실패했습니다: ' + error.message, true, 'log2');
+                detectorErrors.face = true;
+            }
+            result.unavailable = detectorErrors.hand || detectorErrors.face || (camBrightness !== null && camBrightness < 12);
+            result.capturedAt = performance.now();
+            if (!inferenceWindowAt) inferenceWindowAt = started;
+            inferenceCount++;
+            if (result.capturedAt - inferenceWindowAt >= 1000) {
+                inferenceFps = inferenceCount * 1000 / (result.capturedAt - inferenceWindowAt);
+                inferenceCount = 0;
+                inferenceWindowAt = result.capturedAt;
+            }
+            detectionCache = result;
             lastSeen = {
                 hands: (result.handL ? 1 : 0) + (result.handR ? 1 : 0),
                 face: !!result.face
             };
+            renderCameraHealth();
             return result;
         }
 
@@ -2351,6 +2786,7 @@
         // 왼손 · 오른손 · 얼굴을 이어 붙여 하나의 특징으로 만든다.
         // 안 보이는 쪽은 0으로 채우고 앞에 "보였는지" 표시를 둔다 → 한 손 동작과 두 손 동작이 섞이지 않는다.
         function combinedFeature(detection) {
+            if (!detection || detection.unavailable) return null;
             const handL = partFeature('hand', detection.handL);
             const handR = partFeature('hand', detection.handR);
             const face = partFeature('face', detection.face);
@@ -2373,18 +2809,24 @@
             if (!vec || !trained.length) return [];
             const scored = [];
             trained.forEach((cls, classIndex) => {
+                const profile = classProfile(cls.vecs);
+                if (presenceMask(vec) !== profile.mask) return;
                 for (const sample of cls.vecs) {
+                    if (!sample || sample.length !== vec.length) continue;   // 형식이 다른 옛 데이터는 건너뛴다
+                    if (presenceMask(sample) !== profile.mask) continue;
                     let sum = 0;
-                    const n = Math.min(sample.length, vec.length);
+                    const n = vec.length;
                     for (let i = 0; i < n; i++) {
                         const d = sample[i] - vec[i];
                         sum += d * d;
                     }
-                    scored.push({ classIndex, dist: Math.sqrt(sum) });
+                    scored.push({ classIndex, dist: Math.sqrt(sum), limit: profile.limit });
                 }
             });
             if (!scored.length) return [];
             scored.sort((x, y) => x.dist - y.dist);
+            // 투표율이 높아도 학습한 자세에서 멀리 벗어나면 움직임을 선택하지 않는다.
+            if (scored[0].dist / Math.sqrt(vec.length) > scored[0].limit) return [];
             const k = Math.min(KNN_K, scored.length);
             const weights = new Array(trained.length).fill(0);
             let total = 0;
@@ -2397,6 +2839,34 @@
                 className: cls.name,
                 probability: total ? weights[i] / total : 0
             }));
+        }
+
+        function presenceMask(vec) {
+            return (vec[0] ? 1 : 0) | (vec[HAND_DIM + 3] ? 2 : 0) | (vec[2 * (HAND_DIM + 3)] ? 4 : 0);
+        }
+
+        function dominantMask(samples) {
+            const counts = new Map();
+            for (const sample of samples) {
+                const mask = presenceMask(sample);
+                counts.set(mask, (counts.get(mask) || 0) + 1);
+            }
+            return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] || 0;
+        }
+
+        const profileCache = new WeakMap();
+        function classProfile(samples) {
+            if (profileCache.has(samples)) return profileCache.get(samples);
+            const mask = dominantMask(samples);
+            const same = samples.filter(v => v.length === VEC_DIM && presenceMask(v) === mask);
+            const center = Array(VEC_DIM).fill(0);
+            for (const sample of same) sample.forEach((v, i) => { center[i] += v / same.length; });
+            const radii = same.map(sample => Math.sqrt(sample.reduce((sum, v, i) => sum + (v - center[i]) ** 2, 0) / VEC_DIM)).sort((a, b) => a - b);
+            // 좌표 RMS 거리의 여유 폭. 정확도 확률이 아닌, 학습 범위 밖 입력을 거르는 보수적 기준이다.
+            const limit = Math.min(0.6, Math.max(0.15, (radii[Math.floor(radii.length * 0.9)] || 0) * 1.5 + 0.05));
+            const profile = { mask, limit };
+            profileCache.set(samples, profile);
+            return profile;
         }
 
         // ── 인식 상태 표시 ──
@@ -2544,6 +3014,7 @@
         const trainCloseBtn = document.getElementById('trainClose');
         let trainPhase = 'idle';      // idle · count · collect · done
         let trainSamples = [];
+        let trainTimes = [], trainAttempts = 0, trainSequence = 0, trainingGeneration = 0;
         let trainRaf = 0;
         let trainPhaseUntil = 0;
         let trainMissed = 0;
@@ -2607,9 +3078,9 @@
         }
 
         // 카메라 화면 비율을 지켜 캔버스 안에 넣을 자리를 구한다(휴대전화는 세로로 찍힌다).
-        function fitRect(video, W, H) {
-            const vw = (video && video.videoWidth) || W;
-            const vh = (video && video.videoHeight) || H;
+        function fitRect(source, W, H) {
+            const vw = (source && (source.videoWidth || source.width)) || W;
+            const vh = (source && (source.videoHeight || source.height)) || H;
             const scale = Math.min(W / vw, H / vh);
             const w = vw * scale, h = vh * scale;
             return { x: (W - w) / 2, y: (H - h) / 2, w, h };
@@ -2644,13 +3115,13 @@
         function drawPreview(detection) {
             const ctx = trainPreview.getContext('2d');
             const W = trainPreview.width, H = trainPreview.height;
-            const rect = fitRect(mpVideo, W, H);
+            const rect = fitRect(mpFrame, W, H);
             ctx.save();
             ctx.fillStyle = '#10181f';
             ctx.fillRect(0, 0, W, H);
             ctx.translate(W, 0);
             ctx.scale(-1, 1);                       // 거울처럼 보이게
-            if (mpVideo && mpVideo.videoWidth) ctx.drawImage(mpVideo, rect.x, rect.y, rect.w, rect.h);
+            if (mpFrame) ctx.drawImage(mpFrame, rect.x, rect.y, rect.w, rect.h);
             drawDots(ctx, rect, detection);
             ctx.restore();
         }
@@ -2691,11 +3162,16 @@
                 trainBar.style.width = (progress * 100).toFixed(0) + '%';
                 trainBig.classList.add('small');
                 trainBig.textContent = '기억하는 중 ' + Math.ceil(remain / 1000) + '초';
-                const vec = combinedFeature(detection);
-                if (vec) {
-                    trainSamples.push(vec);
-                    captureTrainPreview(progress);
-                } else trainMissed++;
+                if (detection.sequence && detection.sequence !== trainSequence) {
+                    trainSequence = detection.sequence;
+                    trainAttempts++;
+                    const vec = combinedFeature(detection);
+                    if (vec) {
+                        trainSamples.push(vec);
+                        trainTimes.push(now);
+                        captureTrainPreview(progress);
+                    } else trainMissed++;
+                }
                 if (now >= trainPhaseUntil) finishCollecting();
             } else {
                 trainBig.textContent = '';
@@ -2703,11 +3179,26 @@
             trainRaf = requestAnimationFrame(trainLoop);
         }
 
+        // 5초 동안 모은 장면은 100장이 넘기도 한다. 고르게 솎아 내면
+        // 저장 용량과 매 프레임 비교 횟수가 줄고, 판정 결과는 사실상 같다.
+        function thinSamples(list) {
+            if (list.length <= MAX_SAMPLES_PER_CLASS) return list.slice();
+            const out = [];
+            const last = list.length - 1;
+            for (let i = 0; i < MAX_SAMPLES_PER_CLASS; i++) {
+                out.push(list[Math.round(i * last / (MAX_SAMPLES_PER_CLASS - 1))]);
+            }
+            return out;
+        }
+
         function startCollecting() {
             trainPhase = 'collect';
             setTrainStep('capture');
             trainPhaseUntil = performance.now() + COLLECT_MS;
             trainSamples = [];
+            trainTimes = [];
+            trainAttempts = 0;
+            trainSequence = detectionSequence;
             trainMissed = 0;
             trainPreviews = [];
             trainNextPreviewIndex = 0;
@@ -2718,14 +3209,23 @@
             trainPhase = 'done';
             trainBig.textContent = '';
             trainBar.style.width = '100%';
-            if (trainSamples.length < 5) {
-                setTrainMessage('손도 얼굴도 화면에 거의 보이지 않았습니다. 카메라 앞에서 다시 시도하세요.');
+            const mask = dominantMask(trainSamples);
+            const matching = trainSamples.map((v, i) => ({ v, at: trainTimes[i] })).filter(item => presenceMask(item.v) === mask);
+            const span = matching.length ? matching[matching.length - 1].at - matching[0].at : 0;
+            const interrupted = matching.some((item, i) => i > 0 && item.at - matching[i - 1].at > 1000);
+            if (matching.length < 10 || span < 3000 || matching.length / Math.max(1, trainAttempts) < 0.6 ||
+                matching.length / Math.max(1, trainSamples.length) < 0.8 || interrupted) {
+                trainPhase = 'idle';
+                trainSamples = [];
+                trainPreviews = [];
+                setTrainMessage('동작이 충분히 이어서 보이지 않았습니다. 같은 손·얼굴을 화면 안에 두고 5초 동안 유지해 주세요. 위의 인식 점검 안내도 확인해 주세요.');
                 setTrainStep('capture');
                 trainStartBtn.hidden = false;
                 trainStartBtn.disabled = false;
                 trainStartBtn.textContent = '↻ 다시 시도';
                 return;
             }
+            trainSamples = thinSamples(matching.map(item => item.v));
             const skipped = trainMissed ? ` (놓친 장면 ${trainMissed}회)` : '';
             setTrainMessage(`✅ 학습이 완료되었습니다${skipped}. 클래스명을 지정한 후 저장하세요.`, 'success');
             setTrainStep('name');
@@ -2740,6 +3240,8 @@
         }
 
         async function openTrainModal() {
+            if (isWebcamRunning || document.getElementById('startWebcam').disabled) stopRecognition('학습 시작');
+            const generation = ++trainingGeneration;
             trainModal.hidden = false;
             trainPhase = 'idle';
             trainSamples = [];
@@ -2758,9 +3260,12 @@
             try {
                 await ensureCamera();
                 await ensureLandmarkers();
+                if (generation !== trainingGeneration || trainModal.hidden) return;
                 trainStartBtn.disabled = false;
                 setTrainMessage('준비됐습니다. 자세를 잡고 「시작」을 누르세요.');
             } catch (error) {
+                if (generation !== trainingGeneration || error.name === 'AbortError') return;
+                stopCamera();
                 const guide = describeError(error, 'camera');
                 setTrainMessage(guide);
                 log(guide, true, 'log2');
@@ -2783,11 +3288,11 @@
                 }
             }
             trainModal.hidden = true;
+            trainingGeneration++;
             trainPhase = 'idle';
             if (trainRaf) cancelAnimationFrame(trainRaf);
             trainRaf = 0;
-            // 카메라는 그대로 켜 둔다. 껐다 바로 다시 켜면 영상이 준비되기 전에 인식이 돌아
-            // 두 번째 동작부터 아무것도 못 잡는 문제가 생긴다. 정리는 웹캠 중지·단계 이동에서 한다.
+            if (!isWebcamRunning) stopCamera();
         }
 
         document.getElementById('openTrain').addEventListener('click', openTrainModal);
@@ -2869,26 +3374,42 @@
         });
 
         // ── 저장 · 불러오기 ──
+        // 소수점 셋째 자리까지만 남긴다. 판정에는 영향이 없고 저장 용량은 크게 줄어든다.
+        function trainedPayload(withPreviews) {
+            return JSON.stringify({
+                classes: trained.map(cls => ({
+                    name: cls.name,
+                    vecs: cls.vecs.map(v => v.map(x => Math.round(x * 1000) / 1000)),
+                    previews: withPreviews && Array.isArray(cls.previews) ? cls.previews.slice(0, 3) : []
+                }))
+            });
+        }
+
         function persistTrained(showAlert = true) {
             if (!trained.length) {
                 if (showAlert) alert('저장할 학습 결과가 없습니다!');
                 return false;
             }
             try {
-                localStorage.setItem(TRAIN_KEY, JSON.stringify({
-                    classes: trained.map(cls => ({
-                        name: cls.name,
-                        vecs: cls.vecs.map(v => v.map(x => Math.round(x * 1000) / 1000)),
-                        previews: Array.isArray(cls.previews) ? cls.previews.slice(0, 3) : []
-                    }))
-                }));
+                localStorage.setItem(TRAIN_KEY, trainedPayload(true));
                 log('학습 결과를 이 컴퓨터에 저장했습니다.', false, 'log2');
                 if (showAlert) alert('저장했습니다. 같은 컴퓨터·같은 브라우저에서 불러올 수 있습니다.');
                 return true;
             } catch (error) {
-                log('저장 실패: ' + error.message, true, 'log2');
-                if (showAlert) alert('저장 실패: ' + error.message);
-                return false;
+                // 저장 공간이 모자란 경우가 대부분이다. 대표 포즈 사진을 빼면 크게 줄어든다.
+                try {
+                    localStorage.setItem(TRAIN_KEY, trainedPayload(false));
+                    log('저장 공간이 부족해 대표 포즈 사진 없이 저장했습니다.', true, 'log2');
+                    if (showAlert) alert('저장 공간이 부족해 대표 포즈 사진은 빼고 저장했습니다.');
+                    return true;
+                } catch (second) {
+                    log('저장 실패: ' + second.message, true, 'log2');
+                    if (showAlert) {
+                        alert('저장 실패: ' + second.message +
+                            '\n동작 수를 줄이거나 「전체 지우기」 후 다시 학습해 주세요.');
+                    }
+                    return false;
+                }
             }
         }
 
@@ -2902,13 +3423,23 @@
                 if (!raw) { alert('저장된 학습 결과가 없습니다.'); return; }
                 const data = JSON.parse(raw);
                 if (!data || !Array.isArray(data.classes) || !data.classes.length) throw new Error('내용이 비어 있습니다');
-                trained = data.classes.map(cls => ({
-                    name: String(cls.name),
-                    vecs: cls.vecs,
-                    previews: Array.isArray(cls.previews) ? cls.previews.slice(0, 3) : []
-                }));
+                // 형식이 깨졌거나 예전 버전에서 만든 데이터는 걸러 낸다(그대로 쓰면 판정이 엉킨다).
+                let dropped = 0;
+                const classes = data.classes.map(cls => {
+                    const all = Array.isArray(cls && cls.vecs) ? cls.vecs : [];
+                    const vecs = all.filter(v => Array.isArray(v) && v.length === VEC_DIM);
+                    dropped += all.length - vecs.length;
+                    return {
+                        name: String((cls && cls.name) || '').trim(),
+                        vecs,
+                        previews: Array.isArray(cls && cls.previews) ? cls.previews.slice(0, 3) : []
+                    };
+                }).filter(cls => cls.name && cls.vecs.length);
+                if (!classes.length) throw new Error('지금 버전과 형식이 맞지 않습니다. 동작을 다시 학습해 주세요');
+                trained = classes;
                 syncTrainedToMappings();
                 log(`저장된 학습 결과를 불러왔습니다: ${trained.length}개 동작`, false, 'log2');
+                if (dropped) log(`형식이 맞지 않는 장면 ${dropped}개는 빼고 불러왔습니다.`, true, 'log2');
             } catch (error) {
                 alert('불러오기 실패: ' + error.message);
             }
@@ -2942,6 +3473,7 @@
         }
 
         // 초기 모델 타입 표시
+        refreshCameraList();
         checkSupport();
         updateModelTypeDisplay();
         renderTrainedList();
