@@ -314,6 +314,29 @@
             background: #fff;
         }
 
+        /* 큰 행렬의 그림 모드는 DOM 셀 대신 Canvas 1개로 렌더링 */
+        .matrix-canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            transform-origin: top left;
+            background: #fff;
+        }
+
+        .matrix-canvas-tooltip {
+            position: fixed;
+            z-index: 9999;
+            display: none;
+            pointer-events: none;
+            padding: 0.35rem 0.55rem;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.82);
+            color: #fff;
+            font-size: 0.72rem;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        }
+
         .matrix-container {
             overflow: visible;
             border: 1.2px solid #e3e8f0;
@@ -741,11 +764,11 @@
                 <div class="settings">
                     <div class="setting-group">
                         <label for="resize-width">가로:</label>
-                        <input type="number" id="resize-width" min="5" max="100" value="20">
+                        <input type="number" id="resize-width" min="5" max="200" value="20">
                     </div>
                     <div class="setting-group">
                         <label for="resize-height">세로:</label>
-                        <input type="number" id="resize-height" min="5" max="100" value="20">
+                        <input type="number" id="resize-height" min="5" max="200" value="20">
                     </div>
                     <button class="upload-btn" id="process-btn">변환</button>
                 </div>
@@ -845,6 +868,44 @@
             let displayMode = 'color'; // 'color', 'numbers', 'mixed'
             let compactView = false;
             let zoomLevel = 100; // 기본 100%
+            let renderVersion = 0; // 빠른 모드 전환 시 이전 렌더링 취소용
+
+            // 크기 입력 제한: 화면 표시뿐 아니라 실제 입력값도 5~200으로 강제
+            const MIN_SIZE = 5;
+            const MAX_SIZE = 200;
+
+            function clampSize(value, fallback = 20) {
+                const parsed = parseInt(value, 10);
+                const safeValue = Number.isFinite(parsed) ? parsed : fallback;
+                return Math.min(MAX_SIZE, Math.max(MIN_SIZE, safeValue));
+            }
+
+            function enforceSizeLimit(input, clampMinimum = true) {
+                if (!input || input.value === '') return;
+
+                const parsed = parseInt(input.value, 10);
+                if (!Number.isFinite(parsed)) return;
+
+                // 최대값 초과 입력은 즉시 최대값으로 보정
+                if (parsed > MAX_SIZE) {
+                    input.value = MAX_SIZE;
+                    return;
+                }
+
+                // 입력 완료(change/blur) 시 최소값도 5로 보정
+                if (clampMinimum && parsed < MIN_SIZE) {
+                    input.value = MIN_SIZE;
+                }
+            }
+
+            [resizeWidth, resizeHeight].forEach(input => {
+                input.min = MIN_SIZE;
+                input.max = MAX_SIZE;
+
+                input.addEventListener('input', () => enforceSizeLimit(input, false));
+                input.addEventListener('change', () => enforceSizeLimit(input, true));
+                input.addEventListener('blur', () => enforceSizeLimit(input, true));
+            });
 
             // Event listeners
             uploadBtn.addEventListener('click', () => fileInput.click());
@@ -900,10 +961,10 @@
             function applyZoom() {
                 zoomLevelEl.textContent = `${zoomLevel}%`;
 
-                const table = matrixOutput.querySelector('.matrix-table');
-                if (table) {
-                    table.style.transform = `scale(${zoomLevel / 100})`;
-                    table.style.transformOrigin = 'top left';
+                const target = matrixOutput.querySelector('.matrix-table, .matrix-canvas');
+                if (target) {
+                    target.style.transform = `scale(${zoomLevel / 100})`;
+                    target.style.transformOrigin = 'top left';
                 }
             }
 
@@ -1138,8 +1199,10 @@
             function processImage() {
                 if (!uploadedImage) return;
 
-                const width = parseInt(resizeWidth.value) || 20;
-                const height = parseInt(resizeHeight.value) || 20;
+                const width = clampSize(resizeWidth.value);
+                const height = clampSize(resizeHeight.value);
+                resizeWidth.value = width;
+                resizeHeight.value = height;
 
                 // Update matrix size display
                 matrixSize.textContent = `${width}×${height}`;
@@ -1152,7 +1215,7 @@
                 // Scale up the display size for better visibility (but keep pixel data the same)
                 const maxDisplaySize = 300;
                 const maxDimension = Math.max(width, height);
-                const displayScale = Math.min(10, Math.floor(maxDisplaySize / maxDimension));
+                const displayScale = Math.max(1, Math.min(10, Math.floor(maxDisplaySize / maxDimension)));
                 const displayWidth = width * displayScale;
                 const displayHeight = height * displayScale;
 
@@ -1197,10 +1260,7 @@
                 // 행렬 크기에 따라 뷰 스타일 조정
                 adjustMatrixViewForScreenSize();
 
-                // Display matrix
-                displayMatrix(grayMatrix);
-
-                // 디스플레이 모드 업데이트
+                // 디스플레이 모드 적용 + 행렬 렌더링 (중복 렌더링 방지)
                 updateMatrixDisplayMode();
 
                 // 기본 확대/축소 수준 설정
@@ -1238,73 +1298,164 @@
                 }
             }
 
-            // Display matrix as table
+            // Display matrix: 그림 모드는 Canvas, 숫자/혼합 모드는 표로 렌더링
             function displayMatrix(matrix) {
+                if (!matrix || !matrix.length || !matrix[0]) return;
+
+                const myRenderVersion = ++renderVersion;
                 matrixOutput.innerHTML = '<div class="loading">행렬 생성 중...</div>';
 
-                // Use setTimeout to prevent UI freeze on large matrices
-                setTimeout(() => {
-                    const tableContainer = document.createElement('div');
-                    const table = document.createElement('table');
-                    table.className = 'matrix-table';
+                // 기본 그림 모드에서는 수만 개의 <td> 대신 Canvas 1개만 사용
+                if (displayMode === 'color') {
+                    requestAnimationFrame(() => {
+                        if (myRenderVersion !== renderVersion) return;
+                        renderColorCanvas(matrix);
+                    });
+                    return;
+                }
 
-                    // 행렬 크기에 따라 뷰 스타일 적용
-                    const isLargeMatrix = matrix.length > 30 || (matrix[0] && matrix[0].length > 30);
+                // 숫자/혼합 모드는 표가 필요하므로 DOM 렌더링
+                // 200×200에서도 브라우저가 한 번에 너무 오래 멈추지 않도록 행 단위로 나눠 처리
+                requestAnimationFrame(() => {
+                    if (myRenderVersion !== renderVersion) return;
+                    renderMatrixTable(matrix, myRenderVersion);
+                });
+            }
 
-                    for (let y = 0; y < matrix.length; y++) {
+            function renderColorCanvas(matrix) {
+                const rows = matrix.length;
+                const cols = matrix[0].length;
+                const canvas = document.createElement('canvas');
+                canvas.className = 'matrix-canvas';
+                canvas.width = cols;
+                canvas.height = rows;
+
+                // 큰 행렬일수록 한 픽셀의 화면 표시 크기를 줄임
+                const cellSize = (rows > 150 || cols > 150) ? 5
+                    : (rows > 100 || cols > 100) ? 6
+                        : (rows > 60 || cols > 60) ? 8
+                            : (rows > 30 || cols > 30) ? 12 : 20;
+                canvas.style.width = `${cols * cellSize}px`;
+                canvas.style.height = `${rows * cellSize}px`;
+
+                const ctx = canvas.getContext('2d', { alpha: false });
+                const imageData = ctx.createImageData(cols, rows);
+                const data = imageData.data;
+
+                let i = 0;
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        const value = matrix[y][x];
+                        const brightness = Math.floor((value / 255) * 240);
+                        data[i++] = brightness;
+                        data[i++] = brightness;
+                        data[i++] = brightness;
+                        data[i++] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                // 셀마다 tooltip DOM을 만들지 않고, Canvas 전체에 tooltip 1개만 재사용
+                const tooltip = document.createElement('div');
+                tooltip.className = 'matrix-canvas-tooltip';
+                document.body.appendChild(tooltip);
+
+                const hideTooltip = () => {
+                    tooltip.style.display = 'none';
+                };
+
+                canvas.addEventListener('mousemove', (event) => {
+                    const rect = canvas.getBoundingClientRect();
+                    if (!rect.width || !rect.height) return;
+
+                    const x = Math.min(cols - 1, Math.max(0,
+                        Math.floor((event.clientX - rect.left) / rect.width * cols)));
+                    const y = Math.min(rows - 1, Math.max(0,
+                        Math.floor((event.clientY - rect.top) / rect.height * rows)));
+
+                    tooltip.textContent = `좌표: (${x}, ${y}), 값: ${matrix[y][x]}`;
+                    tooltip.style.left = `${event.clientX + 12}px`;
+                    tooltip.style.top = `${event.clientY + 12}px`;
+                    tooltip.style.display = 'block';
+                });
+                canvas.addEventListener('mouseleave', hideTooltip);
+
+                // 모드 변경 등으로 Canvas가 제거될 때 tooltip도 같이 정리
+                const observer = new MutationObserver(() => {
+                    if (!canvas.isConnected) {
+                        tooltip.remove();
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(matrixOutput, { childList: true });
+
+                matrixOutput.innerHTML = '';
+                matrixOutput.appendChild(canvas);
+                adjustMatrixViewForScreenSize();
+                applyZoom();
+            }
+
+            function renderMatrixTable(matrix, myRenderVersion) {
+                const tableContainer = document.createElement('div');
+                const table = document.createElement('table');
+                const tbody = document.createElement('tbody');
+                table.className = 'matrix-table';
+                table.appendChild(tbody);
+
+                const rows = matrix.length;
+                const cols = matrix[0].length;
+                const rowsPerFrame = (rows > 150 || cols > 150) ? 5 : (rows > 100 || cols > 100) ? 8 : 16;
+                let y = 0;
+
+                const renderChunk = () => {
+                    if (myRenderVersion !== renderVersion) return;
+
+                    const fragment = document.createDocumentFragment();
+                    const endRow = Math.min(rows, y + rowsPerFrame);
+
+                    for (; y < endRow; y++) {
                         const row = document.createElement('tr');
 
-                        for (let x = 0; x < matrix[y].length; x++) {
+                        for (let x = 0; x < cols; x++) {
                             const value = matrix[y][x];
                             const cell = document.createElement('td');
-
-                            // 모든 셀에 숫자 값을 항상 표시
                             cell.textContent = value;
 
-                            if (displayMode === 'color' || displayMode === 'mixed') {
-                                // value: 0(검정)~255(흰)
+                            if (displayMode === 'mixed') {
                                 const brightness = Math.floor((value / 255) * 240);
                                 cell.style.backgroundColor = `rgb(${brightness}, ${brightness}, ${brightness})`;
 
-                                if (displayMode === 'color') {
-                                    // 숫자는 어차피 숨김이지만 대비 계산은 유지
-                                    cell.style.color = value > 127 ? '#000' : '#fff';
-                                } else if (displayMode === 'mixed') {
-                                    // 밝은 배경(>127)은 검정 글자, 어두운 배경은 흰 글자
-                                    const textColor = value > 127 ? '#000' : '#fff';
-                                    cell.style.color = textColor;
-
-                                    // 어두운 배경에서 흰 글자가 더 또렷하도록 미세한 그림자만
-                                    cell.style.textShadow = (textColor === '#fff')
-                                        ? '0 0 2px rgba(0,0,0,0.35)'
-                                        : 'none';
-
-                                    cell.style.fontWeight = '600';
-                                }
+                                const textColor = value > 127 ? '#000' : '#fff';
+                                cell.style.color = textColor;
+                                cell.style.textShadow = (textColor === '#fff')
+                                    ? '0 0 2px rgba(0,0,0,0.35)'
+                                    : 'none';
+                                cell.style.fontWeight = '600';
                             }
 
-                            // Add tooltip
-                            const tooltip = document.createElement('div');
-                            tooltip.className = 'tooltip';
-                            tooltip.textContent = `좌표: (${x}, ${y}), 값: ${value}`;
-                            cell.appendChild(tooltip);
-
+                            // 기존처럼 좌표/값 확인 가능하지만, 별도 tooltip <div>는 만들지 않음
+                            cell.title = `좌표: (${x}, ${y}), 값: ${value}`;
                             row.appendChild(cell);
                         }
 
-                        table.appendChild(row);
+                        fragment.appendChild(row);
                     }
 
-                    tableContainer.appendChild(table);
-                    matrixOutput.innerHTML = '';
-                    matrixOutput.appendChild(tableContainer);
+                    tbody.appendChild(fragment);
 
-                    // 최초 렌더링 후 화면 크기에 맞게 스타일 조정
-                    adjustMatrixViewForScreenSize();
+                    if (y < rows) {
+                        requestAnimationFrame(renderChunk);
+                    } else {
+                        if (myRenderVersion !== renderVersion) return;
+                        tableContainer.appendChild(table);
+                        matrixOutput.innerHTML = '';
+                        matrixOutput.appendChild(tableContainer);
+                        adjustMatrixViewForScreenSize();
+                        applyZoom();
+                    }
+                };
 
-                    // 확대/축소 적용
-                    applyZoom();
-                }, 50);
+                renderChunk();
             }
 
             // 초기화 시 기본 모드 강조
