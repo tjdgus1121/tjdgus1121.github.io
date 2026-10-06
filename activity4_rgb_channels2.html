@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RGB 행렬 추출기</title>
+    <title>RGB·RGBA 행렬 추출기</title>
     <meta
       name="description"
       content="이미지를 업로드해 150×150 픽셀로 샘플링하고, R/G/B 채널의 행렬 값을 추출·편집하며 색 변화 원리를 탐구하는 활동입니다."
@@ -17,7 +17,7 @@
     <meta name="robots" content="index, follow" />
     <link
       rel="canonical"
-      href="https://tjdgus1121.github.io/activity2_matrix_extract.html"
+      href="https://tjdgus1121.github.io/activity4_rgb_channels2.html"
     />
 
     <!-- 사이트 소유권/검색엔진 검증(다른 페이지와 동일 값) -->
@@ -260,6 +260,52 @@
 
       #zoom {
         image-rendering: pixelated;
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+      }
+
+      .preview, .grid { min-width: 0; }
+      .analysis-options {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e9ecef;
+        background: #f1f6fb;
+        color: #343a40;
+      }
+      .mode-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .mode-option input { width: 18px; height: 18px; accent-color: #4dabf7; }
+      .analysis-options p, .alpha-controls { font-size: 13px; }
+      .alpha-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .alpha-controls input { width: 68px; padding: 6px; }
+      .alpha-controls .btn { padding: 6px 10px; }
+      .a { background: #6c5ce7; }
+      .channel-buttons, .export-buttons { flex-wrap: wrap; }
+      [hidden] { display: none !important; }
+      #channelInfo { flex-basis: 100%; font-size: 13px; color: #495057; }
+      #zoom.transparency {
+        background-color: #fff;
+        background-image: linear-gradient(45deg, #dce2e8 25%, transparent 25%),
+          linear-gradient(-45deg, #dce2e8 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #dce2e8 75%),
+          linear-gradient(-45deg, transparent 75%, #dce2e8 75%);
+        background-size: 24px 24px;
+        background-position: 0 0, 0 12px, 12px -12px, -12px 0;
       }
 
       .bar {
@@ -503,10 +549,9 @@
     <div id="overlay" class="overlay"></div>
     <div class="container">
       <header>
-        <h1>RGB 행렬 추출 활동</h1>
+        <h1>RGB·RGBA 행렬 추출 활동</h1>
         <p>
-          한 번에 한 채널만 크게 볼수 있도록 편집하였습니다. 표를 클릭하고
-          숫자를 입력하면, 사진의 컬러가 바뀝니다.😁
+          채널별 행렬을 선택해 색을 바꾸고, RGBA 분석으로 투명도도 탐구해 보세요.
         </p>
       </header>
 
@@ -526,12 +571,26 @@
         <span id="fileName"></span>
       </div>
 
-      <div id="alert" class="alert hidden"></div>
+      <div class="analysis-options">
+        <label class="mode-option" for="rgbaMode">
+          <input id="rgbaMode" type="checkbox" aria-controls="btnA alphaControls" />
+          RGBA 분석 (A 채널 포함)
+        </label>
+        <p id="modeHelp">RGB는 색을 분석합니다. RGBA를 선택하면 투명도도 함께 분석합니다.</p>
+        <div class="alpha-controls" id="alphaControls" hidden>
+          <label for="alphaValue">전체 A 값:</label>
+          <input id="alphaValue" type="number" min="0" max="255" step="1" value="255" />
+          <button class="btn a" id="applyAlpha" disabled>전체 적용</button>
+          <span>0 = 완전 투명 · 255 = 완전 불투명</span>
+        </div>
+      </div>
+
+      <div id="alert" class="alert hidden" role="status" aria-live="polite"></div>
 
       <div class="main" id="main" style="display: none">
         <!-- 미리보기 왼쪽 배치 -->
         <div class="panel preview">
-          <h3>⬇️업로드 한 사진⬇️</h3>
+          <h3 id="previewTitle">⬇️ RGB 이미지 미리보기 ⬇️</h3>
           <canvas
             id="orig"
             width="150"
@@ -549,10 +608,12 @@
                 <button id="btnR" class="btn r">R</button>
                 <button id="btnG" class="btn g">G</button>
                 <button id="btnB" class="btn b">B</button>
+                <button id="btnA" class="btn a" hidden>A (불투명도)</button>
               </div>
               <div class="export-buttons">
                 <button class="btn alt" id="exportS">⬇️ CSV 내보내기</button>
                 <button class="btn alt" id="copyS">📋 Excel 복사</button>
+                <button class="btn alt" id="exportPNG">⬇️ PNG 저장</button>
               </div>
             </div>
             <div class="size-control">
@@ -567,6 +628,7 @@
               />
               <span id="cellSizeValue">22px</span>
             </div>
+            <p id="channelInfo" aria-live="polite">R 채널 · 값 범위 0~255</p>
           </div>
           <div class="wrap">
             <div class="vgrid" id="gridS">
@@ -610,20 +672,57 @@
       var SIZE = 150;
       var CELL = 22;
       var OVERSCAN = 4;
-      var CHANNELS = ["R", "G", "B"];
+      var CHANNELS = ["R", "G", "B", "A"];
 
-      // ===== Worker (extract / rebuild 전용으로 분리) =====
-      var extractWorker = (function () {
-        try { return new Worker("activity4_rgb_channels2_worker.js"); } catch (e) { return null; }
-      })();
-      var rebuildWorker = (function () {
-        try { return new Worker("activity4_rgb_channels2_worker.js"); } catch (e) { return null; }
-      })();
+      // 추출·합성 워커를 이 HTML 안에 포함해 별도 파일 없이 실행한다.
+      function channelWorkerTask() {
+        self.onmessage = function (event) {
+          var d = event.data, n = d.size * d.size, i;
+          if (d.type === "extract") {
+            var rgba = new Uint8ClampedArray(d.buffer);
+            var R = new Uint8Array(n), G = new Uint8Array(n);
+            var B = new Uint8Array(n), A = new Uint8Array(n);
+            for (i = 0; i < n; i++) {
+              R[i] = rgba[4 * i]; G[i] = rgba[4 * i + 1];
+              B[i] = rgba[4 * i + 2]; A[i] = rgba[4 * i + 3];
+            }
+            self.postMessage({type: "extracted", id: d.id,
+              R: R.buffer, G: G.buffer, B: B.buffer, A: A.buffer},
+              [R.buffer, G.buffer, B.buffer, A.buffer]);
+          } else if (d.type === "rebuild") {
+            var r = new Uint8Array(d.R), g = new Uint8Array(d.G);
+            var b = new Uint8Array(d.B), a = new Uint8Array(d.A);
+            var output = new Uint8ClampedArray(n * 4);
+            for (i = 0; i < n; i++) {
+              output[4 * i] = r[i]; output[4 * i + 1] = g[i];
+              output[4 * i + 2] = b[i]; output[4 * i + 3] = d.useAlpha ? a[i] : 255;
+            }
+            self.postMessage({type: "rebuilt", id: d.id, buffer: output.buffer}, [output.buffer]);
+          }
+        };
+      }
+
+      function createChannelWorker() {
+        var url;
+        try {
+          url = URL.createObjectURL(new Blob(["(" + channelWorkerTask.toString() + ")();"],
+            {type: "text/javascript"}));
+          return new Worker(url);
+        } catch (e) {
+          return null;
+        } finally {
+          if (url) URL.revokeObjectURL(url);
+        }
+      }
+      var extractWorker = createChannelWorker();
+      var rebuildWorker = createChannelWorker();
 
       // ===== 상태 =====
-      var data = { R: [], G: [], B: [] };
+      var data = { R: [], G: [], B: [], A: [] };
       var currentCh = "R";
       var imageLoaded = false;
+      var rgbaEnabled = false;
+      var loadGeneration = 0, extractionId = 0, renderId = 0;
 
       // ===== DOM =====
       var file = document.getElementById("file");
@@ -638,6 +737,14 @@
       var btnR = document.getElementById("btnR");
       var btnG = document.getElementById("btnG");
       var btnB = document.getElementById("btnB");
+      var btnA = document.getElementById("btnA");
+      var rgbaMode = document.getElementById("rgbaMode");
+      var alphaControls = document.getElementById("alphaControls");
+      var alphaValue = document.getElementById("alphaValue");
+      var applyAlpha = document.getElementById("applyAlpha");
+      var modeHelp = document.getElementById("modeHelp");
+      var previewTitle = document.getElementById("previewTitle");
+      var channelInfo = document.getElementById("channelInfo");
       var resetBtn = document.getElementById("resetBtn");
       var copyBtn = document.getElementById("copyS");
       var cellSizeInput = document.getElementById("cellSize");
@@ -682,7 +789,7 @@
           for (y = 0; y < SIZE; y++) {
             data[c][y] = new Array(SIZE);
             for (x = 0; x < SIZE; x++) {
-              data[c][y][x] = 0;
+              data[c][y][x] = c === "A" ? 255 : 0;
             }
           }
         }
@@ -690,6 +797,7 @@
 
       function tintRGB(ch, v) {
         v = clamp(v);
+        if (ch === "A") return "rgb(" + v + "," + v + "," + v + ")";
         if (ch === "R") return "rgb(" + v + ",0,0)";
         if (ch === "G") return "rgb(0," + v + ",0)";
         return "rgb(0,0," + v + ")";
@@ -707,6 +815,7 @@
       // 밝기 기반 텍스트 색상: 0~127 = 흰색, 128~255 = 보색(채널 반대색)
       function textColorFor(v, ch) {
         v = clamp(v);
+        if (ch === "A") return v <= 127 ? "#ffffff" : "#111111";
         if (v <= 127) return "#ffffff";
         return compColor(ch, v);
       }
@@ -737,11 +846,17 @@
             return;
           }
           fileName.textContent = f.name;
+          var generation = ++loadGeneration;
+          extractionId++;
+          renderId++;
+          imageLoaded = false;
+          applyAlpha.disabled = true;
 
           if (window.createImageBitmap) {
             window
               .createImageBitmap(f)
               .then(function (bmp) {
+                if (generation !== loadGeneration) { bmp.close(); return; }
                 var tmp = document.createElement("canvas");
                 tmp.width = SIZE;
                 tmp.height = SIZE;
@@ -749,16 +864,17 @@
                 tctx.imageSmoothingEnabled = true;
                 tctx.imageSmoothingQuality = "high";
                 tctx.drawImage(bmp, 0, 0, SIZE, SIZE);
+                bmp.close();
                 var id = tctx.getImageData(0, 0, SIZE, SIZE);
                 octx.putImageData(id, 0, 0);
                 extractFromCurrentCanvas();
                 showAlert("이미지가 로드되었습니다.", true, 1000);
               })
               .catch(function () {
-                loadViaImage(f);
+                if (generation === loadGeneration) loadViaImage(f, generation);
               });
           } else {
-            loadViaImage(f);
+            loadViaImage(f, generation);
           }
         } catch (err) {
           console.error(err);
@@ -766,11 +882,12 @@
         }
       });
 
-      function loadViaImage(file) {
+      function loadViaImage(file, generation) {
         var url = URL.createObjectURL(file);
         var img = new Image();
         img.onload = function () {
           try {
+            if (generation !== loadGeneration) return;
             octx.clearRect(0, 0, SIZE, SIZE);
             octx.imageSmoothingEnabled = true;
             octx.imageSmoothingQuality = "high";
@@ -783,13 +900,13 @@
         };
         img.onerror = function () {
           URL.revokeObjectURL(url);
-          showAlert("이미지를 불러오지 못했습니다.", false);
+          if (generation === loadGeneration) showAlert("이미지를 불러오지 못했습니다.", false);
         };
         img.src = url;
       }
 
       // 2D 배열 ↔ flat Uint8Array 변환 헬퍼
-      function flatToData(R, G, B) {
+      function flatToData(R, G, B, A) {
         var n = SIZE * SIZE, y, x, i;
         for (y = 0; y < SIZE; y++) {
           for (x = 0; x < SIZE; x++) {
@@ -797,13 +914,14 @@
             data.R[y][x] = R[i];
             data.G[y][x] = G[i];
             data.B[y][x] = B[i];
+            data.A[y][x] = A[i];
           }
         }
       }
 
       function dataToFlat() {
         var n = SIZE * SIZE;
-        var R = new Uint8Array(n), G = new Uint8Array(n), B = new Uint8Array(n);
+        var R = new Uint8Array(n), G = new Uint8Array(n), B = new Uint8Array(n), A = new Uint8Array(n);
         var y, x, i;
         for (y = 0; y < SIZE; y++) {
           for (x = 0; x < SIZE; x++) {
@@ -811,31 +929,34 @@
             R[i] = data.R[y][x];
             G[i] = data.G[y][x];
             B[i] = data.B[y][x];
+            A[i] = data.A[y][x];
           }
         }
-        return { R: R, G: G, B: B };
+        return { R: R, G: G, B: B, A: A };
       }
 
       function extractFromCurrentCanvas() {
         initArrays();
         var id = octx.getImageData(0, 0, SIZE, SIZE);
+        var requestId = ++extractionId;
         var buf = id.data.buffer.slice(0); // copy for transfer
 
         if (extractWorker) {
           extractWorker.onmessage = function (e) {
             var d = e.data;
-            if (d.type !== "extracted") return;
-            flatToData(new Uint8Array(d.R), new Uint8Array(d.G), new Uint8Array(d.B));
+            if (d.type !== "extracted" || d.id !== extractionId) return;
+            flatToData(new Uint8Array(d.R), new Uint8Array(d.G), new Uint8Array(d.B), new Uint8Array(d.A));
             main.style.display = "grid";
             setupVirtualGridOnce();
             redrawFromData();
             imageLoaded = true;
+            applyAlpha.disabled = false;
             requestAnimationFrame(function () {
               viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
               updateGrid(currentCh);
             });
           };
-          extractWorker.postMessage({ type: "extract", buffer: buf, size: SIZE }, [buf]);
+          extractWorker.postMessage({ type: "extract", id: requestId, buffer: buf, size: SIZE }, [buf]);
         } else {
           // fallback: 워커 없을 때 동기 처리
           var a = id.data;
@@ -845,13 +966,14 @@
               data.R[y][x] = a[p++];
               data.G[y][x] = a[p++];
               data.B[y][x] = a[p++];
-              p++;
+              data.A[y][x] = a[p++];
             }
           }
           main.style.display = "grid";
           setupVirtualGridOnce();
           redrawFromData();
           imageLoaded = true;
+            applyAlpha.disabled = false;
           requestAnimationFrame(function () {
             viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
             updateGrid(currentCh);
@@ -859,41 +981,55 @@
         }
       }
 
+      function imageDataFromData() {
+        var id = octx.createImageData(SIZE, SIZE), pixels = id.data, p = 0;
+        for (var y = 0; y < SIZE; y++) {
+          for (var x = 0; x < SIZE; x++) {
+            pixels[p++] = data.R[y][x]; pixels[p++] = data.G[y][x];
+            pixels[p++] = data.B[y][x]; pixels[p++] = rgbaEnabled ? data.A[y][x] : 255;
+          }
+        }
+        return id;
+      }
+
+      function drawPreview(id) {
+        octx.putImageData(id, 0, 0);
+        zctx.imageSmoothingEnabled = false;
+        zctx.clearRect(0, 0, zoom.width, zoom.height);
+        zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
+      }
+
       function redrawFromData() {
+        var requestId = ++renderId;
         if (rebuildWorker) {
           var flat = dataToFlat();
-          var rBuf = flat.R.buffer.slice(0);
-          var gBuf = flat.G.buffer.slice(0);
-          var bBuf = flat.B.buffer.slice(0);
           rebuildWorker.onmessage = function (e) {
             var d = e.data;
-            if (d.type !== "rebuilt") return;
+            if (d.type !== "rebuilt" || d.id !== renderId) return;
             var id = octx.createImageData(SIZE, SIZE);
-            id.data.set(new Uint8Array(d.buffer));
-            octx.putImageData(id, 0, 0);
-            zctx.imageSmoothingEnabled = false;
-            zctx.clearRect(0, 0, zoom.width, zoom.height);
-            zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
+            id.data.set(new Uint8ClampedArray(d.buffer));
+            drawPreview(id);
           };
-          rebuildWorker.postMessage({ type: "rebuild", R: rBuf, G: gBuf, B: bBuf, size: SIZE }, [rBuf, gBuf, bBuf]);
+          rebuildWorker.postMessage({type: "rebuild", id: requestId, size: SIZE, useAlpha: rgbaEnabled,
+            R: flat.R.buffer, G: flat.G.buffer, B: flat.B.buffer, A: flat.A.buffer},
+            [flat.R.buffer, flat.G.buffer, flat.B.buffer, flat.A.buffer]);
         } else {
-          // fallback
-          var id = octx.createImageData(SIZE, SIZE);
-          var a = id.data, p = 0, y, x;
-          for (y = 0; y < SIZE; y++) {
-            for (x = 0; x < SIZE; x++) {
-              a[p++] = data.R[y][x];
-              a[p++] = data.G[y][x];
-              a[p++] = data.B[y][x];
-              a[p++] = 255;
-            }
-          }
-          octx.putImageData(id, 0, 0);
-          zctx.imageSmoothingEnabled = false;
-          zctx.clearRect(0, 0, zoom.width, zoom.height);
-          zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
+          drawPreview(imageDataFromData());
         }
       }
+
+      if (extractWorker) extractWorker.onerror = function (event) {
+        event.preventDefault();
+        extractWorker.terminate();
+        extractWorker = null;
+        if (file.value && !imageLoaded) extractFromCurrentCanvas();
+      };
+      if (rebuildWorker) rebuildWorker.onerror = function (event) {
+        event.preventDefault();
+        rebuildWorker.terminate();
+        rebuildWorker = null;
+        if (imageLoaded) redrawFromData();
+      };
 
       // ===== 가상 스크롤 =====
       var viewState = { firstRow: -1, lastRow: -1, firstCol: -1, lastCol: -1 };
@@ -1013,6 +1149,7 @@
             inp.style.fontSize = fontSize + "px";
             inp.setAttribute("data-r", r);
             inp.setAttribute("data-c", c);
+            inp.setAttribute("aria-label", ch + " 채널 " + (r + 1) + "행 " + (c + 1) + "열");
 
             div.appendChild(inp);
             frag.appendChild(div);
@@ -1027,8 +1164,9 @@
       function scheduleRedraw() {
         if (redrawScheduled) return;
         redrawScheduled = true;
+        renderId++; // 변경 전의 워커 결과가 미리보기를 덮어쓰지 않게 한다.
         requestAnimationFrame(function () {
-          redrawFromData();
+          if (imageLoaded) redrawFromData();
           redrawScheduled = false;
         });
       }
@@ -1130,42 +1268,94 @@
         };
       }
 
-      // ===== 채널 전환 =====
-      function setCurrentChannel(ch) {
-        if (!imageLoaded) {
-          showAlert("먼저 이미지를 업로드해주세요.", false);
-          return;
-        }
-        currentCh = ch;
-        showAlert(ch + " 채널을 적용했습니다.", true, 800);
-        btnR.style.opacity = ch === "R" ? "1" : "0.6";
-        btnG.style.opacity = ch === "G" ? "1" : "0.6";
-        btnB.style.opacity = ch === "B" ? "1" : "0.6";
+      // ===== 채널 전환 / RGBA 분석 =====
+      function updateChannelControls() {
+        CHANNELS.forEach(function (ch) {
+          var button = document.getElementById("btn" + ch);
+          button.style.opacity = ch === currentCh ? "1" : "0.6";
+          button.setAttribute("aria-pressed", ch === currentCh ? "true" : "false");
+        });
+        btnA.hidden = !rgbaEnabled;
+        alphaControls.hidden = !rgbaEnabled;
+        zoom.classList.toggle("transparency", rgbaEnabled);
+        previewTitle.textContent = "⬇️ " + (rgbaEnabled ? "RGBA" : "RGB") + " 이미지 미리보기 ⬇️";
+        channelInfo.textContent = currentCh + " 채널 · " +
+          (currentCh === "A" ? "0 = 완전 투명, 255 = 완전 불투명" : "값 범위 0~255");
+        modeHelp.textContent = rgbaEnabled
+          ? "원본의 A 값을 보존합니다. A 행렬을 편집하거나 전체 값을 적용해 투명도를 바꿔 보세요."
+          : "RGB는 색을 분석합니다. RGBA를 선택하면 투명도도 함께 분석합니다.";
+      }
+
+      function refreshGrid() {
         viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
         updateGrid(currentCh);
       }
-      btnR.onclick = function () {
-        setCurrentChannel("R");
+
+      function setCurrentChannel(ch) {
+        if (!imageLoaded) { showAlert("먼저 이미지를 업로드해주세요.", false); return; }
+        if (ch === "A" && !rgbaEnabled) return;
+        currentCh = ch;
+        updateChannelControls();
+        refreshGrid();
+      }
+      CHANNELS.forEach(function (ch) {
+        document.getElementById("btn" + ch).onclick = function () { setCurrentChannel(ch); };
+      });
+
+      rgbaMode.addEventListener("change", function () {
+        rgbaEnabled = rgbaMode.checked;
+        if (!rgbaEnabled && currentCh === "A") currentCh = "R";
+        updateChannelControls();
+        if (imageLoaded) { refreshGrid(); scheduleRedraw(); }
+      });
+
+      applyAlpha.onclick = function () {
+        if (!imageLoaded || !rgbaEnabled) return;
+        var value = clamp(parseInt(alphaValue.value, 10) || 0);
+        alphaValue.value = value;
+        for (var y = 0; y < SIZE; y++) data.A[y].fill(value);
+        currentCh = "A";
+        updateChannelControls();
+        refreshGrid();
+        scheduleRedraw();
       };
-      btnG.onclick = function () {
-        setCurrentChannel("G");
-      };
-      btnB.onclick = function () {
-        setCurrentChannel("B");
+
+      document.getElementById("exportPNG").onclick = function () {
+        if (!imageLoaded) { showAlert("먼저 이미지를 업로드해주세요.", false); return; }
+        // 내보내기는 최신 데이터로 직접 합성하여 대기 중인 워커 결과에 의존하지 않는다.
+        var canvas = document.createElement("canvas");
+        canvas.width = canvas.height = SIZE;
+        canvas.getContext("2d").putImageData(imageDataFromData(), 0, 0);
+        var mode = rgbaEnabled ? "RGBA" : "RGB";
+        canvas.toBlob(function (blob) {
+          if (!blob) { showAlert("PNG 저장에 실패했습니다.", false); return; }
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement("a");
+          link.href = url;
+          link.download = "image_" + mode + "_" + SIZE + "x" + SIZE + ".png";
+          link.click();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        }, "image/png");
       };
 
       // ===== 초기화 버튼 =====
       resetBtn.onclick = function () {
         if (confirm("모든 데이터가 초기화됩니다. 계속하시겠습니까?")) {
           imageLoaded = false;
+          loadGeneration++; extractionId++; renderId++;
+          rgbaEnabled = false;
+          rgbaMode.checked = false;
+          alphaValue.value = 255;
+          applyAlpha.disabled = true;
+          octx.clearRect(0, 0, SIZE, SIZE);
+          zctx.clearRect(0, 0, zoom.width, zoom.height);
           fileName.textContent = "";
           main.style.display = "none";
           file.value = "";
           initArrays();
           currentCh = "R";
-          btnR.style.opacity = "1";
-          btnG.style.opacity = "0.6";
-          btnB.style.opacity = "0.6";
+          updateChannelControls();
+          refreshGrid();
           showAlert("초기화되었습니다.", true, 800);
         }
       };
@@ -1181,9 +1371,7 @@
       initArrays();
       setupVirtualGridOnce();
       updateGrid(currentCh);
-      btnR.style.opacity = "1";
-      btnG.style.opacity = "0.6";
-      btnB.style.opacity = "0.6";
+      updateChannelControls();
     </script>
   </body>
 </html>
