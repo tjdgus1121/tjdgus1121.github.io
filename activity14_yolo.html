@@ -211,6 +211,11 @@
             color: white;
         }
 
+        .btn-sample {
+            background: #2E7D5B;
+            color: white;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
@@ -293,9 +298,32 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
+        /* 웹캠 영상은 캔버스로만 보여 줌. display:none이면 브라우저가 재생을 멈출 수 있어 보이지 않게만 둠 */
         #video {
-            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
         }
+
+        .loading.failed { color: #a4262c }
+        .loading.failed .spinner { display: none }
+        .loading #retryBtn { margin-top: 10px }
+
+        .status-msg {
+            margin: 12px 0 0;
+            padding: 10px 14px;
+            border-left: 4px solid #C0392B;
+            border-radius: 6px;
+            background: #fdecea;
+            color: #7a1f16;
+            font-weight: 600;
+        }
+
+        .status-msg[hidden] { display: none }
 
         /* 로딩 스피너 */
         .loading {
@@ -745,6 +773,10 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
                     </button>
                 </div>
 
+                <button type="button" class="btn btn-sample" id="sampleBtn">
+                    🖼️ 예시 사진으로 살펴보기
+                </button>
+
                 <button class="btn btn-secondary" id="webcamBtn" onclick="startWebcam()">
                     🎥 웹캠 시작
                 </button>
@@ -770,17 +802,20 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
             </div>
 
             <!-- 로딩 표시 -->
-            <div class="loading" id="loading">
+            <div class="loading" id="loading" role="status" aria-live="polite">
                 <div class="spinner"></div>
                 <p>AI 모델을 로드하는 중입니다...</p>
+                <button type="button" class="btn btn-primary" id="retryBtn" hidden>🔄 다시 시도</button>
             </div>
+            <!-- 탐지 중 오류 안내 -->
+            <p class="status-msg" id="statusMsg" role="status" aria-live="polite" hidden></p>
         </div>
 
         <!-- 탐지 영역 -->
         <div class="detection-area">
             <div class="canvas-container">
                 <canvas id="canvas" width="640" height="480"></canvas>
-                <video id="video" width="640" height="480" autoplay muted playsinline></video>
+                <video id="video" width="640" height="480" muted playsinline aria-hidden="true"></video>
                 <!-- 감지 중 팝업 -->
                 <div id="detectingOverlay" class="detecting-overlay hidden">
                     <div class="detecting-box">
@@ -865,6 +900,7 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
                 <div class="help-section">
                     <h4>🔧 기술적 정보</h4>
                     <p>이 활동은 <strong>Transformers.js</strong>와 <strong>YOLOS-small</strong> 모델(mAP 36.1, q8 양자화 ~55MB)을 사용하여 객체 탐지를 수행합니다. 모델은 이 사이트에서 직접 서빙되며, 모든 처리는 브라우저에서 이루어져 개인정보가 외부로 전송되지 않습니다.</p>
+                    <p>빠르게 처리하려고 이미지를 <strong>짧은 변 480픽셀</strong>로 맞춰 분석합니다. 모델 기본값(800픽셀)보다 약 5배 빠르지만, 아주 작거나 멀리 있는 물체는 놓칠 수 있습니다. (mAP 36.1은 기본값 800픽셀 기준입니다.)</p>
                 </div>
             </div>
         </div>
@@ -908,9 +944,15 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
         let isWebcamActive = false;
         let animationId = null;
         let currentThreshold = 0.25;
-        let lastImageDataUrl = null;
         let lastPredictions = [];
         let hiddenClasses = new Set();
+        let hasImage = false;    // 업로드한 사진이 있는지 (슬라이더로 다시 탐지할 대상)
+        let session = 0;         // 사진을 바꾸거나 웹캠을 켜고 끌 때마다 1 증가. 이전 장면의 늦은 결과는 버림
+
+        // 박스가 그려지지 않은 원본 장면. 탐지는 늘 여기서 하고, 화면 캔버스는 원본 + 박스를 다시 그림
+        const srcCanvas = document.createElement('canvas');
+        const srcCtx = srcCanvas.getContext('2d');
+        const MAX_SIDE = 1280;   // 큰 사진은 긴 변을 이 크기로 줄여서 처리 (저사양 PC 대비)
 
         // 클래스명 → 고정 색상 (해시 기반 HSL)
         function getClassColor(className) {
@@ -931,6 +973,10 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
             document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+            document.getElementById('retryBtn').addEventListener('click', initWorker);
+            document.getElementById('sampleBtn').addEventListener('click', loadSampleImage);
+            // 목록 체크박스는 한 번만 연결 (목록을 다시 그려도 계속 동작)
+            document.getElementById('detectionList').addEventListener('change', onClassToggle);
 
             // 신뢰도 슬라이더
             const slider = document.getElementById('confidenceSlider');
@@ -938,56 +984,98 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
             slider.addEventListener('input', () => {
                 currentThreshold = slider.value / 100;
                 display.textContent = slider.value + '%';
-                // 이미지가 올라와 있으면 즉시 재탐지
-                if (lastImageDataUrl && workerReady && !isDetecting) {
-                    detectObjects();
-                }
+                // 사진이 올라와 있으면 원본으로 다시 탐지 (웹캠은 다음 프레임부터 새 기준)
+                if (hasImage && !isWebcamActive) detectObjects();
             });
 
+            drawWelcomeMessage();
             initWorker();
+        }
+
+        function setCanvasSize(w, h) {
+            canvas.width = srcCanvas.width = w;
+            canvas.height = srcCanvas.height = h;
+        }
+
+        function showStatus(text) {
+            const el = document.getElementById('statusMsg');
+            el.textContent = text ? '⚠ ' + text : '';
+            el.hidden = !text;
         }
 
         function initWorker() {
             const loadingDiv = document.getElementById('loading');
+            const msg = loadingDiv.querySelector('p');
+            const retry = document.getElementById('retryBtn');
+            if (worker) worker.terminate();
+            workerReady = false;
+            isDetecting = false;
+            loadingDiv.classList.remove('failed');
             loadingDiv.style.display = 'block';
-            loadingDiv.querySelector('p').textContent = 'YOLOS 모델 로드 중... (첫 실행 시 ~55MB 다운로드)';
+            retry.hidden = true;
+            msg.textContent = 'YOLOS 모델 로드 중... (첫 실행 시 ~55MB 다운로드)';
+
+            const fail = (detail) => {
+                workerReady = false;
+                isDetecting = false;
+                hideDetecting();
+                loadingDiv.classList.add('failed');
+                msg.textContent = 'AI 모델을 불러오지 못했습니다. 인터넷 연결을 확인하고, 학교망이라면 ' +
+                    'cdn.jsdelivr.net · tjdgus1121.github.io 접속이 막혀 있지 않은지 확인해 주세요.' + (detail ? ` (${detail})` : '');
+                retry.hidden = false;
+                if (pendingDetection) render();   // '모델 로딩 중' 안내를 지우고 사진만 보여 줌
+            };
 
             worker = new Worker('activity14_worker.js', { type: 'module' });
 
             worker.onmessage = (e) => {
-                const { type, results, message } = e.data;
-                if (type === 'ready') {
+                const { type, results, message, id } = e.data;
+                if (type === 'progress') {
+                    if (e.data.progress < 100) msg.textContent = `YOLOS 모델 내려받는 중... ${Math.floor(e.data.progress)}% (첫 실행 시 ~55MB)`;
+                } else if (type === 'ready') {
                     workerReady = true;
                     loadingDiv.style.display = 'none';
                     if (pendingDetection) {
                         pendingDetection = false;
                         detectObjects();
-                    } else {
-                        drawWelcomeMessage();
                     }
-                } else if (type === 'results') {
+                } else if (type === 'load-error') {
+                    fail(message);
+                } else if (type === 'results' || type === 'error') {
                     isDetecting = false;
                     hideDetecting();
-                    const predictions = results.map(r => ({
-                        class: r.label,
-                        score: r.score,
-                        bbox: [r.box.xmin, r.box.ymin, r.box.xmax - r.box.xmin, r.box.ymax - r.box.ymin]
-                    }));
-                    lastPredictions = predictions;
-                    hiddenClasses.clear();
-                    drawPredictions(predictions);
-                    updateResults(predictions);
-                } else if (type === 'error') {
-                    isDetecting = false;
-                    hideDetecting();
-                    console.error('워커 오류:', message);
+                    // 사진을 바꿨거나 웹캠을 끈 뒤 도착한 결과는 버림 (id가 없으면 캐시된 예전 워커라 그대로 씀)
+                    if (id === session || id === undefined) {
+                        if (type === 'error') {
+                            showStatus('탐지 중 오류가 났습니다. 다른 사진으로 다시 해 보세요. (' + message + ')');
+                        } else {
+                            showStatus('');
+                            lastPredictions = results.map(r => ({
+                                class: r.label,
+                                score: r.score,
+                                bbox: [r.box.xmin, r.box.ymin, r.box.xmax - r.box.xmin, r.box.ymax - r.box.ymin]
+                            }));
+                            if (!isWebcamActive) render();   // 웹캠은 다음 프레임에서 그림
+                            updateResults(lastPredictions);
+                        }
+                    }
+                    // 탐지 중에 슬라이더를 움직였거나 새 사진을 올렸으면 이어서 한 번 더
+                    if (pendingDetection && hasImage && !isWebcamActive) {
+                        pendingDetection = false;
+                        detectObjects();
+                    }
                 }
             };
 
+            // 모듈을 못 받는 등 워커 자체가 실패한 경우
             worker.onerror = (err) => {
-                isDetecting = false;
-                hideDetecting();
-                loadingDiv.querySelector('p').textContent = '워커 오류: ' + err.message;
+                err.preventDefault();
+                if (!workerReady) fail(err.message);
+                else {
+                    isDetecting = false;
+                    hideDetecting();
+                    showStatus('탐지 중 오류가 났습니다. (' + (err.message || '알 수 없는 오류') + ')');
+                }
             };
         }
 
@@ -1003,6 +1091,7 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
          * 캔버스에 환영 메시지 그리기
          */
         function drawWelcomeMessage() {
+            setCanvasSize(640, 480);
             ctx.fillStyle = '#f8f9fa';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1011,124 +1100,149 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
             ctx.textAlign = 'center';
             ctx.fillText('이미지를 업로드하거나', canvas.width / 2, canvas.height / 2 - 20);
             ctx.fillText('웹캠을 시작해보세요!', canvas.width / 2, canvas.height / 2 + 20);
+            ctx.textAlign = 'left';
         }
 
         /**
          * 이미지 업로드 처리 함수
-         * - 사용자가 선택한 이미지 파일을 읽어서 객체 탐지 수행
+         * - 큰 사진은 긴 변 1280px로 줄여 원본 캔버스에 그리고 탐지
          */
-        async function handleImageUpload(event) {
+        function handleImageUpload(event) {
             const file = event.target.files[0];
+            event.target.value = '';   // 같은 파일을 다시 골라도 동작하게
             if (!file) return;
 
-            // 웹캠이 활성화되어 있다면 정지
-            if (isWebcamActive) {
-                stopWebcam();
-            }
+            const url = URL.createObjectURL(file);
+            loadImage(url, '사진을 열 수 없습니다. JPG나 PNG 파일을 골라 주세요.', () => URL.revokeObjectURL(url));
+        }
 
+        // 예시 사진 (거리 풍경: 사람·자동차·버스·자전거·개·신호등 등)
+        function loadSampleImage() {
+            loadImage('activity14_yoloimage1.jpg', '예시 사진을 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+        }
+
+        // 사진을 원본 캔버스에 그리고 탐지 (긴 변이 1280px보다 크면 줄임)
+        function loadImage(url, failText, done = () => {}) {
+            if (isWebcamActive) stopWebcam();
             const img = new Image();
-            img.onload = async function () {
-                // 캔버스 크기를 이미지 크기에 맞춰 조정
-                canvas.width = img.width;
-                canvas.height = img.height;
-
-                // 이미지를 캔버스에 그리기
-                ctx.drawImage(img, 0, 0);
-
-                // 객체 탐지 수행
-                await detectObjects();
+            img.onload = function () {
+                done();
+                const scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+                setCanvasSize(Math.round(img.naturalWidth * scale), Math.round(img.naturalHeight * scale));
+                srcCtx.drawImage(img, 0, 0, srcCanvas.width, srcCanvas.height);
+                session++;
+                hasImage = true;
+                lastPredictions = [];
+                hiddenClasses.clear();
+                showStatus('');
+                render();
+                updateResults([]);   // 이전 사진의 숫자 지우기
+                setListMessage(workerReady ? '분석 중입니다...' : 'AI 모델을 불러오면 바로 분석합니다...');
+                detectObjects();
             };
-
-            // 파일을 이미지로 읽기
-            img.src = URL.createObjectURL(file);
+            img.onerror = function () {
+                done();
+                showStatus(failText);
+            };
+            img.src = url;
         }
 
         /**
          * 웹캠 시작 함수
-         * - 사용자의 카메라에 접근하여 실시간 비디오 스트림 시작
          */
         async function startWebcam() {
+            let stream;
             try {
-                // 카메라 권한 요청 및 비디오 스트림 획득
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
-                    }
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 } }
                 });
-
-                video.srcObject = stream;
-                video.style.display = 'block';
-
-                // 캔버스 크기 설정
-                canvas.width = 640;
-                canvas.height = 480;
-
-                isWebcamActive = true;
-
-                // 버튼 상태 변경
-                document.getElementById('webcamBtn').style.display = 'none';
-                document.getElementById('stopBtn').style.display = 'inline-block';
-
-                // 비디오가 준비되면 실시간 탐지 시작
-                video.addEventListener('loadeddata', startRealTimeDetection);
-
             } catch (error) {
                 console.error('웹캠 접근 오류:', error);
                 alert('웹캠에 접근할 수 없습니다. 권한을 확인해주세요.');
+                return;
+            }
+
+            if (animationId) cancelAnimationFrame(animationId);   // 혹시 남은 반복은 정리
+            video.srcObject = stream;
+            isWebcamActive = true;
+            hasImage = false;
+            session++;
+            lastPredictions = [];
+            hiddenClasses.clear();
+            showStatus('');
+            updateResults([]);
+
+            document.getElementById('webcamBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+
+            // 영상이 준비되면 실시간 탐지 시작 (켤 때마다 덮어써서 반복이 겹치지 않음)
+            video.onloadeddata = () => {
+                setCanvasSize(video.videoWidth || 640, video.videoHeight || 480);
+                startRealTimeDetection();
+            };
+            try {
+                await video.play();
+            } catch (err) {
+                console.error('웹캠 재생 오류:', err);
             }
         }
 
         /**
          * 웹캠 정지 함수
-         * - 비디오 스트림 정지 및 UI 초기화
          */
         function stopWebcam() {
             if (video.srcObject) {
-                // 모든 트랙 정지
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
             }
-
-            video.style.display = 'none';
+            video.onloadeddata = null;
             isWebcamActive = false;
+            session++;   // 아직 처리 중인 프레임의 결과는 버림
 
-            // 애니메이션 정지
             if (animationId) {
                 cancelAnimationFrame(animationId);
                 animationId = null;
             }
 
-            // 버튼 상태 복원
             document.getElementById('webcamBtn').style.display = 'inline-block';
             document.getElementById('stopBtn').style.display = 'none';
 
-            // 캔버스 초기화
+            lastPredictions = [];
+            hiddenClasses.clear();
             drawWelcomeMessage();
-
-            // 결과 초기화
             updateResults([]);
         }
 
         /**
-         * 실시간 객체 탐지 시작
-         * - 비디오 프레임마다 객체 탐지 수행
+         * 실시간 객체 탐지: 매 프레임 영상 + 마지막 박스를 그리고, 이전 탐지가 끝났으면 지금 프레임을 보냄
          */
         function startRealTimeDetection() {
-            if (!isWebcamActive || !video.readyState) return;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            // 이전 탐지가 끝난 후에만 다음 요청
-            if (!isDetecting) {
-                detectObjects();
-            }
-            if (isWebcamActive) {
-                animationId = requestAnimationFrame(startRealTimeDetection);
-            }
+            if (animationId) cancelAnimationFrame(animationId);
+            const tick = () => {
+                if (!isWebcamActive) { animationId = null; return; }
+                if (video.readyState >= 2) {
+                    render(video);
+                    if (!isDetecting && workerReady) {
+                        srcCtx.drawImage(video, 0, 0, srcCanvas.width, srcCanvas.height);
+                        detectObjects({ quiet: true });
+                    }
+                }
+                animationId = requestAnimationFrame(tick);
+            };
+            tick();
         }
 
-        function detectObjects() {
+        // 원본 캔버스(또는 웹캠 영상) 위에 보이는 클래스의 박스만 그림
+        function render(source = srcCanvas) {
+            ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+            drawPredictions(lastPredictions.filter(p => !hiddenClasses.has(p.class)));
+        }
+
+        // 원본 캔버스로 탐지 요청. 웹캠은 프레임마다 부르므로 '감지 중' 팝업을 띄우지 않음
+        function detectObjects({ quiet = false } = {}) {
             if (!workerReady) {
                 pendingDetection = true;
+                if (document.getElementById('loading').classList.contains('failed')) return;
                 ctx.save();
                 ctx.fillStyle = 'rgba(0,0,0,0.45)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1139,146 +1253,154 @@ html,body{background:#F6F5F2 !important;background-image:none !important;color:#
                 ctx.restore();
                 return;
             }
-            if (isDetecting) return;
+            if (isDetecting) {
+                pendingDetection = !isWebcamActive;   // 사진: 지금 탐지가 끝나면 새 기준으로 한 번 더
+                return;
+            }
+            let dataUrl;
+            try {
+                dataUrl = srcCanvas.toDataURL('image/jpeg', 0.85);
+            } catch (err) {   // 페이지를 파일로 직접 열면(file://) 사이트 안의 사진도 보안상 읽을 수 없음
+                showStatus('이 페이지를 파일로 직접 열어서 사진을 분석할 수 없습니다. 웹 주소(배포 사이트나 Live Server)로 열거나 [이미지 업로드]를 써 주세요.');
+                setListMessage('사진을 분석하지 못했습니다.');
+                return;
+            }
             isDetecting = true;
-            showDetecting();
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            lastImageDataUrl = dataUrl;
-            worker.postMessage({ type: 'detect', dataUrl, threshold: currentThreshold });
+            if (!quiet) showDetecting();
+            worker.postMessage({ type: 'detect', id: session, dataUrl, threshold: currentThreshold });
         }
 
         /**
          * 탐지 결과를 캔버스에 그리는 함수
-         * - 각 탐지된 객체 주변에 바운딩 박스와 라벨 표시
+         * - 선 두께·글자 크기는 '화면에 보이는 크기' 기준(글자 약 14px)으로, 이름표가 캔버스 밖으로 나가지 않게
          */
         function drawPredictions(predictions) {
-            // 기존 그림 위에 탐지 결과 그리기 (웹캠의 경우)
-            if (isWebcamActive && video.readyState) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            }
+            const unit = canvas.width / (canvas.clientWidth || canvas.width);   // 캔버스 1px이 화면에서 몇 px로 줄어 보이는지의 역수
+            const fontPx = Math.round(14 * unit), labelH = Math.round(fontPx * 1.5), pad = Math.round(4 * unit);
+            ctx.lineWidth = Math.max(1.5, 2.5 * unit);
+            ctx.font = `${fontPx}px Arial`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
 
-            // 각 탐지 결과에 대해 바운딩 박스 그리기
             predictions.forEach((prediction) => {
                 const [x, y, width, height] = prediction.bbox;
                 const className = prediction.class;
                 const confidence = (prediction.score * 100).toFixed(1);
-
                 const { stroke: color } = getClassColor(className);
 
-                // 바운딩 박스 그리기
                 ctx.strokeStyle = color;
-                ctx.lineWidth = 3;
                 ctx.strokeRect(x, y, width, height);
 
-                // 라벨 배경 그리기
-                ctx.fillStyle = color;
                 const labelText = `${className} ${confidence}%`;
-                ctx.font = '16px Arial';
-                const textWidth = ctx.measureText(labelText).width;
-                ctx.fillRect(x, y - 25, textWidth + 10, 25);
-
-                // 라벨 텍스트 그리기
+                const labelW = ctx.measureText(labelText).width + pad * 2;
+                // 위쪽에 자리가 없으면 박스 안쪽 위에, 오른쪽 끝을 넘으면 왼쪽으로 당김
+                const ly = y - labelH >= 0 ? y - labelH : Math.max(0, y);
+                const lx = Math.max(0, Math.min(x, canvas.width - labelW));
+                ctx.fillStyle = color;
+                ctx.fillRect(lx, ly, labelW, labelH);
                 ctx.fillStyle = 'white';
-                ctx.fillText(labelText, x + 5, y - 5);
+                ctx.fillText(labelText, lx + pad, ly + labelH - Math.round(labelH * 0.28));
             });
         }
 
         /**
          * 탐지 결과 통계 업데이트 함수
-         * - 총 객체 수, 클래스 수, 평균 정확도 등을 계산하여 화면에 표시
          */
         function updateResults(predictions) {
-            // 기본 통계 계산
             const totalObjects = predictions.length;
             const uniqueClasses = [...new Set(predictions.map(p => p.class))].length;
             const avgConfidence = totalObjects > 0
                 ? (predictions.reduce((sum, p) => sum + p.score, 0) / totalObjects * 100).toFixed(1)
                 : 0;
 
-            // 통계 UI 업데이트
             document.getElementById('totalObjects').textContent = totalObjects;
             document.getElementById('uniqueClasses').textContent = uniqueClasses;
             document.getElementById('avgConfidence').textContent = avgConfidence + '%';
 
-            // 상세 탐지 목록 업데이트
             updateDetectionList(predictions);
         }
 
         /**
          * 상세 탐지 목록 업데이트 함수
-         * - 각 탐지된 객체의 클래스명과 정확도를 리스트로 표시
+         * - 클래스 구성이 같으면 카드는 그대로 두고 숫자만 바꿈 (웹캠에서 체크박스를 누를 수 있게)
          */
         function updateDetectionList(predictions) {
             const listElement = document.getElementById('detectionList');
 
             if (predictions.length === 0) {
-                listElement.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;padding:20px;">탐지된 객체가 없습니다.</p>';
+                listElement.dataset.classes = '';
+                listElement.innerHTML = isWebcamActive || hasImage
+                    ? '<p style="grid-column:1/-1;text-align:center;color:#999;padding:20px;">탐지된 객체가 없습니다.</p>'
+                    : '<p style="grid-column:1/-1;text-align:center;color:#999;padding:20px;">이미지를 업로드하거나 웹캠을 시작해주세요.</p>';
                 return;
             }
 
-            // 클래스별로 그룹화하여 개수 계산
-            const classCount = {};
+            // 클래스별 개수와 가장 높은 신뢰도
+            const stats = new Map();
             predictions.forEach(p => {
-                classCount[p.class] = (classCount[p.class] || 0) + 1;
+                const s = stats.get(p.class) || { count: 0, max: 0 };
+                s.count++;
+                s.max = Math.max(s.max, p.score);
+                stats.set(p.class, s);
             });
+            const key = [...stats.keys()].join('\n');
 
-            // HTML 생성 (3열 카드 + 체크박스)
-            let html = '';
-            Object.entries(classCount).forEach(([className, count]) => {
-                const maxConfidence = Math.max(...predictions
-                    .filter(p => p.class === className)
-                    .map(p => p.score));
-                const confidencePercent = (maxConfidence * 100).toFixed(1);
-                const { stroke: color } = getClassColor(className);
-                const checked = !hiddenClasses.has(className);
-                const dimmed = checked ? '' : 'opacity:0.4;';
-
-                html += `
-                    <div class="detection-item" style="border-left-color:${color};${dimmed}" data-class="${className}">
+            if (listElement.dataset.classes !== key) {
+                listElement.dataset.classes = key;
+                listElement.innerHTML = [...stats.keys()].map((className) => {
+                    const { stroke: color } = getClassColor(className);
+                    const checked = !hiddenClasses.has(className);
+                    const name = escapeHtml(className);
+                    return `
+                    <div class="detection-item" style="border-left-color:${color};opacity:${checked ? 1 : 0.4}" data-class="${name}">
                         <div class="det-header">
                             <label class="det-check-label">
-                                <input type="checkbox" class="det-checkbox" data-class="${className}" ${checked ? 'checked' : ''}>
-                                <span class="det-name">${className}</span>
+                                <input type="checkbox" class="det-checkbox" data-class="${name}" ${checked ? 'checked' : ''}>
+                                <span class="det-name">${name}</span>
                             </label>
                         </div>
                         <div class="det-meta">
-                            <span class="det-count">${count}개</span>
-                            <span class="det-conf">${confidencePercent}%</span>
+                            <span class="det-count"></span>
+                            <span class="det-conf"></span>
                         </div>
                         <div class="confidence-bar" style="margin-top:4px">
-                            <div class="confidence-fill" style="width:${confidencePercent}%;background:${color}"></div>
+                            <div class="confidence-fill" style="background:${color}"></div>
                         </div>
-                    </div>
-                `;
-            });
+                    </div>`;
+                }).join('');
+            }
 
-            listElement.innerHTML = html;
-
-            // 체크박스 이벤트 연결
-            listElement.querySelectorAll('.det-checkbox').forEach(cb => {
-                cb.addEventListener('change', () => {
-                    const cls = cb.dataset.class;
-                    if (cb.checked) hiddenClasses.delete(cls);
-                    else hiddenClasses.add(cls);
-                    redrawWithFilter();
-                    // 카드 투명도 즉시 반영
-                    const card = listElement.querySelector(`.detection-item[data-class="${cls}"]`);
-                    if (card) card.style.opacity = cb.checked ? '1' : '0.4';
-                });
+            // 숫자만 갱신
+            listElement.querySelectorAll('.detection-item').forEach((card) => {
+                const s = stats.get(card.dataset.class);
+                if (!s) return;
+                const pct = (s.max * 100).toFixed(1);
+                card.querySelector('.det-count').textContent = s.count + '개';
+                card.querySelector('.det-conf').textContent = pct + '%';
+                card.querySelector('.confidence-fill').style.width = pct + '%';
             });
         }
 
-        // 원본 이미지 위에 필터링된 바운딩 박스만 재드로우
-        function redrawWithFilter() {
-            if (!lastImageDataUrl) return;
-            const img = new Image();
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const visible = lastPredictions.filter(p => !hiddenClasses.has(p.class));
-                drawPredictions(visible);
-            };
-            img.src = lastImageDataUrl;
+        function setListMessage(text) {
+            const listElement = document.getElementById('detectionList');
+            listElement.dataset.classes = '';
+            listElement.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:#999;padding:20px;">${escapeHtml(text)}</p>`;
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
+
+        // 클래스 체크박스: 숨긴 클래스는 박스를 그리지 않음 (사진은 바로 다시 그리고, 웹캠은 다음 프레임부터)
+        function onClassToggle(e) {
+            const cb = e.target.closest('.det-checkbox');
+            if (!cb) return;
+            const cls = cb.dataset.class;
+            if (cb.checked) hiddenClasses.delete(cls);
+            else hiddenClasses.add(cls);
+            const card = cb.closest('.detection-item');
+            if (card) card.style.opacity = cb.checked ? '1' : '0.4';
+            if (!isWebcamActive && hasImage) render();
         }
 
         /**

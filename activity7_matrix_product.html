@@ -439,25 +439,30 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
-        .matrix-description {
-            max-width: 350px;
-            padding: 15px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        /* 역할 뒤집기를 할 수 없을 때 안내 */
+        .swap-msg {
+            max-width: 640px;
+            margin: -6px auto 16px;
+            padding: 10px 14px;
+            border-left: 4px solid #e67e22;
+            border-radius: 6px;
+            background: #fff4e5;
+            color: #7a4100;
+            font-weight: 600;
+            line-height: 1.5;
             text-align: left;
         }
 
-        .matrix-description p {
-            margin: 8px 0;
-            font-size: 0.95rem;
-            color: #2c3e50;
-            line-height: 1.4;
+        .swap-msg[hidden] { display: none }
+
+        /* 범례: 10 이상 (연한 색 여러 개) */
+        .color-box-more {
+            background: linear-gradient(90deg, hsl(0, 75%, 80%) 0 25%, hsl(137, 75%, 80%) 25% 50%, hsl(275, 75%, 80%) 50% 75%, hsl(52, 75%, 80%) 75%);
         }
 
-        .matrix-description p:first-child {
-            color: #3498db;
-            font-weight: bold;
+        @media (prefers-reduced-motion: reduce) {
+            .bounce { animation: none }
+            .matrix-cell, .result-cell, .result-cell-hover, .matrix-cell-strong { transition: none }
         }
 
         /* ===== 경쟁모드 링크 버튼 ===== */
@@ -479,6 +484,8 @@
         #comp-mode-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(247,151,30,0.5); }
     </style>
 </head>
+
+<body>
 <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
         <i class="fas fa-bars"></i>
     </div>
@@ -519,7 +526,6 @@
         </nav>
     </aside>
 
-<body>
     <div class="container">
         <h1>행렬 곱셈 시각화</h1>
         <div class="move_matrix_product2"><a href="./activity7_matrix_product2.html"> 그림 변환 이동 </a></div>
@@ -550,9 +556,9 @@
                     </select>
                 </div>
                 <h2 id="left-title">입력 행렬 A</h2>
-                <h2>값에 0~9의 값을 입력해보세요.</h2>
+                <h2 id="input-hint">칸에 숫자를 입력해 보세요. (0~99)</h2>
                 <div class="matrix" id="matrix-a"></div>
-                <div class="matrix-btn-row">
+                <div class="matrix-btn-row" id="a-btn-row">
                     <button type="button" id="random-a-btn" class="random-btn">🎲 랜덤 값 생성</button>
                     <button type="button" id="transpose-a-btn" class="transpose-btn">🔄 전치행렬</button>
                 </div>
@@ -572,12 +578,12 @@
                     </select>
                 </div>
                 <h2 id="right-title">변환 행렬 T</h2>
-                <div class="binary-only">
+                <div class="binary-only" id="binary-row">
                     <input type="checkbox" id="binary-only" checked>
                     <label for="binary-only">0과 1만 입력 가능</label>
                 </div>
                 <div class="matrix" id="matrix-t"></div>
-                <div class="matrix-btn-row">
+                <div class="matrix-btn-row" id="t-btn-row">
                     <button type="button" id="random-t-btn" class="random-btn">🎲 랜덤 값 생성</button>
                 </div>
             </div>
@@ -592,9 +598,10 @@
 
         <div class="button-container">
             <a id="comp-mode-btn" href="activity7_competition.html">🏆 경쟁모드</a>
-            <button id="swap-role-btn">🔄 역할 뒤집기 (A×T ↔ T×A)</button>
-            <button id="reset-btn">초기화</button>
+            <button type="button" id="swap-role-btn">🔄 역할 뒤집기 (A×T ↔ T×A)</button>
+            <button type="button" id="reset-btn">초기화</button>
         </div>
+        <p class="swap-msg" id="swap-msg" role="status" aria-live="polite" hidden></p>
 
         <div class="result-section">
             <div class="matrix-description">
@@ -645,6 +652,10 @@
                 <div class="color-box" style="background-color: #808080;"></div>
                 <div class="color-text">9 = 회색</div>
             </div>
+            <div class="color-item">
+                <div class="color-box color-box-more" aria-hidden="true"></div>
+                <div class="color-text">10 이상 = 숫자마다 다른 연한 색</div>
+            </div>
         </div>
     </div>
 
@@ -676,10 +687,17 @@
     </footer>
 
     <script>
-        // 전역 변수
+        // ===== 상태 =====
         let isAT = true; // true: A×T, false: T×A
 
-        // 색상 매핑
+        // 역할별 자리: A×T면 왼쪽(#matrix-a)이 입력 A·오른쪽(#matrix-t)이 변환 T, T×A면 반대
+        const inputId = () => (isAT ? 'matrix-a' : 'matrix-t');
+        const transformId = () => (isAT ? 'matrix-t' : 'matrix-a');
+        const binaryOnly = () => document.getElementById('binary-only').checked;
+        const byId = (id) => document.getElementById(id);
+
+        // ===== 색 =====
+        // 0~9는 범례의 색, 10 이상은 숫자마다 다른 연한 색 (입력과 결과가 같은 규칙이라 같은 숫자는 같은 색)
         const colorMap = {
             0: { bg: '#FF0000', text: 'white' },
             1: { bg: '#FFA500', text: 'black' },
@@ -692,17 +710,66 @@
             8: { bg: '#800080', text: 'white' },
             9: { bg: '#808080', text: 'white' }
         };
+        function colorOf(value) {
+            if (colorMap[value]) return colorMap[value];
+            const hue = Math.round(((value - 10) * 137.508) % 360);   // 이웃한 숫자끼리 색이 멀어지게 (황금각)
+            return { bg: `hsl(${hue}, 75%, 80%)`, text: '#222' };
+        }
+        function paint(element, value) {
+            if (Number.isInteger(value) && value >= 0) {
+                const c = colorOf(value);
+                element.style.backgroundColor = c.bg;
+                element.style.color = c.text;
+            } else {
+                element.style.backgroundColor = '#e0e0e0';
+                element.style.color = 'black';
+            }
+        }
+        const updateColorForInputA = (input) => paint(input, parseInt(input.value));
 
-        // 행렬 생성
-        function createMatrix(containerId, rows, cols, isBinary = false) {
-            const container = document.getElementById(containerId);
+        // ===== 행렬 값 (화면 ↔ 2차원 배열) =====
+        // 화면에 그려진 행렬을 그대로 읽음 (크기 선택 상자와 상관없이)
+        function readGrid(id) {
+            return [...document.querySelectorAll(`#${id} .matrix-row`)].map((row) =>
+                [...row.querySelectorAll('input')].map((input) => parseInt(input.value) || 0));
+        }
+
+        // 크기를 바꾸며 겹치는 칸의 값은 그대로 둠. 새 칸은 makeNew()로 채움
+        function resizeGrid(grid, rows, cols, makeNew) {
+            return Array.from({ length: rows }, (_, i) => Array.from({ length: cols }, (_, j) =>
+                (grid[i] && grid[i][j] !== undefined ? grid[i][j] : makeNew())));
+        }
+
+        // 입력 행렬 A의 새 칸: 지금 가장 큰 수 다음부터 10, 11, 12…처럼 이어서 (모든 칸이 다른 숫자라 어디로 옮겨 가는지 보임)
+        function counterAfter(grid) {
+            let next = Math.max(0, ...grid.flat()) + 1;
+            return () => next++;
+        }
+
+        // 두 행렬을 화면에 놓기: 크기 선택 상자, 입력칸, 결과 칸까지 한 번에
+        function layout(left, right) {
+            byId('matrix-a-rows').value = left.length;
+            byId('matrix-a-cols').value = left[0].length;
+            byId('matrix-t-cols').value = right[0].length;
+            createMatrix('matrix-a', left);
+            createMatrix('matrix-t', right);
+            createResultMatrix(left.length, right[0].length);
+            calculateMatrixMultiplication();
+        }
+
+        // ===== 행렬 그리기 =====
+        function createMatrix(containerId, grid) {
+            const container = byId(containerId);
             container.innerHTML = '';
+            const isTransform = containerId === transformId();   // 변환 행렬 T: 덮어쓰기 입력, 0·1 제한 가능
+            const isBinary = isTransform && binaryOnly();
+            const name = isTransform ? 'T' : 'A';
 
-            for (let i = 0; i < rows; i++) {
+            grid.forEach((values, i) => {
                 const row = document.createElement('div');
                 row.className = 'matrix-row';
 
-                for (let j = 0; j < cols; j++) {
+                values.forEach((value, j) => {
                     const cell = document.createElement('div');
                     cell.className = 'matrix-cell';
 
@@ -713,102 +780,72 @@
 
                     const input = document.createElement('input');
                     input.type = 'text';
-                    input.maxLength = 1;
-                    input.value = '0';
+                    input.value = String(isBinary ? Math.min(value, 1) : value);   // 0·1만일 때 2 이상은 1로
                     input.setAttribute('inputmode', 'numeric');
                     input.setAttribute('pattern', '[0-9]*');
+                    input.setAttribute('aria-label', `${name} ${i + 1}행 ${j + 1}열`);
+                    input.addEventListener('focus', function () { this.select(); });
 
-                    input.addEventListener('focus', function () {
-                        this.select();
-                    });
-
-                    // A×T 모드: #matrix-a가 A (색상 적용)
-                    // T×A 모드: #matrix-t가 A (색상 적용)
-                    const isColoredMatrix = (isAT && containerId === 'matrix-a') || (!isAT && containerId === 'matrix-t');
-
-                    if (containerId === 'matrix-t') {
-                        // T 행렬: 덮어쓰기 모드
+                    if (isTransform) {
+                        // T 행렬: 숫자 하나로 덮어쓰기
+                        input.maxLength = 1;
                         input.addEventListener('keydown', function (e) {
                             const isDigit = /^[0-9]$/.test(e.key);
                             const isEditKey = (e.key === 'Backspace' || e.key === 'Delete');
                             const isNavKey = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key);
-
                             if (isDigit) {
-                                if (isBinary && !/[01]/.test(e.key)) {
-                                    e.preventDefault();
-                                    return;
-                                }
                                 e.preventDefault();
+                                if (isBinary && !/[01]/.test(e.key)) return;
                                 this.value = e.key;
-                                // T×A 모드에서 T가 A 역할이면 색상 적용
-                                if (isColoredMatrix) {
-                                    updateColorForInputA(this);
-                                }
                                 calculateMatrixMultiplication();
                                 return;
                             }
                             if (isEditKey) {
                                 e.preventDefault();
                                 this.value = '0';
-                                if (isColoredMatrix) {
-                                    updateColorForInputA(this);
-                                }
                                 calculateMatrixMultiplication();
                                 return;
                             }
                             if (!isNavKey) e.preventDefault();
                         });
-
                         input.addEventListener('paste', function (e) {
                             e.preventDefault();
                             const t = (e.clipboardData || window.clipboardData).getData('text') || '';
                             const m = isBinary ? t.match(/[01]/) : t.match(/[0-9]/);
                             this.value = m ? m[0] : '0';
-                            if (isColoredMatrix) {
-                                updateColorForInputA(this);
-                            }
                             calculateMatrixMultiplication();
                         });
-
                         input.addEventListener('blur', function () {
                             if (this.value === '') this.value = '0';
-                            if (isColoredMatrix) {
-                                updateColorForInputA(this);
-                            }
                         });
-
                     } else {
-                        // A 행렬: 색상 매핑 (A×T 모드에서만)
+                        // A 행렬: 0~99 입력, 숫자별 색
+                        input.maxLength = 2;
+                        updateColorForInputA(input);
                         input.addEventListener('input', function () {
                             this.value = this.value.replace(/[^0-9]/g, '');
-                            if (isColoredMatrix) {
-                                updateColorForInputA(this);
-                            }
+                            updateColorForInputA(this);
                             calculateMatrixMultiplication();
                         });
-                        input.addEventListener('paste', function (e) {
-                            e.preventDefault();
-                        });
+                        input.addEventListener('paste', function (e) { e.preventDefault(); });
                         input.addEventListener('blur', function () {
                             if (this.value === '') {
                                 this.value = '0';
-                                if (isColoredMatrix) {
-                                    updateColorForInputA(this);
-                                }
+                                updateColorForInputA(this);
                             }
                         });
                     }
 
                     cell.appendChild(input);
                     row.appendChild(cell);
-                }
+                });
                 container.appendChild(row);
-            }
+            });
         }
 
         // 결과 행렬 생성
         function createResultMatrix(rows, cols) {
-            const container = document.getElementById('matrix-r');
+            const container = byId('matrix-r');
             container.innerHTML = '';
 
             for (let i = 0; i < rows; i++) {
@@ -835,506 +872,172 @@
             }
         }
 
-        // 관련 셀 강조 (역할 인식)
+        // 관련 셀 강조: 왼쪽 행렬의 행 + 오른쪽 행렬의 열
         function highlightRelatedCells(rowIndex, colIndex) {
-            const leftMatrix = document.getElementById('matrix-a');
-            const rightMatrix = document.getElementById('matrix-t');
-
-            // 왼쪽 행렬의 행 강조
-            const leftRows = leftMatrix.querySelectorAll('.matrix-row');
+            const leftRows = byId('matrix-a').querySelectorAll('.matrix-row');
             if (leftRows[rowIndex]) {
-                const leftCells = leftRows[rowIndex].querySelectorAll('.matrix-cell');
-                leftCells.forEach(cell => {
+                leftRows[rowIndex].querySelectorAll('.matrix-cell').forEach(cell => {
                     cell.classList.add('bounce', 'matrix-cell-strong');
                     cell.style.boxShadow = 'none';
                     cell.style.filter = 'saturate(1.5)';
                     cell.style.fontSize = '1.25rem';
                 });
             }
-
-            // 오른쪽 행렬의 열 강조
-            const rightRows = rightMatrix.querySelectorAll('.matrix-row');
-            rightRows.forEach(row => {
+            byId('matrix-t').querySelectorAll('.matrix-row').forEach(row => {
                 const cell = row.querySelectorAll('.matrix-cell')[colIndex];
-                if (cell) {
-                    cell.classList.add('bounce', 'matrix-cell-strong');
-                    cell.style.boxShadow = '';
-                    cell.style.filter = '';
-                    cell.style.fontSize = '';
-                }
+                if (cell) cell.classList.add('bounce', 'matrix-cell-strong');
             });
         }
 
         function removeHighlight() {
-            document.querySelectorAll('.matrix-cell.bounce').forEach(cell => {
-                cell.classList.remove('bounce');
-            });
-            document.querySelectorAll('.matrix-cell.matrix-cell-strong').forEach(cell => {
-                cell.classList.remove('matrix-cell-strong');
+            document.querySelectorAll('.matrix-cell.bounce, .matrix-cell.matrix-cell-strong').forEach(cell => {
+                cell.classList.remove('bounce', 'matrix-cell-strong');
                 cell.style.boxShadow = '';
                 cell.style.filter = '';
                 cell.style.fontSize = '';
             });
         }
 
-        // 크기 변경
-        function handleSizeChange() {
-            const m = parseInt(document.getElementById('matrix-a-rows').value);
-            const n = parseInt(document.getElementById('matrix-a-cols').value);
-            const p = parseInt(document.getElementById('matrix-t-cols').value);
+        // ===== 계산 =====
+        function calculateMatrixMultiplication() {
+            const left = readGrid('matrix-a');
+            const right = readGrid('matrix-t');
+            const resultCells = document.querySelectorAll('#matrix-r .result-cell');
+            if (!left.length || !right.length || left[0].length !== right.length) return;
+            const p = right[0].length;
 
-            if (m < 1 || n < 1 || p < 1 || m > 5 || n > 5 || p > 5) {
-                alert('행렬 크기는 1부터 5 사이여야 합니다.');
+            left.forEach((row, i) => {
+                for (let j = 0; j < p; j++) {
+                    const value = row.reduce((sum, x, k) => sum + x * right[k][j], 0);
+                    const cell = resultCells[i * p + j];
+                    if (cell) {
+                        cell.textContent = value;
+                        paint(cell, value);
+                    }
+                }
+            });
+        }
+
+        // ===== 버튼 동작 =====
+        // 크기 선택 상자를 바꾸면: 겹치는 칸 값은 그대로, 새 칸은 A면 다음 숫자(10, 11…), T면 0
+        function handleSizeChange() {
+            const m = parseInt(byId('matrix-a-rows').value);
+            const n = parseInt(byId('matrix-a-cols').value);
+            const p = parseInt(byId('matrix-t-cols').value);
+            const fill = (id, grid, rows, cols) =>
+                resizeGrid(grid, rows, cols, id === inputId() ? counterAfter(grid) : () => 0);
+            layout(fill('matrix-a', readGrid('matrix-a'), m, n), fill('matrix-t', readGrid('matrix-t'), n, p));
+            showSwapMessage('');
+        }
+
+        // 초기화: 모두 0
+        function resetMatrices() {
+            const zero = (grid) => grid.map((row) => row.map(() => 0));
+            layout(zero(readGrid('matrix-a')), zero(readGrid('matrix-t')));
+        }
+
+        // 역할 뒤집기: 왼쪽·오른쪽 행렬을 그대로 맞바꿈 (A×T ↔ T×A)
+        // 곱할 수 있으려면 새 왼쪽(지금 오른쪽)의 열 수 = 새 오른쪽(지금 왼쪽)의 행 수
+        function swapRoles() {
+            const left = readGrid('matrix-a'), right = readGrid('matrix-t');
+            const L = isAT ? 'T' : 'A', R = isAT ? 'A' : 'T';   // 뒤집은 뒤의 왼쪽·오른쪽 이름
+            const size = (g) => `${g.length}×${g[0].length}`;
+            if (right[0].length !== left.length) {
+                showSwapMessage(`${L} × ${R}는 계산할 수 없어요. ${L}(${size(right)})의 열 수(${right[0].length})와 ` +
+                    `${R}(${size(left)})의 행 수(${left.length})가 같아야 행렬을 곱할 수 있습니다. 크기를 맞춘 뒤 다시 눌러 보세요.`);
                 return;
             }
-
-            createMatrix('matrix-a', m, n);
-            
-            // A×T 모드에서만 A에 초기값과 색상 적용
-            if (isAT) {
-                const matrixAInputs = document.querySelectorAll('#matrix-a input');
-                const initialValues = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-                matrixAInputs.forEach((input, index) => {
-                    if (index < initialValues.length) {
-                        input.value = initialValues[index];
-                        updateColorForInputA(input);
-                    }
-                });
-            }
-
-            createMatrix('matrix-t', n, p, document.getElementById('binary-only').checked);
-            
-            // T×A 모드에서는 T에 색상 적용
-            if (!isAT) {
-                const matrixTInputs = document.querySelectorAll('#matrix-t input');
-                const initialValues = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-                matrixTInputs.forEach((input, index) => {
-                    if (index < initialValues.length) {
-                        input.value = initialValues[index];
-                        updateColorForInputA(input);
-                    }
-                });
-            }
-            
-            createResultMatrix(m, p);
-
-            calculateMatrixMultiplication();
-        }
-
-        // A 색상 업데이트
-        function updateColorForInputA(element) {
-            const value = parseInt(element.value);
-            if (value >= 0 && value <= 9) {
-                const colorInfo = colorMap[value];
-                element.style.backgroundColor = colorInfo.bg;
-                element.style.color = colorInfo.text;
-            } else {
-                element.style.backgroundColor = '#e0e0e0';
-                element.style.color = 'black';
-            }
-        }
-
-        // 결과 색상 업데이트
-        function updateColorForResultCell(element, value) {
-            if (value >= 0 && value <= 9) {
-                const colorInfo = colorMap[value];
-                element.style.backgroundColor = colorInfo.bg;
-                element.style.color = colorInfo.text;
-            } else {
-                let h = (value * 25) % 360;
-                let s = 80, l = 50;
-                element.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
-                element.style.color = l > 60 ? 'black' : 'white';
-            }
-        }
-
-        // 행렬 값 읽기
-        function getMatrixValues(matrixId) {
-            const matrix = [];
-            const inputs = document.querySelectorAll(`#${matrixId} input`);
-            const rows = matrixId === 'matrix-a' ?
-                parseInt(document.getElementById('matrix-a-rows').value) :
-                parseInt(document.getElementById('matrix-a-cols').value);
-            const cols = matrixId === 'matrix-a' ?
-                parseInt(document.getElementById('matrix-a-cols').value) :
-                parseInt(document.getElementById('matrix-t-cols').value);
-
-            for (let i = 0; i < rows; i++) {
-                matrix[i] = [];
-                for (let j = 0; j < cols; j++) {
-                    const value = parseInt(inputs[i * cols + j].value) || 0;
-                    matrix[i][j] = value;
-                }
-            }
-            return matrix;
-        }
-
-        // 행렬 곱셈
-        function calculateMatrixMultiplication() {
-            try {
-                const matrixA = getMatrixValues('matrix-a');
-                const matrixT = getMatrixValues('matrix-t');
-                const resultCells = document.querySelectorAll('#matrix-r .result-cell');
-                const m = matrixA.length;
-                const n = matrixA[0].length;
-                const p = matrixT[0].length;
-
-                const resultMatrix = Array(m).fill().map(() => Array(p).fill(0));
-
-                for (let i = 0; i < m; i++) {
-                    for (let j = 0; j < p; j++) {
-                        let sum = 0;
-                        for (let k = 0; k < n; k++) {
-                            sum += matrixA[i][k] * matrixT[k][j];
-                        }
-                        resultMatrix[i][j] = sum;
-                    }
-                }
-
-                for (let i = 0; i < m; i++) {
-                    for (let j = 0; j < p; j++) {
-                        const value = resultMatrix[i][j];
-                        const cell = resultCells[i * p + j];
-                        if (cell) {
-                            cell.textContent = value;
-                            updateColorForResultCell(cell, value);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('행렬 곱셈 계산 중 오류 발생:', error);
-            }
-        }
-
-        // 초기화
-        function resetMatrices() {
-            const inputsA = document.querySelectorAll('#matrix-a input');
-            const inputsT = document.querySelectorAll('#matrix-t input');
-
-            inputsA.forEach(input => {
-                input.value = '0';
-                updateColorForInputA(input);
-            });
-
-            inputsT.forEach(input => {
-                input.value = '0';
-            });
-
-            calculateMatrixMultiplication();
-        }
-
-        // 역할 뒤집기
-        function swapRoles() {
-            console.log('역할 뒤집기 시작');
-            
-            // 현재 값 저장
-            const valuesA = getMatrixValues('matrix-a');
-            const valuesT = getMatrixValues('matrix-t');
-            
-            // 모드 전환
             isAT = !isAT;
-            console.log('모드:', isAT ? 'A×T' : 'T×A');
-            
-            // 크기 가져오기
-            const m = parseInt(document.getElementById('matrix-a-rows').value);
-            const n = parseInt(document.getElementById('matrix-a-cols').value);
-            const p = parseInt(document.getElementById('matrix-t-cols').value);
-            
-            // 크기 스왑 (A: m×n, T: n×p → A: n×p, T: m×n)
-            document.getElementById('matrix-a-rows').value = n;
-            document.getElementById('matrix-a-cols').value = p;
-            document.getElementById('matrix-t-cols').value = m;
-            
-            // 행렬 재생성
-            createMatrix('matrix-a', n, p);
-            createMatrix('matrix-t', p, m, document.getElementById('binary-only').checked);
-            createResultMatrix(n, m);
-            
-            // 값 스왑 (T → A, A → T)
-            const inputsA = document.querySelectorAll('#matrix-a input');
-            const inputsT = document.querySelectorAll('#matrix-t input');
-            
-            // T의 값을 A에
-            for (let i = 0; i < n; i++) {
-                for (let j = 0; j < p; j++) {
-                    const idx = i * p + j;
-                    if (inputsA[idx] && valuesT[i] && valuesT[i][j] !== undefined) {
-                        inputsA[idx].value = valuesT[i][j];
-                        // A×T 모드: #matrix-a에 색상 적용
-                        if (isAT) {
-                            updateColorForInputA(inputsA[idx]);
-                        }
-                    }
-                }
-            }
-            
-            // A의 값을 T에
-            for (let i = 0; i < p; i++) {
-                for (let j = 0; j < m; j++) {
-                    const idx = i * m + j;
-                    if (inputsT[idx] && valuesA[i] && valuesA[i][j] !== undefined) {
-                        inputsT[idx].value = valuesA[i][j];
-                        // T×A 모드: #matrix-t에 색상 적용
-                        if (!isAT) {
-                            updateColorForInputA(inputsT[idx]);
-                        }
-                    }
-                }
-            }
-            
-            // UI 업데이트
             updateLabels();
-            calculateMatrixMultiplication();
-            
-            console.log('역할 뒤집기 완료');
+            layout(right, left);
+            showSwapMessage('');
         }
 
-        // 라벨 업데이트
+        function showSwapMessage(text) {
+            const box = byId('swap-msg');
+            box.textContent = text ? '⚠ ' + text : '';
+            box.hidden = !text;
+        }
+
+        // 라벨·안내·버튼을 지금 역할에 맞게
         function updateLabels() {
-            const leftLabel = document.getElementById('left-label');
-            const rightLabel = document.getElementById('right-label');
-            const leftTitle = document.getElementById('left-title');
-            const rightTitle = document.getElementById('right-title');
-            const formulaDisplay = document.getElementById('formula-display');
-            const resultTitle = document.getElementById('result-title');
-            const hoverDesc = document.getElementById('hover-description');
-            
-            const leftContainer = document.getElementById('left-container');
-            const rightContainer = document.getElementById('right-container');
-            const randomBtn = document.getElementById('random-a-btn');
-            const transposeBtn = document.getElementById('transpose-a-btn');
-            const buttonGroup = randomBtn ? randomBtn.parentElement : null;
+            const leftContainer = byId('left-container');
+            const rightContainer = byId('right-container');
+            const L = isAT ? 'A' : 'T', Rn = isAT ? 'T' : 'A';   // 왼쪽·오른쪽 행렬 이름
 
-            if (isAT) {
-                // A×T 모드
-                leftLabel.textContent = '행렬 A 크기:';
-                rightLabel.textContent = '행렬 T 열 크기:';
-                leftTitle.textContent = '입력 행렬 A';
-                rightTitle.textContent = '변환 행렬 T';
-                formulaDisplay.textContent = 'A × T = R';
-                resultTitle.textContent = '결과 행렬 R = A × T';
-                hoverDesc.textContent = '강조되는 A 행렬의 행과 T 행렬의 열이 서로 곱해진 값들입니다.';
-                
-                leftContainer.classList.remove('transform-matrix');
-                leftContainer.classList.add('input-matrix');
-                rightContainer.classList.remove('input-matrix');
-                rightContainer.classList.add('transform-matrix');
-                
-                // 버튼 그룹을 왼쪽(A) 컨테이너로 이동
-                if (buttonGroup && buttonGroup.parentElement !== leftContainer) {
-                    leftContainer.appendChild(buttonGroup);
-                }
-            } else {
-                // T×A 모드
-                leftLabel.textContent = '행렬 T 크기:';
-                rightLabel.textContent = '행렬 A 열 크기:';
-                leftTitle.textContent = '입력 행렬 T';
-                rightTitle.textContent = '변환 행렬 A';
-                formulaDisplay.textContent = 'T × A = R';
-                resultTitle.textContent = '결과 행렬 R = T × A';
-                hoverDesc.textContent = '강조되는 T 행렬의 행과 A 행렬의 열이 서로 곱해진 값들입니다.';
-                
-                leftContainer.classList.remove('input-matrix');
-                leftContainer.classList.add('transform-matrix');
-                rightContainer.classList.remove('transform-matrix');
-                rightContainer.classList.add('input-matrix');
-                
-                // 버튼 그룹을 오른쪽(A) 컨테이너로 이동
-                if (buttonGroup && buttonGroup.parentElement !== rightContainer) {
-                    rightContainer.appendChild(buttonGroup);
-                }
-            }
+            byId('left-label').textContent = `행렬 ${L} 크기:`;
+            byId('right-label').textContent = `행렬 ${Rn} 열 크기:`;
+            byId('left-title').textContent = isAT ? '입력 행렬 A' : '변환 행렬 T';
+            byId('right-title').textContent = isAT ? '변환 행렬 T' : '입력 행렬 A';
+            byId('formula-display').textContent = `${L} × ${Rn} = R`;
+            byId('result-title').textContent = `결과 행렬 R = ${L} × ${Rn}`;
+            byId('hover-description').textContent = `강조되는 ${L} 행렬의 행과 ${Rn} 행렬의 열이 서로 곱해진 값들입니다.`;
+            byId('matrix-a-rows').title = `행렬 ${L}의 행 수 선택`;
+            byId('matrix-a-cols').title = `행렬 ${L}의 열 수 선택`;
+            byId('matrix-t-cols').title = `행렬 ${Rn}의 열 수 선택`;
+
+            const inputBox = isAT ? leftContainer : rightContainer;
+            const transformBox = isAT ? rightContainer : leftContainer;
+            inputBox.classList.remove('transform-matrix');
+            inputBox.classList.add('input-matrix');
+            transformBox.classList.remove('input-matrix');
+            transformBox.classList.add('transform-matrix');
+
+            // 역할에 딸린 안내·버튼을 그 역할의 행렬 쪽으로 옮김
+            // 입력 A: 입력 안내 + 랜덤·전치 버튼 / 변환 T: '0과 1만' 체크 + 랜덤 버튼
+            inputBox.insertBefore(byId('input-hint'), byId(inputId()));
+            inputBox.appendChild(byId('a-btn-row'));
+            transformBox.insertBefore(byId('binary-row'), byId(transformId()));
+            transformBox.appendChild(byId('t-btn-row'));
         }
 
-        // 랜덤 값 생성 (현재 A 역할을 하는 행렬에 적용)
+        // 입력 행렬 A에 1~9 랜덤 값
         function generateRandomValues() {
-            console.log('랜덤 값 생성 시작, 모드:', isAT ? 'A×T' : 'T×A');
-            
-            // A×T 모드: #matrix-a가 A
-            // T×A 모드: #matrix-t가 A (두 번째 위치)
-            const targetId = isAT ? 'matrix-a' : 'matrix-t';
-            const inputs = document.querySelectorAll(`#${targetId} input`);
-            console.log(`대상 행렬: ${targetId}, input 개수:`, inputs.length);
-            
-            inputs.forEach((input, index) => {
-                // 1~9 사이의 랜덤 값 생성
-                const randomValue = Math.floor(Math.random() * 9) + 1;
-                input.value = randomValue;
-                console.log(`Input ${index}: ${randomValue}`);
-                // A 역할을 하는 행렬에 색상 적용
-                updateColorForInputA(input);
-            });
-            
-            calculateMatrixMultiplication();
-            console.log('랜덤 값 생성 완료');
+            const random = (grid) => grid.map((row) => row.map(() => Math.floor(Math.random() * 9) + 1));
+            const left = readGrid('matrix-a'), right = readGrid('matrix-t');
+            if (isAT) layout(random(left), right);
+            else layout(left, random(right));
         }
 
-        // 전치행렬 생성 (현재 A 역할을 하는 행렬에 적용)
+        // 변환 행렬 T에 랜덤 값 (0·1만이면 0 또는 1, 아니면 1~9)
+        function generateRandomTransform() {
+            const random = (grid) => grid.map((row) => row.map(() =>
+                (binaryOnly() ? Math.round(Math.random()) : Math.floor(Math.random() * 9) + 1)));
+            const left = readGrid('matrix-a'), right = readGrid('matrix-t');
+            if (isAT) layout(left, random(right));
+            else layout(random(left), right);
+        }
+
+        // 입력 행렬 A를 전치. 곱할 수 있게 T의 크기도 맞추고, 겹치는 칸 값은 그대로 (새 칸은 0)
         function transposeMatrixA() {
-            console.log('전치행렬 시작, 모드:', isAT ? 'A×T' : 'T×A');
-            
-            // 현재 값들을 먼저 모두 저장
-            const valuesA = getMatrixValues('matrix-a');
-            const valuesT = getMatrixValues('matrix-t');
-            
-            // 크기 정보 저장
-            const m = parseInt(document.getElementById('matrix-a-rows').value);
-            const n = parseInt(document.getElementById('matrix-a-cols').value);
-            const p = parseInt(document.getElementById('matrix-t-cols').value);
-            
-            if (isAT) {
-                // A×T 모드: #matrix-a를 전치
-                console.log(`A 전치: ${m}×${n} → ${n}×${m}`);
-                
-                // 새로운 크기 설정
-                document.getElementById('matrix-a-rows').value = n;
-                document.getElementById('matrix-a-cols').value = m;
-                
-                // 행렬 재생성
-                createMatrix('matrix-a', n, m);
-                createMatrix('matrix-t', m, p, document.getElementById('binary-only').checked);
-                createResultMatrix(n, p);
-                
-                // A 전치 값 적용
-                const inputsA = document.querySelectorAll('#matrix-a input');
-                for (let i = 0; i < n; i++) {
-                    for (let j = 0; j < m; j++) {
-                        const idx = i * m + j;
-                        const value = valuesA[j][i];
-                        if (inputsA[idx]) {
-                            inputsA[idx].value = value;
-                            updateColorForInputA(inputsA[idx]);
-                        }
-                    }
-                }
-                
-                // T 값 복원
-                const inputsT = document.querySelectorAll('#matrix-t input');
-                for (let i = 0; i < m; i++) {
-                    for (let j = 0; j < p; j++) {
-                        const idx = i * p + j;
-                        if (inputsT[idx] && valuesT[i] && valuesT[i][j] !== undefined) {
-                            inputsT[idx].value = valuesT[i][j];
-                        }
-                    }
-                }
-                
-            } else {
-                // T×A 모드: #matrix-t를 전치
-                console.log(`T 전치: ${n}×${p} → ${p}×${n}`);
-                
-                // 새로운 크기 설정
-                document.getElementById('matrix-a-cols').value = p;  // A의 열 = T의 새 행
-                document.getElementById('matrix-t-cols').value = n;  // T의 새 열
-                
-                // 행렬 재생성
-                createMatrix('matrix-a', m, p);
-                createMatrix('matrix-t', p, n, document.getElementById('binary-only').checked);
-                createResultMatrix(m, n);
-                
-                // T 전치 값 적용
-                const inputsT = document.querySelectorAll('#matrix-t input');
-                for (let i = 0; i < p; i++) {
-                    for (let j = 0; j < n; j++) {
-                        const idx = i * n + j;
-                        const value = valuesT[j][i];
-                        if (inputsT[idx]) {
-                            inputsT[idx].value = value;
-                            updateColorForInputA(inputsT[idx]);
-                        }
-                    }
-                }
-                
-                // A 값 복원
-                const inputsA = document.querySelectorAll('#matrix-a input');
-                for (let i = 0; i < m; i++) {
-                    for (let j = 0; j < p; j++) {
-                        const idx = i * p + j;
-                        if (inputsA[idx] && valuesA[i] && valuesA[i][j] !== undefined) {
-                            inputsA[idx].value = valuesA[i][j];
-                        }
-                    }
-                }
-            }
-            
-            calculateMatrixMultiplication();
-            console.log('전치 완료');
+            const transpose = (g) => g[0].map((_, j) => g.map((row) => row[j]));
+            const At = transpose(readGrid(inputId()));
+            const T = readGrid(transformId());
+            if (isAT) layout(At, resizeGrid(T, At[0].length, T[0].length, () => 0));   // A×T: T의 행 수 = A의 열 수
+            else layout(resizeGrid(T, T.length, At.length, () => 0), At);              // T×A: T의 열 수 = A의 행 수
         }
 
-        // 이벤트 리스너
+        // ===== 시작 =====
         document.addEventListener('DOMContentLoaded', function () {
-            // 초기 행렬 생성
-            handleSizeChange();
-
-            // A에 1~9 채우기
-            const matrixAInputs = document.querySelectorAll('#matrix-a input');
-            const initialValues = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-            matrixAInputs.forEach((input, index) => {
-                if (index < initialValues.length) {
-                    input.value = initialValues[index];
-                    updateColorForInputA(input);
-                }
-            });
-
-            // 크기 변경 이벤트
-            document.getElementById('matrix-a-rows').addEventListener('change', handleSizeChange);
-            document.getElementById('matrix-a-cols').addEventListener('change', handleSizeChange);
-            document.getElementById('matrix-t-cols').addEventListener('change', handleSizeChange);
-
-            // 이진 입력 모드
-            document.getElementById('binary-only').addEventListener('change', function () {
-                const n = parseInt(document.getElementById('matrix-a-cols').value);
-                const p = parseInt(document.getElementById('matrix-t-cols').value);
-                createMatrix('matrix-t', n, p, this.checked);
-                calculateMatrixMultiplication();
-            });
-
-            // 버튼 이벤트
-            document.getElementById('swap-role-btn').addEventListener('click', swapRoles);
-            document.getElementById('reset-btn').addEventListener('click', resetMatrices);
-            
-            const randomBtn = document.getElementById('random-a-btn');
-            if (randomBtn) {
-                console.log('랜덤 버튼 찾음:', randomBtn);
-                randomBtn.addEventListener('click', function() {
-                    console.log('랜덤 버튼 클릭됨!');
-                    generateRandomValues();
-                });
-            } else {
-                console.error('랜덤 버튼을 찾을 수 없음');
-            }
-
-            const transposeBtn = document.getElementById('transpose-a-btn');
-            if (transposeBtn) {
-                console.log('전치 버튼 찾음:', transposeBtn);
-                transposeBtn.addEventListener('click', function() {
-                    console.log('전치 버튼 클릭됨!');
-                    transposeMatrixA();
-                });
-            } else {
-                console.error('전치 버튼을 찾을 수 없음');
-            }
-
-            // 변환행렬 T 랜덤 버튼
-            const randomTBtn = document.getElementById('random-t-btn');
-            if (randomTBtn) {
-                randomTBtn.addEventListener('click', function() {
-                    const binaryOnly = document.getElementById('binary-only').checked;
-                    const inputs = document.querySelectorAll('#matrix-t input');
-                    inputs.forEach(input => {
-                        input.value = binaryOnly
-                            ? Math.round(Math.random())          // 0 또는 1
-                            : Math.floor(Math.random() * 9) + 1; // 1~9
-                    });
-                    calculateMatrixMultiplication();
-                });
-            }
-
-            // 초기 라벨 설정
+            // 처음 화면: A는 1, 2, 3…, T는 0
+            const m = parseInt(byId('matrix-a-rows').value);
+            const n = parseInt(byId('matrix-a-cols').value);
+            const p = parseInt(byId('matrix-t-cols').value);
+            layout(resizeGrid([], m, n, counterAfter([])), resizeGrid([], n, p, () => 0));
             updateLabels();
 
-            // 초기 계산
-            calculateMatrixMultiplication();
+            byId('matrix-a-rows').addEventListener('change', handleSizeChange);
+            byId('matrix-a-cols').addEventListener('change', handleSizeChange);
+            byId('matrix-t-cols').addEventListener('change', handleSizeChange);
+
+            // '0과 1만' 바꾸기: T를 다시 그림 (값은 그대로, 0·1만이면 2 이상은 1로)
+            byId('binary-only').addEventListener('change', () => layout(readGrid('matrix-a'), readGrid('matrix-t')));
+
+            byId('swap-role-btn').addEventListener('click', swapRoles);
+            byId('reset-btn').addEventListener('click', resetMatrices);
+            byId('random-a-btn').addEventListener('click', generateRandomValues);
+            byId('transpose-a-btn').addEventListener('click', transposeMatrixA);
+            byId('random-t-btn').addEventListener('click', generateRandomTransform);
         });
     </script>
 </body>
