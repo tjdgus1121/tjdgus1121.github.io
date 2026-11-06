@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="재난 대피소의 두 전원 선택으로 XOR의 필요성을 발견하고, NAND·OR 뉴런의 가중합과 임계값 α를 직접 탐구하는 모션그래픽입니다.">
+  <title>대피소의 전원을 복구하라! · XOR 모션 탐구</title>
+  <link rel="icon" href="../../../favicon.ico">
+  <link rel="stylesheet" href="xor-motion.css">
+  <script src="xor-power-math.js" defer></script>
+  <script src="xor-motion.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#player">모션으로 바로 가기</a>
+  <header class="site-head">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">↯</span><span>논리 탐구실<small>MATHEMATICS IN MOTION</small></span></a>
+    <span class="head-title">대피소의 전원을 복구하라!</span>
+    <a class="head-link" href="#practice" id="practiceLink">직접 풀어보기 <span aria-hidden="true">↗</span></a>
+  </header>
+  <main>
+    <nav class="chapter-nav" aria-label="모션 장면 선택" id="chapters"></nav>
+    <section class="player" id="player" aria-label="XOR 모션그래픽">
+      <div class="scene-head">
+        <div><p class="eyebrow" id="sceneKicker">MISSION 01 · 전원 선택</p><h1 id="sceneTitle">폭우가 내린 날, 대피소가 어두워졌어요.</h1></div>
+        <span class="scene-count" id="sceneCount">01 / 09</span>
+      </div>
+      <div class="scene-body" id="sceneBody" data-scene="0">
+        <div id="visual" class="visual"></div>
+        <div id="sceneDetail" class="scene-detail"></div>
+      </div>
+      <div class="explore-bar">
+        <span class="explore-label">두 요청을 직접 바꿔보세요</span>
+        <button type="button" class="source-toggle utility" id="inputX" aria-pressed="false"><span class="switch-dot" aria-hidden="true"></span>일반 전원 <b id="valueX">0</b></button>
+        <button type="button" class="source-toggle generator" id="inputY" aria-pressed="false"><span class="switch-dot" aria-hidden="true"></span>비상발전기 <b id="valueY">0</b></button>
+        <button type="button" class="follow-btn" id="followBtn" hidden>장면으로 돌아가기 ↩</button>
+        <span class="mode-tag" id="modeTag">장면 따라보기</span>
+      </div>
+      <div class="caption"><span class="guide-avatar" aria-hidden="true">↯</span><p id="caption" role="status" aria-live="polite" aria-atomic="true">재생 버튼을 누르면 대피소 이야기부터 시작합니다. 화면 안의 버튼을 눌러 직접 실험할 수도 있어요.</p></div>
+      <div class="player-controls">
+        <div class="transport">
+          <button type="button" id="restart" class="icon-btn" aria-label="처음부터 다시 보기" title="처음부터">↺</button>
+          <button type="button" id="prev" class="icon-btn" aria-label="이전 설명 단계" title="이전 설명">‹</button>
+          <button type="button" id="play" class="play-btn" aria-label="모션 재생">▶ 이야기 시작</button>
+          <button type="button" id="next" class="icon-btn" aria-label="다음 설명 단계" title="다음 설명">›</button>
+        </div>
+        <label class="sr-only" for="seek">전체 재생 위치</label>
+        <input id="seek" class="seek" type="range" min="0" max="490" step="0.1" value="0" aria-valuetext="0분 0초">
+        <output id="clock" class="clock">0:00 / 8:10</output>
+        <label class="sr-only" for="speed">재생 속도</label>
+        <select id="speed" aria-label="재생 속도"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
+        <button type="button" id="full" class="icon-btn" aria-label="모션 전체 화면" title="전체 화면">⛶</button>
+      </div>
+    </section>
+    <p class="player-hint">스페이스: 재생·정지 <span>← →: 설명 단계 이동</span> <span>생각하기 질문에서는 재생이 잠시 멈춥니다.</span></p>
+    <section class="practice" id="practice" hidden aria-labelledby="practiceTitle">
+      <div class="section-title"><div><p class="eyebrow">YOUR TURN · 직접 실험하고 풀기</p><h2 id="practiceTitle" tabindex="-1">이번에는 내가 전원 선택 검사관!</h2></div><button type="button" id="hidePractice" class="text-btn">모션으로 돌아가기 ↑</button></div>
+      <div class="lab-grid">
+        <article class="lab-panel">
+          <h3>① 네 가지 선택을 모두 시험해요</h3>
+          <div class="lab-inputs"><button type="button" id="labX" class="source-toggle utility" aria-pressed="false">일반 전원 <b>0</b></button><button type="button" id="labY" class="source-toggle generator" aria-pressed="true">비상발전기 <b>1</b></button></div>
+          <div id="labResult" class="lab-result" role="status" aria-live="polite"></div>
+          <p class="small-note" id="labSupply"></p>
+          <h3>② α를 바꾸고 예측을 확인해요</h3>
+          <label class="alpha-label" for="alphaSlider">마지막 뉴런의 문턱 α <output id="alphaLabel">1.500</output></label>
+          <input type="range" id="alphaSlider" min="0" max="3" step="0.001" value="1.5">
+          <div class="alpha-presets"><button type="button" data-alpha="1">1</button><button type="button" data-alpha="1.5">1.5</button><button type="button" data-alpha="2">2</button><button type="button" data-alpha="2.001">2.001</button></div>
+          <label class="prediction-label" for="alphaPrediction">이 α는 네 경우에서 모두 작동할까요?</label>
+          <select id="alphaPrediction"><option value="">먼저 예상해 보세요</option value="yes">모두 작동할 것 같아요</option><option value="no">실패하는 경우가 있을 것 같아요</option></select>
+          <button type="button" class="primary-btn" id="checkAlpha">네 경우 검사하기</button>
+          <div id="alphaCheck" class="alpha-check" role="status" aria-live="polite"></div>
+        </article>
+        <article class="lab-panel quiz-panel">
+          <div class="quiz-top"><h3>③ 스스로 문제 풀기</h3><span id="quizScore">0 / 10 확인</span></div>
+          <nav id="quizNav" class="quiz-nav" aria-label="연습 문제 선택"></nav>
+          <form id="quizForm">
+            <p class="eyebrow" id="questionTag"></p><h4 id="questionTitle"></h4>
+            <div id="questionFields" class="question-fields"></div>
+            <div class="quiz-actions"><button type="submit" class="primary-btn">답 확인하기</button><button type="button" class="text-btn" id="hintBtn">힌트 보기</button></div>
+          </form>
+          <p id="quizHint" class="hint-box" hidden></p>
+          <div id="quizFeedback" class="quiz-feedback" role="status" aria-live="polite"></div>
+          <button type="button" id="nextQuestion" class="next-question">다음 문제 →</button>
+          <p class="small-note">답과 진도는 이 브라우저에만 저장됩니다. <button type="button" id="clearPractice" class="inline-btn">내 연습 기록 지우기</button></p>
+        </article>
+      </div>
+    </section>
+    <details class="teacher-notes">
+      <summary>장면별 설명과 수학적 근거</summary>
+      <div id="transcript"></div>
+      <p>이 수업의 입력은 <b>전원 선택 요청</b>, 출력은 <b>단일 선택의 유효성</b>입니다. 두 전원이 사용 가능하고 다른 조건은 충족한 상황에서 요청 검사를 모델링합니다. 기존 공급원과 새 선택 요청은 별도로 표시합니다.</p>
+      <p>전원 전환의 배경: <a href="https://www.eaton.com/ca/en-gb/products/low-voltage-power-distribution-control-systems/automatic-transfer-switches/automatic-transfer-switch-fundamentals.html" target="_blank" rel="noopener">Eaton의 전원 전환 방식 설명</a>. 이 수업은 두 전원을 함께 연결하지 않는 방식을 가정합니다.</p>
+    </details>
+    <footer class="page-foot"><a href="index.html">← 논리 연산 단원</a><span>요청에서 논리로, 논리에서 뉴런으로.</span><a href="lab.html#lab-neuron">기존 퍼셉트론 실험 ↗</a></footer>
+  </main>
+  <dialog id="checkpoint" aria-labelledby="checkpointTitle">
+    <form method="dialog" class="checkpoint-card">
+      <p class="eyebrow">잠깐, 먼저 예상해 볼까요?</p><h2 id="checkpointTitle"></h2>
+      <div id="checkpointOptions" class="checkpoint-options"></div>
+      <p id="checkpointFeedback" class="checkpoint-feedback" role="status" aria-live="polite"></p>
+      <button type="button" id="checkpointContinue" class="primary-btn" disabled>선택한 뒤 이어보기 →</button>
+      <button type="submit" class="text-btn">닫고 잠시 멈추기</button>
+    </form>
+  </dialog>
+  <noscript><p class="noscript">이 모션은 JavaScript를 사용합니다. XOR는 두 입력 중 정확히 하나가 1일 때 1입니다. 주어진 뉴런의 마지막 합은 11·00에서 1, 10·01에서 2이므로 임계값은 1 &lt; α ≤ 2입니다.</p></noscript>
+</body>
+</html>

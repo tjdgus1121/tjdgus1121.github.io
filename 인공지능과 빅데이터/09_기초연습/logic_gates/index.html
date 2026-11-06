@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>논리 연산 탐구 | AND · OR · NOT · XOR · NAND · NOR</title>
+<meta name="description" content="논리합, 논리곱, 배타적 논리합, NOT, NAND, NOR를 모션 해설과 체험 웹앱으로 배웁니다. 어느 쪽부터 시작해도 됩니다.">
+<link rel="icon" href="../../../favicon.ico">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 20px 56px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; align-items: center; margin-bottom: 26px; }
+  .hero h1 { font-size: clamp(30px, 4.6vw, 50px); line-height: 1.15; letter-spacing: -.03em; color: var(--ink); margin: 10px 0 14px; }
+  .hero p { color: var(--muted); font-size: 17px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { font-family: var(--mono); font-weight: 800; font-size: 13px; padding: 3px 10px; border-radius: 999px; border: 2px solid currentColor; background: #fff; }
+  .hero svg { width: 100%; height: auto; display: block; }
+  .paths { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; margin-bottom: 30px; }
+  .path { display: flex; flex-direction: column; gap: 10px; padding: 22px 24px; background: var(--surface); border: 1.5px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); }
+  .path .k { font-family: var(--mono); font-weight: 800; font-size: 12px; letter-spacing: .12em; color: var(--c-xor); }
+  .path h2 { font-size: 24px; letter-spacing: -.02em; color: var(--ink); }
+  .path p { color: var(--text); }
+  .path ul { margin-left: 1.2em; color: var(--muted); font-size: 15px; }
+  .path .bar { height: 8px; border-radius: 4px; background: var(--paper-2); border: 1px solid var(--line-strong); overflow: hidden; }
+  .path .bar span { display: block; height: 100%; width: 0; background: var(--on); }
+  .path .meta { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .path .btn { align-self: flex-start; margin-top: auto; }
+  .tip { padding: 14px 18px; border-radius: 12px; background: #fff7df; border: 1.5px solid var(--on-dark); margin-bottom: 26px; color: #4a3500; }
+  .map { background: var(--surface); border: 1.5px solid var(--ink); border-radius: 16px; overflow: hidden; }
+  .map h2 { font-size: 18px; padding: 16px 20px 6px; color: var(--ink); }
+  .map p.sub { padding: 0 20px 12px; color: var(--muted); font-size: 14.5px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 10px 14px; border-top: 1px solid var(--line); text-align: left; font-size: 15px; vertical-align: middle; }
+  th { font-size: 12.5px; color: var(--muted); background: var(--paper-2); font-weight: 700; }
+  td.n { font-family: var(--mono); font-weight: 800; color: var(--muted); width: 42px; }
+  td a { font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
+  td a:hover { text-decoration: underline; }
+  .st { font-weight: 800; color: var(--ok); margin-left: 6px; }
+  .foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; color: var(--muted); font-size: 14px; }
+  @media (max-width: 820px) { .hero, .paths { grid-template-columns: minmax(0, 1fr); } th:nth-child(1), td.n { display: none; } th, td { padding: 8px 10px; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="chip">LOGIC</span>논리 연산 탐구</a>
+  <nav aria-label="논리 연산 단원">
+    <a href="index.html" aria-current="page">안내</a>
+    <a href="motion.html">모션 해설</a>
+    <a href="lab.html">체험 웹앱</a>
+    <a href="xor-motion.html">XOR 심화 미션</a>
+    <a href="../index.html">기초 연습</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <p class="chips" aria-label="다루는 연산">
+        <span style="color:var(--c-not)">NOT</span><span style="color:var(--c-and)">AND</span><span style="color:var(--c-or)">OR</span><span style="color:var(--c-xor)">XOR</span><span style="color:var(--c-nand)">NAND</span><span style="color:var(--c-nor)">NOR</span>
+      </p>
+      <h1>컴퓨터는 0과 1로<br>어떻게 생각할까?</h1>
+      <p>논리곱(AND), 논리합(OR), 배타적 논리합(XOR), 부정(NOT)과 NAND·NOR를 배웁니다. 각 연산이 <b>왜 그런 이름과 모양인지</b> 스위치 회로·진리표·벤 다이어그램으로 이해하고, 덧셈 회로와 AI 뉴런까지 이어 봅니다.</p>
+    </div>
+    <svg id="heroFig" viewBox="0 0 600 300" role="img" aria-label="두 스위치와 AND 게이트, 전구가 이어진 그림"></svg>
+  </section>
+
+  <div class="tip"><b>어느 쪽부터 해도 됩니다.</b> 처음 배운다면 <b>모션 해설 → 체험</b>, 어느 정도 안다면 <b>체험 → 모션 해설로 확인</b>을 권합니다. 두 활동은 주제마다 서로 바로 이어집니다.</div>
+
+  <section class="paths">
+    <article class="path">
+      <span class="k">PATH A · WATCH FIRST</span>
+      <h2>▶ 모션 해설 먼저</h2>
+      <p>11장, 약 9분. 자동으로 재생되고 장마다 멈추거나 되감을 수 있습니다. 자막과 대본도 있습니다.</p>
+      <ul><li>스위치 회로로 보는 AND·OR·XOR</li><li>NAND 하나로 모든 게이트 만들기</li><li>반가산기, XOR 암호, 퍼셉트론과 XOR 문제</li></ul>
+      <div class="bar" aria-hidden="true"><span id="barM"></span></div>
+      <span class="meta" id="metaM"></span>
+      <a class="btn btn-primary" href="motion.html" id="goM">모션 해설 시작 →</a>
+    </article>
+    <article class="path">
+      <span class="k">PATH B · TRY FIRST</span>
+      <h2>🔧 체험 웹앱 먼저</h2>
+      <p>직접 눌러 보며 규칙을 알아냅니다. 다섯 가지 활동이 있고 진도가 이 기기에 저장됩니다.</p>
+      <ul><li>게이트 실험실 · 정체를 밝혀라(추리)</li><li>회로 만들기 · 비트 연산과 XOR 암호</li><li>퍼셉트론: 뉴런의 직선 움직이기</li></ul>
+      <div class="bar" aria-hidden="true"><span id="barL"></span></div>
+      <span class="meta" id="metaL"></span>
+      <a class="btn btn-primary" href="lab.html">체험 웹앱 시작 →</a>
+    </article>
+  </section>
+
+  <section class="path" style="margin-bottom:30px;background:#eef5e9;border-color:#789682" aria-labelledby="xorMissionTitle">
+    <span class="k">STORY MISSION · XOR와 다층 퍼셉트론</span>
+    <h2 id="xorMissionTitle">대피소의 전원을 복구하라!</h2>
+    <p>일반 전원과 비상발전기 중 정확히 하나를 선택하려면? 두 버튼에서 시작해 NAND·OR 뉴런의 실제 계산과 문턱 α의 범위까지 이어집니다.</p>
+    <p class="meta">9장 · 약 8분 모션 · 직접 조작 · 기본 8문제 + 확장 2문제</p>
+    <a class="btn btn-primary" href="xor-motion.html">▶ 대피소 모션 시작하기</a>
+    <a href="xor-motion.html#practice" style="font-size:14px">직접 실험하고 문제 풀기 →</a>
+  </section>
+  <section class="map" aria-labelledby="mapTitle">
+    <h2 id="mapTitle">주제별 진도표</h2>
+    <p class="sub">같은 주제를 모션으로 보고, 체험으로 해 볼 수 있습니다. ✓는 이 기기에서 끝낸 것입니다.</p>
+    <table>
+      <thead><tr><th>#</th><th>주제</th><th>모션 해설</th><th>체험 웹앱</th></tr></thead>
+      <tbody id="mapBody"></tbody>
+    </table>
+  </section>
+  <div class="foot">
+    <span>진도는 이 브라우저에만 저장됩니다. 여러 사람이 쓰는 컴퓨터라면 끝난 뒤 지워 주세요.</span>
+    <button type="button" class="btn btn-small" id="resetBtn">내 진도 지우기</button>
+  </div>
+</main>
+
+<script src="logic.js"></script>
+<script src="circuits.js"></script>
+<script>
+(() => {
+  'use strict';
+  const L = window.Logic;
+  // 진도 판정: 주제 → 체험 활동 완료 조건
+  const LAB_DONE = {
+    basics: (p) => Object.keys(p).some((k) => k.startsWith('gate-')),
+    not: (p) => p['gate-NOT'], and: (p) => p['gate-AND'], or: (p) => p['gate-OR'], xor: (p) => p['gate-XOR'],
+    nandnor: (p) => p.mystery || (p['gate-NAND'] && p['gate-NOR']),
+    universal: (p) => p['build-not-nand'] && p['build-and-nand'] && p['build-or-nand'],
+    adder: (p) => p['build-adder'], bits: (p) => p.bits, neuron: (p) => p['neuron-XOR2']
+  };
+  const LAB_HREF = { not: 'lab.html#lab-gate?NOT', and: 'lab.html#lab-gate?AND', or: 'lab.html#lab-gate?OR', xor: 'lab.html#lab-gate?XOR', universal: 'lab.html#lab-build?not-nand', adder: 'lab.html#lab-build?adder' };
+  const MOTION_CH = ['ch-basics', 'ch-not', 'ch-and', 'ch-or', 'ch-xor', 'ch-nandnor', 'ch-universal', 'ch-adder', 'ch-bits', 'ch-neuron', 'ch-summary'];
+  function render() {
+    const pr = L.readProgress();
+    const body = document.getElementById('mapBody');
+    body.replaceChildren(...L.TOPICS.map((t, i) => {
+      const tr = document.createElement('tr');
+      const mDone = !!pr.motion[t.motion], lDone = !!(LAB_DONE[t.id] && LAB_DONE[t.id](pr.lab));
+      tr.innerHTML = `<td class="n">${String(i + 1).padStart(2, '0')}</td><td><b></b></td>
+        <td><a href="motion.html#${t.motion}">▶ ${MOTION_CH.indexOf(t.motion) + 1}장 보기</a>${mDone ? '<span class="st" aria-label="봤음">✓</span>' : ''}</td>
+        <td><a href="${LAB_HREF[t.id] || 'lab.html#' + t.lab}">🔧 ${t.labTitle}</a>${lDone ? '<span class="st" aria-label="끝냄">✓</span>' : ''}</td>`;
+      tr.querySelector('b').textContent = t.title;
+      return tr;
+    }));
+    const m = MOTION_CH.filter((c) => pr.motion[c]).length;
+    const l = L.TOPICS.filter((t) => LAB_DONE[t.id] && LAB_DONE[t.id](pr.lab)).length;
+    document.getElementById('barM').style.width = `${(m / MOTION_CH.length) * 100}%`;
+    document.getElementById('barL').style.width = `${(l / L.TOPICS.length) * 100}%`;
+    document.getElementById('metaM').textContent = `본 장 ${m} / ${MOTION_CH.length}`;
+    document.getElementById('metaL').textContent = `끝낸 주제 ${l} / ${L.TOPICS.length}`;
+    const next = MOTION_CH.find((c) => !pr.motion[c]);
+    const goM = document.getElementById('goM');
+    if (m && next) { goM.href = 'motion.html#' + next; goM.textContent = `이어서 ${MOTION_CH.indexOf(next) + 1}장부터 →`; }
+  }
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!window.confirm('이 브라우저에 저장된 모션·체험 진도를 모두 지울까요?')) return;
+    try { localStorage.removeItem('logicGates.progress.v1'); } catch (e) { /* 무시 */ }
+    render();
+  });
+  // 머리 그림: AND 회로 (A·B가 1초마다 바뀜)
+  const fig = document.getElementById('heroFig');
+  const net = window.Circuits.network(fig, {
+    inputs: [{ id: 'A', x: 70, y: 100 }, { id: 'B', x: 70, y: 210 }],
+    gates: [{ id: 'g', type: 'AND', x: 200, y: 105, in: ['A', 'B'], bend: [130, 160] }],
+    outputs: [{ id: 'o', label: 'A AND B', src: 'g', x: 430, y: 165 }]
+  }, { scale: 1.3 });
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let k = 3;
+  const tick = () => { const r = L.ROWS2[k % 4]; net.set({ A: r[0], B: r[1] }, 0); k++; };
+  tick();
+  if (!reduce) setInterval(tick, 1400);
+  render();
+  window.addEventListener('pageshow', render);
+})();
+</script>
+</body>
+</html>

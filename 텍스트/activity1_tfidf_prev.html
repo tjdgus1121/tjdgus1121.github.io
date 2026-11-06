@@ -1,0 +1,4601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TF-IDF 계산 체험 (형태소 분석)</title>
+    <link rel="stylesheet" href="./activity-nav.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="./activity-nav.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #818CF8;
+            --primary-dark: #3730A3;
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text: #1E293B;
+            --text-light: #64748B;
+            --border: #E2E8F0;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 1.5rem;
+        }
+
+        /* 로딩 오버레이 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .loading-subtext {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-top: 8px;
+        }
+
+        /* 설정 영역 */
+        .settings {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-size: 0.95rem;
+            color: var(--text);
+            user-select: none;
+        }
+
+        /* 문서 입력 영역 */
+        .documents-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .document-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .document-label {
+            min-width: 70px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+
+        .document-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .document-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            padding: 8px 12px;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-example { flex: 1; }
+        .btn-analyze { flex: 2; }
+
+        /* =========================================
+           품사 선택 — 그룹 칩 디자인
+           ========================================= */
+        .pos-tags-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .pos-tags-title {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9rem;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .pos-tags-hint {
+            font-size: 0.78rem;
+            color: var(--text-light);
+            font-weight: 400;
+        }
+
+        .pos-tags-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 그룹 행 */
+        .pos-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .pos-group-label {
+            flex-shrink: 0;
+            width: 64px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-light);
+            letter-spacing: 0.03em;
+            padding-top: 6px;
+            text-align: right;
+        }
+
+        .pos-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        /* 개별 칩 */
+        .pos-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            background: white;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: #64748B;
+            font-size: 0.82rem;
+            line-height: 1;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .pos-chip:hover {
+            border-color: var(--primary-light);
+            color: var(--primary);
+            background: #F5F3FF;
+        }
+
+        .pos-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 6px rgba(79,70,229,0.25);
+        }
+
+        .pos-chip-code {
+            font-size: 0.68rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            opacity: 0.65;
+            letter-spacing: 0.02em;
+        }
+
+        .pos-chip.active .pos-chip-code { opacity: 0.85; }
+
+        .pos-chip-name { font-weight: 600; }
+
+        .pos-chip-info {
+            font-size: 0.68rem;
+            opacity: 0;
+            margin-left: 1px;
+            transition: opacity 0.15s;
+            color: inherit;
+            cursor: pointer;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        .pos-chip:hover .pos-chip-info { opacity: 0.6; }
+        .pos-chip:hover .pos-chip-info:hover { opacity: 1; background: rgba(0,0,0,0.08); }
+        .pos-chip.active .pos-chip-info { opacity: 0.7; }
+        .pos-chip.active .pos-chip-info:hover { opacity: 1; }
+
+        /* 팝업 모달 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .modal-section {
+            margin-bottom: 20px;
+        }
+
+        .modal-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .modal-examples {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .modal-example-item {
+            padding: 4px 0;
+        }
+
+        /* 스텝 네비게이션 */
+        .step-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 64px;
+        }
+
+        .step-circle {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: 2.5px solid var(--border);
+            background: white;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .step-item.done .step-circle {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step-item.active .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+            transform: scale(1.1);
+        }
+
+        .step-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-light);
+            white-space: nowrap;
+            transition: color 0.2s;
+        }
+
+        .step-item.active .step-label {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .step-item.done .step-label {
+            color: var(--success);
+        }
+
+        .step-connector {
+            flex: 1;
+            height: 3px;
+            background: var(--border);
+            min-width: 20px;
+            max-width: 80px;
+            margin-bottom: 22px;
+            transition: background 0.4s;
+            border-radius: 99px;
+        }
+
+        .step-connector.done {
+            background: var(--success);
+        }
+
+        /* 슬라이더 이전/다음 버튼 */
+        .step-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1.5px solid var(--border);
+        }
+
+        .step-info-center {
+            font-size: 0.88rem;
+            color: var(--text-light);
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .btn-step {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 22px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-step-prev {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-step-prev:hover:not(:disabled) { background: #F0F0FF; }
+
+        .btn-step-next {
+            background: var(--primary);
+            color: white;
+            border: 2px solid var(--primary);
+        }
+
+        .btn-step-next:hover:not(:disabled) { background: var(--primary-dark); }
+
+        .btn-step:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        /* 수식 영역 */
+        .formula-box {
+            background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
+            border: 2px solid #BAE6FD;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .formula-title {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .formula {
+            font-size: 1.3rem;
+        }
+
+        /* 테이블 스타일 */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 14px 18px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+
+        th {
+            background: var(--bg);
+            font-weight: 700;
+            color: var(--text);
+            position: sticky;
+            top: 0;
+        }
+
+        th:first-child {
+            text-align: left;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+        td:first-child {
+            text-align: left;
+            font-weight: 600;
+            background: #F8FAFC;
+            color: var(--primary);
+        }
+
+        tr:hover td {
+            background: #F1F5F9;
+        }
+
+        tr:hover td:first-child {
+            background: #EEF2FF;
+        }
+
+        /* 히트맵 색상 */
+        .heat-0 { background: #FEF2F2 !important; }
+        .heat-1 { background: #FEE2E2 !important; }
+        .heat-2 { background: #FECACA !important; }
+        .heat-3 { background: #FCA5A5 !important; }
+        .heat-4 { background: #F87171 !important; }
+        .heat-5 { background: #EF4444 !important; color: white; }
+        .heat-6 { background: #DC2626 !important; color: white; }
+        .heat-7 { background: #B91C1C !important; color: white; }
+        .heat-8 { background: #991B1B !important; color: white; }
+        .heat-9 { background: #7F1D1D !important; color: white; }
+
+        /* 탭 콘텐츠 */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* DF/IDF 특별 테이블 */
+        .df-row {
+            background: linear-gradient(135deg, #ECFDF5, #D1FAE5) !important;
+        }
+
+        .idf-row {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A) !important;
+        }
+
+        .single-doc-warning {
+            display: none;
+            background: #FEF3C7;
+            border: 1px solid #F59E0B;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            color: #92400E;
+            font-size: 0.9rem;
+        }
+
+        /* 설명 텍스트 */
+        .description {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #F8FAFC;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* 단어 클릭 효과 */
+        .clickable-word {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .clickable-word:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        .selected-word {
+            background: #C7D2FE !important;
+            font-weight: 700;
+        }
+
+        /* 핵심 단어 선택 패널 */
+        .word-selector-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1px solid var(--border);
+        }
+
+        .word-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .word-selector-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .word-selector-meta {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .word-selector-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-reset-top {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-reset-top:hover { background: var(--primary-dark); }
+
+        .btn-clear-sel {
+            background: white;
+            color: var(--text-light);
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-clear-sel:hover { border-color: var(--danger); color: var(--danger); }
+
+        .word-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .word-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 99px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            cursor: pointer;
+            transition: all 0.18s;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-light);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .word-chip:hover {
+            border-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .word-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            font-weight: 700;
+        }
+
+        .word-chip.top-rank {
+            border-color: #F59E0B;
+        }
+
+        .word-chip.active.top-rank {
+            background: linear-gradient(135deg, var(--primary), #7C3AED);
+            border-color: var(--primary);
+        }
+
+        .chip-score {
+            font-size: 0.75rem;
+            opacity: 0.75;
+        }
+
+        .chip-rank {
+            font-size: 0.7rem;
+            background: rgba(255,255,255,0.3);
+            border-radius: 99px;
+            padding: 0 5px;
+            font-weight: 700;
+        }
+
+/* TF 총합계 행 */
+        .tf-sum-row { background: #FEF3C7; font-weight: 700; }
+        .tf-sum-row td:first-child { background: #FCD34D; color: #92400E; }
+        .tf-sum-row td:not(:first-child) { color: #92400E; }
+
+        #wordSelectorCard { display: none; }
+
+        /* ── TF-IDF 탭 좌우 레이아웃 ── */
+        .tfidf-layout {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .tfidf-table-side {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .tfidf-cloud-side {
+            flex: 0 0 320px;
+            width: 320px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        @media (max-width: 860px) {
+            .tfidf-layout { flex-direction: column; }
+            .tfidf-cloud-side { flex: none; width: 100%; }
+        }
+
+        /* 워드클라우드 토글 버튼 */
+        .wc-toggle {
+            display: flex;
+            gap: 4px;
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 4px;
+            width: 100%;
+        }
+
+        .wc-btn {
+            flex: 1;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .wc-btn:first-child { border-right: none; }
+
+        .wc-btn:hover:not(.active) {
+            background: rgba(79, 70, 229, 0.07);
+            color: var(--primary);
+        }
+
+        .wc-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .wc-btn.active.tfidf-mode {
+            background: #DC2626;
+            box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
+        }
+
+        .wc-label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+        }
+
+        #wordCloudCanvas {
+            width: 288px !important;
+            height: 288px !important;
+            border-radius: 14px;
+            background: white;
+            border: 1.5px solid rgba(79, 70, 229, 0.15);
+            box-shadow: 0 6px 24px rgba(79, 70, 229, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: block;
+        }
+
+        .wc-diff {
+            width: 100%;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            line-height: 1.7;
+        }
+
+        .wc-diff-title {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+            font-size: 0.82rem;
+        }
+
+        .wc-up   { color: #DC2626; font-weight: 600; }
+        .wc-down { color: #6366F1; font-weight: 600; }
+
+        /* 범례 */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* 토큰화 결과 미리보기 */
+        .preview-section {
+            margin-top: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+            border-radius: 10px;
+            border: 1px solid #BBF7D0;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .preview-tokens {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .token {
+            padding: 6px 12px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border: 1px solid #86EFAC;
+        }
+
+        .token .tag {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-left: 4px;
+        }
+
+        /* 형태소 분석 결과 */
+        .morpheme-result {
+            margin-top: 16px;
+            padding: 16px;
+            background: #F8FAFC;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .morpheme-sentence {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .morpheme-sentence:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .morpheme-sentence-label {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.88rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .morpheme-sentence-orig {
+            font-weight: 400;
+            font-size: 0.82rem;
+            color: var(--text-light);
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 600px;
+        }
+
+        /* =====================
+           아치형 형태소 토큰
+           ===================== */
+        .morpheme-tokens {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            align-items: flex-end;
+            padding: 8px 0;
+        }
+
+        .morph-token-wrapper {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .morph-token {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            transition: transform 0.15s ease;
+        }
+
+        .morph-token:hover { transform: translateY(-3px); }
+
+        .morph-tag-badge {
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            line-height: 1.5;
+            text-align: center;
+            min-width: 28px;
+        }
+
+        .morph-arc {
+            width: 70%;
+            min-width: 18px;
+            height: 14px;
+            border: 2px solid;
+            border-bottom: none;
+            border-radius: 50% 50% 0 0;
+            margin-top: 1px;
+        }
+
+        .morph-word {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            line-height: 1.4;
+            padding: 0 2px;
+        }
+
+        .morph-converted-badge {
+            font-size: 0.55rem;
+            color: #10B981;
+            background: #D1FAE5;
+            padding: 1px 3px;
+            border-radius: 3px;
+            margin-left: 2px;
+            vertical-align: super;
+        }
+
+        /* 상태별 스타일 */
+        .morph-token.excluded .morph-tag-badge {
+            background: #F1F5F9 !important;
+            color: #CBD5E1 !important;
+        }
+        .morph-token.excluded .morph-arc { border-color: #CBD5E1 !important; }
+        .morph-token.excluded .morph-word { color: #CBD5E1; }
+
+        .morph-token.selected .morph-word { color: #1D4ED8; }
+        .morph-token.shift-selecting .morph-word { color: #5B21B6; }
+        .morph-token.shift-selecting .morph-arc {
+            border-color: #7C3AED !important;
+            animation: pulse-arc 0.9s ease-in-out infinite;
+        }
+        .morph-token.shift-selecting .morph-tag-badge {
+            outline: 2px solid #7C3AED;
+            outline-offset: 1px;
+        }
+
+        @keyframes pulse-arc {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+
+        /* 호버 액션 바 */
+        .morph-token-wrapper {
+            /* overflow: visible 보장 */
+            padding-bottom: 2px;
+        }
+
+        .morph-token:hover {
+            filter: brightness(0.96);
+        }
+
+        /* 클릭 편집 힌트: hover 시 단어에 점선 밑줄 + 연필 아이콘 */
+        .morph-token { cursor: pointer; }
+        .morph-token:hover .morph-word {
+            text-decoration: underline dashed #94A3B8;
+            text-underline-offset: 3px;
+        }
+        .morph-token .morph-word::after {
+            content: ' ✏';
+            font-size: 0.6rem;
+            opacity: 0;
+            transition: opacity 0.15s;
+            color: #94A3B8;
+        }
+        .morph-token:hover .morph-word::after { opacity: 1; }
+
+        /* 편집 도움말 패널 */
+        .edit-help-bar {
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+        .edit-help-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            background: #F1F5F9;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+        }
+        .edit-help-toggle:hover { background: #E2E8F0; }
+        .edit-help-toggle .toggle-arrow {
+            font-size: 0.65rem;
+            transition: transform 0.2s;
+            color: #94A3B8;
+        }
+        .edit-help-toggle .toggle-arrow.open { transform: rotate(180deg); }
+        .edit-help-body {
+            display: none;
+            padding: 14px 16px;
+            background: #fff;
+            border-top: 1px solid #E2E8F0;
+        }
+        .edit-help-body.open { display: flex; gap: 0; }
+        .edit-help-action {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-right: 1px solid #F1F5F9;
+            text-align: center;
+        }
+        .edit-help-action:last-child { border-right: none; }
+        .edit-help-key {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            border-bottom: 3px solid #CBD5E1;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #334155;
+            white-space: nowrap;
+        }
+        .edit-help-key kbd {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #334155;
+            font-family: inherit;
+        }
+        .edit-help-desc {
+            font-size: 0.78rem;
+            color: #475569;
+            line-height: 1.4;
+        }
+        .edit-help-desc strong { color: #1E293B; }
+        .edit-help-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .inline-edit-box {
+            position: absolute;
+            z-index: 1000;
+            animation: fadeIn 0.15s ease;
+        }
+
+        .edit-tag-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .edit-tag-btn {
+            flex: 1;
+            padding: 5px 4px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            color: var(--text-light);
+            transition: all 0.15s;
+        }
+
+        .edit-tag-btn.tag-active-명사 {
+            background: #D1FAE5;
+            border-color: #10B981;
+            color: #065F46;
+        }
+
+        .edit-tag-btn.tag-active-동사 {
+            background: #FCE7F3;
+            border-color: #EC4899;
+            color: #9D174D;
+        }
+
+        .edit-tag-btn.tag-active-기타 {
+            background: #F1F5F9;
+            border-color: #94A3B8;
+            color: #475569;
+        }
+
+        /* 에러 메시지 */
+        .error-message {
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #991B1B;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* =========================================
+           반응형 — 모바일 최적화
+           ========================================= */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+
+            header { margin-bottom: 20px; }
+
+            h1 { font-size: 1.6rem; }
+
+            .subtitle { font-size: 0.88rem; }
+
+            .card { padding: 16px; border-radius: 12px; margin-bottom: 16px; }
+
+            .card-header { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+
+            .card-title { font-size: 1.05rem; }
+
+            /* 스텝 네비게이터 모바일 */
+            .step-circle { width: 38px; height: 38px; font-size: 0.82rem; }
+            .step-label { font-size: 0.7rem; }
+            .step-connector { max-width: 40px; }
+            .btn-step { padding: 9px 14px; font-size: 0.85rem; }
+
+            /* 설정 */
+            .settings { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+            /* 버튼 */
+            .button-group { flex-direction: column; gap: 8px; }
+            .button-group .btn { width: 100%; text-align: center; justify-content: center; flex: none; }
+            .btn { padding: 12px 16px; font-size: 0.92rem; min-height: 44px; }
+
+            /* 품사 선택 */
+            .pos-tags-title { font-size: 0.85rem; }
+            .pos-group { flex-direction: column; gap: 5px; }
+            .pos-group-label { width: auto; text-align: left; padding-top: 0; font-size: 0.68rem; }
+            .pos-chip { font-size: 0.78rem; padding: 5px 9px; min-height: 34px; }
+            .pos-chip-info { opacity: 0.5; } /* 모바일: 항상 보이게 */
+
+            /* 테이블 */
+            th, td { padding: 8px 10px; font-size: 0.8rem; }
+            th:first-child, td:first-child { padding-left: 10px; }
+
+            /* 수식 */
+            .formula-box { padding: 14px; }
+            .formula { font-size: 0.95rem; overflow-x: auto; }
+
+            /* 설명 */
+            .description { font-size: 0.88rem; padding: 12px; }
+
+            /* 편집 도움말: 세로 스택 */
+            .edit-help-body.open { flex-direction: column; }
+            .edit-help-action {
+                border-right: none;
+                border-bottom: 1px solid #F1F5F9;
+                flex-direction: row;
+                align-items: center;
+                gap: 12px;
+                text-align: left;
+                padding: 10px 14px;
+            }
+            .edit-help-action:last-child { border-bottom: none; }
+            .edit-help-key { white-space: nowrap; flex-shrink: 0; }
+
+            /* 형태소 분석 결과 */
+            .morpheme-sentence-orig { max-width: 100%; }
+            .morph-word { font-size: 0.85rem; }
+            .morph-tag-badge { font-size: 0.58rem; }
+            .morpheme-tokens { gap: 10px 14px; }
+
+            /* 분석 진행 모달 */
+            .analysis-box { padding: 28px 20px; border-radius: 18px; }
+            .analysis-title { font-size: 1.05rem; }
+            .ap-pct { font-size: 1.9rem; }
+
+            /* 로딩 오버레이 */
+            .loading-text { font-size: 1rem; }
+            .loading-subtext { font-size: 0.85rem; }
+
+            /* 모달 */
+            .modal-content { padding: 20px; border-radius: 12px; max-height: 90vh; }
+            .modal-title { font-size: 1.2rem; }
+
+            /* 범례 */
+            .legend { gap: 6px; }
+            .legend-item { font-size: 0.78rem; }
+
+            /* Step 3 분석하기 버튼 */
+            #calculateBtn { width: 100%; font-size: 1rem; padding: 14px 20px; }
+
+            /* 상태 배지 */
+            .status-badge { font-size: 0.78rem; padding: 5px 10px; }
+
+            /* 워드클라우드 모바일 */
+            .wc-toggle { border-radius: 10px; }
+            .wc-btn { font-size: 0.9rem; min-height: 46px; padding: 10px 12px; }
+            .tfidf-cloud-controls { gap: 10px; }
+            .wc-rank-panel { border-radius: 10px; }
+        }
+
+        /* 소형 기기 (≤ 400px) */
+        @media (max-width: 400px) {
+            body { padding: 8px; }
+            h1 { font-size: 1.35rem; }
+            .step-circle { width: 32px; height: 32px; font-size: 0.75rem; }
+            th, td { padding: 6px 7px; font-size: 0.75rem; }
+            .card { padding: 12px; }
+            .btn { font-size: 0.85rem; padding: 10px 12px; }
+        }
+
+        /* 터치 기기: 호버 효과 억제 (빠른 반응) */
+        @media (hover: none) {
+            .btn:hover { transform: none; }
+            .morph-token:hover { transform: none; filter: none; }
+            .morph-token:hover .morph-word::after { opacity: 0; }
+            .pos-tag-btn:hover:not(.active) { border-color: var(--border); color: var(--text); }
+        }
+
+        .shift-hint {
+            font-size: 0.78rem;
+            color: #7C3AED;
+            background: #F5F3FF;
+            border: 1px solid #DDD6FE;
+            border-radius: 6px;
+            padding: 4px 10px;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .shift-hint.show { display: block; }
+
+        /* =========================================
+           분석 진행률 모달
+           ========================================= */
+        #analysisModal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+
+        #analysisModal.show { display: flex; }
+
+        .analysis-box {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 44px;
+            width: min(500px, calc(100vw - 32px));
+            box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: slideUp 0.3s ease;
+        }
+
+        .analysis-spinner {
+            width: 52px;
+            height: 52px;
+            border: 5px solid #E2E8F0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .analysis-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .analysis-sub {
+            font-size: 0.88rem;
+            color: var(--text-light);
+            margin-bottom: 28px;
+        }
+
+        .ap-pct {
+            font-size: 2.4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .ap-track {
+            background: #E2E8F0;
+            border-radius: 99px;
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .ap-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+        }
+
+        .ap-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-light);
+            margin-bottom: 16px;
+        }
+
+        .ap-sent {
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: var(--text-light);
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* =========================================
+           상태 배지
+           ========================================= */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-badge.loading {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-badge.ready {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-badge.error {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        /* =========================================
+           모바일 액션 시트 (long press)
+           ========================================= */
+        .as-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 4000;
+            display: none;
+        }
+        .as-backdrop.show { display: block; }
+
+        .action-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 0 0 env(safe-area-inset-bottom, 16px);
+            z-index: 4001;
+            transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+            box-shadow: 0 -6px 36px rgba(0,0,0,0.18);
+        }
+        .action-sheet.show { transform: translateY(0); }
+
+        .as-handle {
+            width: 36px;
+            height: 4px;
+            background: #CBD5E1;
+            border-radius: 2px;
+            margin: 10px auto 12px;
+        }
+        .as-title {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            text-align: center;
+            padding: 0 20px 10px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        .as-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 15px 24px;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #F8FAFC;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            text-align: left;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .as-btn:active { background: #F8FAFC; }
+        .as-btn .as-icon { font-size: 1.15rem; width: 22px; text-align: center; flex-shrink: 0; }
+        .as-btn.as-danger { color: #DC2626; }
+        .as-btn.as-merge  { color: #7C3AED; }
+        .as-btn.as-ok     { color: #059669; }
+        .as-cancel {
+            margin: 6px 12px 8px;
+            padding: 14px;
+            background: var(--bg);
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            width: calc(100% - 24px);
+            cursor: pointer;
+            color: var(--text-light);
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .as-cancel:active { background: #E2E8F0; }
+
+        /* 합치기 모드 배너 */
+        .merge-banner {
+            display: none;
+            background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
+            border: 1.5px solid #C4B5FD;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            color: #5B21B6;
+            font-size: 0.88rem;
+            font-weight: 600;
+            align-items: center;
+            gap: 10px;
+        }
+        .merge-banner.show { display: flex; }
+        .merge-banner-cancel {
+            margin-left: auto;
+            padding: 4px 10px;
+            border: 1px solid #C4B5FD;
+            border-radius: 6px;
+            background: white;
+            color: #7C3AED;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* =========================================
+           단어 스포트라이트 카드
+           ========================================= */
+        #wordSpotlightCard { display: none; }
+
+        .spotlight-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 14px 20px;
+            margin-bottom: 20px;
+            gap: 12px;
+        }
+
+        .spotlight-word-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .spotlight-word-text {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
+
+        .spotlight-word-counter {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .spotlight-word-tf-total {
+            font-size: 0.82rem;
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FCD34D;
+            border-radius: 99px;
+            padding: 3px 12px;
+            font-weight: 700;
+        }
+
+        .btn-spot-nav {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: white;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .btn-spot-nav:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #EEF2FF;
+        }
+
+        .btn-spot-nav:disabled { opacity: 0.25; cursor: not-allowed; }
+
+        .spot-sent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .spot-sent-row {
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            transition: border-color 0.25s, background 0.25s;
+        }
+
+        .spot-sent-row.has-word {
+            border-color: #FCD34D;
+            background: #FFFBEB;
+        }
+
+        .spot-sent-row.no-word {
+            background: #F8FAFC;
+            opacity: 0.65;
+        }
+
+        .spot-sent-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .spot-sent-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        .spot-tf-badge {
+            font-size: 0.88rem;
+            font-weight: 700;
+            padding: 3px 14px;
+            border-radius: 99px;
+        }
+
+        .spot-tf-badge.tf-active {
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1.5px solid #FCD34D;
+        }
+
+        .spot-tf-badge.tf-zero {
+            background: #F1F5F9;
+            color: #94A3B8;
+            border: 1.5px solid var(--border);
+        }
+
+        .spot-sent-tokens {
+            line-height: 2.2;
+            word-break: keep-all;
+            font-size: 0.98rem;
+        }
+
+        .spot-token {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 5px;
+            margin: 1px 1px;
+        }
+
+        .spot-token.hit {
+            background: #FEF08A;
+            color: #713F12;
+            font-weight: 800;
+            border: 1.5px solid #FCD34D;
+            box-shadow: 0 2px 6px rgba(253, 211, 77, 0.45);
+            transform: scale(1.06);
+        }
+
+        .spot-token.selected { color: var(--text); }
+
+        .spot-token.other {
+            color: #CBD5E1;
+            font-size: 0.9em;
+        }
+
+        .spot-hint {
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--text-light);
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1.5px dashed var(--border);
+        }
+
+        .spot-meta-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* 소 슬라이더: 단어 도트 네비게이터 */
+        .spot-word-dots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+
+        .spot-word-dot {
+            padding: 4px 14px;
+            border-radius: 99px;
+            border: 1.5px solid var(--border);
+            background: white;
+            color: var(--text-light);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.18s;
+        }
+
+        .spot-word-dot.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+
+        .spot-word-dot:hover:not(.active) {
+            border-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* wordSelectorCard 하단 다음 버튼 영역 */
+        .word-selector-next {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px dashed #3B82F6;
+        }
+
+        .btn-go-result {
+            font-size: 1.05rem;
+            padding: 13px 32px;
+        }
+
+        /* TF-IDF 탭: 문장별 확인 섹션 */
+        .tfidf-sent-section {
+            margin-top: 28px;
+            border-top: 2px solid var(--border);
+            padding-top: 22px;
+        }
+
+        .tfidf-sent-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tfidf-formula-mini {
+            font-size: 0.78rem;
+            color: #6366F1;
+            font-weight: 600;
+            margin: 4px 0 8px 2px;
+            letter-spacing: 0.01em;
+        }
+
+        .tfidf-badge {
+            background: #EDE9FE;
+            color: #4C1D95;
+            border: 1.5px solid #C4B5FD;
+        }
+
+        /* TF-IDF 워드클라우드 섹션 */
+        .tfidf-cloud-full {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tfidf-cloud-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .tfidf-cloud-full-toggle { width: auto; flex-shrink: 0; }
+
+        .wc-section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .wc-section-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .wc-section-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-left: 2px;
+        }
+
+        .tfidf-cloud-body {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .tfidf-cloud-full #wordCloudCanvas {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 100% !important;
+            height: 420px !important;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(79, 70, 229, 0.14), 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 순위 패널 */
+        .wc-rank-panel {
+            flex: 0 0 240px;
+            width: 240px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        .wc-rank-header {
+            background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+            padding: 10px 12px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            color: var(--text);
+            border-bottom: 1.5px solid var(--border);
+            display: flex;
+            gap: 4px;
+        }
+
+        .wc-rank-col-num   { width: 22px; flex-shrink: 0; font-size: 0.72rem; color: #94A3B8; font-weight: 700; }
+        .wc-rank-col-word  { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .wc-rank-col-val   { width: 52px; text-align: right; flex-shrink: 0; font-size: 0.78rem; }
+        .wc-rank-col-bar   { width: 60px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; }
+        .wc-rank-hd-tf     { color: #4338CA; }
+        .wc-rank-hd-tfidf  { color: #B91C1C; }
+        .wc-bar-wrap       { width: 100%; height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden; }
+        .wc-bar-tf         { display: block; height: 100%; background: linear-gradient(90deg, #818CF8, #4F46E5); border-radius: 3px; }
+        .wc-bar-tfidf      { display: block; height: 100%; background: linear-gradient(90deg, #FBBF24, #F97316); border-radius: 3px; }
+
+        .wc-rank-rows {
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        .wc-rank-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-bottom: 1px solid #F1F5F9;
+            transition: background 0.15s;
+        }
+
+        .wc-rank-row:nth-child(1) { background: linear-gradient(90deg, #FFFBEB, #FFF); }
+        .wc-rank-row:nth-child(2) { background: linear-gradient(90deg, #F8FAFC, #FFF); }
+        .wc-rank-row:nth-child(3) { background: linear-gradient(90deg, #FFF7ED, #FFF); }
+
+        .wc-rank-row:hover { background: #EEF2FF !important; }
+
+        .wc-rank-row:last-child { border-bottom: none; }
+
+        .wc-rank-num {
+            font-size: 0.72rem;
+            color: #CBD5E1;
+            font-weight: 700;
+            width: 20px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .wc-rank-word {
+            flex: 1;
+            font-weight: 700;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .wc-rank-tf {
+            width: 28px;
+            text-align: right;
+            color: #4F46E5;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .wc-rank-tfidf {
+            width: 44px;
+            text-align: right;
+            color: #DC2626;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .wc-rank-bar-wrap {
+            width: 52px;
+            flex-shrink: 0;
+        }
+
+        .wc-rank-bar {
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 2px;
+        }
+
+        .wc-rank-bar.bar-tf    { background: linear-gradient(90deg, #818CF8, #4F46E5); }
+        .wc-rank-bar.bar-tfidf { background: linear-gradient(90deg, #FBBF24, #F97316); }
+
+        @media (max-width: 700px) {
+            .tfidf-cloud-body { flex-direction: column; }
+            .wc-rank-panel { width: 100%; flex: none; }
+            .tfidf-cloud-full #wordCloudCanvas { height: 260px !important; }
+            .wc-rank-rows { max-height: 220px; }
+        }
+
+        /* 결과 카드 상단 돌아가기 버튼 */
+        .result-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.18s;
+            margin-bottom: 20px;
+        }
+        .result-back-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* 단어 통계 메트릭 바 (DF·IDF) */
+        .spot-word-stats {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            background: #F0F9FF;
+            border: 1.5px solid #BAE6FD;
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin-bottom: 16px;
+        }
+
+        .spot-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            flex: 1;
+        }
+
+        .spot-stat-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #0369A1;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .spot-stat-val {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #0C4A6E;
+            line-height: 1;
+        }
+
+        .spot-stat-desc {
+            font-size: 0.68rem;
+            color: #0369A1;
+            white-space: nowrap;
+        }
+
+        .spot-stat-div {
+            width: 1.5px;
+            height: 40px;
+            background: #BAE6FD;
+            flex-shrink: 0;
+            margin: 0 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 로딩 오버레이 (즉시 숨김) -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">준비 중...</div>
+    </div>
+
+    <div class="container">
+        <!-- 입력/분석/단어선택 섹션 ("다음" 시 숨김) -->
+        <div id="preResultSection">
+        <header>
+            <h1>📊 TF-IDF 계산 체험</h1>
+            <p class="subtitle">형태소를 분석하고 단어 중요도를 계산해보세요</p>
+        </header>
+
+        <!-- 설정 카드 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="icon">⚙️</span>
+                    계산 설정
+                </div>
+                <span class="status-badge loading" id="statusBadge">
+                    <span id="statusIcon">⏳</span>
+                    <span id="statusText">로딩 중...</span>
+                </span>
+            </div>
+            <div class="settings">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="useLog">
+                    <span class="checkbox-label">IDF에 log 적용 (체크 해제 = 교과서 방식: N/DF)</span>
+                </label>
+            </div>
+
+            <!-- 품사 태그 선택 -->
+            <div class="pos-tags-section">
+                <div class="pos-tags-title">
+                    <span>📝 추출할 품사</span>
+                    <span class="pos-tags-hint">탭하여 선택/해제 &nbsp;·&nbsp; ⓘ 클릭 시 설명</span>
+                </div>
+                <div class="pos-tags-container" id="posTagsContainer">
+                    <!-- 동적으로 생성 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 품사 설명 모달 -->
+        <div class="modal-overlay" id="posModal" onclick="closeModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title" id="modalTitle">품사 설명</div>
+                    <button class="modal-close" onclick="closeModal()">✕</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- 동적으로 생성 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 문장 입력 카드 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="icon">📝</span>
+                    Step 1: 문장 입력
+                </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 8px;">
+                    💡 한 줄에 하나씩 문장을 입력하거나 아래 예시를 불러오세요
+                </div>
+                <textarea id="documentsTextarea"
+                          class="document-input"
+                          rows="6"
+                          autocomplete="off"
+                          autocorrect="off"
+                          spellcheck="false"
+                          placeholder="문장을 입력하세요 (줄바꿈 또는 마침표로 구분)&#10;예: 커피는 카페인이 들어있는 음료다.&#10;녹차에도 카페인과 항산화 성분이 있다."
+                          style="width: 100%; resize: vertical; min-height: 130px; font-family: inherit; line-height: 1.6; font-size: 0.95rem;"></textarea>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-secondary btn-example" onclick="loadExample()">📚 예시 불러오기</button>
+                <button class="btn btn-primary btn-analyze" id="analyzeBtn" onclick="analyzeSentences()" disabled>🔤 형태소 분석하기</button>
+            </div>
+
+            <!-- 형태소 분석 결과 미리보기 -->
+            <div class="morpheme-result" id="morphemeResult" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="preview-title">🔤 Step 2: 형태소 분석 결과 (단어 편집)</div>
+                </div>
+
+                <!-- 편집 도움말 (접기/펼치기) -->
+                <div class="edit-help-bar">
+                    <div class="edit-help-toggle" onclick="toggleEditHelp(this)">
+                        <span>단어 편집 방법</span>
+                        <span class="toggle-arrow open">▼</span>
+                    </div>
+                    <div class="edit-help-body open" id="editHelpBody">
+                        <!-- JS로 터치/마우스 기기에 맞게 렌더링 -->
+                    </div>
+                </div>
+                <!-- 합치기 모드 배너 (모바일) -->
+                <div class="merge-banner" id="mergeBanner">
+                    <span>🔗 합치기 모드 — 끝 단어를 길게 눌러 선택하세요</span>
+                    <button type="button" class="merge-banner-cancel" onclick="asMergeCancel()">취소</button>
+                </div>
+                <div id="morphemeContent"></div>
+                <div style="margin-top: 16px; text-align: center; padding-top: 16px; border-top: 2px dashed #3B82F6;">
+                    <div style="color: var(--primary); font-weight: 600; margin-bottom: 12px; font-size: 1.1rem;">
+                        👇 Step 3: TF-IDF 분석
+                    </div>
+                    <button class="btn btn-primary" id="calculateBtn" onclick="calculate()" style="font-size: 1.1rem; padding: 14px 28px;">
+                        📊 분석하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 추출된 단어 미리보기 -->
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <div class="preview-title">✅ 추출된 단어 (TF-IDF 계산에 사용)</div>
+                <div class="preview-tokens" id="previewTokens"></div>
+            </div>
+        </div>
+
+        <!-- 핵심 단어 선택 패널 -->
+        <div class="word-selector-card" id="wordSelectorCard">
+            <div class="word-selector-header">
+                <div>
+                    <div class="word-selector-title">🏆 핵심 단어 선택</div>
+                    <div class="word-selector-meta" id="wordSelectorMeta"></div>
+                </div>
+                <div class="word-selector-actions">
+                    <button type="button" class="btn-reset-top" onclick="resetTopWords()">⭐ 상위 10개 자동 선택</button>
+                    <button type="button" class="btn-clear-sel" onclick="clearWordSelection()">✖ 전체 해제</button>
+                </div>
+            </div>
+            <div class="word-chips" id="wordChips"></div>
+            <div class="word-selector-next">
+                <button type="button" class="btn btn-primary btn-go-result" id="btnGoResult" onclick="goToResult()">
+                    다음: 단어별 TF 확인 →
+                </button>
+            </div>
+        </div>
+
+        </div><!-- /preResultSection -->
+
+        <!-- 결과 카드 (대 슬라이더: 5단계) -->
+        <div class="card" id="resultCard" style="display: none;">
+            <button type="button" class="result-back-btn" onclick="goBack()">← 단어 선택으로 돌아가기</button>
+
+            <!-- 대 슬라이더 스텝 인디케이터 -->
+            <div class="step-nav" id="stepNav">
+                <div class="step-item active" id="step-item-0" onclick="goToStep(0)">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">단어 탐색</div>
+                </div>
+                <div class="step-connector" id="connector-0"></div>
+                <div class="step-item" id="step-item-1" onclick="goToStep(1)">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">TF</div>
+                </div>
+                <div class="step-connector" id="connector-1"></div>
+                <div class="step-item" id="step-item-2" onclick="goToStep(2)">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">DF</div>
+                </div>
+                <div class="step-connector" id="connector-2"></div>
+                <div class="step-item" id="step-item-3" onclick="goToStep(3)">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">IDF</div>
+                </div>
+                <div class="step-connector" id="connector-3"></div>
+                <div class="step-item" id="step-item-4" onclick="goToStep(4)">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">TF-IDF</div>
+                </div>
+            </div>
+
+            <!-- Step 1: 단어별 TF 탐색 (소 슬라이더 포함) -->
+            <div class="tab-content active" id="tab-words">
+                <!-- 소 슬라이더: 단어 네비게이터 -->
+                <div class="spotlight-nav-bar">
+                    <button type="button" class="btn-spot-nav" id="btnSpotPrev" onclick="spotPrev()" title="이전 단어">&#8592;</button>
+                    <div class="spotlight-word-display">
+                        <div class="spotlight-word-text" id="spotWordText">-</div>
+                        <div class="spotlight-word-tf-total" id="spotTfTotal">전체 TF: -</div>
+                        <div class="spotlight-word-counter" id="spotCounter"></div>
+                    </div>
+                    <button type="button" class="btn-spot-nav" id="btnSpotNext" onclick="spotNext()" title="다음 단어">&#8594;</button>
+                </div>
+                <!-- 단어 도트: 전체 선택 단어 한눈에 보기 (소 슬라이더 도트) -->
+                <div class="spot-word-dots" id="spotWordDots"></div>
+                <!-- 단어 통계 메트릭 바 (TF합계·DF·IDF) -->
+                <div class="spot-word-stats" id="spotWordStats">
+                    <div class="spot-stat">
+                        <span class="spot-stat-label">TF 합계</span>
+                        <span class="spot-stat-val" id="spotStatTf">-</span>
+                        <span class="spot-stat-desc">전체 문장 등장 횟수</span>
+                    </div>
+                    <div class="spot-stat-div"></div>
+                    <div class="spot-stat">
+                        <span class="spot-stat-label">DF</span>
+                        <span class="spot-stat-val" id="spotStatDf">-</span>
+                        <span class="spot-stat-desc" id="spotStatDfDesc">문장에 등장</span>
+                    </div>
+                    <div class="spot-stat-div"></div>
+                    <div class="spot-stat">
+                        <span class="spot-stat-label">IDF</span>
+                        <span class="spot-stat-val" id="spotStatIdf">-</span>
+                        <span class="spot-stat-desc" id="spotStatIdfDesc">희귀도</span>
+                    </div>
+                </div>
+                <!-- 문장별 TF 음영 표시 -->
+                <div class="spot-sent-list" id="spotSentList"></div>
+            </div>
+
+            <!-- Step 2: TF -->
+            <div class="tab-content" id="tab-tf">
+                <div class="formula-box">
+                    <div class="formula-title">TF (Term Frequency) 계산 공식</div>
+                    <div class="formula" id="formula-tf"></div>
+                </div>
+                <div class="description">
+                    <strong>TF(단어 빈도)</strong>는 특정 문장에서 해당 단어가 몇 번 등장하는지를 나타냅니다.
+                    값이 클수록 해당 문장에서 자주 사용된 단어입니다.
+                </div>
+                <div class="table-container">
+                    <table id="tfTable"></table>
+                </div>
+            </div>
+
+            <!-- Step 2: DF -->
+            <div class="tab-content" id="tab-df">
+                <div class="formula-box">
+                    <div class="formula-title">DF (Document Frequency) 계산 공식</div>
+                    <div class="formula" id="formula-df"></div>
+                </div>
+                <div class="description">
+                    <strong>DF(문장 빈도)</strong>는 해당 단어가 전체 문장 중 몇 개의 문장에 등장하는지를 나타냅니다.
+                    모든 문장에 등장하는 단어는 DF가 높고, 특정 문장에만 있는 단어는 DF가 낮습니다.
+                </div>
+                <div class="table-container">
+                    <table id="dfTable"></table>
+                </div>
+            </div>
+
+            <!-- Step 3: IDF -->
+            <div class="tab-content" id="tab-idf">
+                <div class="formula-box">
+                    <div class="formula-title">IDF (Inverse Document Frequency) 계산 공식</div>
+                    <div class="formula" id="formula-idf"></div>
+                </div>
+                <div class="description">
+                    <strong>IDF(역문장 빈도)</strong>는 DF의 역수 개념으로, 희귀한 단어일수록 값이 커집니다.
+                    많은 문장에 등장하는 흔한 단어는 IDF가 낮고, 특정 문장에만 있는 단어는 IDF가 높습니다.
+                </div>
+                <div id="idf-single-warning" class="single-doc-warning"></div>
+                <div class="table-container">
+                    <table id="idfTable"></table>
+                </div>
+            </div>
+
+            <!-- Step 5: TF-IDF -->
+            <div class="tab-content" id="tab-tfidf">
+                <div class="formula-box">
+                    <div class="formula-title">TF-IDF 최종 계산 공식</div>
+                    <div class="formula" id="formula-tfidf"></div>
+                </div>
+                <div class="description">
+                    <strong>TF-IDF</strong>는 TF와 IDF를 곱한 값입니다.
+                    특정 문장에서 자주 등장하면서(TF 높음) 다른 문장에는 잘 없는(IDF 높음) 단어가 높은 값을 갖습니다.
+                    이런 단어가 해당 문장을 대표하는 <strong>핵심 키워드</strong>입니다.
+                </div>
+                <div id="tfidf-single-warning" class="single-doc-warning"></div>
+
+                <!-- ① TF-IDF 표 (전체폭) -->
+                <div class="table-container">
+                    <table id="tfidfTable"></table>
+                </div>
+                <div class="legend" id="legend"></div>
+
+                <!-- ② 단어별 문장 TF-IDF 확인 -->
+                <div class="tfidf-sent-section">
+                    <div class="tfidf-sent-title">🔍 단어별 문장 TF-IDF 확인</div>
+                    <!-- 소 슬라이더: 단어 네비게이터 -->
+                    <div class="spotlight-nav-bar">
+                        <button type="button" class="btn-spot-nav" id="btnTfidfPrev" onclick="tfidfSpotPrev()" title="이전 단어">&#8592;</button>
+                        <div class="spotlight-word-display">
+                            <div class="spotlight-word-text" id="tfidfSpotWord">-</div>
+                            <div class="spotlight-word-counter" id="tfidfSpotCounter"></div>
+                        </div>
+                        <button type="button" class="btn-spot-nav" id="btnTfidfNext" onclick="tfidfSpotNext()" title="다음 단어">&#8594;</button>
+                    </div>
+                    <!-- 도트 칩 -->
+                    <div class="spot-word-dots" id="tfidfSpotDots"></div>
+                    <!-- 문장 목록 -->
+                    <div class="spot-sent-list" id="tfidfSentList"></div>
+                </div>
+
+                <!-- ③ 워드클라우드 + 순위 패널 -->
+                <div class="tfidf-cloud-full">
+                    <!-- 섹션 헤더 -->
+                    <div class="wc-section-header">
+                        <span class="wc-section-title">☁️ 워드클라우드</span>
+                        <span id="wc-label" class="wc-section-label">TF 기반 핵심어</span>
+                    </div>
+                    <!-- 컨트롤 행 -->
+                    <div class="tfidf-cloud-controls">
+                        <div class="wc-toggle tfidf-cloud-full-toggle">
+                            <button type="button" class="wc-btn active" id="wc-btn-tf"    onclick="switchWordCloud('tf')">📊 TF 기반</button>
+                            <button type="button" class="wc-btn"        id="wc-btn-tfidf" onclick="switchWordCloud('tfidf')">🔥 TF-IDF 합산</button>
+                        </div>
+                    </div>
+                    <!-- 클라우드 + 순위표 -->
+                    <div class="tfidf-cloud-body">
+                        <canvas id="wordCloudCanvas" width="600" height="400"></canvas>
+                        <div class="wc-rank-panel" id="wcRankPanel">
+                            <div class="wc-rank-header">
+                                <span class="wc-rank-col-num">#</span>
+                                <span class="wc-rank-col-word">단어</span>
+                                <span class="wc-rank-col-val wc-rank-hd-tf">TF</span>
+                                <span class="wc-rank-col-val wc-rank-hd-tfidf">TF-IDF</span>
+                                <span class="wc-rank-col-bar"></span>
+                            </div>
+                            <div class="wc-rank-rows" id="wcRankRows"></div>
+                        </div>
+                    </div>
+                    <div class="wc-diff" id="wc-diff"></div>
+                </div>
+            </div>
+
+            <!-- 이전 / 다음 버튼 -->
+            <div class="step-controls">
+                <button type="button" class="btn-step btn-step-prev" id="btnPrev" onclick="prevStep()" disabled>← 이전</button>
+                <div class="step-info-center" id="stepInfo">Step 1 / 5 &nbsp;·&nbsp; 단어별 TF 탐색</div>
+                <button type="button" class="btn-step btn-step-next" id="btnNext" onclick="nextStep()">다음 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 형태소 분석 진행률 모달 -->
+    <div id="analysisModal">
+        <div class="analysis-box">
+            <div class="analysis-spinner"></div>
+            <div class="analysis-title">🔤 형태소 분석 중...</div>
+            <div class="analysis-sub" id="apSub">잠시 기다려 주세요</div>
+            <div class="ap-pct" id="apPct">0%</div>
+            <div class="ap-track">
+                <div class="ap-fill" id="apFill"></div>
+            </div>
+            <div class="ap-label">
+                <span id="apStep">준비 중...</span>
+                <span id="apFrac">0 / 0</span>
+            </div>
+            <div class="ap-sent" id="apSent">—</div>
+        </div>
+    </div>
+
+    <!-- 모바일 액션 시트 -->
+    <div class="as-backdrop" id="asBackdrop" onclick="closeActionSheet()"></div>
+    <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true"></div>
+
+    <script>
+        // ====================================================================
+        // 형태소 분석 진행률 모달
+        // ====================================================================
+        function showAnalysisModal(total) {
+            document.getElementById('apPct').textContent  = '0%';
+            document.getElementById('apFill').style.width = '0%';
+            document.getElementById('apStep').textContent = '분석 준비 중...';
+            document.getElementById('apFrac').textContent = `0 / ${total}`;
+            document.getElementById('apSent').textContent = '—';
+            document.getElementById('apSub').textContent  = `총 ${total}문장`;
+            document.getElementById('analysisModal').classList.add('show');
+        }
+
+        function updateAnalysisModal(current, total, sentPreview) {
+            const pct = Math.round(current / total * 100);
+            document.getElementById('apPct').textContent  = pct + '%';
+            document.getElementById('apFill').style.width = pct + '%';
+            document.getElementById('apStep').textContent = `문장 ${current} 분석 완료`;
+            document.getElementById('apFrac').textContent = `${current} / ${total}`;
+            const preview = sentPreview.length > 40 ? sentPreview.slice(0, 40) + '…' : sentPreview;
+            document.getElementById('apSent').textContent = `"${preview}"`;
+        }
+
+        function hideAnalysisModal() {
+            document.getElementById('analysisModal').classList.remove('show');
+        }
+
+        // 내부 로그 (콘솔에만, UI 표시 없음)
+        function clog(level, msg) { console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](`[${level}] ${msg}`); }
+
+        // ── 품사 태그 색상 매핑 (아치형 토큰용) ──────────────────────────
+        // 세종 태그 → 간략 태그 변환 (Kiwi 결과에 적용)
+        // 명사/동사 2분법 — 그 외는 모두 '기타'로 처리
+        function simplifyTag(tag) {
+            if (['명사','동사'].includes(tag)) return tag;
+            // 혹시 세종 태그가 섞여 올 경우 대비
+            if (['NNG','NNB','NNP','NR','NP'].includes(tag)) return '명사';
+            if (['VV','VX','VCP','VCN','VA'].includes(tag)) return '동사';
+            return '기타';
+        }
+
+        const TAG_COLORS = {
+            '명사': { bg:'#D1FAE5', text:'#065F46', arc:'#10B981' },
+            '동사': { bg:'#FCE7F3', text:'#9D174D', arc:'#EC4899' },
+            '기타': { bg:'#F1F5F9', text:'#64748B', arc:'#94A3B8' },
+        };
+
+        function getTagColor(tag) {
+            return TAG_COLORS[tag] || { bg:'#F1F5F9', text:'#475569', arc:'#94A3B8' };
+        }
+
+        // Shift+클릭 선택 상태
+        let shiftSelectState = null; // { sentenceIdx, morphIdx }
+        let _clickTimer = null;      // 클릭/더블클릭 구분용 타이머
+
+        // 동사 기본형 변환: 어간 + "다"
+        function appendDa(sentenceIdx, morphIdx) {
+            const m = allMorphemes[sentenceIdx][morphIdx];
+            if (m.lex.endsWith('다')) return;
+            m.original = m.original || m.lex;
+            // 명사 태그면 하다 동사 변환 (조사→조사하다), 동사 어간은 그냥 다 (먹→먹다)
+            m.lex = m.lex + (m.tag === '명사' ? '하다' : '다');
+            renderMorphemeResult(allMorphemes);
+        }
+
+        // 토큰 클릭 핸들러
+        // - 일반 클릭    → 불용어 토글
+        // - 더블클릭     → 수정 편집창 열기
+        // - Shift+클릭  → 합치기 선택
+        // - Ctrl+클릭   → 동사 기본형 변환 (어간 + 다)
+        function handleTokenClick(event, sentenceIdx, morphIdx) {
+            // 롱프레스로 액션 시트가 열렸으면 뒤따라오는 click 이벤트 무시
+            if (_lpFired) { _lpFired = false; return; }
+            if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
+                if (_clickTimer) { clearTimeout(_clickTimer); _clickTimer = null; }
+                appendDa(sentenceIdx, morphIdx);
+                return;
+            }
+            if (event.shiftKey) {
+                event.stopPropagation();
+                if (_clickTimer) { clearTimeout(_clickTimer); _clickTimer = null; }
+                if (!shiftSelectState) {
+                    shiftSelectState = { sentenceIdx, morphIdx };
+                    renderMorphemeResult(allMorphemes);
+                } else if (
+                    shiftSelectState.sentenceIdx === sentenceIdx &&
+                    shiftSelectState.morphIdx    !== morphIdx
+                ) {
+                    const from = Math.min(shiftSelectState.morphIdx, morphIdx);
+                    const to   = Math.max(shiftSelectState.morphIdx, morphIdx);
+                    shiftSelectState = null;
+                    mergeRange(sentenceIdx, from, to);
+                } else {
+                    shiftSelectState = null;
+                    renderMorphemeResult(allMorphemes);
+                }
+                return;
+            }
+
+            if (shiftSelectState) {
+                shiftSelectState = null;
+                renderMorphemeResult(allMorphemes);
+                return;
+            }
+
+            // 더블클릭 판별: 첫 클릭은 250ms 대기 후 불용어 토글
+            if (_clickTimer) { clearTimeout(_clickTimer); _clickTimer = null; return; }
+            _clickTimer = setTimeout(() => {
+                _clickTimer = null;
+                toggleStopWord(allMorphemes[sentenceIdx][morphIdx].lex);
+                renderMorphemeResult(allMorphemes);
+            }, 250);
+        }
+
+        // 단어(lex) 전체를 불용어 토글 (모든 문장에서 해당 lex 동시 처리)
+        function toggleStopWord(lex) {
+            // 하나라도 selected면 → 전체 제외, 모두 제외면 → 품사 기준으로 복원
+            let anySelected = false;
+            allMorphemes.forEach(morphs =>
+                morphs.forEach(m => { if (m.lex === lex && m.selected) anySelected = true; })
+            );
+            allMorphemes.forEach(morphs =>
+                morphs.forEach(m => {
+                    if (m.lex === lex)
+                        m.selected = anySelected ? false : selectedPosTags.has(m.tag);
+                })
+            );
+        }
+
+        // 더블클릭 핸들러 → 수정 편집창 열기
+        function handleTokenDblClick(event, sentenceIdx, morphIdx) {
+            if (_clickTimer) { clearTimeout(_clickTimer); _clickTimer = null; }
+            showEditBox(sentenceIdx, morphIdx, event.currentTarget);
+        }
+
+        // ── 모바일 롱프레스 & 액션 시트 ──────────────────────────────
+        const isTouchDevice = () => window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+        let _lpTimer = null;       // 롱프레스 타이머
+        let _lpFired = false;      // 롱프레스로 열렸는지 (click 이벤트 무시용)
+        let _lpMoved = false;      // 손가락이 이동하면 취소
+
+        function onTokenTouchStart(event, si, mi) {
+            _lpFired = false;
+            _lpMoved = false;
+            _lpTimer = setTimeout(() => {
+                if (_lpMoved) return;
+                _lpFired = true;
+                navigator.vibrate && navigator.vibrate(25);
+                showActionSheet(si, mi);
+            }, 550);
+        }
+
+        function onTokenTouchMove() {
+            _lpMoved = true;
+            if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+        }
+
+        function onTokenTouchEnd() {
+            if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+        }
+
+        // 액션 시트 열기
+        function showActionSheet(si, mi) {
+            const m = allMorphemes[si][mi];
+            const inMerge   = shiftSelectState !== null;
+            const isMergeStart = inMerge &&
+                shiftSelectState.sentenceIdx === si &&
+                shiftSelectState.morphIdx    === mi;
+
+            let html = `
+                <div class="as-handle"></div>
+                <div class="as-title">「${m.lex}」 <span style="opacity:.6">${m.tag}</span></div>
+                <button type="button" class="as-btn" onclick="asEdit(${si},${mi})">
+                    <span class="as-icon">✏️</span>단어 수정
+                </button>
+                <button type="button" class="as-btn" onclick="asAppendDa(${si},${mi})">
+                    <span class="as-icon">다</span>기본형 변환 (어간+다)
+                </button>`;
+
+            if (inMerge && !isMergeStart) {
+                html += `
+                <button type="button" class="as-btn as-merge" onclick="asMergeEnd(${si},${mi})">
+                    <span class="as-icon">🔗</span>여기까지 합치기
+                </button>
+                <button type="button" class="as-btn" onclick="asMergeCancel()">
+                    <span class="as-icon">✕</span>합치기 취소
+                </button>`;
+            } else if (!inMerge) {
+                html += `
+                <button type="button" class="as-btn as-merge" onclick="asMergeStart(${si},${mi})">
+                    <span class="as-icon">🔗</span>이 단어부터 합치기
+                </button>`;
+            }
+
+            html += `
+                <button type="button" class="as-cancel" onclick="closeActionSheet()">취소</button>`;
+
+            const sheet    = document.getElementById('actionSheet');
+            const backdrop = document.getElementById('asBackdrop');
+            sheet.innerHTML = html;
+            backdrop.classList.add('show');
+            requestAnimationFrame(() => sheet.classList.add('show'));
+        }
+
+        function closeActionSheet() {
+            document.getElementById('actionSheet').classList.remove('show');
+            document.getElementById('asBackdrop').classList.remove('show');
+        }
+
+        // 액션 시트 버튼 핸들러
+        function asEdit(si, mi) {
+            closeActionSheet();
+            // 시트 닫히는 애니메이션 후 편집창 열기
+            setTimeout(() => {
+                const el = document.querySelector(`.morph-token[data-si="${si}"][data-mi="${mi}"]`);
+                if (el) showEditBox(si, mi, el);
+            }, 300);
+        }
+
+        function asMergeStart(si, mi) {
+            closeActionSheet();
+            shiftSelectState = { sentenceIdx: si, morphIdx: mi };
+            document.getElementById('mergeBanner').classList.add('show');
+            renderMorphemeResult(allMorphemes);
+        }
+
+        function asMergeEnd(si, mi) {
+            closeActionSheet();
+            if (!shiftSelectState) return;
+            const from = Math.min(shiftSelectState.morphIdx, mi);
+            const to   = Math.max(shiftSelectState.morphIdx, mi);
+            shiftSelectState = null;
+            document.getElementById('mergeBanner').classList.remove('show');
+            mergeRange(si, from, to);
+        }
+
+        function asMergeCancel() {
+            closeActionSheet();
+            shiftSelectState = null;
+            document.getElementById('mergeBanner').classList.remove('show');
+            renderMorphemeResult(allMorphemes);
+        }
+
+        function asAppendDa(si, mi) {
+            closeActionSheet();
+            appendDa(si, mi);
+        }
+
+        // 편집 도움말 초기화 (터치/마우스에 따라 다른 내용)
+        function initEditHelp() {
+            const body = document.getElementById('editHelpBody');
+            if (!body) return;
+            if (isTouchDevice()) {
+                body.innerHTML = `
+                    <div class="edit-help-action">
+                        <div class="edit-help-key">탭</div>
+                        <div class="edit-help-desc"><strong>불용어 지정 / 해제</strong><br>TF-IDF 계산에서 제외할 단어를 지정합니다.</div>
+                    </div>
+                    <div class="edit-help-action">
+                        <div class="edit-help-key">길게 누르기</div>
+                        <div class="edit-help-desc"><strong>단어 메뉴 열기</strong><br>수정 · 합치기 · 불용어 추가/해제를 선택합니다.</div>
+                    </div>`;
+            } else {
+                body.innerHTML = `
+                    <div class="edit-help-action">
+                        <div class="edit-help-key">클릭</div>
+                        <div class="edit-help-desc"><strong>불용어 지정 / 해제</strong><br>TF-IDF 계산에서 제외할 단어를 지정합니다.</div>
+                    </div>
+                    <div class="edit-help-action">
+                        <div class="edit-help-key">더블클릭</div>
+                        <div class="edit-help-desc"><strong>단어 직접 수정</strong><br>형태소 분석 결과가 잘못된 경우 직접 고칩니다.</div>
+                    </div>
+                    <div class="edit-help-action">
+                        <div class="edit-help-key"><kbd>Shift</kbd> + 클릭</div>
+                        <div class="edit-help-desc"><strong>인접 단어 합치기</strong><br>시작 단어를 클릭 후, 끝 단어를 Shift+클릭합니다.</div>
+                    </div>
+                    <div class="edit-help-action">
+                        <div class="edit-help-key"><kbd>Ctrl</kbd> + 클릭</div>
+                        <div class="edit-help-desc"><strong>동사 기본형 변환</strong><br>어간에 "다"를 붙입니다. (바꾸→바꾸다)</div>
+                    </div>`;
+            }
+        }
+
+        // from ~ to 범위 형태소 전부 하나로 병합
+        function mergeRange(sentenceIdx, from, to) {
+            const morphemes = allMorphemes[sentenceIdx];
+            const merged    = morphemes.slice(from, to + 1);
+            const mergedLex = merged.map(m => m.lex).join('');
+
+            morphemes[from].lex      = mergedLex;
+            morphemes[from].original = morphemes[from].original || mergedLex;
+            morphemes[from].selected = merged.some(m => m.selected);
+            morphemes.splice(from + 1, to - from);
+            renderMorphemeResult(allMorphemes);
+        }
+
+        // ESC로 shift 선택 취소
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && shiftSelectState) {
+                shiftSelectState = null;
+                renderMorphemeResult(allMorphemes);
+            }
+        });
+
+        // 인접 형태소 합치기
+        function mergeWithNext(sentenceIdx, morphIdx) {
+            const morphemes = allMorphemes[sentenceIdx];
+            if (morphIdx >= morphemes.length - 1) return;
+
+            const cur  = morphemes[morphIdx];
+            const next = morphemes[morphIdx + 1];
+
+            // lex 병합, original 보존, tag는 앞 토큰 유지
+            cur.lex      = cur.lex + next.lex;
+            cur.original = cur.original || cur.lex;
+            cur.selected = cur.selected || next.selected;
+
+            morphemes.splice(morphIdx + 1, 1);
+            renderMorphemeResult(allMorphemes);
+        }
+
+        // ====================================================================
+        // 전역 변수
+        // ====================================================================
+        let mecab = null;
+        let documents = [];
+        let words = [];
+        let tfMatrix = [];
+        let dfVector = [];
+        let idfVector = [];
+        let tfidfMatrix = [];
+        let selectedWord = null;
+        let selectedWords = new Set(); // 핵심 단어 선택 Set
+        let wordScores = {};           // 단어별 TF-IDF 합산 점수
+        let allMorphemes = []; // 형태소 분석 결과 저장
+        let useLemmatize = true; // 기본형 변환 ON/OFF
+
+        // ──────────────────────────────────────────────────────────
+        //  한국어 동사/형용사 기본형 변환 엔진
+        //  VV·VA·VX 태그 형태소를 입력받아 "어간+다" 형태로 반환
+        //  처리 순서: ①ㅂ불규칙 → ②르불규칙 → ③일반 어미 제거
+        // ──────────────────────────────────────────────────────────
+        const KrLemma = (() => {
+            // 종성 인덱스 배열 (없음=0, ㄱ=1 … ㅎ=27)
+            const JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+            const JONG_IDX = Object.fromEntries(JONG.map((j,i)=>[j,i]));
+
+            // 음절 분해/조합
+            const dc = ch => {
+                const c = ch.charCodeAt(0) - 0xAC00;
+                if (c < 0 || c > 11171) return null;
+                return { cho:(c/588)|0, jung:((c%588)/28)|0, jong:c%28 };
+            };
+            const cc = (cho, jung, jong=0) =>
+                String.fromCharCode(0xAC00 + cho*588 + jung*28 + jong);
+
+            // 마지막 음절 종성 교체
+            const setJong = (s, jIdx) => {
+                const d = dc(s);
+                return d ? cc(d.cho, d.jung, jIdx) : s;
+            };
+
+            // ── ① ㅂ 불규칙 ─────────────────────────────────────
+            // 어간 모음 끝음절 + 워/와 → 해당 음절에 ㅂ 종성 추가
+            // 예: 쉬워→쉽, 아름다워→아름답, 무거워→무겁, 도와→돕
+            function bIrreg(f) {
+                let core = null;
+                if (f.endsWith('워')) core = f.slice(0,-1);
+                else if (f.endsWith('와') && f.length >= 2) core = f.slice(0,-1);
+                if (!core) return null;
+                const last = core[core.length-1];
+                const d = dc(last);
+                if (!d || d.jong !== 0) return null; // 이미 받침 있으면 제외
+                return core.slice(0,-1) + cc(d.cho, d.jung, 17); // 17=ㅂ
+            }
+
+            // ── ② 르 불규칙 ─────────────────────────────────────
+            // 형태: X(ㄹ종성)+라/러 계열  →  X(ㄹ제거)+르
+            // 예: 몰랐→모르, 불렀→부르, 달랐→다르, 나빴→나쁘(아님, 이건 ㅂ불규칙)
+            const REU_SUFFS = [
+                '랐습니다','렀습니다','랐어요','렀어요',
+                '랐어','렀어','랐다','렀다','랐','렀',
+                '라요','러요','라서','러서','라도','러도',
+                '라야','러야','라면','러면','라고','러고',
+            ];
+            function reuIrreg(f) {
+                for (const suf of REU_SUFFS) {
+                    if (!f.endsWith(suf)) continue;
+                    const before = f.slice(0, f.length - suf.length);
+                    if (!before) continue;
+                    const d = dc(before[before.length-1]);
+                    if (d && d.jong === 8) { // 8=ㄹ
+                        return before.slice(0,-1) + cc(d.cho, d.jung, 0) + '르';
+                    }
+                }
+                return null;
+            }
+
+            // ── ③ ㅎ 불규칙 ─────────────────────────────────────
+            // 어간 끝 ㅎ 탈락 후 모음 축약: 빨개→빨갛, 파래→파랗, 하얘→하얗
+            // ㅎ 어간 + 아/어 → ㅐ/ㅔ (복잡한 축약)
+            // 형태: X+(ㅐ|ㅔ)로 끝나는 경우 → X에 ㅎ 종성 추가 시도
+            function hIrreg(f) {
+                if (!f) return null;
+                const last = f[f.length-1];
+                const d = dc(last);
+                if (!d) return null;
+                // 중성이 ㅐ(1) 또는 ㅔ(5)이고 종성 없는 경우
+                if ((d.jung === 1 || d.jung === 5) && d.jong === 0) {
+                    // ㅐ→ㅏ, ㅔ→ㅓ로 되돌리고 ㅎ 종성 추가
+                    const origJung = d.jung === 1 ? 0 : 4; // ㅏ=0, ㅓ=4
+                    return f.slice(0,-1) + cc(d.cho, origJung, 27); // 27=ㅎ
+                }
+                return null;
+            }
+
+            // ── 일반 어미 목록 (긴 것 우선) ─────────────────────
+            const ENDINGS = [
+                // 과거+존댓말
+                '았습니다','었습니다','겠습니다',
+                // 아/어야겠
+                '아야겠어요','어야겠어요','아야겠어','어야겠어','아야겠다','어야겠다',
+                // 과거+요
+                '았어요','었어요',
+                // 요체
+                '아요','어요','여요',
+                // 합쇼체
+                '습니다',
+                // 과거
+                '았어','었어','았다','었다','겠다',
+                // 연결어미
+                '아서는','어서는','아서도','어서도',
+                '아서','어서','여서',
+                '아도','어도','여도',
+                '아야만','어야만','아야','어야','여야',
+                '아야','어야',
+                // 관형형
+                '는다면','는다고','는다는',
+                '는다','는데','는지','는가',
+                '은데','은지','은가',
+                '는','은','을',
+                '던','겠던',
+                // 선어말어미
+                '았','었','겠',
+                // 연결
+                '고도','고나','고서','고는','고',
+                '며','면서','면',
+                '지만','지',
+                '도록','도',
+                '서','나',
+                // 모음 어미
+                '아','어','여',
+            ];
+
+            function stripEnding(f) {
+                for (const e of ENDINGS) {
+                    if (f.endsWith(e) && f.length > e.length) {
+                        return f.slice(0, f.length - e.length);
+                    }
+                }
+                return f; // 어미 없음 → 그 자체가 어간
+            }
+
+            // ── 공개 API ─────────────────────────────────────────
+            return {
+                /**
+                 * form: 추출된 형태소 텍스트
+                 * tag : 품사 코드 (VV·VA·VX)
+                 * 반환: "어간+다" 기본형, 변환 불필요 시 null
+                 */
+                toBase(form, tag) {
+                    if (!['VV','VA','VX'].includes(tag)) return null;
+                    if (!form || form.length === 0) return null;
+                    if (form.endsWith('다')) return form; // 이미 기본형
+
+                    // ① ㅂ 불규칙
+                    const bStem = bIrreg(form);
+                    if (bStem) return bStem + '다';
+
+                    // ② 르 불규칙
+                    const rStem = reuIrreg(form);
+                    if (rStem) return rStem + '다';
+
+                    // ③ ㅎ 불규칙 (형용사)
+                    if (tag === 'VA') {
+                        const hStem = hIrreg(form);
+                        if (hStem) return hStem + '다';
+                    }
+
+                    // ④ 일반 어미 제거
+                    const stem = stripEnding(form);
+                    if (stem && stem !== form) return stem + '다';
+
+                    // ⑤ 어미 없음 → 그대로 + 다
+                    return form + '다';
+                }
+            };
+        })();
+
+        // 자주 쓰는 동사/형용사/명사 자동 변환 사전 (예외/보정용)
+        const verbStemDict = {
+            // 좋다 계열 (확장)
+            '좋아하': '좋다', '좋아해': '좋다', '좋아': '좋다', '좋은': '좋다', '좋': '좋다',
+            '좋고': '좋다', '좋아요': '좋다', '좋네요': '좋다', '좋습니다': '좋다',
+            // 하다 계열 (확장)
+            '했': '하다', '해': '하다', '하': '하다', '하는': '하다', '한': '하다',
+            '하고': '하다', '해요': '하다', '합니다': '하다', '하네요': '하다',
+            // 있다 계열 (확장)
+            '있어': '있다', '있는': '있다', '있': '있다', '있고': '있다', 
+            '있어요': '있다', '있습니다': '있다', '있네요': '있다',
+            // 없다 계열 (확장)
+            '없어': '없다', '없는': '없다', '없': '없다', '없고': '없다',
+            '없어요': '없다', '없습니다': '없다', '없네요': '없다',
+            // 사다 계열
+            '사': '사다', '샀': '사다', '사는': '사다', '산': '사다',
+            '사고': '사다', '사요': '사다', '삽니다': '사다',
+            // 먹다 계열 (확장)
+            '먹': '먹다', '먹어': '먹다', '먹는': '먹다', '먹은': '먹다',
+            '먹고': '먹다', '먹어요': '먹다', '먹습니다': '먹다',
+            // 만들다 계열 (확장)
+            '만들': '만들다', '만드': '만들다', '만든': '만들다', '만들어': '만들다',
+            '만들고': '만들다', '만들어요': '만들다', '만듭니다': '만들다',
+            // 보다 계열 (확장)
+            '보': '보다', '봐': '보다', '보는': '보다', '본': '보다',
+            '보고': '보다', '봐요': '보다', '봅니다': '보다',
+            // 가다 계열 (확장)
+            '가': '가다', '간': '가다', '가는': '가다', '가고': '가다',
+            '가요': '가다', '갑니다': '가다',
+            // 오다 계열 (확장)
+            '와': '오다', '온': '오다', '오는': '오다', '오고': '오다',
+            '와요': '오다', '옵니다': '오다',
+            // 되다 계열 (확장)
+            '되': '되다', '된': '되다', '되는': '되다', '돼': '되다',
+            '되고': '되다', '돼요': '되다', '됩니다': '되다',
+            // 주다 계열 (확장)
+            '주': '주다', '준': '주다', '주는': '주다', '줘': '주다',
+            '주고': '주다', '줘요': '주다', '줍니다': '주다',
+            // 받다 계열 (확장)
+            '받': '받다', '받아': '받다', '받는': '받다', '받은': '받다',
+            '받고': '받다', '받아요': '받다', '받습니다': '받다',
+            // 쓰다 계열 (확장)
+            '써': '쓰다', '쓴': '쓰다', '쓰는': '쓰다', '쓰고': '쓰다',
+            '써요': '쓰다', '씁니다': '쓰다',
+            // 찾다 계열 (확장)
+            '찾': '찾다', '찾아': '찾다', '찾는': '찾다', '찾은': '찾다',
+            '찾고': '찾다', '찾아요': '찾다', '찾습니다': '찾다',
+            // 나오다 계열 (확장)
+            '나와': '나오다', '나온': '나오다', '나오는': '나오다',
+            '나오고': '나오다', '나와요': '나오다', '나옵니다': '나오다',
+            // 들어가다 계열 (확장)
+            '들어가': '들어가다', '들어간': '들어가다', '들어가는': '들어가다',
+            '들어가고': '들어가다', '들어가요': '들어가다',
+            // 어울리다 계열 (확장)
+            '어울려': '어울리다', '어울리': '어울리다', '어울린': '어울리다',
+            '어울리고': '어울리다', '어울려요': '어울리다',
+            // 괜찮다 계열 (확장 - 명사형 포함)
+            '괜찮아': '괜찮다', '괜찮은': '괜찮다', '괜찮': '괜찮다',
+            '괜찮고': '괜찮다', '괜찮아요': '괜찮다', '괜찮습니다': '괜찮다',
+            // 맛있다 계열 (확장)
+            '맛있어': '맛있다', '맛있는': '맛있다', '맛있': '맛있다',
+            '맛있고': '맛있다', '맛있어요': '맛있다', '맛있습니다': '맛있다',
+            // 재밌다 계열 (확장)
+            '재밌어': '재밌다', '재밌는': '재밌다', '재밌': '재밌다',
+            '재밌고': '재밌다', '재밌어요': '재밌다', '재밌습니다': '재밌다',
+            // 싸다 계열 (확장)
+            '싸': '싸다', '싼': '싸다', '싸고': '싸다', '싸요': '싸다',
+            // 비싸다 계열 (확장)
+            '비싸': '비싸다', '비싼': '비싸다', '비싸고': '비싸다', '비싸요': '비싸다',
+            // 크다 계열 (확장)
+            '크': '크다', '큰': '크다', '크고': '크다', '커요': '크다', '큽니다': '크다',
+            // 작다 계열 (확장)
+            '작아': '작다', '작은': '작다', '작': '작다', '작고': '작다',
+            '작아요': '작다', '작습니다': '작다',
+            // 많다 계열 (확장 - 중요!)
+            '많아': '많다', '많은': '많다', '많': '많다', '많고': '많다',
+            '많아요': '많다', '많습니다': '많다', '많네요': '많다',
+            // 적다 계열 (확장)
+            '적어': '적다', '적은': '적다', '적': '적다', '적고': '적다',
+            '적어요': '적다', '적습니다': '적다',
+            // 빠르다 계열 (확장)
+            '빨라': '빠르다', '빠른': '빠르다', '빨리': '빠르다', '빠르고': '빠르다',
+            '빨라요': '빠르다', '빠릅니다': '빠르다',
+            // 느리다 계열 (확장)
+            '느려': '느리다', '느린': '느리다', '느리고': '느리다', '느려요': '느리다',
+            // 예쁘다 계열 (확장)
+            '예쁘': '예쁘다', '예쁜': '예쁘다', '예쁘고': '예쁘다', '예뻐요': '예쁘다',
+            // 아름답다 계열 (확장)
+            '아름다워': '아름답다', '아름다운': '아름답다', '아름답고': '아름답다',
+            // 쉽다 계열 (확장)
+            '쉬워': '쉽다', '쉬운': '쉽다', '쉽': '쉽다', '쉽고': '쉽다',
+            '쉬워요': '쉽다', '쉽습니다': '쉽다',
+            // 어렵다 계열 (확장)
+            '어려워': '어렵다', '어려운': '어렵다', '어렵': '어렵다', '어렵고': '어렵다',
+            '어려워요': '어렵다', '어렵습니다': '어렵다',
+            // 가볍다 계열 (확장)
+            '가벼워': '가볍다', '가벼운': '가볍다', '가볍고': '가볍다', '가벼워요': '가볍다',
+            // 무겁다 계열 (확장)
+            '무거워': '무겁다', '무거운': '무겁다', '무겁고': '무겁다', '무거워요': '무겁다',
+            // 차다 계열 (확장)
+            '차': '차다', '찬': '차다', '차고': '차다', '차요': '차다',
+            // 놀다 계열 (확장)
+            '놀': '놀다', '노': '놀다', '노는': '놀다', '놀고': '놀다', '놀아요': '놀다',
+            // 저렴하다 계열
+            '저렴하': '저렴하다', '저렴한': '저렴하다', '저렴해': '저렴하다', '저렴하고': '저렴하다', '저렴해요': '저렴하다',
+            // 안심하다 계열
+            '안심하': '안심하다', '안심해': '안심하다', '안심되': '안심하다', '안심돼': '안심하다', '안심돼요': '안심하다',
+            // 자세하다 계열
+            '자세하': '자세하다', '자세한': '자세하다', '자세해': '자세하다', '자세해요': '자세하다',
+            // 다양하다 계열
+            '다양하': '다양하다', '다양한': '다양하다', '다양해': '다양하다', '다양해요': '다양하다',
+            // 간단하다 계열
+            '간단하': '간단하다', '간단한': '간단하다', '간단해': '간단하다', '간단해요': '간단하다'
+        };
+
+        // 품사 태그 정의 (명사/동사 2분법)
+        const posTagInfo = {
+            '명사': { name:'명사', desc:'일반명사·고유명사·대명사·수사 포함', examples:['사과','학교','서울','BTS'], detail:'TF-IDF 핵심 키워드.', selected: true  },
+            '동사': { name:'동사', desc:'동작·작용·상태를 나타내는 말 (어간)', examples:['먹','가','예쁘','크'],     detail:'형용사도 동사로 통합됩니다.', selected: true  },
+            '기타': { name:'기타', desc:'조사·어미·부사·기호 등',             examples:['이','가','고','매우'],     detail:'TF-IDF 계산에서 제외됩니다.', selected: false },
+        };
+
+        let selectedPosTags = new Set(['명사', '동사']);
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', async () => {
+            renderFormulas();
+            renderPosTagButtons();
+            initEditHelp();   // 터치/마우스 기기에 맞게 편집 도움말 렌더링
+            initGemini();
+        });
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // ── Gemini 프록시 (Cloudflare Worker) ───────────────────────
+        const GEMINI_PROXY = 'https://tfidf.tjdgus1121.workers.dev';
+
+        function resolveGeminiUrl(model) {
+            return `${GEMINI_PROXY}/${model}`;
+        }
+
+        function initGemini() {
+            updateStatus('ready', '✅', '준비 완료');
+            document.getElementById('analyzeBtn').disabled = false;
+        }
+
+        async function callGeminiMorpheme(sentences) {
+            const prompt = `한국어 문장들을 형태소로 분리하고 각각을 명사 또는 동사로만 분류하세요.
+
+규칙:
+- 명사: 일반명사, 고유명사, 대명사, 수사 → tag: "명사"
+- 동사: 동사, 형용사 모두 포함 → 어간만 반환 (예: "먹었다"→"먹", "아름다운"→"아름답", "조사했다"→"조사하", "발전했다"→"발전하") → tag: "동사"
+  ※ 하다동사는 반드시 "하"를 포함한 어간을 반환 (조사하, 연구하, 발전하, 분석하 등)
+- 조사, 어미, 부사, 기호 등 나머지 → tag: "기타"
+- 조사와 어미는 반드시 분리
+- JSON 배열만 반환, 설명 없이
+
+출력 형식: [[{"lex":"형태소","tag":"명사 또는 동사 또는 기타"}, ...], ...]
+
+문장들:
+${sentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
+
+            const res = await fetch(
+                resolveGeminiUrl('gemini-2.5-flash-lite'),
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0,
+                            responseMimeType: 'application/json',
+                            responseSchema: {
+                                type: 'array',
+                                items: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            lex: { type: 'string' },
+                                            tag: { type: 'string' }
+                                        },
+                                        required: ['lex', 'tag']
+                                    }
+                                }
+                            }
+                        }
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error?.message ?? `HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            const text = data.candidates[0].content.parts[0].text;
+            const raw = typeof text === 'string' ? JSON.parse(text) : text;
+
+            return raw.map(sentenceMorphs =>
+                sentenceMorphs.map(morph => {
+                    const tag = simplifyTag(morph.tag); // 혹시 세종 태그 섞이면 변환
+                    return {
+                        lex:      morph.lex,
+                        tag,
+                        selected: selectedPosTags.has(tag),
+                        original: null
+                    };
+                })
+            );
+        }
+
+        // 형태소 하나를 기본형으로 변환
+        // 우선순위: ① verbStemDict 사전 → ② KrLemma 규칙 엔진
+        function applyLemma(lex, tag) {
+            if (!useLemmatize) return lex;
+            if (verbStemDict[lex]) return verbStemDict[lex];
+            const base = KrLemma.toBase(lex, tag);
+            return base ?? lex;
+        }
+
+        // Worker 결과 후처리 (기본형 변환 + selected 플래그)
+        function postProcessRaw(rawResult) {
+            const morphemes = [];
+            rawResult.forEach(word => {
+                word.morphs.forEach(morph => {
+                    const rawLex = morph.lex;
+                    const lex    = applyLemma(rawLex, morph.tag);
+                    const tag    = simplifyTag(morph.tag);   // 세종 → 간략 태그
+                    morphemes.push({
+                        lex,
+                        tag,
+                        selected: selectedPosTags.has(tag),
+                        original: lex !== rawLex ? rawLex : null
+                    });
+                });
+            });
+            return morphemes;
+        }
+
+        // 상태 업데이트
+        function updateStatus(type, icon, text) {
+            const badge = document.getElementById('statusBadge');
+            const iconEl = document.getElementById('statusIcon');
+            const textEl = document.getElementById('statusText');
+            
+            badge.className = 'status-badge ' + type;
+            iconEl.textContent = icon;
+            textEl.textContent = text;
+        }
+
+        const POS_GROUPS = [
+            { label: '포함', tags: ['명사', '동사'] },
+            { label: '제외', tags: ['기타'] },
+        ];
+
+        // 품사 칩 렌더링
+        function renderPosTagButtons() {
+            const container = document.getElementById('posTagsContainer');
+            container.innerHTML = POS_GROUPS.map(group => {
+                const chips = group.tags
+                    .filter(tag => posTagInfo[tag])
+                    .map(tag => {
+                        const info = posTagInfo[tag];
+                        const on   = selectedPosTags.has(tag);
+                        return `<button type="button"
+                                        class="pos-chip${on ? ' active' : ''}"
+                                        onclick="togglePosTag('${tag}')"
+                                        title="${info.desc}">
+                                    <span class="pos-chip-code">${tag}</span>
+                                    <span class="pos-chip-name">${info.name}</span>
+                                    <span class="pos-chip-info"
+                                          onclick="event.stopPropagation();showPosInfo('${tag}')"
+                                          title="설명 보기">ⓘ</span>
+                                </button>`;
+                    }).join('');
+                return `<div class="pos-group">
+                            <span class="pos-group-label">${group.label}</span>
+                            <div class="pos-chips">${chips}</div>
+                        </div>`;
+            }).join('');
+        }
+
+        // 품사 설명 모달 열기
+        function showPosInfo(tag) {
+            const info = posTagInfo[tag];
+            const modal = document.getElementById('posModal');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+
+            title.innerHTML = `${info.name} <span style="color: #94a3b8; font-size: 1rem;">(${tag})</span>`;
+
+            body.innerHTML = `
+                <div class="modal-section">
+                    <div class="modal-section-title">📖 정의</div>
+                    <div>${info.desc}</div>
+                </div>
+
+                <div class="modal-section">
+                    <div class="modal-section-title">✨ 예시</div>
+                    <div class="modal-examples">
+                        ${(info.examples || []).map(ex => `<div class="modal-example-item">• ${ex}</div>`).join('')}
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <div class="modal-section-title">💡 TF-IDF 분석에서의 활용</div>
+                    <div>${info.detail ?? info.desc}</div>
+                </div>
+
+                <div class="modal-section">
+                    <div style="background: ${selectedPosTags.has(tag) ? '#D1FAE5' : '#FEE2E2'};
+                                padding: 12px; border-radius: 8px; text-align: center;">
+                        <strong>${selectedPosTags.has(tag) ? '✅ 현재 선택됨' : '❌ 현재 선택 안 됨'}</strong>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('show');
+        }
+
+        // 모달 닫기
+        function closeModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            const modal = document.getElementById('posModal');
+            modal.classList.remove('show');
+        }
+
+        // 품사 태그 토글
+        function togglePosTag(tag) {
+            if (selectedPosTags.has(tag)) {
+                selectedPosTags.delete(tag);
+            } else {
+                selectedPosTags.add(tag);
+            }
+            renderPosTagButtons();
+            if (documents.length > 0 && allMorphemes.length > 0) {
+                calculate();
+            }
+        }
+
+        // KaTeX으로 수식 렌더링
+        function renderFormulas() {
+            katex.render("TF(t, d) = \\text{문장 } d \\text{에서 단어 } t \\text{의 등장 횟수}", 
+                document.getElementById('formula-tf'));
+            katex.render("DF(t) = \\text{단어 } t \\text{가 등장한 문장의 수}", 
+                document.getElementById('formula-df'));
+            updateIdfFormula();
+            updateTfidfFormula();
+        }
+
+        function updateIdfFormula() {
+            const useLog = document.getElementById('useLog').checked;
+            const formula = useLog 
+                ? "IDF(t) = \\log\\frac{N}{DF(t)}"
+                : "IDF(t) = \\frac{N}{DF(t)}";
+            katex.render(formula, document.getElementById('formula-idf'));
+        }
+
+        function updateTfidfFormula() {
+            const useLog = document.getElementById('useLog').checked;
+            const formula = useLog
+                ? "TF\\text{-}IDF(t, d) = TF(t, d) \\times \\log\\frac{N}{DF(t)}"
+                : "TF\\text{-}IDF(t, d) = TF(t, d) \\times \\frac{N}{DF(t)}";
+            katex.render(formula, document.getElementById('formula-tfidf'));
+        }
+
+        // 예시 불러오기
+        function toggleEditHelp(toggleEl) {
+            const body = toggleEl.nextElementSibling;
+            const arrow = toggleEl.querySelector('.toggle-arrow');
+            const isOpen = body.classList.toggle('open');
+            arrow.classList.toggle('open', isOpen);
+        }
+
+        function loadExample() {
+            const examples = [
+                `인공지능은 이미지 데이터에서 이미지 패턴을 찾는다.
+이미지 자료는 픽셀 행렬로 표현되며 수학 처리가 가능하다.
+학생들은 행렬 값을 바꾸며 이미지 밝기 변화를 관찰했다.
+인공지능 모델은 많은 데이터에서 이미지 특징을 학습한다.
+수학 수업에서 데이터와 행렬을 활용하면 인공지능 원리를 이해하기 쉽다.`,
+
+                `친환경 정책은 탄소중립 목표와 경제 성장을 함께 추구한다.
+기후위기 대응을 위해 친환경 에너지와 친환경 기술 투자가 확대되고 있다.
+물가 상승은 소비 위축과 경제 불안을 키웠다.
+탄소중립 기술은 에너지 산업과 지역 경제에 영향을 준다.
+친환경 소비가 늘면서 기업의 지속가능 전략이 중요해졌다.`,
+
+                `학생들은 진로 탐색을 위해 대학 학과와 대학 정보를 조사했다.
+동아리 활동에서 학생들은 로봇 제작과 코딩 실습을 진행했다.
+진로 상담 시간에는 학과 선택과 자기소개서 준비가 이루어졌다.
+코딩 프로젝트는 문제해결 능력과 협업 태도를 기르는 데 도움이 되었다.
+대학 탐방 후 학생들은 진로 목표와 학습 계획을 구체화했다.`
+            ];
+
+            const randomExample = examples[Math.floor(Math.random() * examples.length)];
+            const textarea = document.getElementById('documentsTextarea');
+            textarea.value = randomExample;
+        }
+
+        // 형태소 분석
+        function analyzeMorphemes(text) {
+            if (!mecab) return [];
+
+            try {
+                const result = mecab.analyze(text);
+                const morphemes = [];
+
+                result.forEach(word => {
+                    word.morphs.forEach(morph => {
+                        let lex = morph.lex;
+                        
+                        // 모든 품사에 대해 자동 변환 사전 확인
+                        if (verbStemDict[lex]) {
+                            lex = verbStemDict[lex];
+                        }
+                        
+                        morphemes.push({
+                            lex: lex,
+                            tag: morph.tag,
+                            selected: selectedPosTags.has(morph.tag),
+                            original: lex !== morph.lex ? morph.lex : null // 변환된 경우만 original 저장
+                        });
+                    });
+                });
+
+                return morphemes;
+            } catch (error) {
+                console.error('형태소 분석 오류:', error);
+                return [];
+            }
+        }
+
+        // 형태소 분석 결과 표시
+        function renderMorphemeResult(allMorphemes) {
+            const container = document.getElementById('morphemeContent');
+            const section = document.getElementById('morphemeResult');
+            
+            // Shift 선택 중 힌트 배너
+            const shiftHintHTML = shiftSelectState
+                ? `<div class="shift-hint show">⇧ 합치기 모드 — 합칠 <strong>끝 단어</strong>를 Shift+클릭하세요 &nbsp;(ESC = 취소)</div>`
+                : `<div class="shift-hint"></div>`;
+
+            container.innerHTML = shiftHintHTML + allMorphemes.map((morphemes, sentenceIdx) => `
+                <div class="morpheme-sentence">
+                    <div class="morpheme-sentence-label">
+                        문장 ${sentenceIdx + 1}
+                        <span class="morpheme-sentence-orig">${(documents[sentenceIdx] || '').replace(/</g, '&lt;')}</span>
+                    </div>
+                    <div class="morpheme-tokens">
+                        ${morphemes.map((m, morphIdx) => {
+                            const isShiftPicked = shiftSelectState &&
+                                shiftSelectState.sentenceIdx === sentenceIdx &&
+                                shiftSelectState.morphIdx    === morphIdx;
+                            const baseCss  = m.selected ? 'selected' : 'excluded';
+                            const cssClass = isShiftPicked ? baseCss + ' shift-selecting' : baseCss;
+                            const isAutoConverted = m.original && m.original !== m.lex;
+                            const isLast = morphIdx === morphemes.length - 1;
+                            const titleTxt = isShiftPicked
+                                ? '선택됨 — 끝 단어를 Shift+클릭하여 합치기'
+                                : shiftSelectState
+                                    ? 'Shift+클릭 → 여기까지 합치기'
+                                    : '더블클릭 → 수정 / Shift+클릭 → 합치기';
+                            const col = getTagColor(m.tag);
+
+                            return `
+                                <div class="morph-token-wrapper">
+                                    <div class="morph-token ${cssClass}"
+                                         data-si="${sentenceIdx}" data-mi="${morphIdx}"
+                                         onclick="handleTokenClick(event, ${sentenceIdx}, ${morphIdx})"
+                                         ondblclick="handleTokenDblClick(event, ${sentenceIdx}, ${morphIdx})"
+                                         ontouchstart="onTokenTouchStart(event,${sentenceIdx},${morphIdx})"
+                                         ontouchmove="onTokenTouchMove()"
+                                         ontouchend="onTokenTouchEnd()"
+                                         title="${titleTxt}">
+                                        <div class="morph-tag-badge" style="background:${col.bg}; color:${col.text};">${m.tag}</div>
+                                        <div class="morph-arc" style="border-color:${col.arc};"></div>
+                                        <div class="morph-word">
+                                            ${m.lex}${isAutoConverted ? `<span class="morph-converted-badge" title="원본: ${m.original}">✓</span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+            
+            section.style.display = 'block';
+        }
+
+        // 인라인 편집창 표시
+        function showEditBox(sentenceIdx, morphIdx, tokenEl) {
+            // 기존 편집창이 있으면 제거
+            const existingBox = document.querySelector('.inline-edit-box');
+            if (existingBox) {
+                existingBox.remove();
+            }
+
+            const morpheme = allMorphemes[sentenceIdx][morphIdx];
+            const currentLex = morpheme.lex;
+            const originalLex = morpheme.original || currentLex;
+
+            // 편집창 생성
+            const wrapper = tokenEl.closest('.morph-token-wrapper');
+            const editBox = document.createElement('div');
+            editBox.className = 'inline-edit-box';
+            const currentTag = morpheme.tag;
+            editBox.innerHTML = `
+                <div style="background:white;border:2px solid #3B82F6;border-radius:10px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,0.16);min-width:220px;">
+                    <div style="font-size:0.78rem;color:#94A3B8;margin-bottom:6px;font-weight:600;letter-spacing:0.02em;">단어 수정</div>
+                    ${originalLex !== currentLex ? `<div style="font-size:0.8rem;color:#94A3B8;margin-bottom:4px;">원본: <strong style="color:#475569">${originalLex}</strong></div>` : ''}
+                    <input type="text"
+                           id="editInput_${sentenceIdx}_${morphIdx}"
+                           value="${currentLex}"
+                           style="width:100%;padding:7px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:0.95rem;margin-bottom:8px;box-sizing:border-box;outline:none;"
+                           placeholder="새로운 단어 입력"
+                           onkeydown="if(event.key==='Enter')applyEdit(${sentenceIdx},${morphIdx});if(event.key==='Escape')cancelEdit();">
+                    <div style="font-size:0.75rem;color:#94A3B8;margin-bottom:5px;font-weight:600;">품사 변경</div>
+                    <input type="hidden" id="editTag_${sentenceIdx}_${morphIdx}" value="${currentTag}">
+                    <div class="edit-tag-row">
+                        ${['명사','동사','기타'].map(t => `
+                        <button type="button"
+                                class="edit-tag-btn${currentTag===t?' tag-active-'+t:''}"
+                                id="editTagBtn_${sentenceIdx}_${morphIdx}_${t}"
+                                onclick="selectEditTag(${sentenceIdx},${morphIdx},'${t}')">${t}</button>`).join('')}
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button type="button" onclick="applyEdit(${sentenceIdx}, ${morphIdx})"
+                                style="flex:1;background:#3B82F6;color:white;border:none;padding:6px 10px;border-radius:5px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+                            확인
+                        </button>
+                        <button type="button" onclick="cancelEdit()"
+                                style="flex:1;background:#F1F5F9;color:#475569;border:none;padding:6px 10px;border-radius:5px;cursor:pointer;font-size:0.82rem;">
+                            취소
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            editBox.style.position = 'absolute';
+            editBox.style.top = '100%';
+            editBox.style.left = '0';
+            editBox.style.marginTop = '4px';
+            editBox.style.zIndex = '1000';
+            
+            wrapper.appendChild(editBox);
+            
+            // 입력창에 포커스
+            const input = document.getElementById(`editInput_${sentenceIdx}_${morphIdx}`);
+            input.focus();
+            input.select();
+            
+            // Enter 키로 확인
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    applyEdit(sentenceIdx, morphIdx);
+                }
+            });
+            
+            // ESC 키로 취소
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    cancelEdit();
+                }
+            });
+        }
+
+        // 품사 버튼 선택 (편집창 내)
+        function selectEditTag(si, mi, tag) {
+            document.getElementById(`editTag_${si}_${mi}`).value = tag;
+            ['명사','동사','기타'].forEach(t => {
+                const btn = document.getElementById(`editTagBtn_${si}_${mi}_${t}`);
+                if (btn) {
+                    btn.className = 'edit-tag-btn' + (t === tag ? ` tag-active-${t}` : '');
+                }
+            });
+        }
+
+        // 편집 적용
+        function applyEdit(sentenceIdx, morphIdx) {
+            const input   = document.getElementById(`editInput_${sentenceIdx}_${morphIdx}`);
+            const tagInput = document.getElementById(`editTag_${sentenceIdx}_${morphIdx}`);
+            const newLex  = input ? input.value.trim() : '';
+            const newTag  = tagInput ? tagInput.value : null;
+            const morpheme = allMorphemes[sentenceIdx][morphIdx];
+
+            // 텍스트 변경
+            if (newLex !== '' && newLex !== morpheme.lex) {
+                if (!morpheme.original) morpheme.original = morpheme.lex;
+                morpheme.lex = newLex;
+            }
+
+            // 품사 변경
+            if (newTag && newTag !== morpheme.tag) {
+                morpheme.tag      = newTag;
+                morpheme.selected = selectedPosTags.has(newTag);
+            }
+
+            cancelEdit();
+            renderMorphemeResult(allMorphemes);
+        }
+
+        // 편집 취소
+        function cancelEdit() {
+            const editBox = document.querySelector('.inline-edit-box');
+            if (editBox) {
+                editBox.remove();
+            }
+        }
+
+        // 외부 클릭 시 편집창 닫기
+        document.addEventListener('click', (e) => {
+            const editBox = document.querySelector('.inline-edit-box');
+            if (editBox && !editBox.contains(e.target) && !e.target.closest('.morph-token')) {
+                cancelEdit();
+            }
+        });
+
+        // 단어 사전 렌더링
+        function renderVocabulary(vocabulary, docWords) {
+            const container = document.getElementById('vocabularyTokens');
+            const countEl = document.getElementById('vocabCount');
+            const card = document.getElementById('dictionaryCard');
+
+            countEl.textContent = vocabulary.length;
+
+            container.innerHTML = vocabulary.map((token, index) => {
+                // 이 단어가 등장하는 문장 번호 찾기
+                const docIndices = [];
+                docWords.forEach((words, docIndex) => {
+                    if (words.includes(token)) {
+                        docIndices.push(docIndex + 1);
+                    }
+                });
+
+                const docBadges = docIndices.map(n =>
+                    `<span style="background: #E0E7FF; color: #4338CA; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 4px;">문장${n}</span>`
+                ).join('');
+
+                return `
+                    <span class="token" style="position: relative; display: inline-flex; align-items: center;">
+                        <span style="font-size: 0.7rem; color: #94a3b8; margin-right: 4px;">${index + 1}.</span>
+                        <strong>${token}</strong>
+                        ${docBadges}
+                    </span>
+                `;
+            }).join('');
+
+            card.style.display = 'block';
+            // card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); // 스크롤 제거
+        }
+
+        // 추출된 단어 미리보기
+        function renderPreview(allTokens) {
+            const container = document.getElementById('previewTokens');
+            const section = document.getElementById('previewSection');
+
+            const uniqueTokens = [...new Set(allTokens.flat())].sort();
+
+            container.innerHTML = uniqueTokens.map(token => `
+                <span class="token">${token}</span>
+            `).join('');
+
+            section.style.display = 'block';
+        }
+
+        // Step 1: 형태소 분석하기
+        async function analyzeSentences() {
+
+            // textarea에서 문장 수집
+            const textarea = document.getElementById('documentsTextarea');
+            const textLines = textarea.value
+                .split('\n')
+                .map(line => line.trim())
+                .filter(text => text.length > 0);
+
+            // 각 줄을 마침표로 추가 분리
+            documents = [];
+            textLines.forEach(line => {
+                const sentences = line.split(/\.\s+|\.$/)
+                    .map(s => s.trim())
+                    .filter(s => s.length > 0);
+                sentences.forEach(sentence => {
+                    if (!sentence.endsWith('.')) sentence += '.';
+                    documents.push(sentence);
+                });
+            });
+
+            if (documents.length < 1) {
+                alert('문장을 1개 이상 입력해주세요.');
+                return;
+            }
+
+            document.getElementById('analyzeBtn').disabled = true;
+            showAnalysisModal(documents.length);
+
+            // ── Gemini 분석 ──────────────────────────────────
+            updateAnalysisModal(0, documents.length, '분석 중...');
+            try {
+                allMorphemes = await callGeminiMorpheme(documents);
+                hideAnalysisModal();
+                document.getElementById('analyzeBtn').disabled = false;
+                renderMorphemeResult(allMorphemes);
+            } catch (e) {
+                hideAnalysisModal();
+                document.getElementById('analyzeBtn').disabled = false;
+                clog('error', '분석 오류:' + e.message);
+                alert('분석 오류:' + e.message);
+            }
+        }
+
+        // Step 2: TF-IDF 계산 실행
+        function calculate() {
+            if (!allMorphemes || allMorphemes.length === 0) {
+                alert('먼저 형태소 분석을 수행해주세요.');
+                return;
+            }
+
+            clog('info', 'TF-IDF 계산 시작');
+
+            // 선택된 품사만 추출하여 단어 사전 구축
+            const wordSet = new Set();
+            const docWords = allMorphemes.map(morphemes => {
+                const tokens = morphemes
+                    .filter(m => m.selected)
+                    .map(m => m.lex);
+                tokens.forEach(w => wordSet.add(w));
+                return tokens;
+            });
+            words = Array.from(wordSet).sort();
+
+            if (words.length === 0) {
+                clog('error', '추출된 단어 없음 — 품사 선택 확인 필요');
+                alert('추출된 단어가 없습니다. 품사 선택을 확인해주세요.');
+                return;
+            }
+
+            clog('success', `TF-IDF 완료 — 어휘 ${words.length}개, 문장 ${documents.length}개`);
+
+            // 단어 사전 표시 제거 (학생들에게 보여줄 필요 없음)
+            // renderVocabulary(words, docWords);
+
+            // 미리보기
+            renderPreview(docWords);
+
+            // TF 계산
+            tfMatrix = documents.map((doc, i) => {
+                const row = {};
+                words.forEach(word => {
+                    row[word] = docWords[i].filter(w => w === word).length;
+                });
+                return row;
+            });
+
+            // DF 계산
+            dfVector = {};
+            words.forEach(word => {
+                dfVector[word] = documents.filter((doc, i) => tfMatrix[i][word] > 0).length;
+            });
+
+            // IDF 계산
+            const useLog = document.getElementById('useLog').checked;
+            const N = documents.length;
+            idfVector = {};
+            words.forEach(word => {
+                const df = dfVector[word];
+                if (useLog) {
+                    idfVector[word] = Math.log10(N / df);
+                } else {
+                    idfVector[word] = N / df;
+                }
+            });
+
+            // TF-IDF 계산
+            tfidfMatrix = tfMatrix.map(row => {
+                const tfidfRow = {};
+                words.forEach(word => {
+                    tfidfRow[word] = row[word] * idfVector[word];
+                });
+                return tfidfRow;
+            });
+
+            // 수식 업데이트
+            updateIdfFormula();
+            updateTfidfFormula();
+
+            // 핵심 단어 자동 선택 후 테이블 렌더링
+            computeWordScores();
+            resetTopWords();
+            renderTables();
+
+            // 단어 선택 패널 표시 (resultCard는 "다음" 버튼으로 진입)
+            document.getElementById('wordSelectorCard').style.display = 'block';
+            document.getElementById('resultCard').style.display = 'none';
+            updateSpotlight();
+        }
+
+        // 테이블 렌더링
+        function renderTables() {
+            renderTfTable();
+            renderDfTable();
+            renderIdfTable();
+            renderTfidfTable();
+        }
+
+        // 현재 선택된 단어만 정렬해서 반환 (선택 없으면 전체)
+        function getDisplayWords() {
+            const pool = selectedWords.size > 0
+                ? words.filter(w => selectedWords.has(w))
+                : words;
+            return pool.sort(wordSortKey);
+        }
+
+        // TF 테이블
+        function renderTfTable() {
+            const dw = getDisplayWords();
+            const table = document.getElementById('tfTable');
+            let html = '<thead><tr><th></th>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' selected-word' : '';
+                html += `<th class="clickable-word${sel}" onclick="selectWord('${word}')">${word}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            tfMatrix.forEach((row, i) => {
+                html += `<tr><td>문장 ${i + 1}</td>`;
+                dw.forEach(word => {
+                    const sel = selectedWord === word ? ' class="selected-word"' : '';
+                    html += `<td${sel}>${row[word]}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '<tr class="tf-sum-row"><td>총합계</td>';
+            dw.forEach(word => {
+                const sum = tfMatrix.reduce((s, row) => s + row[word], 0);
+                html += `<td>${sum}</td>`;
+            });
+            html += '</tr>';
+
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        // DF 테이블
+        function renderDfTable() {
+            const dw = getDisplayWords();
+            const table = document.getElementById('dfTable');
+            let html = '<thead><tr><th></th>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' selected-word' : '';
+                html += `<th class="clickable-word${sel}" onclick="selectWord('${word}')">${word}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            html += '<tr class="df-row"><td>DF</td>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' class="selected-word"' : '';
+                html += `<td${sel}>${dfVector[word]}</td>`;
+            });
+            html += '</tr>';
+
+            html += `<tr><td style="white-space:nowrap;">N<br>(문장 수)</td>`;
+            html += `<td colspan="${dw.length}" style="text-align:center;font-weight:600;color:var(--primary);">${documents.length}</td>`;
+            html += '</tr>';
+
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        // IDF 테이블
+        function renderIdfTable() {
+            const dw = getDisplayWords();
+            const table = document.getElementById('idfTable');
+            const useLog = document.getElementById('useLog').checked;
+
+            let html = '<thead><tr><th></th>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' selected-word' : '';
+                html += `<th class="clickable-word${sel}" onclick="selectWord('${word}')">${word}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            html += '<tr class="df-row"><td>DF</td>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' class="selected-word"' : '';
+                html += `<td${sel}>${dfVector[word]}</td>`;
+            });
+            html += '</tr>';
+
+            html += '<tr><td>N / DF</td>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' class="selected-word"' : '';
+                html += `<td${sel}>${(documents.length / dfVector[word]).toFixed(2)}</td>`;
+            });
+            html += '</tr>';
+
+            html += '<tr class="idf-row"><td>IDF' + (useLog ? ' (log₁₀)' : '') + '</td>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' class="selected-word"' : '';
+                html += `<td${sel}>${idfVector[word].toFixed(3)}</td>`;
+            });
+            html += '</tr>';
+
+            html += '</tbody>';
+            table.innerHTML = html;
+
+            const idfWarning = document.getElementById('idf-single-warning');
+            if (documents.length === 1) {
+                const msg = useLog
+                    ? '⚠️ <strong>문장이 1개뿐입니다.</strong> 모든 단어의 IDF = log₁₀(1/1) = <strong>0</strong>이 되어 TF-IDF도 모두 0입니다. TF 탭만 의미 있습니다. (log 해제 시 IDF = 1)'
+                    : '⚠️ <strong>문장이 1개뿐입니다.</strong> 모든 단어의 IDF = 1/1 = <strong>1</strong>이 되어 TF-IDF = TF와 동일합니다.';
+                idfWarning.innerHTML = msg;
+                idfWarning.style.display = 'block';
+            } else {
+                idfWarning.style.display = 'none';
+            }
+        }
+
+        // TF-IDF 테이블 (히트맵)
+        function renderTfidfTable() {
+            const dw = getDisplayWords();
+            let maxValue = 0;
+            tfidfMatrix.forEach(row => {
+                dw.forEach(word => {
+                    if (row[word] > maxValue) maxValue = row[word];
+                });
+            });
+
+            const table = document.getElementById('tfidfTable');
+            let html = '<thead><tr><th></th>';
+            dw.forEach(word => {
+                const sel = selectedWord === word ? ' selected-word' : '';
+                html += `<th class="clickable-word${sel}" onclick="selectWord('${word}')">${word}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            tfidfMatrix.forEach((row, i) => {
+                html += `<tr><td>문장 ${i + 1}</td>`;
+                dw.forEach(word => {
+                    const value = row[word];
+                    const heatLevel = maxValue > 0 ? Math.floor((value / maxValue) * 9) : 0;
+                    const cls = selectedWord === word ? 'selected-word' : `heat-${heatLevel}`;
+                    html += `<td class="${cls}">${value.toFixed(2)}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            table.innerHTML = html;
+
+            const tfidfWarning = document.getElementById('tfidf-single-warning');
+            if (documents.length === 1) {
+                const useLog = document.getElementById('useLog').checked;
+                const msg = useLog
+                    ? '⚠️ <strong>문장이 1개뿐입니다.</strong> IDF = 0이므로 TF-IDF 값이 모두 <strong>0</strong>입니다. TF 탭을 확인하세요. (log 해제 시 TF-IDF = TF)'
+                    : '⚠️ <strong>문장이 1개뿐입니다.</strong> IDF = 1이므로 TF-IDF 값이 TF와 <strong>동일</strong>합니다.';
+                tfidfWarning.innerHTML = msg;
+                tfidfWarning.style.display = 'block';
+            } else {
+                tfidfWarning.style.display = 'none';
+            }
+
+            const legend = document.getElementById('legend');
+            legend.innerHTML = '<span style="margin-right: 8px;">값 크기:</span>';
+            for (let i = 0; i <= 9; i += 3) {
+                const percent = Math.round((i / 9) * 100);
+                legend.innerHTML += `
+                    <div class="legend-item">
+                        <div class="legend-color heat-${i}"></div>
+                        <span>${percent}%</span>
+                    </div>
+                `;
+            }
+        }
+
+        // 단어 클릭 하이라이트 (기존)
+        function selectWord(word) {
+            selectedWord = selectedWord === word ? null : word;
+            renderTables();
+        }
+
+        // ── 핵심 단어 선택 ───────────────────────────────────────────
+
+        // 단어별 TF 합산 점수 계산 (전체 문장 등장 횟수 총합)
+        function computeWordScores() {
+            wordScores = {};
+            words.forEach(word => {
+                wordScores[word] = tfMatrix.reduce((sum, row) => sum + (row[word] || 0), 0);
+            });
+        }
+
+        // 정렬 비교 함수
+        // ① TF 합계 내림차순 → ② DF 오름차순(낮을수록 특징적, IDF 개념 연결) → ③ 가나다순
+        function wordSortKey(a, b) {
+            const tfDiff = wordScores[b] - wordScores[a];
+            if (tfDiff !== 0) return tfDiff;
+            const dfDiff = (dfVector[a] || 0) - (dfVector[b] || 0);
+            if (dfDiff !== 0) return dfDiff;
+            return a.localeCompare(b, 'ko');
+        }
+
+        // 상위 N개 자동 선택
+        function resetTopWords(n = 10) {
+            const sorted = [...words].sort(wordSortKey);
+            selectedWords = new Set(sorted.slice(0, Math.min(n, sorted.length)));
+            renderWordSelector();
+            renderTables();
+            updateSpotlight();
+        }
+
+        // 전체 해제
+        function clearWordSelection() {
+            selectedWords.clear();
+            renderWordSelector();
+            renderTables();
+            updateSpotlight();
+        }
+
+        // 단어 토글
+        function toggleWord(word) {
+            if (selectedWords.has(word)) {
+                selectedWords.delete(word);
+            } else {
+                selectedWords.add(word);
+                // 새로 추가된 단어를 스포트라이트에서 바로 표시
+                const sorted = [...words].sort(wordSortKey);
+                spotIdx = sorted.filter(w => selectedWords.has(w)).indexOf(word);
+                if (spotIdx < 0) spotIdx = 0;
+            }
+            renderWordSelector();
+            renderTables();
+            updateSpotlight();
+        }
+
+        // 단어 선택 패널 렌더링
+        function renderWordSelector() {
+            const sorted = [...words].sort(wordSortKey);
+            const top10 = new Set(sorted.slice(0, 10));
+
+            const chips = sorted.map((word, rank) => {
+                const active = selectedWords.has(word);
+                const isTop = top10.has(word);
+                const tf = wordScores[word];
+                const df = dfVector[word] || 0;
+                return `<button type="button"
+                    class="word-chip${active ? ' active' : ''}${isTop ? ' top-rank' : ''}"
+                    onclick="toggleWord('${word}')"
+                    title="TF 합계: ${tf} | DF: ${df}">
+                    ${rank < 10 ? `<span class="chip-rank">${rank + 1}</span>` : ''}
+                    ${word}
+                    <span class="chip-score">TF ${tf}</span>
+                </button>`;
+            }).join('');
+
+            document.getElementById('wordChips').innerHTML = chips;
+            document.getElementById('wordSelectorMeta').textContent =
+                `전체 ${words.length}개 단어 중 ${selectedWords.size}개 선택됨 — TF 합계↓ · DF 동점 시 낮은 DF 우선 · 가나다순`;
+        }
+
+        // ── 워드클라우드 ─────────────────────────────────────────────
+
+        let wcMode = 'tf'; // 현재 모드
+
+        function switchWordCloud(mode) {
+            wcMode = mode;
+            document.getElementById('wc-btn-tf').classList.toggle('active', mode === 'tf');
+            document.getElementById('wc-btn-tfidf').classList.toggle('active', mode === 'tfidf');
+            renderWordCloud(mode);
+        }
+
+        function renderWordCloud(mode) {
+            if (words.length === 0) return;
+
+            // canvas를 새 요소로 교체해 wordcloud2 내부 캐시/잔상 완전 제거
+            const old = document.getElementById('wordCloudCanvas');
+            if (!old) return;
+            const fresh = document.createElement('canvas');
+            fresh.id = 'wordCloudCanvas';
+            old.parentNode.replaceChild(fresh, old);
+
+            // CSS가 적용된 실제 렌더링 크기를 픽셀 버퍼에 반영
+            const w = fresh.offsetWidth  || fresh.parentElement?.offsetWidth || 600;
+            const h = fresh.offsetHeight || 400;
+            fresh.width  = w;
+            fresh.height = h;
+
+            // 점수 계산 (전체 단어 — 비교·맥락 목적)
+            const pool = words;
+
+            const scores = {};
+            pool.forEach(word => {
+                if (mode === 'tf') {
+                    scores[word] = tfMatrix.reduce((s, r) => s + (r[word] || 0), 0);
+                } else {
+                    scores[word] = tfidfMatrix.reduce((s, r) => s + (r[word] || 0), 0);
+                }
+            });
+
+            const vals = Object.values(scores).filter(v => v > 0);
+            if (vals.length === 0) return;
+
+            const maxScore = Math.max(...vals);
+            const minScore = Math.min(...vals);
+            const range    = maxScore - minScore || 1;
+
+            // 크기: 지수 스케일링으로 상위 단어가 훨씬 크게 표시 (시각적 대비 강조)
+            const sortedWords = pool
+                .filter(w => scores[w] > 0)
+                .sort((a, b) => scores[b] - scores[a]);
+
+            const list = sortedWords.map((w, rank) => {
+                const normalized = (scores[w] - minScore) / range;   // 0~1
+                // 지수(0.55제곱): 상위 단어와 하위 단어 간 크기 차이를 더 극적으로
+                const size = Math.round(Math.pow(normalized, 0.55) * 70) + 12;  // 12~82
+                return [w, size];
+            });
+
+            const tfPalette = [
+                '#4338CA','#4F46E5','#6366F1','#818CF8',
+                '#7C3AED','#2563EB','#1D4ED8','#3B82F6','#6D28D9','#5B21B6'
+            ];
+            const tfidfPalette = [
+                '#B91C1C','#DC2626','#EF4444','#F97316',
+                '#F59E0B','#D97706','#EA580C','#C2410C','#E11D48','#BE123C'
+            ];
+            const palette = mode === 'tf' ? tfPalette : tfidfPalette;
+            const bgColor = mode === 'tf' ? '#F9F8FF' : '#FFF8F7';
+
+            document.getElementById('wc-label').textContent =
+                mode === 'tf' ? 'TF 기반 핵심어 (전체 빈도)' : 'TF-IDF 기반 핵심어 (합산)';
+
+            const drawCloud = (sizedList, attempt) => {
+                // 레이아웃 확정 후 실제 크기로 재측정
+                const rw = fresh.parentElement?.offsetWidth || fresh.offsetWidth || 600;
+                const rh = fresh.parentElement?.offsetHeight || 400;
+                fresh.width  = rw;
+                fresh.height = rh;
+
+                fresh.addEventListener('wordcloudstop', () => {
+                    if (attempt >= 3) return;
+
+                    // 빈 픽셀(흰색 배경) 비율 측정
+                    const ctx = fresh.getContext('2d');
+                    const data = ctx.getImageData(0, 0, fresh.width, fresh.height).data;
+                    let blank = 0;
+                    const total = fresh.width * fresh.height;
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i] > 250 && data[i + 1] > 250 && data[i + 2] > 250) blank++;
+                    }
+                    const blankPct = blank / total;
+
+                    // 빈 공간이 45% 초과면 폰트 비례 확대 후 재시도
+                    if (blankPct > 0.45) {
+                        const scale = 1 + (blankPct - 0.45) * 1.8;
+                        const scaled = sizedList.map(([w, s]) => [w, Math.round(s * scale)]);
+                        drawCloud(scaled, attempt + 1);
+                    }
+                }, { once: true });
+
+                // 순위 기반 색상: 상위 단어는 팔레트 앞부분(진한 색), 하위는 뒤(밝은 색)
+                const totalWords = sizedList.length;
+                let rankIdx = 0;
+                WordCloud(fresh, {
+                    list: sizedList,
+                    fontFamily: "'Pretendard Variable', 'Noto Sans KR', sans-serif",
+                    color: (word) => {
+                        const idx = sortedWords.indexOf(word);
+                        const normalized = totalWords > 1 ? idx / (totalWords - 1) : 0;
+                        const paletteIdx = Math.min(
+                            Math.floor(normalized * (palette.length * 0.7)),
+                            palette.length - 1
+                        );
+                        return palette[paletteIdx];
+                    },
+                    backgroundColor: bgColor,
+                    weightFactor: 1,
+                    rotateRatio: 0,
+                    shrinkToFit: true,
+                    drawOutOfBound: false,
+                    minSize: 10,
+                    gridSize: 6,
+                    ellipticity: 0.75,
+                });
+            };
+            requestAnimationFrame(() => drawCloud(list, 0));
+
+            renderWcDiff();
+            renderWcRankTable(mode, scores);
+        }
+
+        function renderWcRankTable(mode, scores) {
+            const container = document.getElementById('wcRankRows');
+            if (!container) return;
+
+            // TF 합산 (항상 표시)
+            const tfScores = {};
+            words.forEach(w => { tfScores[w] = tfMatrix.reduce((s, r) => s + (r[w] || 0), 0); });
+
+            // TF-IDF 합산 (항상 표시)
+            const tfidfSumScores = {};
+            words.forEach(w => { tfidfSumScores[w] = tfidfMatrix.reduce((s, r) => s + (r[w] || 0), 0); });
+
+            // 현재 모드 기준으로 정렬
+            const sorted = [...words].filter(w => (scores[w] || 0) > 0)
+                .sort((a, b) => scores[b] - scores[a]);
+
+            const maxTf    = Math.max(...sorted.map(w => tfScores[w]    || 0)) || 1;
+            const maxTfidf = Math.max(...sorted.map(w => tfidfSumScores[w] || 0)) || 1;
+
+            const medals = ['🥇', '🥈', '🥉'];
+            container.innerHTML = sorted.map((w, i) => {
+                const tf       = tfScores[w]    || 0;
+                const tfidfSum = tfidfSumScores[w] || 0;
+                const tfPct    = (tf    / maxTf)    * 100;
+                const tfidfPct = (tfidfSum / maxTfidf) * 100;
+                const rankLabel = i < 3 ? medals[i] : (i + 1);
+                return `
+                <div class="wc-rank-row">
+                    <span class="wc-rank-num" title="${i + 1}위">${rankLabel}</span>
+                    <span class="wc-rank-word">${esc(w)}</span>
+                    <span class="wc-rank-tf">${tf}</span>
+                    <span class="wc-rank-tfidf">${tfidfSum.toFixed(3)}</span>
+                    <span class="wc-rank-bar-wrap">
+                        <span class="wc-bar-wrap">
+                            <span class="wc-bar-tf"    style="width:${tfPct.toFixed(1)}%"></span>
+                        </span>
+                        <span class="wc-bar-wrap">
+                            <span class="wc-bar-tfidf" style="width:${tfidfPct.toFixed(1)}%"></span>
+                        </span>
+                    </span>
+                </div>`;
+            }).join('');
+        }
+
+        // TF 순위 vs TF-IDF 순위 비교 — 상위 5개 변화 표시
+        function renderWcDiff() {
+            if (words.length === 0) return;
+
+            const tfScores = {};
+            const tfidfScores = {};
+            words.forEach(w => {
+                tfScores[w]    = tfMatrix.reduce((s, r)    => s + (r[w] || 0), 0);
+                tfidfScores[w] = tfidfMatrix.reduce((s, r) => s + (r[w] || 0), 0);
+            });
+
+            const tfRank    = [...words].sort((a,b) => tfScores[b]    - tfScores[a]);
+            const tfidfRank = [...words].sort((a,b) => tfidfScores[b] - tfidfScores[a]);
+
+            const rankOf = (arr, w) => arr.indexOf(w) + 1;
+
+            // 순위가 가장 많이 오른 단어 (TF→TF-IDF)
+            const risers = [...words]
+                .map(w => ({ w, diff: rankOf(tfRank, w) - rankOf(tfidfRank, w) }))
+                .filter(x => x.diff > 0)
+                .sort((a,b) => b.diff - a.diff)
+                .slice(0, 3);
+
+            // 순위가 가장 많이 내린 단어
+            const fallers = [...words]
+                .map(w => ({ w, diff: rankOf(tfidfRank, w) - rankOf(tfRank, w) }))
+                .filter(x => x.diff > 0)
+                .sort((a,b) => b.diff - a.diff)
+                .slice(0, 3);
+
+            let html = '<div class="wc-diff-title">📊 TF → TF-IDF 순위 변화</div>';
+
+            if (risers.length) {
+                html += '<div>🔺 <span class="wc-up">순위 상승</span> (TF-IDF에서 더 중요해진 단어)<br>';
+                html += risers.map(x => `&nbsp;&nbsp;<strong>${x.w}</strong> +${x.diff}위`).join(' &nbsp;');
+                html += '</div>';
+            }
+            if (fallers.length) {
+                html += '<div style="margin-top:6px">🔻 <span class="wc-down">순위 하락</span> (TF에서만 자주 나온 단어)<br>';
+                html += fallers.map(x => `&nbsp;&nbsp;<strong>${x.w}</strong> −${x.diff}위`).join(' &nbsp;');
+                html += '</div>';
+            }
+            if (!risers.length && !fallers.length) {
+                html += '<div>TF와 TF-IDF 순위가 동일합니다.</div>';
+            }
+
+            document.getElementById('wc-diff').innerHTML = html;
+        }
+
+        // 대 슬라이더 스텝 네비게이션 (5단계)
+        const STEP_NAMES  = ['words', 'tf', 'df', 'idf', 'tfidf'];
+        const STEP_LABELS = ['단어별 TF 탐색', 'TF (단어 빈도)', 'DF (문장 빈도)', 'IDF (역문장 빈도)', 'TF-IDF'];
+        let currentStep = 0;
+
+        function goToStep(n) {
+            currentStep = n;
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${STEP_NAMES[n]}`).classList.add('active');
+
+            document.querySelectorAll('.step-item').forEach((el, i) => {
+                el.classList.remove('active', 'done');
+                if (i < n) el.classList.add('done');
+                else if (i === n) el.classList.add('active');
+            });
+            document.querySelectorAll('.step-connector').forEach((el, i) => {
+                el.classList.toggle('done', i < n);
+            });
+
+            document.getElementById('btnPrev').disabled = n === 0;
+            document.getElementById('btnNext').disabled = n === STEP_NAMES.length - 1;
+            document.getElementById('stepInfo').innerHTML =
+                `Step ${n + 1} / ${STEP_NAMES.length} &nbsp;·&nbsp; ${STEP_LABELS[n]}`;
+
+            // TF-IDF 스텝 진입 시 문장뷰 + 워드클라우드 초기화
+            if (STEP_NAMES[n] === 'tfidf') {
+                updateTfidfSentView();
+                wcMode = 'tf';
+                document.getElementById('wc-btn-tf').classList.add('active');
+                document.getElementById('wc-btn-tfidf').classList.remove('active');
+                renderWordCloud('tf');
+            }
+        }
+
+        function prevStep() { if (currentStep > 0) goToStep(currentStep - 1); }
+        function nextStep() { if (currentStep < STEP_NAMES.length - 1) goToStep(currentStep + 1); }
+
+        function switchTab(tabName) { goToStep(STEP_NAMES.indexOf(tabName)); }
+
+        // 단어 선택 완료 → 대 슬라이더 진입 (상단 섹션 숨김)
+        function goToResult() {
+            document.getElementById('preResultSection').style.display = 'none';
+            const card = document.getElementById('resultCard');
+            card.style.display = 'block';
+            spotIdx = 0;
+            updateSpotlight();
+            goToStep(0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 대 슬라이더 → 단어 선택으로 돌아가기
+        function goBack() {
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('preResultSection').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ================================================================
+        // 단어 스포트라이트 (단어별 TF 음영 미리보기)
+        // ================================================================
+        let spotlightWords = [];
+        let spotIdx = 0;
+
+        function esc(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function updateSpotlight() {
+            if (!words || words.length === 0) return;
+            const sorted = [...words].sort(wordSortKey);
+            spotlightWords = sorted.filter(w => selectedWords.has(w));
+            if (spotlightWords.length === 0) return;
+            // 현재 단어가 목록에서 사라졌으면 0으로 리셋
+            if (spotIdx >= spotlightWords.length) spotIdx = 0;
+            // resultCard가 열려 있을 때만 렌더링
+            if (document.getElementById('resultCard').style.display !== 'none') {
+                renderSpotlight();
+            }
+        }
+
+        function renderSpotlight() {
+            const word = spotlightWords[spotIdx];
+            if (!word) return;
+
+            const totalTf = tfMatrix.reduce((s, r) => s + (r[word] || 0), 0);
+            const df      = dfVector[word] || 0;
+            const idf     = idfVector[word] != null ? idfVector[word] : null;
+            const useLog  = document.getElementById('useLog').checked;
+            const N       = documents.length;
+
+            // 단어 네비게이터
+            document.getElementById('spotWordText').textContent = word;
+            document.getElementById('spotTfTotal').textContent  = `TF 합계: ${totalTf}`;
+            document.getElementById('spotCounter').textContent  =
+                `${spotIdx + 1} / ${spotlightWords.length}번째 단어`;
+            document.getElementById('btnSpotPrev').disabled = spotIdx === 0;
+            document.getElementById('btnSpotNext').disabled =
+                spotIdx === spotlightWords.length - 1;
+
+            // 소 슬라이더 도트
+            document.getElementById('spotWordDots').innerHTML = spotlightWords.map((w, i) =>
+                `<button type="button" class="spot-word-dot${i === spotIdx ? ' active' : ''}" onclick="spotGoTo(${i})">${esc(w)}</button>`
+            ).join('');
+
+            // 메트릭 바: TF합계·DF·IDF
+            document.getElementById('spotStatTf').textContent  = totalTf;
+            document.getElementById('spotStatDf').textContent  = df;
+            document.getElementById('spotStatDfDesc').textContent =
+                `${N}개 문장 중 ${df}개에 등장`;
+            document.getElementById('spotStatIdf').textContent =
+                idf != null ? idf.toFixed(3) : '-';
+            document.getElementById('spotStatIdfDesc').textContent =
+                useLog ? `log(${N}/${df}) = ${idf != null ? idf.toFixed(3) : '-'}`
+                       : `${N}/${df} = ${idf != null ? idf.toFixed(3) : '-'}`;
+
+            // 문장별 TF 음영
+            let html = '';
+            documents.forEach((doc, i) => {
+                const tf = tfMatrix[i][word] || 0;
+                html += `
+                    <div class="spot-sent-row ${tf > 0 ? 'has-word' : 'no-word'}">
+                        <div class="spot-sent-header">
+                            <span class="spot-sent-label">문장 ${i + 1}</span>
+                            <span class="spot-tf-badge ${tf > 0 ? 'tf-active' : 'tf-zero'}">TF = ${tf}</span>
+                        </div>
+                        <div class="spot-sent-tokens">${buildTokenHtml(i, word)}</div>
+                    </div>`;
+            });
+            document.getElementById('spotSentList').innerHTML = html;
+        }
+
+        function spotGoTo(n) {
+            spotIdx = n;
+            renderSpotlight();
+        }
+
+        // ================================================================
+        // TF-IDF 단어별 문장 확인 (Step 5 내 소 슬라이더)
+        // ================================================================
+        let tfidfSpotIdx   = 0;
+        let tfidfSpotWords = [];
+
+        function updateTfidfSentView() {
+            if (!words || words.length === 0) return;
+            // TF-IDF 합계 내림차순으로 정렬
+            tfidfSpotWords = [...words]
+                .filter(w => selectedWords.has(w))
+                .sort((a, b) => {
+                    const sa = tfidfMatrix.reduce((s, r) => s + (r[a] || 0), 0);
+                    const sb = tfidfMatrix.reduce((s, r) => s + (r[b] || 0), 0);
+                    return sb - sa;
+                });
+            tfidfSpotIdx = 0;
+            renderTfidfSentView();
+        }
+
+        function renderTfidfSentView() {
+            const word = tfidfSpotWords[tfidfSpotIdx];
+            if (!word) return;
+
+            const idf = idfVector[word] != null ? idfVector[word] : 0;
+
+            document.getElementById('tfidfSpotWord').textContent    = word;
+            document.getElementById('tfidfSpotCounter').textContent =
+                `${tfidfSpotIdx + 1} / ${tfidfSpotWords.length}번째 단어`;
+            document.getElementById('btnTfidfPrev').disabled = tfidfSpotIdx === 0;
+            document.getElementById('btnTfidfNext').disabled =
+                tfidfSpotIdx === tfidfSpotWords.length - 1;
+
+            // 도트 칩
+            document.getElementById('tfidfSpotDots').innerHTML = tfidfSpotWords.map((w, i) =>
+                `<button type="button" class="spot-word-dot${i === tfidfSpotIdx ? ' active' : ''}" onclick="tfidfSpotGoTo(${i})">${esc(w)}</button>`
+            ).join('');
+
+            // 문장 목록
+            let html = '';
+            documents.forEach((doc, i) => {
+                const tf    = tfMatrix[i][word]    || 0;
+                const tfidf = tfidfMatrix[i][word] || 0;
+                const hit   = tfidf > 0;
+                html += `
+                    <div class="spot-sent-row ${hit ? 'has-word' : 'no-word'}">
+                        <div class="spot-sent-header">
+                            <span class="spot-sent-label">문장 ${i + 1}</span>
+                            <span class="spot-tf-badge ${hit ? 'tfidf-badge' : 'tf-zero'}">TF-IDF = ${tfidf.toFixed(3)}</span>
+                        </div>
+                        ${hit ? `<div class="tfidf-formula-mini">TF(${tf}) × IDF(${idf.toFixed(3)}) = ${tfidf.toFixed(3)}</div>` : ''}
+                        <div class="spot-sent-tokens">${buildTokenHtml(i, word)}</div>
+                    </div>`;
+            });
+            document.getElementById('tfidfSentList').innerHTML = html;
+        }
+
+        function tfidfSpotPrev()  { if (tfidfSpotIdx > 0) { tfidfSpotIdx--; renderTfidfSentView(); } }
+        function tfidfSpotNext()  { if (tfidfSpotIdx < tfidfSpotWords.length - 1) { tfidfSpotIdx++; renderTfidfSentView(); } }
+        function tfidfSpotGoTo(n) { tfidfSpotIdx = n; renderTfidfSentView(); }
+
+        function buildTokenHtml(sentIdx, targetWord) {
+            const morphs = allMorphemes[sentIdx];
+            if (!morphs || morphs.length === 0) return esc(documents[sentIdx]);
+            return morphs.map(m => {
+                const safe = esc(m.lex);
+                if (m.lex === targetWord && m.selected) {
+                    return `<span class="spot-token hit">${safe}</span>`;
+                }
+                if (m.selected) {
+                    return `<span class="spot-token selected">${safe}</span>`;
+                }
+                return `<span class="spot-token other">${safe}</span>`;
+            }).join('');
+        }
+
+        function spotPrev() { if (spotIdx > 0) { spotIdx--; renderSpotlight(); } }
+        function spotNext() {
+            if (spotIdx < spotlightWords.length - 1) { spotIdx++; renderSpotlight(); }
+        }
+
+        // useLog 변경 시 재계산
+        document.getElementById('useLog').addEventListener('change', () => {
+            if (documents.length > 0 && allMorphemes.length > 0) calculate();
+        });
+    </script>
+</body>
+</html>

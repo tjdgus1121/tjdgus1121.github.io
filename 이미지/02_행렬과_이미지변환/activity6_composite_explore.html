@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description"
+        content="두 이미지를 그레이스케일로 변환, 블렌딩하고 그 결과를 픽셀 밝기값 행렬로 시각화합니다. 이미지 합성의 수학적 원리를 행렬 데이터로 탐구해 보세요.">
+    <meta name="keywords" content="이미지 블렌딩, 행렬 시각화, 그레이스케일 변환, 픽셀 행렬, 이미지 합성 수학, 인공지능 수학, 수학 실험, 교육 활동">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="이미지 블렌딩 행렬 시각화 - 인공지능 수학 탐구">
+    <meta property="og:description" content="두 이미지를 혼합하고 그레이스케일 행렬 데이터를 시각화하여 이미지 합성의 수학적 원리를 탐구합니다.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/02_%ED%96%89%EB%A0%AC%EA%B3%BC_%EC%9D%B4%EB%AF%B8%EC%A7%80%EB%B3%80%ED%99%98/activity6_composite_explore.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/02_%ED%96%89%EB%A0%AC%EA%B3%BC_%EC%9D%B4%EB%AF%B8%EC%A7%80%EB%B3%80%ED%99%98/activity6_composite_explore.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="이미지 블렌딩 행렬 시각화">
+    <meta name="twitter:description" content="이미지 블렌딩 결과를 행렬로 시각화하고 수학적 원리를 탐구하는 활동 페이지.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/02_%ED%96%89%EB%A0%AC%EA%B3%BC_%EC%9D%B4%EB%AF%B8%EC%A7%80%EB%B3%80%ED%99%98/activity6_composite_explore.html">
+
+    <title>이미지 블렌딩 행렬 시각화 | 인공지능 수학 웹앱</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../../stylefooter.css">
+    <link rel="stylesheet" href="../../nav.css">
+  <script src="../../backguard.js"></script>
+    <script src="../../nav.js"></script>
+    <style>
+        :root {
+            /* ══ 대표 컬러 1: 인디고 — 브랜드·모드·강조 ══ */
+            --p-50:  #eef2ff;
+            --p-100: #e0e7ff;
+            --p-200: #c7d2fe;
+            --p-400: #818cf8;
+            --p-500: #6366f1;
+            --p-600: #4f46e5;
+            --p-700: #4338ca;
+
+            /* ══ 대표 컬러 2: 틸 — 액션·다운로드·슬라이더 ══ */
+            --a-50:  #f0fdfa;
+            --a-100: #ccfbf1;
+            --a-200: #99f6e4;
+            --a-400: #2dd4bf;
+            --a-500: #14b8a6;
+            --a-600: #0d9488;
+            --a-700: #0f766e;
+
+            /* ── 시맨틱 (needs-image 경고만) ── */
+            --warning-color: #d97706;
+            --danger-color:  #ef4444;
+
+            /* ── 하위 호환 ── */
+            --primary-color:   var(--p-500);
+            --primary-dark:    var(--p-600);
+            --secondary-color: var(--a-500);
+            --success-color:   var(--a-500);
+            --info-color:      var(--p-500);
+
+            /* ── 중립 ── */
+            --light-gray:     #f8fafc;
+            --border-color:   #e2e8f0;
+            --text-primary:   #1e293b;
+            --text-secondary: #64748b;
+
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.07);
+            --shadow-xl: 0 20px 40px -8px rgb(99 102 241 / 0.09), 0 8px 16px -4px rgb(0 0 0 / 0.05);
+
+            --glass-bg:     rgba(255, 255, 255, 0.82);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --border-radius:    0.875rem;
+            --border-radius-lg: 1.25rem;
+            --transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: #f5f7ff;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .header-section::before {
+            display: none;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4.5vw, 3.5rem);
+            font-family: 'Do Hyeon', sans-serif;
+            color: var(--p-700);
+            font-weight: 400;
+            color: #22223b;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #3b3b4f;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-card {
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-xl), inset 0 1px 0 var(--glass-border);
+            transition: var(--transition);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--p-500);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .upload-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 24px 48px -8px rgba(99, 102, 241, 0.18), inset 0 1px 0 var(--glass-border);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .upload-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .upload-title::before {
+            content: '';
+            width: 4px;
+            height: 1em;
+            background: var(--p-500);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .preview-container {
+            position: relative;
+            height: 240px;
+            background: var(--light-gray);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .preview-container:hover {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+            border-radius: var(--border-radius);
+        }
+
+        .drop-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        /* display:none 이면 Tab 으로 갈 수 없다. 화면에서만 숨기고 포커스는 받게 한다 */
+        input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        input[type="file"]:focus-visible + .custom-file-upload-button {
+            outline: 3px solid var(--p-500);
+            outline-offset: 2px;
+        }
+
+        .preview-container.drag-over {
+            border-color: var(--a-500);
+            background: var(--a-50);
+        }
+
+        .panel-status {
+            margin-top: 0.625rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            background: var(--p-50);
+            color: var(--p-700);
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1.45;
+        }
+
+        .panel-status:empty { display: none; }
+
+        .panel-status.is-error {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .custom-file-upload-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--a-50);
+            color: var(--a-700);
+            padding: 0.6rem 1.5rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1.5px solid var(--a-200);
+            transition: var(--transition);
+            text-decoration: none;
+            justify-content: center;
+            width: 100%;
+            letter-spacing: 0.01em;
+        }
+
+        .custom-file-upload-button:hover {
+            background: var(--a-500);
+            color: white;
+            border-color: var(--a-500);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+        }
+
+        .custom-file-upload-button::before {
+            content: '📂';
+            font-size: 1rem;
+        }
+
+        .result-section {
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-xl), inset 0 1px 0 var(--glass-border);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--a-500);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            letter-spacing: -0.01em;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 1.1em;
+            background: var(--a-500);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .result-canvas {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            display: block;
+            margin: 10px auto;
+        }
+
+        .controls-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .control-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .input-group,
+        .mode-buttons {
+            width: 100%;
+            justify-content: flex-start;
+            gap: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1 1 0;
+            min-width: 200px;
+            max-width: 350px;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .size-input {
+            width: 72px;
+            padding: 0.45rem 0.75rem;
+            border: 1.5px solid rgba(99, 102, 241, 0.25);
+            border-radius: 9999px;
+            background: rgba(99, 102, 241, 0.05);
+            color: #3730a3;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .size-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .input-group label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0 1.25rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            justify-content: center;
+            min-height: 40px;
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0);
+            transition: background 0.15s;
+        }
+
+        .btn:hover::after { background: rgba(255, 255, 255, 0.1); }
+        .btn:active { transform: scale(0.96); }
+
+        /* solid indigo — 주요 액션 */
+        .btn-primary {
+            background: var(--p-500);
+            color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: var(--p-600);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.32);
+        }
+
+        /* outlined indigo — 보조 액션 */
+        .btn-secondary {
+            background: var(--p-50);
+            color: var(--p-700);
+            border: 1.5px solid var(--p-200);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: var(--p-100);
+            border-color: var(--p-400);
+            transform: translateY(-1px);
+        }
+
+        /* ghost indigo — 아이콘/유틸리티 버튼 */
+        .btn-ghost {
+            background: transparent;
+            color: var(--p-600);
+            border: 1.5px solid var(--p-200);
+            box-shadow: none;
+            min-height: 36px;
+            padding: 0 0.875rem;
+        }
+
+        .btn-ghost:hover {
+            background: var(--p-50);
+            border-color: var(--p-400);
+        }
+
+        /* solid teal — 액션·다운로드·적용 전용 */
+        .btn-success,
+        .btn-accent {
+            background: var(--a-500);
+            color: white;
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.25);
+        }
+
+        .btn-success:hover,
+        .btn-accent:hover {
+            background: var(--a-600);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(20, 184, 166, 0.32);
+        }
+
+        /* ghost teal — 슬라이더·셀 크기 버튼 */
+        .btn-ghost {
+            background: transparent;
+            color: var(--p-600);
+            border: 1.5px solid var(--p-200);
+            box-shadow: none;
+            min-height: 36px;
+            padding: 0 0.875rem;
+        }
+
+        .btn-ghost:hover {
+            background: var(--p-50);
+            border-color: var(--p-400);
+        }
+
+        /* alias — 하위 호환 */
+        .btn-info    { background: var(--p-500); color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
+        .btn-info:hover { background: var(--p-600); transform: translateY(-1px); }
+        .btn-warning { background: var(--p-50); color: var(--p-700); border: 1.5px solid var(--p-200); }
+
+        /* 크기 적용 버튼 그룹 전체 가운데 정렬 */
+        .control-row .input-group {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .mode-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        /* 모드 버튼 — 인디고 단일 계열 */
+        .mode-button {
+            min-width: 100px;
+            flex: 1 1 100px;
+            height: 42px;
+            padding: 0 1.25rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1.5px solid var(--p-200);
+            background: var(--p-50);
+            color: var(--p-700);
+            letter-spacing: 0.01em;
+        }
+
+        .mode-button:hover:not(.active) {
+            background: var(--p-100);
+            border-color: var(--p-400);
+        }
+
+        .mode-button.active {
+            background: var(--p-500);
+            color: white;
+            border-color: var(--p-500);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.28);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.625rem;
+            width: auto;
+            margin-top: 0.75rem;
+            background: var(--a-50);
+            border: 1px solid var(--a-200);
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            flex-wrap: wrap;
+        }
+
+        .slider-container label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--a-700);
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .slider {
+            width: 160px;
+            min-width: 80px;
+            max-width: 200px;
+            height: 5px;
+            background: var(--border-color);
+            border-radius: 9999px;
+            outline: none;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--p-500);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+            transition: var(--transition);
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+        }
+
+        .matrix-section {
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-xl), inset 0 1px 0 var(--glass-border);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .matrix-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--p-500);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .matrix-header {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .matrix-btn-zone {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+            align-items: center;
+        }
+
+        .matrix-btn-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            flex-wrap: nowrap;
+            justify-content: center;
+        }
+
+        .matrix-action-btns {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .btn-sm {
+            padding: .3rem .7rem;
+            font-size: .8rem;
+            white-space: nowrap;
+        }
+
+        .btn-expand {
+            height: 42px;
+            padding: 0 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: #fff;
+            border: none;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.28);
+            transition: var(--transition);
+        }
+
+        .btn-expand:hover {
+            background: linear-gradient(135deg, #0284c7, #4f46e5);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.38);
+        }
+
+        .btn-fit {
+            height: 42px;
+            padding: 0 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1.5px solid #86efac;
+            transition: var(--transition);
+        }
+
+        .btn-fit:hover {
+            background: #dcfce7;
+            border-color: #4ade80;
+        }
+
+        .btn-fit.active {
+            background: #16a34a;
+            color: #fff;
+            border-color: #16a34a;
+        }
+
+        .hidden { display: none !important; }
+        body.matrix-expand-mode .btn-fit { display: inline-flex !important; }
+
+        .matrix-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            letter-spacing: -0.01em;
+        }
+
+        .matrix-title::before {
+            content: '';
+            width: 4px;
+            height: 1.15em;
+            background: var(--p-500);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .matrix-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .control-group-inline {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-group-inline span {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .matrix-wrapper {
+            overflow: auto;
+            max-height: 600px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--light-gray);
+            position: relative;
+        }
+
+        #matrixSpacer {
+            position: relative;
+        }
+
+        #matrixCells {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: grid;
+        }
+
+        .vcell {
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            box-sizing: border-box;
+            overflow: hidden;
+            cursor: pointer;
+            transition: none;
+        }
+
+        .vcell:hover {
+            outline: 2px solid var(--primary-color);
+            position: relative;
+            z-index: 1;
+        }
+
+        .pixel-info {
+            margin-top: 1rem;
+            padding: 0.75rem 1.25rem;
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: 9999px;
+            border: 1px solid rgba(99, 102, 241, 0.12);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .loading-indicator--hidden { display: none !important; }
+
+        .loading-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            max-width: 300px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1rem;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+
+            .matrix-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .matrix-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .input-group,
+            .mode-buttons,
+            .slider-container {
+                max-width: 100%;
+                min-width: 0;
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .upload-card,
+            .result-section,
+            .matrix-section {
+                padding: 1.5rem;
+            }
+
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .mode-buttons {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .input-group,
+            .mode-buttons,
+            .slider-container {
+                max-width: 100%;
+                min-width: 0;
+                flex: 1 1 100%;
+            }
+
+            .mode-button {
+                flex: 1;
+            }
+
+            .input-group,
+            .mode-buttons {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .mode-button {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .upload-card,
+            .result-section,
+            .matrix-section {
+                padding: 1rem;
+            }
+
+            .btn {
+                padding: 0.625rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .input-group,
+            .mode-buttons {
+                max-width: 100%;
+                min-width: 0;
+                flex: 1 1 100%;
+            }
+        }
+
+        /* 업로드 영역 + 결과 레이아웃 */
+        .work-area {
+            display: grid;
+            grid-template-columns: minmax(300px, 420px) 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        .work-area .upload-section {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1.5rem;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .work-area { grid-template-columns: 1fr; }
+        }
+
+        /* 이미지 추가 필요 시 카드 강조 */
+        .upload-card.needs-image {
+            border: 2px solid var(--warning-color);
+        }
+
+        .upload-card.needs-image::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: inherit;
+            border: 3px solid var(--warning-color);
+            opacity: 0;
+            animation: pulse-border 1.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .upload-card.needs-image .drop-text {
+            color: var(--warning-color);
+            font-weight: 600;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.4; }
+        }
+
+        /* 슬라이더 화살표 버튼 */
+        .slider-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(99, 102, 241, 0.25);
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--primary-color);
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            -webkit-user-select: none;
+            user-select: none;
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .slider-btn:hover {
+            background: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+        }
+
+        .slider-btn:active {
+            transform: scale(0.88);
+        }
+
+        /* 슬라이더 레이아웃 */
+        .blend-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 72px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .blend-label span {
+            color: var(--a-600);
+            font-weight: 700;
+        }
+
+        /* ══ Fixed Control Panel ══ */
+        .ctrl-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 284px;
+            height: 100vh;
+            background: var(--white, #fff);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 50;          /* nav sidebar=2000, hamburger=2100 — 아래에 위치 */
+        }
+
+        /* 섹션 묶음을 세로 가운데 정렬 */
+        .ctrl-panel-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .ctrl-panel::-webkit-scrollbar { width: 4px; }
+        .ctrl-panel::-webkit-scrollbar-track { background: transparent; }
+        .ctrl-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 9999px; }
+
+        /* 햄버거(left:1rem, top:1rem, ~44px) 공간 확보 */
+        .ctrl-panel-head {
+            height: 52px;
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 1rem 0 3.25rem;  /* 왼쪽: 햄버거 너비 확보 */
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            gap: 0.375rem;
+        }
+
+        .ctrl-panel-head::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            background: var(--p-500);
+            border-radius: 2px;
+        }
+
+        .ctrl-section {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .ctrl-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 0.625rem;
+        }
+
+        /* 컨트롤 패널 내 업로드 카드 오버라이드 */
+        .ctrl-panel .upload-card {
+            padding: 0.75rem;
+        }
+
+        .ctrl-panel .upload-card + .upload-card {
+            margin-top: 0.5rem;
+        }
+
+        .ctrl-panel .preview-container {
+            height: 130px;
+            margin-bottom: 0.625rem;
+        }
+
+        .ctrl-panel .upload-title {
+            font-size: 0.78rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .ctrl-panel .custom-file-upload-button {
+            padding: 0.45rem 1rem;
+            font-size: 0.78rem;
+        }
+
+        /* 슬라이더 컨테이너 — 2행 레이아웃 */
+        .ctrl-panel .slider-container {
+            margin-top: 0;
+            padding: 0.4rem 0.5rem;
+            gap: 0.3rem;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-items: stretch;
+        }
+
+        .blend-row-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.25rem 0.25rem 0;
+        }
+
+        .blend-label--right { text-align: right; }
+
+        .blend-row-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .blend-row-controls .slider {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+
+        /* 크기 조절 — 패널 너비에 맞게 */
+        .ctrl-panel .input-group {
+            margin: 0;
+            max-width: 100%;
+            min-width: 0;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: center;
+        }
+
+        .ctrl-panel #resizeButton {
+            width: 100%;
+            margin-top: 1.25rem;
+        }
+
+        /* 메인 컨텐츠 영역 — 패널 너비만큼 밀기 */
+        .main-container {
+            margin-left: 284px !important;
+            max-width: none !important;
+        }
+
+        /* work-area — 업로드 없으니 단일 컬럼 */
+        .work-area {
+            grid-template-columns: 1fr !important;
+        }
+
+        @media (max-width: 860px) {
+            .ctrl-panel { position: static; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .main-container { margin-left: 0 !important; }
+        }
+
+        /* ── 행렬 크게 보기 모드 ── */
+        body.matrix-expand-mode .header-section,
+        body.matrix-expand-mode .work-area,
+        body.matrix-expand-mode footer,
+        body.matrix-expand-mode .matrix-title,
+        body.matrix-expand-mode #pixelInfo { display: none !important; }
+
+        body.matrix-expand-mode .main-container {
+            padding: 0 !important;
+        }
+
+        /* matrix-section = 전체 영역을 flex row로 점유 */
+        body.matrix-expand-mode .matrix-section {
+            position: fixed;
+            left: 284px;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 45;
+            margin: 0;
+            padding: 0;
+            border-radius: 0;
+            background: #f5f7ff;
+            display: flex !important;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        body.matrix-expand-mode .matrix-section::before { display: none; }
+
+        /* 행렬 영역: 남은 공간 전부 */
+        body.matrix-expand-mode .matrix-wrapper {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: none;
+            height: 100%;
+            max-height: none;
+            border-radius: 0;
+            border: none;
+            order: 1;
+        }
+
+        /* 오른쪽 사이드바: matrix-header를 static으로 변경 */
+        body.matrix-expand-mode .matrix-header {
+            position: static !important;
+            order: 2;
+            flex: 0 0 240px;
+            height: 100%;
+            background: #fff;
+            border-left: 1px solid var(--border-color);
+            display: flex !important;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2rem 1.25rem;
+            gap: 0;
+            overflow-y: auto;
+            margin: 0;
+        }
+
+        body.matrix-expand-mode .matrix-btn-zone {
+            align-items: stretch;
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        body.matrix-expand-mode .matrix-btn-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+        }
+
+        body.matrix-expand-mode .mode-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        body.matrix-expand-mode .mode-button {
+            flex: none;
+            width: 100%;
+            min-width: unset;
+            height: 40px;
+            font-size: 0.85rem;
+        }
+
+        body.matrix-expand-mode .btn-expand,
+        body.matrix-expand-mode .btn-fit,
+        body.matrix-expand-mode .btn-accent,
+        body.matrix-expand-mode .btn-secondary {
+            width: 100%;
+            height: 40px;
+            font-size: 0.85rem;
+            padding: 0 0.75rem;
+        }
+
+        body.matrix-expand-mode .control-group-inline {
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        body.matrix-expand-mode .matrix-action-btns {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        body.matrix-expand-mode .matrix-btn-row + .matrix-btn-row {
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 860px) {
+            body.matrix-expand-mode .matrix-section { left: 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-sec">시작</div>
+            <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="../01_이미지와_RGB/activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
+            <a href="../01_이미지와_RGB/activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="../01_이미지와_RGB/activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="../01_이미지와_RGB/activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+            <a href="../01_이미지와_RGB/activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="activity6_composite_explore.html" class="active"><i class="fa fa-layer-group"></i><span>합성
+                    원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
+            <a href="activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="../03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
+            <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
+                    변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
+            <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
+
+    <!-- ── Fixed Control Panel ── -->
+    <aside class="ctrl-panel">
+        <div class="ctrl-panel-head">컨트롤</div>
+
+        <div class="ctrl-panel-body">
+        <!-- 업로드 -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">이미지 업로드</div>
+            <div class="upload-card">
+                <h3 class="upload-title">이미지 1</h3>
+                <div class="preview-container" id="preview1">
+                    <p class="drop-text">이미지를 드래그하거나 선택하세요</p>
+                    <img class="preview-image" id="previewImage1" alt="업로드된 이미지 1 미리보기">
+                </div>
+                <input type="file" id="imageInput1" accept="image/*">
+                <label for="imageInput1" class="custom-file-upload-button">파일 선택</label>
+            </div>
+            <div class="upload-card">
+                <h3 class="upload-title">이미지 2</h3>
+                <div class="preview-container" id="preview2">
+                    <p class="drop-text">이미지를 드래그하거나 선택하세요</p>
+                    <img class="preview-image" id="previewImage2" alt="업로드된 이미지 2 미리보기">
+                </div>
+                <input type="file" id="imageInput2" accept="image/*">
+                <label for="imageInput2" class="custom-file-upload-button">파일 선택</label>
+            </div>
+            <p class="panel-status" id="panelStatus" role="status" aria-live="polite"></p>
+        </div>
+
+        <!-- 혼합 비율 -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">혼합 비율</div>
+            <div class="slider-container">
+                <div class="blend-row-controls">
+                    <button type="button" class="slider-btn" id="sliderDec" title="이미지1 비율 증가" aria-label="이미지1 비율 증가">&#9664;</button>
+                    <input type="range" id="blendSlider" class="slider" min="0" max="100" value="50" step="5" title="혼합 비율 슬라이더" aria-label="혼합 비율" aria-valuetext="이미지1 50%, 이미지2 50%">
+                    <button type="button" class="slider-btn" id="sliderInc" title="이미지2 비율 증가" aria-label="이미지2 비율 증가">&#9654;</button>
+                </div>
+                <div class="blend-row-labels">
+                    <span class="blend-label">이미지1 <span id="blend1Value">50</span>%</span>
+                    <span class="blend-label blend-label--right">이미지2 <span id="blend2Value">50</span>%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 출력 크기 -->
+        <div class="ctrl-section">
+            <div class="ctrl-label">출력 크기</div>
+            <div class="input-group">
+                <label for="widthInput">너비</label>
+                <input type="number" id="widthInput" class="size-input" value="100" min="5" max="100">
+                <label for="heightInput">높이</label>
+                <input type="number" id="heightInput" class="size-input" value="100" min="5" max="100">
+                <button type="button" id="resizeButton" class="btn btn-accent">적용</button>
+            </div>
+        </div>
+        </div><!-- /.ctrl-panel-body -->
+    </aside>
+
+    <div class="main-container">
+        <div class="header-section">
+            <h1>이미지 블렌딩 행렬 시각화</h1>
+            <p class="subtitle">두 이미지를 업로드하여 동일한 사이즈로 렌더링한 후, 그레이스케일로 변환하여 합성합니다.<br>슬라이더를 조절하며 행렬 데이터가 어떻게 변화하는지
+                탐구해보세요.</p>
+        </div>
+        <div id="loadingIndicator" class="loading-indicator loading-indicator--hidden">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loadingMessage">이미지 처리 중...</p>
+            </div>
+        </div>
+        <div class="work-area">
+            <div class="result-section">
+                <h3 class="section-title">결과 이미지</h3>
+                <canvas id="resultCanvas" class="result-canvas"></canvas>
+            </div>
+        </div>
+        <div class="matrix-section">
+            <div class="matrix-header">
+                <span class="matrix-title">픽셀 밝기값 행렬</span>
+                <div class="matrix-btn-zone">
+                    <!-- 1행: 모드 + 크게 보기 -->
+                    <div class="matrix-btn-row">
+                        <div class="mode-buttons">
+                            <button type="button" id="numberMode" class="mode-button">숫자 모드</button>
+                            <button type="button" id="colorMode" class="mode-button">그림 모드</button>
+                            <button type="button" id="mixedMode" class="mode-button active">혼합 모드</button>
+                        </div>
+                        <button type="button" id="fitFull" class="btn btn-fit hidden">⛶ 가득 모드</button>
+                        <button type="button" id="expandMatrix" class="btn btn-expand"><i class="fa fa-expand"></i> 크게 보기</button>
+                    </div>
+                    <!-- 2행: 셀 크기 + CSV + Excel -->
+                    <div class="matrix-btn-row">
+                        <div class="control-group-inline">
+                            <button type="button" id="decreaseSize" class="btn btn-ghost btn-sm">−</button>
+                            <span>셀 크기: <span id="cellSizeValue">24</span>px</span>
+                            <button type="button" id="increaseSize" class="btn btn-ghost btn-sm">+</button>
+                        </div>
+                        <div class="matrix-action-btns">
+                            <button type="button" id="downloadCSV" class="btn btn-accent btn-sm"><i class="fa fa-download"></i> CSV 다운로드</button>
+                            <button type="button" id="copyToExcel" class="btn btn-secondary btn-sm"><i class="fa fa-copy"></i> Excel 복사</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="matrix-wrapper" id="matrixWrapper">
+                <div id="matrixSpacer"></div>
+                <div id="matrixCells"></div>
+            </div>
+            <div id="pixelInfo" class="pixel-info">픽셀을 클릭하면 좌표와 밝기값이 표시됩니다.</div>
+        </div>
+    </div>
+
+    <footer class="footer" style="width:100%;">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : <a href="mailto:tjdgus1121@naver.com">tjdgus1121@naver.com</a>
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="../../assets/branding/naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+          
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+        </div>
+    </footer>
+
+    <script src="activity6_script.js" defer></script>
+</body>
+
+</html>

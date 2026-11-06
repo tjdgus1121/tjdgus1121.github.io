@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>유사도 퀴즈 — 유클리드 & 코사인</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link rel="stylesheet" href="./activity-nav.css">
+<script src="./activity-nav.js" defer></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F7F7F5;--s1:#FFFFFF;--s2:#F3F3F1;--s3:#E8E8E5;--s4:#D6D6D2;
+  --border:#D9D9D5;--bhi:#B8B8B2;
+  --accent:#0D99FF;--blue:#0D99FF;--purple:#F24E1E;--green:#14AE5C;
+  --coral:#F24822;--gold:#B66D0A;
+  --text:#1E1E1E;--muted:#6B6B6B;
+  --mono:'JetBrains Mono','Space Mono',monospace;
+  --body:'Noto Sans KR',sans-serif;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(30,30,30,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,30,30,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+
+/* ── 화면 전환 ── */
+.screen{display:none;position:relative;z-index:1;}
+.screen.on{display:flex;}
+#startScreen {min-height:100vh;min-height:100dvh;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:36px;}
+#quizScreen  {min-height:100vh;min-height:100dvh;flex-direction:column;}
+#resultScreen{min-height:100vh;min-height:100dvh;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:24px;}
+
+/* ── 시작 화면 ── */
+.start-hero{text-align:center;}
+.start-hero h1{font-size:clamp(1.8rem,5vw,3rem);font-weight:700;line-height:1.2;letter-spacing:-.02em;}
+.start-hero h1 em{color:var(--accent);font-style:normal;}
+.start-hero p{margin-top:14px;font-size:15px;color:var(--muted);line-height:1.9;max-width:520px;word-break:keep-all;}
+.guide-box{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px 24px;max-width:560px;width:100%;box-shadow:0 2px 8px rgba(30,30,30,.05);}
+.guide-box h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--muted);margin-bottom:14px;text-transform:uppercase;}
+.guide-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;font-size:13px;line-height:1.75;}
+.guide-row:last-child{margin-bottom:0;}
+.guide-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.guide-row strong{color:var(--accent);}
+.guide-row.cosine-row strong{color:var(--purple);}
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:680px;}
+.mode-card{appearance:none;width:100%;background:var(--s1);color:var(--text);border:1.5px solid var(--border);border-radius:16px;padding:28px 18px;text-align:center;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;font-family:var(--body);box-shadow:0 2px 8px rgba(30,30,30,.05);}
+.mode-card:hover,.mode-card:focus-visible{transform:translateY(-2px);outline:none;}
+.mode-card.eu:hover,.mode-card.eu:focus-visible {border-color:rgba(13,153,255,.55);box-shadow:0 8px 22px rgba(13,153,255,.1);}
+.mode-card.cos:hover,.mode-card.cos:focus-visible{border-color:rgba(242,78,30,.55);box-shadow:0 8px 22px rgba(242,78,30,.1);}
+.mode-card.mix:hover,.mode-card.mix:focus-visible{border-color:rgba(20,174,92,.55);box-shadow:0 8px 22px rgba(20,174,92,.1);}
+.mode-card:active{transform:translateY(-2px);}
+.mode-icon{font-size:2.4rem;margin-bottom:12px;}
+.mode-title{font-size:1rem;font-weight:700;margin-bottom:6px;}
+.mode-card.eu  .mode-title{color:var(--blue);}
+.mode-card.cos .mode-title{color:var(--purple);}
+.mode-card.mix .mode-title{color:var(--green);}
+.mode-desc{font-size:12px;color:var(--muted);line-height:1.75;word-break:keep-all;}
+.timer-picker{width:100%;max-width:560px;}
+.timer-picker-title{
+  margin-bottom:9px;text-align:center;color:var(--muted);
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;
+}
+.timer-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.timer-option{
+  border:1px solid var(--border);border-radius:10px;padding:10px 8px;
+  background:rgba(255,255,255,.72);color:var(--muted);cursor:pointer;
+  font-family:var(--body);transition:border-color .15s,background .15s,color .15s,transform .15s;
+}
+.timer-option strong{display:block;font-size:13px;margin-bottom:2px;}
+.timer-option span{font-family:var(--mono);font-size:11px;}
+.timer-option:hover,.timer-option:focus-visible{border-color:var(--accent);outline:none;transform:translateY(-1px);}
+.timer-option.active{border-color:var(--accent);background:rgba(13,153,255,.09);color:#007BE5;box-shadow:0 2px 8px rgba(13,153,255,.1);}
+.timer-modal{
+  position:fixed;inset:0;z-index:3000;display:none;
+  align-items:center;justify-content:center;padding:20px;
+}
+.timer-modal.open{display:flex;}
+.timer-modal-backdrop{position:absolute;inset:0;background:rgba(30,30,30,.38);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+.timer-dialog{
+  position:relative;width:min(100%,480px);border:1px solid var(--border);
+  border-radius:18px;padding:28px;background:rgba(255,255,255,.98);
+  box-shadow:0 20px 56px rgba(30,30,30,.2);
+}
+.timer-modal-close{
+  position:absolute;top:12px;right:12px;width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;
+  background:var(--s2);color:var(--muted);font-size:18px;cursor:pointer;
+}
+.timer-modal-close:hover,.timer-modal-close:focus-visible{background:var(--s3);color:var(--text);outline:2px solid rgba(13,153,255,.25);}
+.timer-dialog-head{text-align:center;margin-bottom:22px;}
+.timer-dialog-head .q-badge{display:inline-block;margin-bottom:12px;}
+.timer-dialog-head h2{font-size:21px;margin-bottom:7px;}
+.timer-dialog-head p{color:var(--muted);font-size:13px;line-height:1.65;}
+.timer-dialog .timer-picker{max-width:none;}
+.timer-modal-start{
+  width:100%;margin-top:20px;border:0;border-radius:10px;padding:13px;
+  background:var(--accent);color:#fff;font-family:var(--mono);font-size:14px;
+  font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(13,153,255,.22);
+  transition:background .15s,transform .15s;
+}
+.timer-modal-start:hover,.timer-modal-start:focus-visible{background:#007BE5;outline:none;transform:translateY(-1px);}
+body.timer-modal-open{overflow:hidden;}
+
+/* ── 퀴즈 상단 ── */
+.quiz-topbar{min-height:54px;flex-shrink:0;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;padding:0 24px 0 72px;border-bottom:1px solid var(--border);background:rgba(247,247,245,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.quiz-leading{display:flex;align-items:center;gap:9px;justify-self:start;min-width:0;}
+.quiz-back{
+  display:inline-flex;align-items:center;gap:5px;flex-shrink:0;
+  border:1px solid var(--border);border-radius:6px;padding:5px 9px;
+  background:rgba(255,255,255,.72);color:var(--muted);
+  font-family:var(--body);font-size:12px;font-weight:600;cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s,transform .15s;
+}
+.quiz-back:hover,.quiz-back:focus-visible{
+  border-color:var(--accent);background:#fff;color:var(--accent);
+  outline:none;transform:translateX(-1px);
+}
+.q-badge{font-family:var(--mono);font-size:11px;letter-spacing:.12em;padding:4px 11px;border-radius:4px;text-transform:uppercase;justify-self:start;}
+.q-badge.eu {background:rgba(13,153,255,.09);border:1px solid rgba(13,153,255,.35);color:#007BE5;}
+.q-badge.cos{background:rgba(242,78,30,.09);border:1px solid rgba(242,78,30,.32);color:#C83C16;}
+.q-badge.mix{background:rgba(20,174,92,.09);border:1px solid rgba(20,174,92,.32);color:#0C8F49;}
+.q-prog-txt{font-family:var(--mono);font-size:13px;color:var(--muted);justify-self:center;}
+.q-score-txt{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);justify-self:end;}
+.prog-wrap{height:3px;background:var(--s3);flex-shrink:0;}
+.prog-bar{height:100%;background:var(--accent);transition:width .5s ease;}
+.prog-bar-init{width:0;}
+.result-score-wrap{text-align:center;}
+.timer-row{display:flex;align-items:center;gap:10px;padding:10px 24px 0;flex-shrink:0;}
+.timer-outer{flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.timer-inner{height:100%;border-radius:3px;background:var(--accent);transition:width .12s linear,background .3s;}
+.timer-level-chip{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;}
+.timer-num{font-family:var(--mono);font-size:13px;color:var(--muted);width:48px;text-align:right;}
+
+/* ── 퀴즈 본문 (단일 열) ── */
+.quiz-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:0 16px 32px;}
+
+/* 문제+계산기 래퍼 */
+.q-left{width:min(80vw,1120px);max-width:100%;display:flex;flex-direction:column;gap:18px;padding:20px 0 24px;}
+.q-calc-wrap{padding-top:0;}
+.q-type-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.q-type-badge{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:4px;}
+.q-type-badge.eu {background:rgba(13,153,255,.09);color:#007BE5;border:1px solid rgba(13,153,255,.25);}
+.q-type-badge.cos{background:rgba(242,78,30,.09);color:#C83C16;border:1px solid rgba(242,78,30,.25);}
+.q-streak{font-family:var(--mono);font-size:11px;color:var(--gold);}
+.q-title{font-size:16px;font-weight:700;line-height:1.45;word-break:keep-all;}
+.q-title em{color:var(--accent);font-style:normal;}
+.q-title em.cos-tone{color:var(--purple);}
+.q-title var,.vec-table var{
+  font-family:'Cambria Math','STIX Two Math','Times New Roman',serif;
+  font-size:1.08em;font-style:italic;font-weight:700;
+}
+
+/* 벡터 테이블 */
+.vec-scroll{overflow-x:auto;border-radius:8px;}
+.vec-table{border-collapse:collapse;font-family:var(--mono);font-size:14px;width:100%;min-width:max-content;}
+.vec-table th,.vec-table td{padding:9px 14px;text-align:center;border:1px solid var(--border);}
+.vec-table thead th{
+  background:#E8E8E5;color:#555550;
+  padding-top:12px;padding-bottom:12px;
+  font-size:clamp(.9rem,1vw,1rem);font-weight:700;letter-spacing:.05em;
+}
+.vec-table tbody tr:nth-child(1) td{background:#F5FAFE;color:#1E1E1E;}
+.vec-table tbody tr:nth-child(2) td{background:#FFF6F3;color:#1E1E1E;}
+.vec-table tbody td:not(:first-child){
+  padding-top:13px;padding-bottom:13px;
+  font-size:clamp(1.15rem,1.5vw,1.35rem);font-weight:500;
+  font-variant-numeric:tabular-nums;
+}
+.vec-table tbody tr:nth-child(1) td:first-child{color:#007BE5;background:#EAF6FF!important;}
+.vec-table tbody tr:nth-child(2) td:first-child{color:#C83C16;background:#FFF0EB!important;}
+.vec-table td:first-child{
+  font-size:clamp(1.15rem,1.35vw,1.3rem);font-weight:700;
+  text-align:center;padding-left:14px;padding-right:14px;
+}
+
+/* 공식 */
+.formula-strip{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;gap:18px;min-height:56px;overflow-x:auto;
+  font-size:clamp(1.1rem,1.45vw,1.35rem);
+  color:#333330;background:var(--s2);
+  border-radius:8px;padding:12px 18px;border-left:3px solid var(--border);
+}
+.formula-strip.eu {border-left-color:var(--blue);}
+.formula-strip.cos{border-left-color:var(--purple);}
+.formula-strip math{font-size:1.08em;color:inherit;}
+.formula-equation{display:flex;align-items:center;justify-content:center;min-width:max-content;}
+.formula-side{
+  display:flex;align-items:center;gap:10px;min-width:0;
+  color:var(--muted);font-family:var(--mono);font-size:10px;
+  font-weight:600;letter-spacing:.02em;white-space:nowrap;
+}
+.formula-side::after,.formula-side.right::before{
+  content:"";height:1px;min-width:18px;flex:1;
+  background:linear-gradient(90deg,rgba(107,107,107,.06),rgba(107,107,107,.32));
+}
+.formula-side.right::after{display:none;}
+.formula-side.right::before{
+  background:linear-gradient(90deg,rgba(107,107,107,.32),rgba(107,107,107,.06));
+}
+
+/* 힌트 */
+.hint-area{display:flex;flex-direction:column;gap:8px;}
+.hint-btn{font-family:var(--mono);font-size:11px;background:none;border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:6px;cursor:pointer;align-self:flex-start;transition:all .15s;}
+.hint-btn:hover,.hint-btn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none;}
+.hint-content{display:none;background:var(--s2);border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:2.1;border:1px solid var(--border);}
+.hint-content.open{display:block;}
+.hint-content math,.fb-exp math{font-size:1.08em;vertical-align:middle;}
+.hl{color:var(--text);}
+.hla{color:var(--accent);font-weight:700;}
+.hlb{color:var(--blue);}
+.hlp{color:var(--purple);}
+
+/* 피드백 */
+.feedback{display:none;flex-direction:column;gap:8px;padding:14px 16px;border-radius:10px;font-size:13px;line-height:1.8;overflow:hidden;}
+.feedback.on{display:flex;}
+.feedback.ok{background:rgba(20,174,92,.08);border:1px solid rgba(20,174,92,.28);}
+.feedback.ng{background:rgba(242,72,34,.07);border:1px solid rgba(242,72,34,.25);}
+.fb-top{display:flex;align-items:center;gap:10px;}
+.feedback-line{display:flex;align-items:center;gap:10px;min-width:0;white-space:nowrap;overflow-x:auto;}
+.fb-icon{font-size:20px;flex-shrink:0;}
+.fb-msg{font-weight:700;flex-shrink:0;}
+.fb-exp{font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.5;flex-shrink:0;}
+
+/* ── 풀이 가이드 카드 ── */
+.solution-layout{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.9fr);
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 8px 24px rgba(30,41,59,.06);
+}
+.solution-layout.eu-layout{background:rgba(13,153,255,.035);border:1px solid rgba(13,153,255,.22);}
+.solution-layout.cos-layout{background:rgba(242,78,30,.035);border:1px solid rgba(242,78,30,.22);}
+.guide-card{border-radius:0;padding:22px 24px;background:transparent!important;border:0!important;}
+.guide-card-title{font-size:15px;font-weight:700;margin-bottom:15px;}
+.guide-card.eu-guide  .guide-card-title{color:var(--blue);}
+.guide-card.cos-guide .guide-card-title{color:var(--purple);}
+.guide-steps{display:flex;flex-direction:column;gap:13px;}
+.guide-step{display:flex;gap:12px;align-items:flex-start;font-size:15px;line-height:1.7;color:var(--text);}
+.step-num{background:var(--s4);color:var(--muted);border-radius:50%;width:24px;height:24px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+  font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.step-formula{
+  display:block;font-size:15px;color:#555550;margin-top:4px;
+}
+.step-formula math{font-size:1.08em;color:inherit;}
+.math-note{font-family:var(--body);font-size:13px;font-style:normal;margin-left:6px;}
+.norm-formulas{
+  display:flex;align-items:center;flex-wrap:wrap;
+  gap:24px;margin-top:4px;color:#555550;font-size:15px;
+}
+.norm-item{display:flex;align-items:center;min-width:0;}
+.norm-item math{display:block;margin:0;font-size:1.08em;color:inherit;}
+.norm-delimiter{font-size:calc(1em + 3px);line-height:1;}
+.cosine-formula-row{
+  display:flex;align-items:center;flex-wrap:wrap;
+  gap:8px;margin-top:4px;color:#555550;font-size:15px;
+}
+.cosine-formula{display:flex;align-items:center;min-width:0;}
+.cosine-formula math{display:block;margin:0;font-size:1.08em;color:inherit;}
+.tolerance-note{font-family:var(--body);font-size:13px;font-style:normal;white-space:nowrap;}
+.norm-formulas mjx-container[display="true"],
+.cosine-formula-row mjx-container[display="true"]{margin:0!important;}
+.hint-btn-gap{margin-top:14px;}
+.mt2{margin-top:2px;}.mt6{margin-top:6px;}.mt8{margin-top:8px;}
+
+/* ── 답 입력 폼 ── */
+.ans-form{display:flex;flex-direction:column;gap:14px;}
+.ans-panel{
+  min-width:0;justify-content:center;padding:22px 24px;
+  border-left:1px solid rgba(107,107,107,.2);
+  background:rgba(255,255,255,.7);
+}
+.ans-panel-title{
+  padding-bottom:10px;border-bottom:1px solid rgba(107,107,107,.18);
+  color:var(--text);font-size:13px;font-weight:700;
+}
+.ans-panel .eu-input-row,.ans-panel .cos-frac-row{justify-content:center;}
+.ans-panel .submit-btn,.ans-panel .next-btn{width:100%;}
+.calc-result-line{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  min-height:36px;color:var(--muted);font-size:12px;
+}
+.calc-result-line .ans-result-display,.calc-result-line .cos-result-display{
+  min-width:0;font-size:1.35rem;
+}
+.ans-input{
+  background:var(--s3);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:var(--mono);font-size:1.25rem;
+  padding:10px 14px;width:150px;max-width:100%;outline:none;transition:border-color .15s;
+}
+.ans-input:focus{border-color:var(--accent);}
+.ans-input::placeholder{color:var(--muted);font-size:.85rem;}
+.frac-group{display:flex;flex-direction:column;gap:4px;}
+.frac-label{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em;}
+
+/* 유클리드 입력 행 */
+.eu-input-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.eu-input-field{display:flex;flex-direction:column;gap:4px;}
+.eu-radical{display:flex;align-items:flex-end;}
+.eu-sqrt-symbol{
+  font-family:'Cambria Math','Times New Roman',serif;
+  font-size:3.25rem;color:var(--blue);line-height:.82;
+}
+.eu-radicand{
+  border-top:2px solid var(--blue);
+  border-top-left-radius:0;padding-top:10px;margin-left:-2px;
+}
+.ans-sqrt-btn{
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  background:rgba(13,153,255,.1);color:#007BE5;
+  border:1.5px solid rgba(13,153,255,.3);border-radius:8px;
+  padding:10px 18px;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.ans-sqrt-btn:hover,.ans-sqrt-btn:focus-visible{background:rgba(13,153,255,.18);outline:none;}
+.ans-result-display{font-family:var(--mono);font-size:1.7rem;font-weight:700;
+  color:var(--muted);min-width:60px;transition:color .2s;}
+.ans-result-display.ready{color:var(--accent);}
+
+/* 코사인 입력 행 */
+.cos-frac-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.cos-fraction-input{
+  display:flex;flex-direction:column;align-items:stretch;
+  width:min(340px,100%);
+}
+.cos-fraction-input .frac-group{align-items:center;}
+.cos-fraction-input .ans-input{width:180px;text-align:center;}
+.radical-denominator{display:flex;align-items:flex-start;justify-content:center;gap:5px;width:100%;}
+.radical-input-field{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:8px;}
+.radical-input-field label{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.radical-input-field .ans-input{width:108px;}
+.radical-mark{
+  position:relative;z-index:1;align-self:flex-start;margin:3px -7px 0 0;
+  font-family:serif;font-size:3rem;line-height:1;color:#4A4A47;
+}
+.radical-inside{position:relative;}
+.radical-inside::before{
+  content:"";position:absolute;top:0;left:-8px;right:0;height:2px;
+  border-radius:2px;background:#4A4A47;
+}
+.radical-help{margin-top:7px;color:var(--muted);font-size:10px;text-align:center;font-family:var(--mono);}
+.fraction-rule{height:2px;background:#4A4A47;border-radius:2px;margin:8px 0;}
+.frac-equals{font-family:var(--mono);font-size:1.6rem;color:var(--muted);flex-shrink:0;}
+.cos-result-display{font-family:var(--mono);font-size:1.5rem;font-weight:700;
+  color:var(--muted);min-width:80px;transition:color .2s;}
+.cos-result-display.ready{color:var(--accent);}
+
+/* 제출 버튼 */
+.submit-btn{
+  font-family:var(--mono);font-size:14px;font-weight:700;
+  background:var(--accent);color:#fff;border:none;border-radius:10px;
+  padding:14px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 12px rgba(13,153,255,.22);
+}
+.submit-btn:hover,.submit-btn:focus-visible{background:#007BE5;transform:translateY(-1px);outline:none;}
+.submit-btn:disabled{background:var(--s3);color:var(--muted);cursor:not-allowed;transform:none;}
+
+/* 다음 문제 버튼 */
+.next-btn{
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  background:var(--s2);color:var(--text);border:1px solid var(--border);
+  border-radius:9px;padding:12px;cursor:pointer;transition:all .15s;
+  display:none;align-items:center;justify-content:center;gap:6px;
+}
+.next-btn.on{display:flex;}
+.next-btn:hover,.next-btn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none;}
+
+/* ── 결과 화면 ── */
+.result-title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;text-align:center;line-height:1.3;}
+.result-title em{color:var(--accent);font-style:normal;}
+.result-score-big{font-family:var(--mono);font-size:clamp(3.5rem,9vw,5.5rem);font-weight:700;color:var(--accent);line-height:1;}
+.result-max{font-family:var(--mono);font-size:14px;color:var(--muted);margin-top:4px;text-align:center;}
+.result-grade{font-size:14px;color:var(--muted);text-align:center;}
+.rb-wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.rb-item{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px 22px;text-align:center;min-width:110px;}
+.rb-val{font-family:var(--mono);font-size:1.8rem;font-weight:700;}
+.rb-val.blue{color:var(--blue);} .rb-val.purple{color:var(--purple);} .rb-val.gold{color:var(--gold);}
+.rb-lbl{font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono);}
+.result-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.res-btn{font-family:var(--mono);font-size:13px;font-weight:700;padding:12px 28px;border-radius:8px;cursor:pointer;transition:all .2s;}
+.res-btn.primary{background:var(--accent);border:none;color:#fff;box-shadow:0 4px 12px rgba(13,153,255,.22);}
+.res-btn.primary:hover,.res-btn.primary:focus-visible{background:#007BE5;transform:translateY(-2px);outline:none;}
+.res-btn.secondary{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.res-btn.secondary:hover,.res-btn.secondary:focus-visible{border-color:var(--blue);color:var(--blue);outline:none;}
+.firebase-cta{background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:22px 28px;text-align:center;max-width:480px;width:100%;}
+.firebase-cta h3{font-size:14px;font-weight:700;color:var(--purple);margin-bottom:8px;}
+.firebase-cta p{font-size:12px;color:var(--muted);line-height:1.85;}
+
+/* ── 오른쪽 Canvas 연습장 ── */
+:root{--scratch-width:clamp(340px,29vw,420px);}
+#quizScreen{transition:padding-right .28s ease;}
+body.scratch-open #quizScreen{padding-right:var(--scratch-width);}
+.scratchpad{
+  position:fixed;z-index:80;top:0;right:0;
+  width:var(--scratch-width);height:100vh;height:100dvh;
+  display:flex;flex-direction:column;
+  background:rgba(247,247,245,.98);
+  border-left:1px solid rgba(13,153,255,.22);
+  box-shadow:-12px 0 32px rgba(30,30,30,.12);
+  transform:translateX(100%);visibility:hidden;
+  transition:transform .28s ease,visibility 0s linear .28s;
+}
+body.quiz-active .scratchpad{visibility:visible;}
+body.quiz-active.scratch-open .scratchpad{
+  transform:translateX(0);transition:transform .28s ease,visibility 0s;
+}
+.scratch-toggle{
+  position:absolute;top:50%;left:-46px;transform:translateY(-50%);
+  width:46px;min-height:112px;padding:12px 8px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  border:1px solid rgba(13,153,255,.35);border-right:0;border-radius:12px 0 0 12px;
+  background:#fff;color:var(--accent);font-family:var(--body);font-size:12px;font-weight:700;
+  box-shadow:-5px 5px 16px rgba(30,30,30,.1);cursor:pointer;
+}
+.scratch-toggle:hover,.scratch-toggle:focus-visible{background:#EAF6FF;outline:none;}
+.scratch-toggle-icon{font-size:19px;}
+.scratch-toggle-text{writing-mode:vertical-rl;letter-spacing:.08em;}
+.scratch-header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:18px 18px 14px;border-bottom:1px solid var(--border);
+}
+.scratch-title{font-size:15px;font-weight:700;}
+.scratch-subtitle{margin-top:3px;font-size:11px;color:var(--muted);}
+.scratch-close{
+  width:34px;height:34px;border:1px solid var(--border);border-radius:8px;
+  background:var(--s1);color:var(--muted);font-size:18px;cursor:pointer;
+}
+.scratch-close:hover,.scratch-close:focus-visible{border-color:var(--accent);color:var(--accent);outline:none;}
+.scratch-tools{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px 14px;border-bottom:1px solid var(--border);background:#fff;
+}
+.scratch-color,.scratch-tool-btn{
+  width:32px;height:32px;border:1px solid var(--border);border-radius:8px;
+  background:#fff;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:14px;cursor:pointer;
+}
+.scratch-color::before{content:'';width:16px;height:16px;border-radius:50%;background:var(--pen-color);}
+.scratch-color.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(13,153,255,.15);}
+.scratch-tool-btn:hover,.scratch-tool-btn:focus-visible,.scratch-tool-btn.active{
+  border-color:var(--accent);color:var(--accent);background:#EAF6FF;outline:none;
+}
+.scratch-size{display:flex;align-items:center;gap:6px;margin-right:auto;color:var(--muted);font-size:11px;}
+.scratch-size input{width:76px;accent-color:var(--accent);}
+.scratch-canvas-wrap{
+  position:relative;flex:1;min-height:280px;margin:14px;
+  overflow:hidden;border:1px solid rgba(107,107,107,.22);border-radius:12px;
+  background-color:#fff;
+  background-image:
+    linear-gradient(rgba(13,153,255,.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(13,153,255,.08) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+#scratchCanvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair;}
+.scratch-help{padding:0 16px 14px;color:var(--muted);font-size:11px;line-height:1.6;}
+
+/* ── 반응형 ── */
+@media(max-width:1180px){
+  body.scratch-open .solution-layout{grid-template-columns:1fr;}
+  body.scratch-open .ans-panel{border-left:0;border-top:1px solid rgba(107,107,107,.2);}
+}
+@media(max-width:900px){
+  .solution-layout{grid-template-columns:1fr;}
+  .ans-panel{border-left:0;border-top:1px solid rgba(107,107,107,.2);}
+  :root{--scratch-width:min(86vw,390px);}
+  body.scratch-open #quizScreen{padding-right:0;}
+}
+@media(max-width:700px){
+  .formula-strip{grid-template-columns:1fr;justify-items:center;}
+  .formula-side{display:none;}
+  .norm-formulas{flex-direction:column;align-items:flex-start;gap:10px;}
+  .cosine-formula-row{align-items:flex-start;}
+}
+@media(max-width:600px){
+  #startScreen{padding:36px 16px;gap:24px;}
+  .guide-box{padding:18px 16px;}
+  .quiz-topbar{padding:10px 14px 10px 64px;}
+  .quiz-leading{gap:6px;}
+  .quiz-back{padding:5px 7px;}
+  .timer-row{padding:10px 14px 0;}
+  .timer-level-chip{display:none;}
+  .quiz-body{padding:0 10px 24px;}
+  .q-left{width:100%;gap:14px;padding:16px 0 20px;}
+  .guide-card,.ans-panel{padding:16px 14px;}
+  .eu-input-row{align-items:flex-end;}
+  .cos-frac-row{align-items:center;}
+  .ans-input{width:132px;font-size:1.1rem;}
+  .radical-input-field .ans-input{width:94px;}
+  .submit-btn,.next-btn{min-height:46px;}
+}
+@media(max-width:480px){
+  .mode-grid{grid-template-columns:1fr;max-width:320px;}
+  .timer-options{gap:5px;}
+  .timer-option{padding:9px 5px;}
+  .timer-dialog{padding:24px 16px 18px;}
+  .quiz-back span:last-child{display:none;}
+  .quiz-back{min-width:29px;justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- ① 시작 화면 -->
+<div id="startScreen" class="screen on">
+  <div class="start-hero">
+    <h1>유사도 계산 <em>퀴즈</em></h1>
+    <p>유클리드 거리와 코사인 유사도를 계산기로 직접 계산하고 제출하세요.<br>
+       벡터는 2~5차원이며, 총시간 안에서 10문제를 자유롭게 배분해 풉니다.</p>
+  </div>
+
+  <div class="guide-box">
+    <h3>🧮 계산기 사용법</h3>
+    <div class="guide-row">
+      <div class="guide-icon">📏</div>
+      <div>
+        <strong>유클리드</strong>: 제곱차를 더한 뒤 <strong>√</strong> 버튼을 누르면 루트를 계산합니다.<br>
+        예) 9 + 16 = → <strong>√</strong> → 5 → ✓ 제출
+      </div>
+    </div>
+    <div class="guide-row cosine-row">
+      <div class="guide-icon">🔺</div>
+      <div>
+        <strong>코사인</strong>: 내적과 근호로 정리한 크기 곱을 입력해 제출하세요.<br>
+        예) 분모가 5√2이면 루트 밖 5, 루트 안 2 → ✓ 제출
+      </div>
+    </div>
+    <div class="guide-row">
+      <div class="guide-icon">💡</div>
+      <div>"계산 힌트 보기"를 눌러 단계별 풀이 가이드를 확인할 수 있습니다. <strong>기본 10점 + 연속 보너스 + 완료 시간 보너스</strong></div>
+    </div>
+  </div>
+
+  <div class="mode-grid">
+    <button type="button" class="mode-card eu" data-mode="euclidean" aria-label="유클리드 거리 퀴즈와 총시간 선택"><div class="mode-icon">📏</div><div class="mode-title">유클리드만</div><div class="mode-desc">두 벡터 사이의 거리.<br>√ 버튼으로 루트 계산!</div></button>
+    <button type="button" class="mode-card cos" data-mode="cosine" aria-label="코사인 유사도 퀴즈와 총시간 선택"><div class="mode-icon">🔺</div><div class="mode-title">코사인만</div><div class="mode-desc">방향 유사도.<br>÷ 버튼으로 분수 계산!</div></button>
+    <button type="button" class="mode-card mix" data-mode="mixed" aria-label="혼합 모드 퀴즈와 총시간 선택"><div class="mode-icon">⚡</div><div class="mode-title">혼합 모드</div><div class="mode-desc">두 유형 섞여 출제.<br>10문제 도전!</div></button>
+  </div>
+</div>
+
+<!-- 문제 유형 선택 후 표시되는 총시간 팝업 -->
+<div class="timer-modal" id="timerModal" aria-hidden="true">
+  <div class="timer-modal-backdrop" data-modal-close></div>
+  <div class="timer-dialog" role="dialog" aria-modal="true" aria-labelledby="timerDialogTitle">
+    <button type="button" class="timer-modal-close" data-modal-close aria-label="총시간 선택 팝업 닫기">×</button>
+    <div class="timer-dialog-head">
+      <span class="q-badge mix" id="timerModeBadge">혼합</span>
+      <h2 id="timerDialogTitle">총시간을 선택하세요</h2>
+      <p>10문제 전체에 사용할 시간입니다.<br>문제를 넘겨도 타이머는 초기화되지 않습니다.</p>
+    </div>
+    <div class="timer-picker">
+      <div class="timer-picker-title">⏱ 난이도별 총시간</div>
+      <div class="timer-options" role="radiogroup" aria-label="퀴즈 총시간 난이도">
+        <button type="button" class="timer-option" data-timer-level="easy" role="radio" aria-checked="false">
+          <strong>쉬움</strong><span>10:00</span>
+        </button>
+        <button type="button" class="timer-option active" data-timer-level="normal" role="radio" aria-checked="true">
+          <strong>중간</strong><span>07:00</span>
+        </button>
+        <button type="button" class="timer-option" data-timer-level="hard" role="radio" aria-checked="false">
+          <strong>어려움</strong><span>05:00</span>
+        </button>
+      </div>
+    </div>
+    <button type="button" class="timer-modal-start" id="timerModalStart">중간 · 7분으로 시작</button>
+  </div>
+</div>
+
+<!-- ② 퀴즈 화면 -->
+<div id="quizScreen" class="screen">
+  <div class="quiz-topbar">
+    <div class="quiz-leading">
+      <button type="button" class="quiz-back" onclick="goStart()" aria-label="퀴즈를 나가고 모드 선택으로 돌아가기">
+        <span aria-hidden="true">←</span><span>뒤로</span>
+      </button>
+      <span class="q-badge" id="modeBadge">유클리드</span>
+    </div>
+    <span class="q-prog-txt" id="progressTxt" aria-live="polite">1 / 10</span>
+    <span class="q-score-txt" id="scoreTxt" aria-live="polite">0점</span>
+  </div>
+  <div class="prog-wrap" role="progressbar" aria-label="문제 진행률" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><div class="prog-bar prog-bar-init" id="progBar"></div></div>
+  <div class="timer-row">
+    <span class="timer-level-chip" id="timerLevelLabel">중간 · 총 7분</span>
+    <div class="timer-outer" role="progressbar" aria-label="총 남은 시간" aria-valuemin="0" aria-valuemax="420" aria-valuenow="420"><div class="timer-inner" id="timerBar"></div></div>
+    <div class="timer-num" id="timerNum" aria-live="polite">7:00</div>
+  </div>
+
+  <div class="quiz-body">
+    <div class="q-left" id="qLeft"><!-- 동적 생성 --></div>
+
+    <!-- 풀이 가이드 + 답 입력 (동적 생성) -->
+    <div id="answerSection" class="q-left q-calc-wrap"></div>
+  </div>
+</div>
+
+<!-- 오른쪽 Canvas 연습장 -->
+<aside class="scratchpad" id="scratchpad" aria-hidden="true">
+  <button type="button" class="scratch-toggle" id="scratchToggle"
+    aria-controls="scratchpad" aria-expanded="false" data-testid="scratch-toggle">
+    <span class="scratch-toggle-icon" aria-hidden="true">✎</span>
+    <span class="scratch-toggle-text">연습장</span>
+  </button>
+  <div class="scratch-header">
+    <div>
+      <div class="scratch-title">계산 연습장</div>
+      <div class="scratch-subtitle">식을 자유롭게 적어 보세요.</div>
+    </div>
+    <button type="button" class="scratch-close" id="scratchClose" aria-label="연습장 닫기">×</button>
+  </div>
+  <div class="scratch-tools" aria-label="연습장 도구">
+    <button type="button" class="scratch-color active" style="--pen-color:#1E1E1E"
+      data-color="#1E1E1E" aria-label="검정색 펜" aria-pressed="true"></button>
+    <button type="button" class="scratch-color" style="--pen-color:#0D99FF"
+      data-color="#0D99FF" aria-label="파란색 펜" aria-pressed="false"></button>
+    <button type="button" class="scratch-color" style="--pen-color:#F24822"
+      data-color="#F24822" aria-label="빨간색 펜" aria-pressed="false"></button>
+    <label class="scratch-size" for="scratchSize">굵기
+      <input type="range" id="scratchSize" min="2" max="10" value="3" aria-label="펜 굵기">
+    </label>
+    <button type="button" class="scratch-tool-btn" id="scratchEraser"
+      aria-label="지우개" aria-pressed="false" title="지우개">⌫</button>
+    <button type="button" class="scratch-tool-btn" id="scratchUndo"
+      aria-label="실행 취소" title="실행 취소">↶</button>
+    <button type="button" class="scratch-tool-btn" id="scratchClear"
+      aria-label="연습장 전체 지우기" title="전체 지우기">⌧</button>
+  </div>
+  <div class="scratch-canvas-wrap" id="scratchCanvasWrap">
+    <canvas id="scratchCanvas" width="600" height="800" tabindex="0"
+      aria-label="마우스나 터치로 계산을 적는 연습장"></canvas>
+  </div>
+  <div class="scratch-help">마우스·펜·터치로 쓸 수 있습니다. 작성 내용은 문제를 넘겨도 유지됩니다.</div>
+</aside>
+
+<!-- ③ 결과 화면 -->
+<div id="resultScreen" class="screen">
+  <div class="result-title">퀴즈 <em>완료!</em></div>
+  <div class="result-score-wrap">
+    <div class="result-score-big" id="finalScore">0</div>
+    <div class="result-max" id="finalMax">기본 100점 + 남은 시간 최대 20점 + 연속 보너스</div>
+  </div>
+  <div class="result-grade" id="resultGrade"></div>
+  <div class="rb-wrap">
+    <div class="rb-item"><div class="rb-val blue"   id="rbCorrect">0</div><div class="rb-lbl">정답</div></div>
+    <div class="rb-item"><div class="rb-val purple" id="rbWrong">0</div><div class="rb-lbl">오답</div></div>
+    <div class="rb-item"><div class="rb-val gold"   id="rbStreak">0</div><div class="rb-lbl">최고 연속</div></div>
+  </div>
+  <div class="result-actions">
+    <button type="button" class="res-btn primary"   onclick="restartSame()">같은 모드 다시</button>
+    <button type="button" class="res-btn secondary" onclick="goStart()">모드 선택으로</button>
+  </div>
+  <div class="firebase-cta">
+    <h3>🔥 경쟁 모드 — Coming Soon</h3>
+    <p>Firebase 실시간 DB를 활용한 멀티플레이 경쟁 모드 준비 중입니다.<br>
+       같은 문제를 동시에 풀고 점수를 실시간으로 비교합니다.</p>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  QUIZ DATA
+// ══════════════════════════════════════
+const QUESTION_DIMS=[2,3,4,5];
+const EUCLID_PATTERNS=[
+  {values:[2],dist:2},
+  {values:[3],dist:3},
+  {values:[4],dist:4},
+  {values:[5],dist:5},
+  {values:[3,4],dist:5},
+  {values:[1,2,2],dist:3},
+  {values:[2,4,4],dist:6},
+  {values:[2,3,6],dist:7},
+  {values:[1,1,1,1],dist:2},
+  {values:[2,2,2,2],dist:4},
+  {values:[3,3,3,3],dist:6},
+];
+// ══════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════
+const gcd = (a,b) => b===0 ? Math.abs(a) : gcd(b, a%b);
+function simplify(n,d){const g=gcd(Math.abs(n),d);return[n/g,d/g];}
+function fmtDec(v){return Number.isInteger(v)?v.toFixed(0):parseFloat(v.toFixed(4)).toString();}
+function simplifyRadical(n){
+  const value=Math.abs(Math.trunc(n));
+  for(let factor=Math.floor(Math.sqrt(value));factor>=2;factor--){
+    const square=factor*factor;
+    if(value%square===0)return{outside:factor,inside:value/square};
+  }
+  return{outside:1,inside:value};
+}
+function radicalMath(outside,inside){
+  if(inside===1)return `<mn>${outside}</mn>`;
+  const root=`<msqrt><mn>${inside}</mn></msqrt>`;
+  return outside===1?root:`<mrow><mn>${outside}</mn>${root}</mrow>`;
+}
+function buildExactRoot(squared){
+  const {outside,inside}=simplifyRadical(squared);
+  return `<math display="inline" aria-label="${squared}의 제곱근">
+    <mrow><msqrt><mn>${squared}</mn></msqrt><mo>=</mo>${radicalMath(outside,inside)}</mrow>
+  </math>`;
+}
+function buildRootEquation(radicand,result){
+  return `<math display="inline" aria-label="${radicand}의 제곱근은 ${result}">
+    <mrow><mi>d</mi><mo>=</mo><msqrt><mn>${radicand}</mn></msqrt><mo>=</mo><mn>${result}</mn></mrow>
+  </math>`;
+}
+function buildFractionEquation(n,d,result){
+  const[sn,sd]=simplify(n,d);
+  const simplified=sd===1
+    ?`<mn>${sn}</mn>`
+    :`<mfrac><mn>${sn}</mn><mn>${sd}</mn></mfrac>`;
+  const changed=sn!==n||sd!==d;
+  return `<math display="inline" aria-label="${n}을 ${d}로 나눈 값은 ${result}">
+    <mrow>
+      <mi mathvariant="normal">cos</mi><mo>=</mo>
+      <mfrac><mn>${n}</mn><mn>${d}</mn></mfrac>
+      ${changed?`<mo>=</mo>${simplified}`:''}
+      <mo>≈</mo><mn>${result}</mn>
+    </mrow>
+  </math>`;
+}
+function buildRadicalFractionEquation(n,outside,inside,result){
+  return `<math display="inline" aria-label="${n}을 ${outside} 루트 ${inside}로 나눈 값은 ${result}">
+    <mrow>
+      <mi mathvariant="normal">cos</mi><mo>=</mo>
+      <mfrac><mn>${n}</mn>${radicalMath(outside,inside)}</mfrac>
+      <mo>≈</mo><mn>${result}</mn>
+    </mrow>
+  </math>`;
+}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function padAndShuffle(values,dim){return shuffle([...values,...Array(dim-values.length).fill(0)]);}
+function randomVector(dim){
+  let vector;
+  do{
+    vector=Array.from({length:dim},()=>Math.floor(Math.random()*9)-4);
+  }while(vector.every(value=>value===0));
+  return vector;
+}
+function buildDimensionPlan(count){
+  const plan=[];
+  while(plan.length<count)plan.push(...shuffle(QUESTION_DIMS));
+  return plan.slice(0,count);
+}
+
+// ══════════════════════════════════════
+//  QUESTION GENERATION
+// ══════════════════════════════════════
+function genEuclid(dim=pick(QUESTION_DIMS)){
+  const tpl=pick(EUCLID_PATTERNS.filter(pattern=>pattern.values.length<=dim));
+  const diffs=padAndShuffle(tpl.values,dim);
+  const A=Array.from({length:dim},()=>Math.floor(Math.random()*5)+1);
+  const B=A.map((a,i)=>{
+    if(diffs[i]===0)return a;
+    const up=a+diffs[i],dn=a-diffs[i];
+    return(dn>=1&&Math.random()<.5)?dn:up;
+  });
+  const sq=diffs.reduce((s,d)=>s+d*d,0);
+  return{type:'eu',A,B,dim,dist:tpl.dist,squaredSum:sq,diffs};
+}
+function genCosine(dim=pick(QUESTION_DIMS)){
+  for(let attempt=0;attempt<500;attempt++){
+    const A=randomVector(dim),B=randomVector(dim);
+    const dot=A.reduce((sum,a,i)=>sum+a*B[i],0);
+    const magA2=A.reduce((sum,a)=>sum+a*a,0);
+    const magB2=B.reduce((sum,b)=>sum+b*b,0);
+    const denomRadicand=magA2*magB2;
+    const {outside:denomOutside,inside:denomInside}=simplifyRadical(denomRadicand);
+    const denomValue=Math.sqrt(denomRadicand);
+    const cosine=dot/denomValue;
+    if(dot===0||Math.abs(cosine)>.96||denomInside===1)continue;
+    return{type:'cos',A,B,dim,dot,magA2,magB2,denomRadicand,denomOutside,denomInside,denomValue,cosine};
+  }
+  const A=[1,2,...Array(dim-2).fill(0)],B=[2,2,...Array(dim-2).fill(0)];
+  const dot=A.reduce((sum,a,i)=>sum+a*B[i],0);
+  const magA2=A.reduce((sum,a)=>sum+a*a,0);
+  const magB2=B.reduce((sum,b)=>sum+b*b,0);
+  const denomRadicand=magA2*magB2;
+  const {outside:denomOutside,inside:denomInside}=simplifyRadical(denomRadicand);
+  const denomValue=Math.sqrt(denomRadicand);
+  return{type:'cos',A,B,dim,dot,magA2,magB2,denomRadicand,denomOutside,denomInside,denomValue,cosine:dot/denomValue};
+}
+function genQuestion(mode,dim=pick(QUESTION_DIMS)){
+  if(mode==='euclidean')return genEuclid(dim);
+  if(mode==='cosine')   return genCosine(dim);
+  return Math.random()<.5?genEuclid(dim):genCosine(dim);
+}
+
+// ══════════════════════════════════════
+//  HINT HTML
+// ══════════════════════════════════════
+function buildHint(q){
+  if(q.type==='eu'){
+    const rows=q.A.map((a,i)=>{
+      const b=q.B[i],d=a-b,sq=d*d;
+      return `<div class="hl">d<sub>${i+1}</sub>: (${a}−${b})² = (${d})² = <span class="hla">${sq}</span></div>`;
+    }).join('');
+    return `<div>각 차원 제곱차:</div>${rows}
+      <div class="mt6">합계: <span class="hla">${q.squaredSum}</span></div>
+      <div class="mt2">${buildRootEquation(q.squaredSum,q.dist)}
+        → 제곱합 칸에 <strong>${q.squaredSum}</strong> 입력 후 <span class="hla">√ 적용</span> 버튼 클릭!</div>`;
+  }else{
+    const dotP=q.A.map((a,i)=>`(${a})×(${q.B[i]})`).join(' + ');
+    const products=q.A.map((a,i)=>a*q.B[i]);
+    const dotV=products.map((value,index)=>{
+      if(index===0)return `${value}`;
+      return value<0?` − ${Math.abs(value)}`:` + ${value}`;
+    }).join('');
+    const aS2=q.A.map(a=>a*a).join('+'),bS2=q.B.map(b=>b*b).join('+');
+    return `<div><span class="hlb">① 내적 A·B</span></div>
+      <div class="hl">${dotP} = ${dotV} = <span class="hla">${q.dot}</span></div>
+      <div class="mt8"><span class="hlp">② 서로 다른 벡터 크기 계산</span></div>
+      <div class="hl">‖A‖² = ${aS2} = ${q.magA2} → ‖A‖ = <span class="hla">${buildExactRoot(q.magA2)}</span></div>
+      <div class="hl">‖B‖² = ${bS2} = ${q.magB2} → ‖B‖ = <span class="hla">${buildExactRoot(q.magB2)}</span></div>
+      <div class="hl">‖A‖×‖B‖ = √${q.denomRadicand} = <span class="hla"><math display="inline">${radicalMath(q.denomOutside,q.denomInside)}</math></span></div>
+      <div class="mt8"><span class="hlb">③ 코사인 유사도</span></div>
+      <div class="hl">${buildRadicalFractionEquation(q.dot,q.denomOutside,q.denomInside,fmtDec(q.cosine))}
+        → 분자 <strong>${q.dot}</strong>, 루트 밖 <strong>${q.denomOutside}</strong>, 루트 안 <strong>${q.denomInside}</strong> 입력!</div>`;
+  }
+}
+
+// ══════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════
+const TOTAL=10;
+const BASE_SCORE=10;
+const MAX_FINAL_TIME_BONUS=20;
+const TIMER_PRESETS={
+  easy:{label:'쉬움',seconds:600},
+  normal:{label:'중간',seconds:420},
+  hard:{label:'어려움',seconds:300},
+};
+let selectedTimerLevel='normal';
+let pendingMode=null;
+let timerModalTrigger=null;
+let GS={mode:'mixed',questions:[],cur:0,score:0,streak:0,maxStreak:0,correct:0,wrong:0,
+  totalTime:TIMER_PRESETS.normal.seconds,timeLeft:TIMER_PRESETS.normal.seconds,
+  timer:null,answered:false,finalized:false,finalTimeBonus:0};
+
+const MODE_INFO={
+  euclidean:{label:'유클리드',className:'eu'},
+  cosine:{label:'코사인',className:'cos'},
+  mixed:{label:'혼합 모드',className:'mix'},
+};
+
+function updateTimerModalSelection(level){
+  selectedTimerLevel=level;
+  document.querySelectorAll('.timer-option[data-timer-level]').forEach(option=>{
+    const selected=option.dataset.timerLevel===level;
+    option.classList.toggle('active',selected);
+    option.setAttribute('aria-checked',selected?'true':'false');
+  });
+  const preset=TIMER_PRESETS[level];
+  document.getElementById('timerModalStart').textContent=`${preset.label} · ${Math.round(preset.seconds/60)}분으로 시작`;
+}
+
+function openTimerModal(mode,trigger){
+  const info=MODE_INFO[mode];
+  if(!info)return;
+  pendingMode=mode;
+  timerModalTrigger=trigger||null;
+  const badge=document.getElementById('timerModeBadge');
+  badge.className=`q-badge ${info.className}`;
+  badge.textContent=info.label;
+  document.getElementById('timerDialogTitle').textContent=`${info.label} 총시간 선택`;
+  updateTimerModalSelection(selectedTimerLevel);
+  const modal=document.getElementById('timerModal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  document.body.classList.add('timer-modal-open');
+  modal.querySelector(`.timer-option[data-timer-level="${selectedTimerLevel}"]`).focus();
+}
+
+function closeTimerModal(restoreFocus=true){
+  const modal=document.getElementById('timerModal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+  document.body.classList.remove('timer-modal-open');
+  pendingMode=null;
+  if(restoreFocus&&timerModalTrigger)timerModalTrigger.focus();
+  timerModalTrigger=null;
+}
+
+function startPendingGame(){
+  if(!pendingMode)return;
+  const mode=pendingMode;
+  closeTimerModal(false);
+  startGame(mode);
+}
+
+function startGame(mode){
+  const timerPreset=TIMER_PRESETS[selectedTimerLevel];
+  GS={mode,cur:0,score:0,streak:0,maxStreak:0,correct:0,wrong:0,
+    totalTime:timerPreset.seconds,timeLeft:timerPreset.seconds,timer:null,answered:false,
+    finalized:false,finalTimeBonus:0,
+    questions:buildDimensionPlan(TOTAL).map(dim=>genQuestion(mode,dim))};
+  showScreen('quizScreen');
+  const bd=document.getElementById('modeBadge');
+  bd.className='q-badge '+(mode==='euclidean'?'eu':mode==='cosine'?'cos':'mix');
+  bd.textContent=mode==='euclidean'?'유클리드':mode==='cosine'?'코사인':'혼합';
+  document.getElementById('timerLevelLabel').textContent=`${timerPreset.label} · 총 ${Math.round(timerPreset.seconds/60)}분`;
+  loadQuestion();
+  startTimer();
+}
+
+function loadQuestion(){
+  const q=GS.questions[GS.cur];
+  GS.answered=false;
+  updateProgressUI();
+  renderQuestion(q);
+}
+
+function updateProgressUI(){
+  const current=Math.min(GS.cur+1,TOTAL);
+  document.getElementById('progressTxt').textContent=`${current} / ${TOTAL}`;
+  document.getElementById('progBar').style.width=`${(current/TOTAL)*100}%`;
+  const wrap=document.querySelector('.prog-wrap');
+  if(wrap)wrap.setAttribute('aria-valuenow',current);
+}
+
+// ══════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════
+function buildFormula(type){
+  if(type==='eu'){
+    return `<math display="inline" displaystyle="true" aria-label="A와 B의 유클리드 거리">
+      <mrow>
+        <mi>d</mi>
+        <mrow><mo>(</mo><mi mathvariant="bold">A</mi><mo>,</mo><mi mathvariant="bold">B</mi><mo>)</mo></mrow>
+        <mo>=</mo>
+        <msqrt><mrow>
+          <munderover>
+            <mo>∑</mo>
+            <mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow>
+            <mi>n</mi>
+          </munderover>
+          <msup>
+            <mrow><mo>(</mo><msub><mi>a</mi><mi>i</mi></msub><mo>−</mo><msub><mi>b</mi><mi>i</mi></msub><mo>)</mo></mrow>
+            <mn>2</mn>
+          </msup>
+        </mrow></msqrt>
+      </mrow>
+    </math>`;
+  }
+  return `<math display="inline" displaystyle="true" aria-label="A와 B의 코사인 유사도">
+    <mrow>
+      <mi mathvariant="normal">cos</mi>
+      <mrow><mo>(</mo><mi mathvariant="bold">A</mi><mo>,</mo><mi mathvariant="bold">B</mi><mo>)</mo></mrow>
+      <mo>=</mo>
+      <mfrac>
+        <mrow><mi mathvariant="bold">A</mi><mo>·</mo><mi mathvariant="bold">B</mi></mrow>
+        <mrow>
+          <mrow><mo class="norm-delimiter" stretchy="false">‖</mo><mi mathvariant="bold">A</mi><mo class="norm-delimiter" stretchy="false">‖</mo></mrow>
+          <mo>·</mo>
+          <mrow><mo class="norm-delimiter" stretchy="false">‖</mo><mi mathvariant="bold">B</mi><mo class="norm-delimiter" stretchy="false">‖</mo></mrow>
+        </mrow>
+      </mfrac>
+    </mrow>
+  </math>`;
+}
+
+function buildNormFormula(){
+  return `<div class="norm-formulas">
+    <div class="norm-item">
+      <math display="block" aria-label="벡터 A의 크기">
+        <mrow>
+          <mrow><mo class="norm-delimiter" stretchy="false">‖</mo><mi mathvariant="bold">A</mi><mo class="norm-delimiter" stretchy="false">‖</mo></mrow>
+          <mo>=</mo>
+          <msqrt><mrow><msup><msub><mi>a</mi><mn>1</mn></msub><mn>2</mn></msup><mo>+</mo><msup><msub><mi>a</mi><mn>2</mn></msub><mn>2</mn></msup><mo>+</mo><mo>⋯</mo></mrow></msqrt>
+        </mrow>
+      </math>
+    </div>
+    <div class="norm-item">
+      <math display="block" aria-label="벡터 B의 크기">
+        <mrow>
+          <mrow><mo class="norm-delimiter" stretchy="false">‖</mo><mi mathvariant="bold">B</mi><mo class="norm-delimiter" stretchy="false">‖</mo></mrow>
+          <mo>=</mo>
+          <msqrt><mrow><msup><msub><mi>b</mi><mn>1</mn></msub><mn>2</mn></msup><mo>+</mo><msup><msub><mi>b</mi><mn>2</mn></msub><mn>2</mn></msup><mo>+</mo><mo>⋯</mo></mrow></msqrt>
+        </mrow>
+      </math>
+    </div>
+  </div>`;
+}
+
+function renderQuestion(q){
+  const isEu=q.type==='eu';
+  const dims=Array.from({length:q.dim},(_,i)=>`<th>d<sub>${i+1}</sub></th>`).join('');
+  const rowA=q.A.map(v=>`<td>${v}</td>`).join('');
+  const rowB=q.B.map(v=>`<td>${v}</td>`).join('');
+  const formula=buildFormula(q.type);
+  const streakBadge=GS.streak>=2?`<span class="q-streak">🔥 ${GS.streak}연속 정답!</span>`:'';
+
+  document.getElementById('qLeft').innerHTML=`
+    <div class="q-type-row">
+      <span class="q-type-badge ${isEu?'eu':'cos'}">${isEu?'📏 유클리드 거리':'🔺 코사인 유사도'} · ${q.dim}차원</span>
+      ${streakBadge}
+    </div>
+    <div class="q-title">두 벡터 <var>A</var>와 <var>B</var>의 <em class="${isEu?'eu-tone':'cos-tone'}">${isEu?'유클리드 거리':'코사인 유사도'}</em>를 구하세요.</div>
+    <div class="vec-scroll">
+      <table class="vec-table">
+        <thead><tr><th>벡터</th>${dims}</tr></thead>
+        <tbody>
+          <tr><td><var>A</var></td>${rowA}</tr>
+          <tr><td><var>B</var></td>${rowB}</tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="formula-strip ${isEu?'eu':'cos'}">
+      <span class="formula-side"><span>핵심 공식</span></span>
+      <span class="formula-equation">${formula}</span>
+      <span class="formula-side right"><span>${isEu?'허용 오차 ±0.01':'정확한 근호 입력'}</span></span>
+    </div>
+  `;
+  renderAnswerSection(q);
+}
+
+function toggleHint(btn){
+  const box=document.getElementById('hintBox');
+  const open=box.classList.toggle('open');
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  btn.textContent=open?'💡 계산 보기 닫기':'💡 단계별 계산 보기';
+}
+
+// ══════════════════════════════════════
+//  ANSWER SECTION
+// ══════════════════════════════════════
+let euSqrtVal=null;
+let errorHideTimer=null;
+let nextCountdownTimer=null;
+
+function clearErrorTimer(){
+  if(errorHideTimer){
+    clearTimeout(errorHideTimer);
+    errorHideTimer=null;
+  }
+}
+
+function clearNextCountdown(){
+  if(nextCountdownTimer){
+    clearInterval(nextCountdownTimer);
+    nextCountdownTimer=null;
+  }
+}
+
+function startNextCountdown(){
+  clearNextCountdown();
+  const nb=document.getElementById('nextBtn');
+  if(!nb)return;
+  const destination=GS.cur+1<TOTAL?'다음 문제':'결과 보기';
+  let remaining=3;
+  const updateLabel=()=>{
+    nb.textContent=`${destination} → ${remaining}`;
+    nb.setAttribute('aria-label',`${remaining}초 후 ${destination}. 지금 이동하려면 누르세요.`);
+  };
+  updateLabel();
+  nextCountdownTimer=setInterval(()=>{
+    remaining--;
+    if(remaining<=0){
+      clearNextCountdown();
+      nextQ();
+      return;
+    }
+    updateLabel();
+  },1000);
+}
+
+function renderAnswerSection(q){
+  const sec=document.getElementById('answerSection');
+  euSqrtVal=null;
+  if(q.type==='eu'){
+    sec.innerHTML=`
+      <div class="solution-layout eu-layout">
+        <div class="guide-card eu-guide">
+          <div class="guide-card-title">📐 유클리드 거리 — 풀이 순서</div>
+          <div class="guide-steps">
+            <div class="guide-step">
+              <span class="step-num">1</span>
+              <div>각 차원마다 두 값의 차이를 구해 <strong>제곱</strong>하세요.
+                <span class="step-formula">(a₁−b₁)², (a₂−b₂)², ···</span></div>
+            </div>
+            <div class="guide-step">
+              <span class="step-num">2</span>
+              <div>제곱한 값들을 <strong>모두 더한 합계</strong>를 아래 칸에 입력하세요.</div>
+            </div>
+            <div class="guide-step">
+              <span class="step-num">3</span>
+              <div><strong>√ 적용</strong> 버튼을 눌러 제곱근을 계산한 뒤 제출하세요.
+                <span class="step-formula">${buildFormula('eu')}<span class="math-note">허용 오차 ±0.01</span></span></div>
+            </div>
+          </div>
+          <button type="button" class="hint-btn hint-btn-gap" aria-expanded="false" aria-controls="hintBox" onclick="toggleHint(this)">💡 단계별 계산 보기</button>
+          <div class="hint-content" id="hintBox">${buildHint(q)}</div>
+        </div>
+        <div class="ans-form ans-panel">
+          <div class="ans-panel-title">답 입력</div>
+          <div class="eu-input-row">
+            <div class="eu-input-field">
+              <label for="sqSumInput" class="frac-label">제곱합</label>
+              <div class="eu-radical">
+                <span class="eu-sqrt-symbol" aria-hidden="true">√</span>
+                <input type="number" id="sqSumInput" class="ans-input eu-radicand" placeholder="예: 25" min="0"
+                  oninput="euSqrtVal=null;const r=document.getElementById('euResult');r.textContent='—';r.classList.remove('ready');">
+              </div>
+            </div>
+            <button type="button" class="ans-sqrt-btn" onclick="applyEuSqrt()">√ 적용</button>
+          </div>
+          <div class="calc-result-line">계산 결과: <span class="ans-result-display" id="euResult">—</span></div>
+          <button type="button" class="submit-btn" id="submitBtn" onclick="submitAnswer()">✓ 답 제출</button>
+          <div class="feedback" id="feedback"></div>
+          <button type="button" class="next-btn" id="nextBtn" onclick="nextQ()">다음 문제 →</button>
+        </div>
+      </div>`;
+  }else{
+    sec.innerHTML=`
+      <div class="solution-layout cos-layout">
+        <div class="guide-card cos-guide">
+          <div class="guide-card-title">🔺 코사인 유사도 — 풀이 순서</div>
+          <div class="guide-steps">
+            <div class="guide-step">
+              <span class="step-num">1</span>
+              <div><strong>내적(A·B)</strong> 계산: 같은 위치 원소끼리 곱한 뒤 모두 더하기
+                <span class="step-formula">A·B = a₁b₁ + a₂b₂ + ···</span></div>
+            </div>
+            <div class="guide-step">
+              <span class="step-num">2</span>
+              <div>각 벡터의 <strong>크기(‖A‖, ‖B‖)</strong> 계산 후 곱하기
+                ${buildNormFormula()}</div>
+            </div>
+            <div class="guide-step">
+              <span class="step-num">3</span>
+              <div>분자에 <strong>내적</strong>, 분모를 <strong>루트 밖 × √루트 안</strong>으로 정리해 입력
+                <div class="cosine-formula-row">
+                  <div class="cosine-formula">${buildFormula('cos')}</div>
+                  <span class="tolerance-note">정확한 근호 형태로 제출</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="hint-btn hint-btn-gap" aria-expanded="false" aria-controls="hintBox" onclick="toggleHint(this)">💡 단계별 계산 보기</button>
+          <div class="hint-content" id="hintBox">${buildHint(q)}</div>
+        </div>
+        <div class="ans-form ans-panel">
+          <div class="ans-panel-title">답 입력</div>
+          <div class="cos-frac-row">
+            <div class="cos-fraction-input" aria-label="코사인 유사도 분수 입력">
+              <div class="frac-group">
+                <label for="fracNumer" class="frac-label">내적 A·B</label>
+                <input type="number" id="fracNumer" class="ans-input" step="1" placeholder="예: -6" oninput="updateCosPreview()">
+              </div>
+              <span class="fraction-rule" aria-hidden="true"></span>
+              <div class="frac-group">
+                <span class="frac-label" id="radicalDenomLabel">‖A‖ × ‖B‖</span>
+                <div class="radical-denominator" aria-labelledby="radicalDenomLabel">
+                  <div class="radical-input-field">
+                    <input type="number" id="radOutside" class="ans-input" min="1" step="1" placeholder="예: 5" oninput="updateCosPreview()">
+                    <label for="radOutside">루트 밖</label>
+                  </div>
+                  <span class="radical-mark" aria-hidden="true">√</span>
+                  <div class="radical-input-field radical-inside">
+                    <input type="number" id="radInside" class="ans-input" min="2" step="1" placeholder="예: 2" oninput="updateCosPreview()">
+                    <label for="radInside">루트 안</label>
+                  </div>
+                </div>
+                <span class="radical-help">예: 5√2 → 루트 밖 5, 루트 안 2</span>
+              </div>
+            </div>
+          </div>
+          <div class="calc-result-line">계산 결과: <span class="cos-result-display" id="cosResult">—</span></div>
+          <button type="button" class="submit-btn" id="submitBtn" onclick="submitAnswer()">✓ 답 제출</button>
+          <div class="feedback" id="feedback"></div>
+          <button type="button" class="next-btn" id="nextBtn" onclick="nextQ()">다음 문제 →</button>
+        </div>
+      </div>`;
+  }
+}
+
+function applyEuSqrt(){
+  const inp=document.getElementById('sqSumInput');
+  const val=parseFloat(inp.value);
+  const el=document.getElementById('euResult');
+  if(isNaN(val)||val<0){
+    el.textContent='오류';el.classList.remove('ready');
+    euSqrtVal=null;return;
+  }
+  euSqrtVal=Math.sqrt(val);
+  el.textContent=fmtDec(euSqrtVal);
+  el.classList.add('ready');
+}
+
+function updateCosPreview(){
+  const n=parseFloat(document.getElementById('fracNumer').value);
+  const outside=parseFloat(document.getElementById('radOutside').value);
+  const inside=parseFloat(document.getElementById('radInside').value);
+  const el=document.getElementById('cosResult');
+  if(Number.isInteger(n)&&Number.isInteger(outside)&&Number.isInteger(inside)&&outside>0&&inside>1){
+    const val=n/(outside*Math.sqrt(inside));
+    el.innerHTML=buildRadicalFractionEquation(n,outside,inside,fmtDec(val));
+    el.classList.add('ready');
+  }else{
+    el.textContent='—';el.classList.remove('ready');
+  }
+}
+
+// ══════════════════════════════════════
+//  ANSWER SUBMIT
+// ══════════════════════════════════════
+function submitAnswer(){
+  if(GS.answered)return;
+  const q=GS.questions[GS.cur];
+  let val,displayVal,exactCosParts=false;
+  if(q.type==='eu'){
+    if(euSqrtVal===null){
+      showFormError('제곱합을 입력한 뒤 √ 적용 버튼을 눌러 주세요!');return;
+    }
+    val=euSqrtVal;
+    displayVal=buildRootEquation(document.getElementById('sqSumInput').value,fmtDec(val));
+  }else{
+    const n=parseFloat(document.getElementById('fracNumer').value);
+    const outside=parseFloat(document.getElementById('radOutside').value);
+    const inside=parseFloat(document.getElementById('radInside').value);
+    if(isNaN(n)||isNaN(outside)||isNaN(inside)){
+      showFormError('분자와 루트 밖·루트 안 값을 모두 입력하세요.');return;
+    }
+    if(!Number.isInteger(n)||!Number.isInteger(outside)||!Number.isInteger(inside)||outside<1||inside<2){
+      showFormError('내적과 근호 값은 정수로, 루트 밖은 1 이상·루트 안은 2 이상으로 입력하세요.');return;
+    }
+    val=n/(outside*Math.sqrt(inside));
+    displayVal=buildRadicalFractionEquation(n,outside,inside,fmtDec(val));
+    exactCosParts=n===q.dot&&outside===q.denomOutside&&inside===q.denomInside;
+  }
+  const TOL=0.01;
+  const isCorrect=q.type==='eu'
+    ?Math.abs(val-q.dist)<=TOL
+    :exactCosParts;
+  finishAnswer(isCorrect,val,displayVal);
+}
+
+function finishAnswer(isCorrect,val,displayVal){
+  if(GS.answered)return;
+  GS.answered=true;
+  clearErrorTimer();
+  document.getElementById('submitBtn').disabled=true;
+
+  const q=GS.questions[GS.cur];
+  let gained=0;
+  if(isCorrect){
+    GS.streak++;if(GS.streak>GS.maxStreak)GS.maxStreak=GS.streak;
+    const stB=GS.streak>=3?(GS.streak-2)*3:0;
+    gained=BASE_SCORE+stB;
+    GS.score+=gained;GS.correct++;
+    document.getElementById('scoreTxt').textContent=GS.score+'점';
+  }else{
+    GS.streak=0;GS.wrong++;
+  }
+  showFeedback(isCorrect,q,gained,displayVal);
+  if(GS.cur===TOTAL-1)clearInterval(GS.timer);
+  if(isCorrect)startNextCountdown();
+}
+
+function showFormError(msg){
+  clearErrorTimer();
+  const fb=document.getElementById('feedback');
+  fb.className='feedback on ng';
+  fb.innerHTML=`<div class="fb-top"><span class="fb-icon">⚠️</span><span class="fb-msg">${msg}</span></div>`;
+  errorHideTimer=setTimeout(()=>{
+    if(!GS.answered)fb.className='feedback';
+    errorHideTimer=null;
+  },2500);
+}
+
+function showFeedback(ok,q,gained,displayVal){
+  const fb=document.getElementById('feedback');
+  const isEu=q.type==='eu';
+  let msg='',exp='';
+  if(ok){
+    const sB=gained-BASE_SCORE;
+    msg=`✅ 정답! +${gained}점`;
+    exp=`기본 ${BASE_SCORE}점${sB>0?' + 연속보너스 '+sB+'점':''} · 남은 시간 보너스는 완료 후 반영`;
+  }else{
+    msg='❌ 오답!';
+    const submittedStr=displayVal?`(입력값: ${displayVal})`:'';
+    exp=isEu
+      ?`정답: ${buildRootEquation(q.squaredSum,q.dist)} ${submittedStr}`
+      :`정답: ${buildRadicalFractionEquation(q.dot,q.denomOutside,q.denomInside,fmtDec(q.cosine))} ${submittedStr}`;
+  }
+  fb.className='feedback on '+(ok?'ok':'ng');
+  fb.innerHTML=`<div class="feedback-line"><span class="fb-icon">${ok?'🎉':'💭'}</span><span class="fb-msg">${msg}</span><span class="fb-exp">${exp}</span></div>`;
+  const nb=document.getElementById('nextBtn');
+  nb.textContent=GS.cur+1<TOTAL?'다음 문제 →':'결과 보기 →';
+  nb.removeAttribute('aria-label');
+  nb.classList.add('on');
+}
+
+function timeOut(){
+  clearInterval(GS.timer);
+  clearNextCountdown();
+  const remainingAfterCurrent=Math.max(0,TOTAL-GS.cur-1);
+  if(!GS.answered)GS.wrong++;
+  GS.wrong+=remainingAfterCurrent;
+  GS.cur=TOTAL;
+  showResult();
+}
+
+function nextQ(){
+  clearNextCountdown();
+  GS.cur++;
+  if(GS.cur>=TOTAL)showResult();
+  else loadQuestion();
+}
+
+// ══════════════════════════════════════
+//  TIMER
+// ══════════════════════════════════════
+function startTimer(){
+  clearInterval(GS.timer);
+  updateTimerUI();
+  GS.timer=setInterval(()=>{
+    GS.timeLeft--;updateTimerUI();
+    if(GS.timeLeft<=0){clearInterval(GS.timer);timeOut();}
+  },1000);
+}
+function updateTimerUI(){
+  const pct=Math.max(0,(GS.timeLeft/GS.totalTime)*100);
+  const bar=document.getElementById('timerBar');
+  bar.style.width=pct+'%';
+  bar.style.background=pct>30?'var(--accent)':pct>15?'var(--gold)':'var(--coral)';
+  const minutes=Math.floor(Math.max(0,GS.timeLeft)/60);
+  const seconds=Math.max(0,GS.timeLeft)%60;
+  document.getElementById('timerNum').textContent=`${minutes}:${String(seconds).padStart(2,'0')}`;
+  const outer=document.querySelector('.timer-outer');
+  if(outer){
+    outer.setAttribute('aria-valuemax',GS.totalTime);
+    outer.setAttribute('aria-valuenow',Math.max(0,GS.timeLeft));
+  }
+}
+
+// ══════════════════════════════════════
+//  RESULT
+// ══════════════════════════════════════
+function showResult(){
+  clearInterval(GS.timer);
+  clearNextCountdown();
+  if(!GS.finalized){
+    GS.finalTimeBonus=Math.min(MAX_FINAL_TIME_BONUS,Math.floor(Math.max(0,GS.timeLeft)/10));
+    GS.score+=GS.finalTimeBonus;
+    GS.finalized=true;
+  }
+  document.getElementById('finalScore').textContent=GS.score;
+  document.getElementById('finalMax').textContent=`기본 ${TOTAL*BASE_SCORE}점 + 남은 시간 보너스 ${GS.finalTimeBonus}점 + 연속 보너스`;
+  document.getElementById('rbCorrect').textContent=GS.correct;
+  document.getElementById('rbWrong').textContent=GS.wrong;
+  document.getElementById('rbStreak').textContent=GS.maxStreak;
+  const pct=(GS.correct/TOTAL)*100;
+  const g=[  [90,'🏆 완벽해요! 유사도 마스터!'],
+    [70,'👍 잘했어요! 거의 다 됐어요'],
+    [50,'💪 좋아요! 더 연습하면 완벽해요'],
+    [0, '📚 다시 도전! 힌트를 꼭 활용해보세요']
+  ];
+  document.getElementById('resultGrade').textContent=g.find(([t])=>pct>=t)[1];
+  showScreen('resultScreen');
+}
+function restartSame(){startGame(GS.mode);}
+function goStart(){showScreen('startScreen');}
+
+// ══════════════════════════════════════
+//  CANVAS SCRATCHPAD
+// ══════════════════════════════════════
+const scratchpad=document.getElementById('scratchpad');
+const scratchToggle=document.getElementById('scratchToggle');
+const scratchClose=document.getElementById('scratchClose');
+const scratchCanvas=document.getElementById('scratchCanvas');
+const scratchCanvasWrap=document.getElementById('scratchCanvasWrap');
+const scratchCtx=scratchCanvas.getContext('2d');
+const scratchStrokes=[];
+const scratchState={color:'#1E1E1E',width:3,eraser:false,drawing:false,current:null};
+
+function setScratchpad(open){
+  document.body.classList.toggle('scratch-open',open);
+  scratchpad.setAttribute('aria-hidden',open?'false':'true');
+  scratchToggle.setAttribute('aria-expanded',open?'true':'false');
+  scratchToggle.setAttribute('aria-label',open?'연습장 닫기':'연습장 열기');
+  if(open)requestAnimationFrame(resizeScratchCanvas);
+}
+
+function scratchPoint(e){
+  const rect=scratchCanvas.getBoundingClientRect();
+  return{
+    x:(e.clientX-rect.left)/Math.max(rect.width,1),
+    y:(e.clientY-rect.top)/Math.max(rect.height,1)
+  };
+}
+
+function drawScratchStroke(stroke){
+  const width=scratchCanvas.clientWidth;
+  const height=scratchCanvas.clientHeight;
+  const points=stroke.points;
+  if(!points.length||!width||!height)return;
+  scratchCtx.save();
+  scratchCtx.globalCompositeOperation=stroke.eraser?'destination-out':'source-over';
+  scratchCtx.strokeStyle=stroke.color;
+  scratchCtx.fillStyle=stroke.color;
+  scratchCtx.lineWidth=stroke.eraser?stroke.width*2.8:stroke.width;
+  scratchCtx.lineCap='round';
+  scratchCtx.lineJoin='round';
+  if(points.length===1){
+    scratchCtx.beginPath();
+    scratchCtx.arc(points[0].x*width,points[0].y*height,scratchCtx.lineWidth/2,0,Math.PI*2);
+    scratchCtx.fill();
+  }else{
+    scratchCtx.beginPath();
+    scratchCtx.moveTo(points[0].x*width,points[0].y*height);
+    for(let i=1;i<points.length;i++)scratchCtx.lineTo(points[i].x*width,points[i].y*height);
+    scratchCtx.stroke();
+  }
+  scratchCtx.restore();
+}
+
+function redrawScratchCanvas(){
+  scratchCtx.clearRect(0,0,scratchCanvas.clientWidth,scratchCanvas.clientHeight);
+  scratchStrokes.forEach(drawScratchStroke);
+}
+
+function resizeScratchCanvas(){
+  const width=Math.max(1,Math.round(scratchCanvasWrap.clientWidth));
+  const height=Math.max(1,Math.round(scratchCanvasWrap.clientHeight));
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const pixelWidth=Math.round(width*dpr);
+  const pixelHeight=Math.round(height*dpr);
+  if(scratchCanvas.width!==pixelWidth||scratchCanvas.height!==pixelHeight){
+    scratchCanvas.width=pixelWidth;
+    scratchCanvas.height=pixelHeight;
+  }
+  scratchCtx.setTransform(dpr,0,0,dpr,0,0);
+  redrawScratchCanvas();
+}
+
+function beginScratchStroke(e){
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();
+  scratchCanvas.setPointerCapture(e.pointerId);
+  scratchState.drawing=true;
+  scratchState.current={
+    color:scratchState.color,width:scratchState.width,
+    eraser:scratchState.eraser,points:[scratchPoint(e)]
+  };
+  scratchStrokes.push(scratchState.current);
+  redrawScratchCanvas();
+}
+
+function continueScratchStroke(e){
+  if(!scratchState.drawing||!scratchState.current)return;
+  e.preventDefault();
+  const events=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[e];
+  events.forEach(event=>scratchState.current.points.push(scratchPoint(event)));
+  redrawScratchCanvas();
+}
+
+function endScratchStroke(e){
+  if(!scratchState.drawing)return;
+  scratchState.drawing=false;
+  scratchState.current=null;
+  if(scratchCanvas.hasPointerCapture(e.pointerId))scratchCanvas.releasePointerCapture(e.pointerId);
+}
+
+scratchToggle.addEventListener('click',()=>setScratchpad(!document.body.classList.contains('scratch-open')));
+scratchClose.addEventListener('click',()=>{setScratchpad(false);scratchToggle.focus();});
+scratchCanvas.addEventListener('pointerdown',beginScratchStroke);
+scratchCanvas.addEventListener('pointermove',continueScratchStroke);
+scratchCanvas.addEventListener('pointerup',endScratchStroke);
+scratchCanvas.addEventListener('pointercancel',endScratchStroke);
+
+document.querySelectorAll('.scratch-color').forEach(button=>{
+  button.addEventListener('click',()=>{
+    scratchState.color=button.dataset.color;
+    scratchState.eraser=false;
+    document.getElementById('scratchEraser').classList.remove('active');
+    document.getElementById('scratchEraser').setAttribute('aria-pressed','false');
+    document.querySelectorAll('.scratch-color').forEach(item=>{
+      const active=item===button;
+      item.classList.toggle('active',active);
+      item.setAttribute('aria-pressed',active?'true':'false');
+    });
+  });
+});
+document.getElementById('scratchSize').addEventListener('input',e=>scratchState.width=Number(e.target.value));
+document.getElementById('scratchEraser').addEventListener('click',e=>{
+  scratchState.eraser=!scratchState.eraser;
+  e.currentTarget.classList.toggle('active',scratchState.eraser);
+  e.currentTarget.setAttribute('aria-pressed',scratchState.eraser?'true':'false');
+});
+document.getElementById('scratchUndo').addEventListener('click',()=>{
+  scratchStrokes.pop();
+  redrawScratchCanvas();
+});
+document.getElementById('scratchClear').addEventListener('click',()=>{
+  scratchStrokes.length=0;
+  redrawScratchCanvas();
+});
+
+window.addEventListener('resize',resizeScratchCanvas);
+if('ResizeObserver'in window){
+  const scratchResizeObserver=new ResizeObserver(resizeScratchCanvas);
+  scratchResizeObserver.observe(scratchCanvasWrap);
+}
+
+function showScreen(id){
+  if(id!=='quizScreen'){
+    clearInterval(GS.timer);
+    clearNextCountdown();
+  }
+  ['startScreen','quizScreen','resultScreen'].forEach(s=>document.getElementById(s).classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  const quizActive=id==='quizScreen';
+  document.body.classList.toggle('quiz-active',quizActive);
+  if(!quizActive)setScratchpad(false);
+}
+
+// ══════════════════════════════════════
+//  KEYBOARD SUPPORT
+// ══════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('quizScreen').classList.contains('on'))return;
+  if(e.key==='Escape'&&document.body.classList.contains('scratch-open')){
+    e.preventDefault();setScratchpad(false);scratchToggle.focus();return;
+  }
+  if(document.activeElement&&document.activeElement.closest('#scratchpad'))return;
+  if(GS.answered){
+    if(e.key==='Enter'||e.key===' '){
+      e.preventDefault();
+      nextQ();
+    }
+    return;
+  }
+  const active=document.activeElement;
+  const inInput=active&&active.tagName==='INPUT';
+  // Enter: 유클리드는 √적용 or 제출, 코사인은 제출
+  if(e.key==='Enter'&&!inInput){
+    e.preventDefault();
+    const q=GS.questions[GS.cur];
+    if(q&&q.type==='eu'&&euSqrtVal===null)applyEuSqrt();
+    else submitAnswer();
+  }
+  if(e.key==='Enter'&&inInput){
+    e.preventDefault();
+    const q=GS.questions[GS.cur];
+    if(q&&q.type==='eu'&&active.id==='sqSumInput'&&euSqrtVal===null)applyEuSqrt();
+    else submitAnswer();
+  }
+});
+
+document.querySelectorAll('.timer-option[data-timer-level]').forEach(button=>{
+  button.addEventListener('click',()=>{
+    updateTimerModalSelection(button.dataset.timerLevel);
+  });
+});
+
+document.querySelectorAll('[data-modal-close]').forEach(element=>{
+  element.addEventListener('click',()=>closeTimerModal());
+});
+document.getElementById('timerModalStart').addEventListener('click',startPendingGame);
+
+document.querySelectorAll('.mode-card[data-mode]').forEach(card=>{
+  card.addEventListener('click',()=>openTimerModal(card.dataset.mode,card));
+});
+
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&document.getElementById('timerModal').classList.contains('open')){
+    event.preventDefault();
+    closeTimerModal();
+  }
+});
+</script>
+</body>
+</html>

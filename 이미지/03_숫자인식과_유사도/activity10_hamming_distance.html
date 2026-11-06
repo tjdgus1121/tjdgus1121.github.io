@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <title>손글씨 숫자의 28×28 행렬 | 인공지능 수학 웹앱</title>
+    <meta name="description" content="손글씨로 그린 숫자를 28x28 행렬로 변환하여 MNIST 데이터셋 형식으로 확인할 수 있는 웹 도구입니다.">
+    <meta name="keywords" content="손글씨 인식, MNIST, 행렬 변환, 28x28, 이미지 처리, 인공지능 수학, 교육용 웹사이트">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a607097941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="손글씨 숫자 to 28x28 행렬 변환기">
+    <meta property="og:description" content="손글씨로 그린 숫자를 MNIST 데이터셋 형식의 28x28 행렬로 변환하여 확인할 수 있는 교육용 웹 도구입니다.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/03_%EC%88%AB%EC%9E%90%EC%9D%B8%EC%8B%9D%EA%B3%BC_%EC%9C%A0%EC%82%AC%EB%8F%84/activity10_hamming_distance.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/03_%EC%88%AB%EC%9E%90%EC%9D%B8%EC%8B%9D%EA%B3%BC_%EC%9C%A0%EC%82%AC%EB%8F%84/activity10_hamming_distance.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="손글씨 숫자 to 28x28 행렬 변환기">
+    <meta name="twitter:description" content="손글씨로 그린 숫자를 MNIST 데이터셋 형식으로 변환해보세요.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#ff9a9e">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/03_%EC%88%AB%EC%9E%90%EC%9D%B8%EC%8B%9D%EA%B3%BC_%EC%9C%A0%EC%82%AC%EB%8F%84/activity10_hamming_distance.html">
+
+    <!-- 📎 스타일 및 폰트 -->
+    <link rel="stylesheet" href="../../stylefooter.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../../nav.css">
+  <script src="../../backguard.js"></script>
+    <script src="../../nav.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            /* 배경을 계속 왕복시키던 gradientMove 애니메이션을 걷어냈다.
+               스크롤과 상관없이 무늬가 흘러 눈이 어지러웠다. 배경색·무늬는
+               quiz-theme.css 가 정한다. */
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 18px;
+            padding: 32px 24px;
+            box-shadow: 0 4px 24px 0 rgba(108,140,255,0.07);
+            margin-top: 32px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f284a;
+            margin-bottom: 30px;
+            font-family: "Do Hyeon";
+            font-weight: 400;
+            font-size: 3em;
+            letter-spacing: 1px;
+        }
+
+        .canvas-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #drawingCanvas {
+            border: 2.5px solid #6c8cff;
+            cursor: crosshair;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px 0 rgba(108,140,255,0.08);
+        }
+
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        button {
+            background: #6c8cff;
+            color: #fff;
+            border: none;
+            padding: 14px 32px;
+            margin: 0 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: none;
+        }
+        button:hover {
+            background: #4b5fc9;
+            transform: scale(1.04);
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .clear-btn {
+            background: #ffb6b9;
+            color: #fff;
+        }
+        .clear-btn:hover {
+            background: #ff8a9e;
+        }
+
+        .output-section {
+            margin-top: 30px;
+        }
+
+        .matrix-container {
+            background: #f8faff;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.04);
+            padding: 24px 0;
+            margin-top: 18px;
+            display: flex;
+            flex-direction: row;
+            gap: 32px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .matrix-display {
+            border: none;
+            border-radius: 10px;
+            padding: 18px 10px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.04);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 0;
+        }
+        .matrix-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #6c8cff;
+            font-size: 1.15em;
+        }
+        .visual-matrix, .numeric-matrix {
+            border-radius: 8px;
+            box-shadow: 0 1px 4px 0 rgba(108,140,255,0.04);
+        }
+        .visual-matrix {
+            display: grid;
+            grid-template-columns: repeat(28, 1fr);
+            gap: 1px;
+            width: 450px;
+            height: 450px;
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+
+        .mode-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: 14px 0 4px 0;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 10px 28px;
+            font-size: 1em;
+            font-weight: 700;
+            border-radius: 10px;
+            border: 2px solid #6c8cff;
+            background: #fff;
+            color: #6c8cff;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s, transform 0.1s;
+        }
+        .mode-btn.active {
+            background: #6c8cff;
+            color: #fff;
+        }
+        .mode-btn:hover:not(.active) {
+            background: #e3eaff;
+        }
+
+        .brush-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .brush-control label {
+            font-weight: 600;
+            color: #1f284a;
+            font-size: 1em;
+        }
+        .brush-control input[type=range] {
+            width: 160px;
+            accent-color: #6c8cff;
+            cursor: pointer;
+        }
+        .brush-preview {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .brush-circle {
+            background: #222;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .pixel {
+            width: 100%;
+            height: 100%;
+            font-size: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+
+        .numeric-matrix {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            letter-spacing: 0px;
+            white-space: pre;
+            text-align: center;
+            overflow: auto;
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 3px;
+            display: grid;
+            grid-template-columns: repeat(28, 1fr);
+            gap: 1px;
+            width: 450px;
+            height: 450px;
+            max-width: 450px;
+            max-height: 450px;
+        }
+        .numeric-matrix.mode-14 {
+            grid-template-columns: repeat(14, 1fr);
+        }
+
+        .matrix-cell {
+            width: 12px;
+            /* 셀 크기 조정 */
+            height: 12px;
+            /* 셀 크기 조정 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7px;
+            /* 폰트 크기 조정 */
+            border: 0.5px solid #eee;
+            background-color: white;
+        }
+
+        .matrix-cell.highlight {
+            background-color: #ffeb3b;
+            font-weight: bold;
+        }
+
+        .compact-matrix {
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            line-height: 1.0;
+            letter-spacing: 0px;
+            white-space: pre;
+            text-align: left;
+            overflow: auto;
+            width: 450px;
+            height: 450px;
+            max-width: 450px;
+            max-height: 450px;
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 3px;
+        }
+
+        .matrix-flex-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .button-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .button-column button {
+            width: 160px;
+            padding: 12px 24px;
+            margin: 0;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .button-column button:hover {
+            opacity: 0.9;
+        }
+
+        .button-column button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* 버튼 색상 클래스 */
+        .btn-primary {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #FF5722;
+            color: white;
+        }
+
+        .stats {
+            margin-top: 15px;
+            font-size: 15px;
+            color: #6c8cff;
+            text-align: center;
+        }
+
+        .instructions {
+            background: #e3f0ff;
+            border-left: 6px solid #6c8cff;
+            padding: 18px 24px;
+            margin-bottom: 24px;
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 2px 8px rgba(108,140,255,0.04);
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .matrix-tabs {
+            display: flex;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background-color: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+            font-size: 12px;
+        }
+
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .numeric-matrix-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        @media (max-width: 900px) {
+            .container {
+                padding: 10px 2vw;
+            }
+            .visual-matrix, .numeric-matrix, .compact-matrix {
+                width: 98vw;
+                height: 98vw;
+                max-width: 98vw;
+                max-height: 98vw;
+            }
+            .matrix-container {
+                flex-direction: column;
+                gap: 18px;
+                align-items: center;
+            }
+        }
+    </style>
+  <link rel="stylesheet" href="../quiz-theme.css" />
+</head>
+
+<body class="theme-pixel">
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+      </div>
+
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-sec">시작</div>
+            <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="../01_이미지와_RGB/activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
+            <a href="../01_이미지와_RGB/activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="../01_이미지와_RGB/activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="../01_이미지와_RGB/activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+            <a href="../01_이미지와_RGB/activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
+            <a href="../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
+            <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="activity10_hamming_distance.html" class="active"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
+            <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
+            <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
+    <div class="container">
+        <h1>손글씨 숫자 → 28×28 행렬 변환기</h1>
+
+        <div class="instructions">
+            <h3>사용법</h3>
+            <ul>
+                <li>아래 캔버스에 마우스로 숫자 0~9를 그려보세요</li>
+                <li>"변환" 버튼을 클릭하면 28×28 픽셀로 변환됩니다</li>
+                <li>각 픽셀의 명도값이 0~255 범위의 숫자로 표시됩니다 (검정=0, 흰색=255)</li>
+                <li>MNIST 데이터셋과 동일한 형식으로 변환됩니다</li>
+            </ul>
+        </div>
+
+        <div class="mode-controls">
+            <span style="font-weight:700;color:#1f284a;">변환 모드:</span>
+            <button class="mode-btn active" id="mode28Btn">28×28</button>
+            <button class="mode-btn" id="mode14Btn">14×14</button>
+        </div>
+
+        <div class="brush-control">
+            <label for="brushSize">붓 크기:</label>
+            <input type="range" id="brushSize" min="2" max="40" value="15" step="1">
+            <div class="brush-preview">
+                <span class="brush-circle" id="brushCircle" style="width:15px;height:15px;"></span>
+            </div>
+            <span id="brushSizeLabel" style="font-weight:600;color:#6c8cff;min-width:28px;">15px</span>
+        </div>
+
+        <div class="canvas-section">
+            <canvas id="drawingCanvas" width="400" height="400"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="convertBtn">🔄 28×28 행렬로 변환</button>
+            <button id="clearBtn" class="clear-btn">🗑️ 지우기</button>
+        </div>
+
+        <div class="output-section" id="outputSection" style="display: none;">
+            <h2 style="text-align: center; color: #333;">변환 결과</h2>
+
+            <!-- 다운로드 버튼들을 상단에 배치 -->
+            <div
+                style="text-align: center; margin-bottom: 20px; padding: 15px; background-color: #f8f8f8; border-radius: 5px;">
+                <h4 style="margin: 0 0 10px 0; color: #555;">아래에서 시각적 표현과 숫자 데이터를 확인하세요.</h4>
+
+            </div>
+
+            <div class="matrix-container">
+                <div class="matrix-display">
+                    <div class="matrix-title">시각적 표현 (28×28)</div>
+                    <div class="visual-matrix" id="visualMatrix"></div>
+                    <div class="stats" id="visualStats"></div>
+                </div>
+
+                <div class="matrix-display">
+                    <div class="matrix-title">숫자 행렬 표시</div>
+                    <!-- 숫자 행렬과 버튼을 감싸는 새로운 flex 컨테이너 -->
+                    <div class="numeric-matrix-container">
+                        <div class="numeric-matrix" id="numericMatrix"></div>
+                        <div class="button-column">
+                            <button id="copyExcelBtn" class="btn-primary">📋 엑셀 복사</button>
+                            <button id="downloadCsvBtn" class="btn-success">📁 CSV 다운</button>
+                            <button id="downloadPng28" class="btn-warning">🖼️ PNG (28×28)</button>
+                            <button id="downloadPng280" class="btn-danger">🖼️ PNG (280×280)</button>
+                        </div>
+                    </div>
+                    <div class="stats" id="numericStats"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" style="width:100%;">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="../../assets/branding/naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+
+
+    <script>
+        // === 상수 정의 ===
+        const DRAWING_CANVAS_SIZE = 400; // 손글씨 입력 캔버스 크기 (픽셀)
+        const VISUAL_MATRIX_SIZE_PX = 450; // 시각적 행렬 표시 크기 (픽셀)
+        const HIGHLIGHT_THRESHOLD = 127; // 숫자 행렬에서 강조 표시할 임계값 (0-255)
+        const MAX_PIXEL_VALUE = 255; // 픽셀 명도 최대값 (흰색)
+
+        class DigitCanvasConverter {
+            constructor() {
+                this.canvas = document.getElementById('drawingCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.isDrawing = false;
+                this.matrixSize = 28; // 현재 변환 모드 (14 또는 28)
+                this.penSize = 15;    // 현재 붓 크기
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.currentMatrix = null;
+            }
+
+            // 캔버스 초기 설정 (배경색, 펜 스타일 등)
+            setupCanvas() {
+                this.ctx.fillStyle = 'white';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.strokeStyle = 'black';
+                this.ctx.lineWidth = this.penSize;
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
+            }
+
+            // 이벤트 리스너 설정 (마우스, 터치, 버튼)
+            setupEventListeners() {
+                // 손글씨 그리기 마우스 이벤트
+                this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+                this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+                this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+                this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+
+                // 손글씨 그리기 터치 이벤트 (모바일 지원)
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY }));
+                });
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY }));
+                });
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.canvas.dispatchEvent(new MouseEvent('mouseup', {}));
+                });
+
+                // 변환 및 지우기 버튼
+                document.getElementById('convertBtn').addEventListener('click', () => this.convertToMatrix());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clearCanvas());
+
+                // 다운로드/복사 버튼
+                document.getElementById('copyExcelBtn').addEventListener('click', () => this.copyToClipboard());
+                document.getElementById('downloadCsvBtn').addEventListener('click', () => this.downloadMatrix());
+                document.getElementById('downloadPng28').addEventListener('click', () => this.downloadPNG());
+                document.getElementById('downloadPng280').addEventListener('click', () => this.downloadPNGLarge());
+
+                // 모드 전환 버튼
+                document.getElementById('mode28Btn').addEventListener('click', () => this.setMode(28));
+                document.getElementById('mode14Btn').addEventListener('click', () => this.setMode(14));
+
+                // 붓 크기 슬라이더
+                const brushSlider = document.getElementById('brushSize');
+                brushSlider.addEventListener('input', () => {
+                    this.penSize = parseInt(brushSlider.value);
+                    this.ctx.lineWidth = this.penSize;
+                    document.getElementById('brushSizeLabel').textContent = this.penSize + 'px';
+                    const circle = document.getElementById('brushCircle');
+                    circle.style.width = this.penSize + 'px';
+                    circle.style.height = this.penSize + 'px';
+                });
+            }
+
+            // 모드 전환 (14 또는 28)
+            setMode(size) {
+                this.matrixSize = size;
+                const btn28 = document.getElementById('mode28Btn');
+                const btn14 = document.getElementById('mode14Btn');
+                const convertBtn = document.getElementById('convertBtn');
+                if (size === 28) {
+                    btn28.classList.add('active');
+                    btn14.classList.remove('active');
+                    convertBtn.textContent = '🔄 28×28 행렬로 변환';
+                } else {
+                    btn14.classList.add('active');
+                    btn28.classList.remove('active');
+                    convertBtn.textContent = '🔄 14×14 행렬로 변환';
+                }
+                // 모드 변경 시 결과 숨기기
+                document.getElementById('outputSection').style.display = 'none';
+                this.currentMatrix = null;
+            }
+
+            // 마우스/터치 좌표를 캔버스 내 좌표로 변환
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect(); // 캔버스 요소의 화면 좌표 및 크기
+                return {
+                    x: e.clientX - rect.left, // 이벤트 좌표 - 캔버스 좌측 경계
+                    y: e.clientY - rect.top // 이벤트 좌표 - 캔버스 상단 경계
+                };
+            }
+
+            // 그리기 시작
+            startDrawing(e) {
+                this.isDrawing = true;
+                const pos = this.getMousePos(e);
+                this.ctx.beginPath(); // 새 경로 시작
+                this.ctx.moveTo(pos.x, pos.y); // 시작점 이동
+            }
+
+            // 그리는 중 (선 그리기)
+            draw(e) {
+                if (!this.isDrawing) return;
+
+                const pos = this.getMousePos(e);
+                this.ctx.lineTo(pos.x, pos.y); // 현재 위치까지 선 그리기
+                this.ctx.stroke(); // 선 그리기 실행
+            }
+
+            // 그리기 종료
+            stopDrawing() {
+                this.isDrawing = false;
+            }
+
+            // 캔버스 지우기
+            clearCanvas() {
+                this.setupCanvas(); // 캔버스 초기 설정 다시 적용 (흰색 배경)
+                document.getElementById('outputSection').style.display = 'none'; // 결과 섹션 숨기기
+                this.currentMatrix = null; // 행렬 데이터 초기화
+            }
+
+            // 손글씨 이미지를 matrixSize x matrixSize 행렬로 변환
+            convertToMatrix() {
+                const size = this.matrixSize;
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = size;
+                tempCanvas.height = size;
+
+                tempCtx.imageSmoothingEnabled = true;
+                tempCtx.imageSmoothingQuality = 'high';
+                tempCtx.drawImage(this.canvas, 0, 0, size, size);
+
+                const imageData = tempCtx.getImageData(0, 0, size, size);
+                const data = imageData.data;
+
+                const matrix = [];
+                for (let y = 0; y < size; y++) {
+                    const row = [];
+                    for (let x = 0; x < size; x++) {
+                        const index = (y * size + x) * 4;
+                        const grayscale = Math.round(0.299 * data[index] + 0.587 * data[index + 1] + 0.114 * data[index + 2]);
+                        row.push(MAX_PIXEL_VALUE - grayscale);
+                    }
+                    matrix.push(row);
+                }
+
+                this.currentMatrix = matrix;
+                this.displayMatrix(matrix);
+            }
+
+            // 변환 결과 (시각적 및 숫자 행렬) 표시
+            displayMatrix(matrix) {
+                const size = this.matrixSize;
+                // 출력 제목 업데이트
+                document.querySelector('.matrix-title').textContent = `시각적 표현 (${size}×${size})`;
+                this.displayVisualMatrix(matrix);
+                this.displayNumericMatrix(matrix);
+                document.getElementById('outputSection').style.display = 'block';
+            }
+
+            // 시각적 표현 (픽셀 그리드) 표시
+            displayVisualMatrix(matrix) {
+                const size = this.matrixSize;
+                const visualMatrix = document.getElementById('visualMatrix');
+                const visualStats = document.getElementById('visualStats');
+
+                visualMatrix.innerHTML = '';
+                visualMatrix.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+                let nonZeroCount = 0;
+                let minVal = MAX_PIXEL_VALUE, maxVal = 0;
+
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const value = matrix[y][x];
+                        const pixel = document.createElement('div');
+                        pixel.className = 'pixel';
+                        const displayGray = MAX_PIXEL_VALUE - value;
+                        pixel.style.backgroundColor = `rgb(${displayGray}, ${displayGray}, ${displayGray})`;
+                        pixel.title = `(${x},${y}): ${value}`;
+                        visualMatrix.appendChild(pixel);
+
+                        if (value > 0) nonZeroCount++;
+                        if (value > maxVal) maxVal = value;
+                        if (value < minVal) minVal = value;
+                    }
+                }
+
+                const totalPixels = size * size;
+                visualStats.innerHTML = `
+                    활성 픽셀: ${nonZeroCount}/${totalPixels} (${(nonZeroCount / totalPixels * 100).toFixed(1)}%)<br>
+                    값 범위: ${minVal} ~ ${maxVal}
+                `;
+            }
+
+            // 숫자 행렬 (격자형) 표시
+            displayNumericMatrix(matrix) {
+                const size = this.matrixSize;
+                const numericMatrix = document.getElementById('numericMatrix');
+                const numericStats = document.getElementById('numericStats');
+
+                numericMatrix.innerHTML = '';
+                numericMatrix.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+                // 14x14 모드에서는 셀을 더 크게
+                const cellSize = size === 14 ? 24 : 12;
+                const fontSize = size === 14 ? 10 : 7;
+
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const value = matrix[y][x];
+                        const cell = document.createElement('div');
+                        cell.className = 'matrix-cell';
+                        cell.style.width = cellSize + 'px';
+                        cell.style.height = cellSize + 'px';
+                        cell.style.fontSize = fontSize + 'px';
+                        cell.textContent = value;
+                        cell.title = `위치: (${x}, ${y}), 값: ${value}`;
+                        if (value > HIGHLIGHT_THRESHOLD) {
+                            cell.classList.add('highlight');
+                        }
+                        numericMatrix.appendChild(cell);
+                    }
+                }
+
+                const flatMatrix = matrix.flat();
+                const sum = flatMatrix.reduce((a, b) => a + b, 0);
+                const avg = (sum / flatMatrix.length).toFixed(1);
+                const nonZeros = flatMatrix.filter(v => v > 0).length;
+
+                numericStats.innerHTML = `
+                    전체 평균: ${avg}<br>
+                    0이 아닌 값: ${nonZeros}/${size * size}<br>
+                `;
+            }
+
+            // 클립보드에 행렬 데이터를 탭으로 구분하여 복사 (엑셀 붙여넣기 용이)
+            copyToClipboard() {
+                // currentMatrix 데이터가 없을 경우 종료
+                if (!this.currentMatrix) {
+                    console.warn('행렬 데이터가 없습니다.');
+                    alert('변환된 행렬 데이터가 없습니다.');
+                    return;
+                }
+
+                // 2차원 배열을 탭('\t')으로 구분된 문자열로 변환
+                const matrixData = this.currentMatrix.map(row => row.join('\t')).join('\n');
+
+                // 클립보드에 쓰기
+                navigator.clipboard.writeText(matrixData).then(() => {
+                    alert('행렬 데이터가 클립보드에 복사되었습니다!');
+                }).catch(err => {
+                    console.error('클립보드 복사 실패:', err);
+                    alert('클립보드 복사에 실패했습니다. 브라우저 설정 또는 권한을 확인해주세요.'); // 사용자에게 더 상세한 알림
+                });
+            }
+
+            // 행렬 데이터를 CSV 파일로 다운로드
+            downloadMatrix() {
+                // currentMatrix 데이터가 없을 경우 종료
+                if (!this.currentMatrix) {
+                    console.warn('행렬 데이터가 없습니다.');
+                    alert('변환된 행렬 데이터가 없습니다.');
+                    return;
+                }
+
+                // 2차원 배열을 쉼표(',')로 구분된 CSV 문자열로 변환
+                const matrixData = this.currentMatrix.map(row => row.join(',')).join('\n');
+
+                try {
+                    // Blob 객체 생성
+                    const blob = new Blob([matrixData], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob); // Blob URL 생성
+
+                    // 다운로드 링크 생성 및 클릭
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `digit_matrix_${this.matrixSize}x${this.matrixSize}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+
+                    // 사용 후 Blob URL 해제 (비동기적으로 실행될 수 있으므로 setTimeout 사용)
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url); // 사용 후 Blob URL 해제
+                    }, 100);
+
+                } catch (error) {
+                    console.error('CSV 다운로드 실패:', error);
+                    alert('CSV 파일 다운로드에 실패했습니다.');
+                }
+            }
+
+            // 원본 크기 PNG 다운로드
+            downloadPNG() {
+                if (!this.currentMatrix) { alert('변환된 행렬 데이터가 없습니다.'); return; }
+                const size = this.matrixSize;
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = size;
+                canvas.height = size;
+                const imageData = ctx.createImageData(size, size);
+                const data = imageData.data;
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const index = (y * size + x) * 4;
+                        const grayValue = MAX_PIXEL_VALUE - this.currentMatrix[y][x];
+                        data[index] = grayValue;
+                        data[index + 1] = grayValue;
+                        data[index + 2] = grayValue;
+                        data[index + 3] = MAX_PIXEL_VALUE;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+                canvas.toBlob((blob) => {
+                    if (!blob) { alert('이미지 다운로드에 실패했습니다.'); return; }
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `digit_${size}x${size}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                }, 'image/png');
+            }
+
+            // 10배 확대 PNG 다운로드
+            downloadPNGLarge() {
+                if (!this.currentMatrix) { alert('변환된 행렬 데이터가 없습니다.'); return; }
+                const size = this.matrixSize;
+                const scaleFactor = 10;
+                const largeSize = size * scaleFactor;
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = largeSize;
+                canvas.height = largeSize;
+                ctx.imageSmoothingEnabled = false;
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const grayValue = MAX_PIXEL_VALUE - this.currentMatrix[y][x];
+                        ctx.fillStyle = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+                        ctx.fillRect(x * scaleFactor, y * scaleFactor, scaleFactor, scaleFactor);
+                    }
+                }
+                canvas.toBlob((blob) => {
+                    if (!blob) { alert('이미지 다운로드에 실패했습니다.'); return; }
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `digit_${largeSize}x${largeSize}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                }, 'image/png');
+            }
+        }
+
+        // 페이지 로드 완료 시 앱 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            new DigitCanvasConverter();
+        });
+    </script>
+</body>
+
+</html>

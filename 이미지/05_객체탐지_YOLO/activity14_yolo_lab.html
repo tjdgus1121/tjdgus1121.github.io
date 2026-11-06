@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>YOLO 직접 학습시키기 | 인공지능 수학 웹앱</title>
+    <meta name="description" content="사진을 올리고 직접 라벨링해 YOLO식 물체 탐지 모델을 브라우저에서 학습시키고, 학습 과정과 판별 근거를 눈으로 확인하는 활동 페이지입니다.">
+    <meta name="keywords" content="YOLO, 객체 탐지, 딥러닝 학습, 과적합, 전이 학습, 인공지능 수학">
+    <meta name="author" content="황성현">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/05_%EA%B0%9D%EC%B2%B4%ED%83%90%EC%A7%80_YOLO/activity14_yolo_lab.html">
+
+    <meta property="og:title" content="YOLO 직접 학습시키기">
+    <meta property="og:description" content="사진을 직접 라벨링해 YOLO식 탐지 모델을 학습시키고, 학습 과정과 판별 근거를 확인합니다.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/05_%EA%B0%9D%EC%B2%B4%ED%83%90%EC%A7%80_YOLO/activity14_yolo_lab.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="AI & 탐구수학">
+
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../../stylefooter.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="../../nav.css">
+    <script defer src="../../nav.js"></script>
+    <style>
+        /* ===== 디자인 토큰: 밝은 바탕 + 먹색 강조, 숫자·라벨은 고정폭 ===== */
+        :root {
+            --bg: #f5f6f8;
+            --surface: #ffffff;
+            --sunken: #f1f3f6;
+            --line: #e2e5ea;
+            --line-strong: #cfd4dc;
+            --ink: #0d1117;
+            --text: #1b2230;
+            --muted: #5d6675;
+            --accent: #2453d4;
+            --accent-weak: #edf2ff;
+            --ok: #18794e;
+            --warn: #a15c07;
+            --err: #b42318;
+            --dog: #2a78d6;
+            --cat: #eb6834;
+            --train: #6250d6;
+            --val: #1baf7a;
+            --radius: 12px;
+            --sans: 'Pretendard Variable', Pretendard, 'Malgun Gothic', sans-serif;
+            --mono: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, monospace;   /* 한글은 Pretendard로 */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        [hidden] { display: none !important; }
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: var(--sans); font-size: 16px; line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        button, input, select { font: inherit; color: inherit; }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+        b, strong { font-weight: 650; }
+
+        .page { max-width: 1240px; margin: 0 auto; padding: 56px 24px 40px; }
+
+        /* ===== 머리말 ===== */
+        .page-head {
+            display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end;
+            padding: 36px 28px 30px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 16px;
+            background-color: var(--surface);
+            background-image: radial-gradient(rgba(13, 17, 23, .09) 1px, transparent 1px);
+            background-size: 18px 18px;
+        }
+        .eyebrow { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-weight: 500; }
+        .eyebrow .chip {
+            font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: .08em;
+            color: var(--surface); background: var(--ink); padding: 3px 8px; border-radius: 4px;
+        }
+        .page-head h1 { font-size: clamp(30px, 4.2vw, 44px); line-height: 1.15; letter-spacing: -0.03em; font-weight: 800; color: var(--ink); margin: 12px 0 10px; }
+        .page-head p.desc { color: var(--muted); max-width: 680px; font-size: 16.5px; }
+        .spec { list-style: none; display: grid; gap: 6px; min-width: 270px; }
+        .spec li {
+            display: grid; grid-template-columns: 88px 1fr; gap: 10px; align-items: baseline;
+            padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 13.5px;
+        }
+        .spec li span { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+
+        /* ===== 준비 상태판 ===== */
+        .prep {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+            background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+            margin-bottom: 16px; overflow: hidden;
+        }
+        .prep-item { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 14px 18px; font-size: 14px; }
+        .prep-item + .prep-item { border-left: 1px solid var(--line); }
+        .prep-item .key { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+        .prep-item .key::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--line-strong); }
+        .prep-item[data-state="loading"] .key::before { border-color: var(--accent); border-right-color: transparent; }
+        .prep-item[data-state="done"] .key::before { background: var(--ok); border-color: var(--ok); }
+        .prep-item[data-state="failed"] .key::before { background: var(--err); border-color: var(--err); border-radius: 2px; }
+        .prep-item b { font-weight: 650; color: var(--ink); }
+        .prep-item .txt { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+        .prep-item[data-state="done"] .txt { color: var(--ok); }
+        .prep-item[data-state="failed"] .txt { color: var(--err); }
+        .prep-item .bar { height: 3px; background: var(--sunken); border-radius: 2px; overflow: hidden; }
+        .prep-item .bar span { display: block; height: 100%; width: 0; background: var(--ink); transition: width .2s; }
+        .prep-item[data-state="done"] .bar span { background: var(--ok); }
+        .prep-msg { grid-column: 1 / -1; padding: 10px 18px; border-top: 1px solid var(--line); color: var(--err); font-size: 14px; }
+        #retryWrap { grid-column: 1 / -1; padding: 0 18px 12px; }
+
+        /* ===== 버튼·입력 ===== */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+            min-height: 44px; padding: 8px 16px; border: 1px solid var(--line-strong); border-radius: 8px;
+            background: var(--surface); color: var(--ink); font-weight: 600; font-size: 15px; cursor: pointer;
+            transition: background .12s, border-color .12s;
+        }
+        .btn:hover { background: var(--sunken); border-color: #b9c0cb; }
+        .btn-primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+        .btn-primary:hover { background: #262d3a; border-color: #262d3a; }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
+        .btn-small { min-height: 36px; padding: 4px 12px; font-size: 14px; }
+        .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        select {
+            min-height: 44px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface);
+            font-size: 14.5px; font-variant-numeric: tabular-nums;
+        }
+
+        /* ===== 단계 탭 ===== */
+        .steps {
+            display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px;
+            margin-bottom: 28px; padding: 5px; background: var(--surface);
+            border: 1px solid var(--line); border-radius: 14px;
+        }
+        .step-tab {
+            display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 6px 12px;
+            border: 0; border-radius: 10px; background: transparent; color: var(--text);
+            text-align: left; cursor: pointer; transition: background .12s, color .12s;
+        }
+        .step-tab .num {
+            flex: none; display: grid; place-items: center; width: 32px; height: 24px; border-radius: 6px;
+            border: 1px solid var(--line-strong); background: var(--surface);
+            font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--muted);
+        }
+        .step-tab .lbl { font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+        .step-tab:not(:disabled):not([aria-selected="true"]):hover { background: var(--sunken); }
+        .step-tab:not(:disabled):not([aria-selected="true"]):hover .num { border-color: var(--ink); color: var(--ink); }
+        .step-tab[aria-selected="true"], .step-tab[aria-selected="true"]:hover { background: var(--ink); color: #fff; cursor: default; }
+        .step-tab[aria-selected="true"] .num { background: rgba(255, 255, 255, .14); border-color: transparent; color: #fff; }
+        .step-tab:disabled { color: #a3a9b4; cursor: not-allowed; }
+        .step-tab:disabled .num { border-style: dashed; color: #a3a9b4; background: transparent; }
+
+        /* ===== 단계 공통 ===== */
+        .box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; box-shadow: 0 1px 2px rgba(13, 17, 23, .04); }
+        .step > div:first-child { padding-bottom: 6px; }
+        .step-eyebrow {
+            font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: .12em; color: var(--accent);
+            margin-bottom: 6px;
+        }
+        .step h2 { font-size: 27px; line-height: 1.25; letter-spacing: -0.025em; font-weight: 780; color: var(--ink); margin-bottom: 10px; }
+        .step h3 { font-size: 16.5px; font-weight: 700; color: var(--ink); margin: 0 0 8px; letter-spacing: -0.01em; }
+        .lead { color: #3d4553; max-width: 860px; }
+        .mini { font-size: 13.5px; color: var(--muted); }
+        .stack > * + * { margin-top: 14px; }
+        .two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+        .think {
+            padding: 12px 16px; border: 1px solid #d6e0fb; background: var(--accent-weak);
+            border-radius: 10px; font-size: 15px; color: #1d2a4d;
+        }
+        details.think::before { content: none; }
+        details.think summary, details.keys summary { cursor: pointer; font-weight: 700; color: var(--accent); font-size: 13.5px; }
+        details.think[open] summary { margin-bottom: 4px; }
+        /* 시작 안내 팝업 */
+        dialog.guide { margin: auto; width: min(940px, 94vw); border: 0; border-radius: 20px; padding: 30px 30px 24px; color: var(--ink); box-shadow: 0 24px 60px rgba(13,17,23,.35); }
+        dialog.guide::backdrop { background: rgba(13,17,23,.5); }
+        .guide h2 { font-size: 26px; letter-spacing: -.02em; margin: 0 0 20px; }
+        .guide-steps { list-style: none; margin: 0 0 18px; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+        .g-card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 18px 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+        .g-card .g-num { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--muted); }
+        .g-card i { font-size: 22px; color: var(--accent); margin: 6px 0 4px; }
+        .g-card b { font-size: 17px; letter-spacing: -.01em; color: var(--ink); }
+        .g-card span:last-child { font-size: 14px; line-height: 1.5; color: #4a5263; word-break: keep-all; }
+        .g-card:first-child { border-color: var(--accent); background: var(--accent-weak); }
+        .guide-tip { font-size: 14px; color: var(--muted); background: var(--sunken); border-radius: 10px; padding: 10px 14px; margin: 0 0 18px; }
+        .guide-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .guide-foot label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); min-height: 44px; }
+        @media (max-width: 900px) { .guide-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 480px) { .guide-steps { grid-template-columns: minmax(0, 1fr); } .g-card { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 10px; padding: 12px 14px; } .g-card i { margin: 0; font-size: 18px; } .g-card span:last-child { flex-basis: 100%; } dialog.guide { padding: 22px 18px 18px; } }
+        .think::before {
+            content: '생각해 보기'; display: block; margin-bottom: 2px;
+            font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--accent);
+        }
+        /* 계산 출력: 콘솔처럼 정렬 */
+        .calc {
+            padding: 12px 16px; border-radius: 10px; background: var(--sunken); border: 1px solid var(--line);
+            font-size: 14.5px; font-variant-numeric: tabular-nums;
+        }
+        .calc .row { display: grid; grid-template-columns: 7.5em 1fr; gap: 10px; padding: 5px 0; }
+        .calc .row + .row { border-top: 1px solid #e6e9ee; }
+        .calc .k { color: var(--muted); font-size: 13px; font-weight: 600; padding-top: 1px; }
+        .calc .v { min-width: 0; overflow-wrap: anywhere; font-family: var(--mono); font-size: 13.5px; color: var(--ink); }
+        .calc .v b { color: var(--accent); font-weight: 700; }
+        .calc .v .mini { font-family: var(--sans); }
+        .empty { color: var(--muted); }
+        .tag { display: inline-block; padding: 1px 8px; border-radius: 5px; font-size: 12.5px; font-weight: 700; color: var(--tag-ink, #fff); font-family: var(--sans); }
+        .ok-text { color: var(--ok); font-weight: 700; }
+        .err-text { color: var(--err); font-weight: 700; }
+
+        .stage-canvas { display: block; width: 100%; height: auto; border-radius: 10px; background: #e7e9ee; touch-action: manipulation; }
+        .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--sunken); border: 1px solid var(--line); border-radius: 9px; }
+        .seg button {
+            min-height: 34px; padding: 4px 12px; border: 0; border-radius: 6px; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted);
+        }
+        .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line-strong); }
+
+        /* ===== 사진 격자 ===== */
+        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+        .photo-grid.scroll { max-height: 560px; overflow-y: auto; padding-right: 4px; }
+        .photo {
+            position: relative; display: block; padding: 3px; border: 1px solid var(--line); border-radius: 9px;
+            background: var(--surface); cursor: pointer; text-align: left; overflow: hidden;
+        }
+        div.photo { cursor: default; }
+        .photo canvas { display: block; width: 100%; aspect-ratio: 1; border-radius: 6px; background: #e7e9ee; }
+        button.photo:hover { border-color: var(--line-strong); }
+        .photo[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+        .photo .cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 6px; padding: 4px 3px 1px; font-size: 12px; line-height: 1.45; word-break: keep-all; color: var(--muted); }
+        .photo .cap b { font-weight: 700; color: var(--ink); }
+
+        .meter { height: 4px; background: var(--sunken); border-radius: 2px; overflow: hidden; }
+        .meter span { display: block; height: 100%; width: 0; background: var(--ink); transition: width .15s; }
+
+        .control-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+        .control-head label, .control-head b { font-weight: 700; color: var(--ink); }
+        .control-head output { font-family: var(--mono); font-weight: 700; font-size: 20px; color: var(--accent); font-variant-numeric: tabular-nums; }
+        input[type="range"] { width: 100%; height: 36px; accent-color: var(--ink); cursor: pointer; }
+        input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 17px; height: 17px; }
+
+        .bars { display: grid; gap: 5px; }
+        .bar-row { display: grid; grid-template-columns: 9.5em 1fr 4.5em; align-items: center; gap: 10px; font-size: 14px; }
+        .bar-row .track { position: relative; height: 10px; background: var(--sunken); border-radius: 3px; }
+        .bar-row .fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+        .bar-row .val { text-align: right; font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+        .diverge .track::after { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: #8a909b; }
+
+        /* ===== 학습 설정 ===== */
+        .settings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: end; }
+        .settings .btn-row { grid-column: 1 / -1; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label { font-weight: 600; font-size: 13.5px; color: var(--muted); }
+        .field select { width: 100%; }
+        .train-status {
+            display: flex; flex-wrap: wrap; gap: 6px 22px; padding: 10px 14px; border-radius: 9px;
+            background: var(--sunken); border: 1px solid var(--line); font-size: 14px; font-variant-numeric: tabular-nums;
+        }
+        .train-status span b { color: var(--accent); }
+        .train-status .mini { font-family: var(--sans); }
+
+        /* ===== 차트 ===== */
+        .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .cam { display: grid; gap: 10px; }
+        .cam video { width: 100%; max-width: 480px; border-radius: 10px; background: #000; }
+        .chart-box h4 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+        .chart-box p { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+        .chart > svg { display: block; width: 100%; height: auto; overflow: visible; }
+        .chart text { font-family: var(--mono); }
+        .chart .grid { stroke: #eceef2; stroke-width: 1; }
+        .chart .tick { font-size: 10px; fill: #6b7280; }
+        .chart .end-label { font-size: 10.5px; font-weight: 700; fill: #1b2230; }
+        .chart .mark { stroke: #8a909b; stroke-dasharray: 3 3; }
+        .chart .mark-label { font-size: 10px; fill: #4b5563; }
+        .chart .hair { stroke: #4b5563; stroke-width: 1; }
+        .chart .frame { fill: #fcfcfd; stroke: var(--line); }
+        .chart .dot { stroke: #fff; stroke-width: 1.5; cursor: pointer; }
+        .chart .dot:hover { stroke: var(--ink); }
+        .chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: #3d4553; margin-bottom: 4px; }
+        .chart-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+        .chart-legend svg { flex: none; }
+        .chart-tip {
+            position: fixed; z-index: 3000; pointer-events: none; padding: 8px 10px; border-radius: 8px;
+            background: var(--ink); color: #fff; font-size: 12.5px; font-family: var(--mono);
+        }
+        .chart-tip .tip-head { font-weight: 700; margin-bottom: 2px; }
+        .chart-tip i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
+        .chart-tip img { display: block; border-radius: 4px; margin-bottom: 4px; object-fit: cover; }
+
+        table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; word-break: keep-all; }
+        th { color: var(--muted); font-weight: 600; font-size: 12.5px; background: var(--sunken); }
+        td { font-size: 14px; }
+        td .mini { font-family: var(--sans); }
+        .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+        .table-wrap > table:not(.confusion) { min-width: 600px; }
+        .table-wrap tr:last-child td { border-bottom: 0; }
+
+        /* ===== 돌아보기 ===== */
+        .pheno { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+        .pheno-card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; background: var(--surface); box-shadow: 0 1px 2px rgba(13, 17, 23, .04); transition: border-color .12s; }
+        .pheno-card:hover { border-color: var(--line-strong); }
+        .pheno-card h4 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+        .pheno-card p { font-size: 14px; color: #3d4553; flex: 1; }
+        .pheno-card .btn { margin-top: 10px; align-self: flex-start; }
+        .confusion td, .confusion th { text-align: center; }
+
+        /* ===== 판별 ===== */
+        .examples { display: flex; flex-wrap: wrap; gap: 6px; }
+        .examples button { padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; }
+        .examples button:hover, .examples button:focus-visible { border-color: var(--ink); }
+        .examples img { display: block; width: 84px; height: 64px; object-fit: cover; border-radius: 6px; }
+        .verdict { font-size: 22px; font-weight: 750; color: var(--ink); letter-spacing: -0.01em; }
+        .verdict .tag { font-size: 18px; padding: 2px 12px; vertical-align: 1px; }
+        .verdict .note { display: block; margin-top: 6px; font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+        .unit-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+        .unit-row .thumbs { display: flex; gap: 3px; }
+        .unit-row .thumbs img { width: 44px; height: 44px; object-fit: cover; border-radius: 5px; }
+        .neighbors { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+        .neighbors figure { font-size: 12.5px; text-align: center; font-variant-numeric: tabular-nums; }
+        .neighbors img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 7px; margin-bottom: 4px; }
+
+        /* ===== 1단계: 올리기·라벨링 ===== */
+        .howto { margin-left: 1.3em; }
+        .howto li + li { margin-top: 5px; }
+        .howto a { color: var(--accent); font-weight: 700; }
+        .upload-summary { font-weight: 650; font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+        #skippedList { margin: 6px 0 0 1.3em; font-size: 14px; color: var(--muted); max-height: 200px; overflow-y: auto; }
+        details summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+        .label-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .label-nav span { font-size: 14px; font-variant-numeric: tabular-nums; font-weight: 600; text-align: center; min-width: 0; overflow-wrap: anywhere; color: var(--ink); }
+        #dataCanvas { cursor: crosshair; touch-action: none; }   /* 손가락으로 상자를 그릴 때 화면이 스크롤되지 않게 */
+        .class-list { display: grid; gap: 6px; }
+        .class-item { display: flex; gap: 6px; }
+        .class-btn {
+            flex: 1; display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 6px 12px;
+            border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); cursor: pointer; text-align: left; font-weight: 600;
+        }
+        .class-btn:hover { background: var(--sunken); }
+        .class-btn[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+        .class-btn .key { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; }
+        .class-btn .cnt { margin-left: auto; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--muted); }
+        .class-del { min-width: 44px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); cursor: pointer; color: var(--muted); }
+        .class-del:disabled { opacity: .35; cursor: not-allowed; }
+        .class-add { display: flex; gap: 6px; }
+        .class-add input { flex: 1; min-width: 0; min-height: 40px; padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
+        .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: none; }
+
+        details.credits { margin-top: 28px; font-size: 13px; color: var(--muted); }
+        details.credits ol { margin: 6px 0 0 1.4em; max-height: 280px; overflow-y: auto; }
+        details.credits a { color: inherit; }
+        .credit { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+        /* 바닥글은 사이트 공통(stylefooter.css)을 그대로 씀 */
+        .footer { margin-top: 40px; }
+
+        @media (max-width: 1000px) {
+            .settings { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+            .page-head { grid-template-columns: minmax(0, 1fr); padding: 28px 20px 22px; }
+            .spec { min-width: 0; }
+        }
+        @media (max-width: 820px) {
+            .two-col { grid-template-columns: minmax(0, 1fr); }
+            .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .charts { grid-template-columns: minmax(0, 1fr); }
+            .prep { grid-template-columns: minmax(0, 1fr); }
+            .prep-item + .prep-item { border-left: 0; border-top: 1px solid var(--line); }
+        }
+        @media (max-width: 520px) {
+            .page { padding: 56px 14px 32px; }
+            .steps { margin-bottom: 20px; }
+            .step h2 { font-size: 23px; }
+            .box { padding: 16px; }
+            .step-tab { flex-direction: column; gap: 3px; padding: 6px 4px; text-align: center; }
+            .step-tab .lbl { font-size: 12.5px; }
+            .calc .row { grid-template-columns: 1fr; gap: 0; }
+            .settings { grid-template-columns: minmax(0, 1fr); }
+            .neighbors { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .bar-row { grid-template-columns: 7em 1fr 3.8em; }
+            .spec li { grid-template-columns: 78px 1fr; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .meter span, .prep-item .bar span, .btn, .step-tab, .pheno-card { transition: none; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-sec">시작</div>
+            <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="../01_이미지와_RGB/activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
+            <a href="../01_이미지와_RGB/activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="../01_이미지와_RGB/activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="../01_이미지와_RGB/activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+            <a href="../01_이미지와_RGB/activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
+            <a href="../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="../03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
+            <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="activity14_yolo_lab.html" class="active"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
+            <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+            <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+            <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
+
+    <div class="page">
+        <header class="page-head">
+            <div>
+                <p class="eyebrow">AI 이미지 기술 · 객체 탐지</p>
+                <h1>YOLO 직접 학습시키기</h1>
+                <p class="desc">내 사진에 이름표를 붙여, 물체를 찾는 AI를 직접 학습시킵니다.</p>
+            </div>
+            <button type="button" class="btn" id="guideOpen" aria-haspopup="dialog">사용법</button>
+        </header>
+
+        <section class="prep" aria-label="준비 상태">
+            <div class="prep-item" id="prepPhotos"><span class="key" aria-hidden="true"></span><b>학습 사진 올리기</b><span class="txt">대기 중</span><span class="bar"><span></span></span></div>
+            <div class="prep-item" id="prepModel"><span class="key" aria-hidden="true"></span><b>AI의 눈(MobileNetV2) 받기</b><span class="txt">대기 중</span><span class="bar"><span></span></span></div>
+            <div class="prep-item" id="prepFeats"><span class="key" aria-hidden="true"></span><b>사진에서 특징 뽑기</b><span class="txt">대기 중</span><span class="bar"><span></span></span></div>
+            <p class="prep-msg" id="prepMsg" role="alert" hidden></p>
+            <div id="retryWrap" hidden><button type="button" class="btn btn-small" id="retryBtn">다시 시도</button></div>
+        </section>
+
+        <div class="steps" role="tablist" aria-label="학습 단계">
+            <button type="button" class="step-tab" role="tab" id="tab-1" aria-controls="panel-1" data-step="1"><span class="num">01</span><span class="lbl">사진·라벨링</span></button>
+            <button type="button" class="step-tab" role="tab" id="tab-2" aria-controls="panel-2" data-step="2"><span class="num">02</span><span class="lbl">특징 뽑기</span></button>
+            <button type="button" class="step-tab" role="tab" id="tab-3" aria-controls="panel-3" data-step="3"><span class="num">03</span><span class="lbl">학습하기</span></button>
+            <button type="button" class="step-tab" role="tab" id="tab-4" aria-controls="panel-4" data-step="4"><span class="num">04</span><span class="lbl">학습 돌아보기</span></button>
+            <button type="button" class="step-tab" role="tab" id="tab-5" aria-controls="panel-5" data-step="5"><span class="num">05</span><span class="lbl">내 사진 판별</span></button>
+        </div>
+
+        <!-- 1. 사진 올리고 라벨링 -->
+        <section class="step stack" id="panel-1" role="tabpanel" aria-labelledby="tab-1">
+            <div>
+                <h2>사진을 올리고 직접 정답 표시하기</h2>
+                <p class="lead">사진마다 물체에 <b>상자</b>를 그리고 <b>이름</b>을 붙이세요. 붙인 이름 그대로 배웁니다.</p>
+            </div>
+            <div class="box stack" id="uploadBox">
+                <h3>① 사진 올리기</h3>
+                <ol class="howto">
+                    <li><a href="downloads/activity14_yolo_sample_lite.zip" download>수업용 묶음</a>(3MB) 또는 <a href="downloads/activity14_yolo_sample.zip" download>전체 묶음</a>(14MB)을 받아 압축을 풀어요. 직접 찍은 사진도 돼요.</li>
+                    <li>사진을 올려요. 이름마다 <b>10장 이상</b>이 좋아요. (<b>시험_</b> 사진은 5단계용)</li>
+                </ol>
+                <div class="btn-row">
+                    <input type="file" id="trainFiles" accept="image/*" multiple class="visually-hidden" aria-label="학습할 사진 파일 고르기">
+                    <input type="file" id="trainFolder" webkitdirectory multiple class="visually-hidden" aria-label="학습할 사진이 든 폴더 고르기">
+                    <button type="button" class="btn btn-primary" id="pickFiles"><i class="fa fa-upload" aria-hidden="true"></i>사진 고르기</button>
+                    <button type="button" class="btn" id="pickFolder"><i class="fa fa-folder-open" aria-hidden="true"></i>폴더째 올리기</button>
+                    <button type="button" class="btn" id="clearFiles" hidden>올린 사진 모두 지우기</button>
+                    <!-- 선생님용: 주소 끝에 ?teacher 를 붙이면 보인다. 샘플 사진과 선생님 정답지를 서버에서 한 번에 불러온다 -->
+                    <button type="button" class="btn" id="loadAllTemp" style="border-style:dashed" hidden>[선생님] 샘플 전체 + 정답지 한 번에 불러오기</button>
+                </div>
+                <p class="upload-summary" id="uploadSummary" aria-live="polite">아직 올린 사진이 없습니다.</p>
+                <details id="skippedBox" hidden>
+                    <summary id="skippedTitle"></summary>
+                    <ul id="skippedList"></ul>
+                </details>
+                <p class="mini">사진은 이 기기 밖으로 나가지 않아요.</p>
+            </div>
+            <div class="two-col" id="dataArea" hidden>
+                <div class="box stack">
+                    <div class="label-nav">
+                        <button type="button" class="btn btn-small" id="prevPhoto" aria-label="이전 사진">← 이전</button>
+                        <span id="labelPos" aria-live="polite"></span>
+                        <button type="button" class="btn btn-small" id="nextPhoto" aria-label="다음 사진">다음 →</button>
+                    </div>
+                    <canvas class="stage-canvas" id="dataCanvas" width="512" height="512" tabindex="0" aria-label="라벨링할 사진. 끌어서 상자를 그립니다"></canvas>
+                    <div class="btn-row">
+                        <button type="button" class="btn btn-small" id="wholeBox">사진 전체를 상자로 (F)</button>
+                        <button type="button" class="btn btn-small" id="nextBox">다음 상자 고르기 (N)</button>
+                        <button type="button" class="btn btn-small" id="delBox">고른 상자 지우기 (Delete)</button>
+                        <button type="button" class="btn btn-small" id="skipPhoto" aria-pressed="false">이 사진 학습에서 빼기</button>
+                    </div>
+                    <p class="mini">이름을 고르고, 사진 위를 끌어 상자를 그려요.</p>
+                    <details class="mini keys"><summary>키보드 단축키</summary>숫자 1~7 이름 고르기 · ←/→ 사진 넘기기 · F 사진 전체를 상자로 · N 상자 고르기 · 상자를 고른 뒤 방향키로 옮기고 Shift+방향키로 크기 조절 · Delete 지우기 · Esc 고르기 취소</details>
+                    <div class="calc" id="dataCalc"></div>
+                    <details class="think"><summary>생각해 보기</summary><p>상자의 중심이 들어 있는 칸 하나가 그 물체를 “책임”집니다. 나머지 칸은 “여기엔 없다”고 답하도록 배웁니다. 한 사진에서 ‘없다’를 배우는 칸과 ‘있다’를 배우는 칸 중 어느 쪽이 더 많을까요?</p></details>
+                </div>
+                <div class="box stack">
+                    <h3>② 이름(종류) 만들고 고르기</h3>
+                    <div class="class-list" id="classList" role="radiogroup" aria-label="상자에 붙일 이름"></div>
+                    <div class="class-add">
+                        <label for="classInput" class="visually-hidden">새 이름</label>
+                        <input type="text" id="classInput" maxlength="12" placeholder="새 이름 (예: A, 우리집 개)" autocomplete="off">
+                        <button type="button" class="btn btn-small" id="addClass">이름 추가</button>
+                    </div>
+                    <p class="mini" id="classMsg" role="status">이름은 7개까지 만들 수 있습니다. 쓰지 않는 이름은 ×로 지울 수 있습니다.</p>
+                    <h3>③ 라벨링 현황</h3>
+                    <p class="upload-summary" id="labelSummary" aria-live="polite"></p>
+                    <div class="seg" role="group" aria-label="사진 거르기" id="dataFilter">
+                        <button type="button" data-f="all" aria-pressed="true">전체</button>
+                        <button type="button" data-f="todo" aria-pressed="false">아직 안 함</button>
+                        <button type="button" data-f="done" aria-pressed="false">표시 완료</button>
+                        <button type="button" data-f="skip" aria-pressed="false">뺀 사진</button>
+                    </div>
+                    <p class="mini" id="dataCount"></p>
+                    <div class="photo-grid scroll" id="gallery" aria-label="올린 사진 목록"></div>
+                    <h3>④ 정답 표시를 파일로 주고받기</h3>
+                    <p class="mini">표시는 자동 저장되지만 학교 컴퓨터는 지워질 수 있어요. 파일로도 저장하세요. 모둠원 파일을 불러오면 합쳐져요.</p>
+                    <div class="btn-row">
+                        <input type="file" id="labelFile" accept=".json,application/json" multiple class="visually-hidden" aria-label="정답 표시 파일 불러오기">
+                        <button type="button" class="btn btn-small" id="saveLabels">정답 표시를 파일로 저장</button>
+                        <button type="button" class="btn btn-small" id="loadLabels">파일 불러오기·합치기</button>
+                        <button type="button" class="btn btn-small" id="clearLabels">표시한 정답 모두 지우기</button>
+                    </div>
+                    <p class="mini" id="labelIoMsg" role="status"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 특징 뽑기 -->
+        <section class="step stack" id="panel-2" role="tabpanel" aria-labelledby="tab-2" hidden>
+            <div>
+                <h2>사진을 숫자(특징)로 바꾸기</h2>
+                <p class="lead">사진 120만 장으로 보는 법을 익힌 <b>MobileNetV2</b>가 사진을 <b>7×7칸 × 숫자 320개</b>로 바꿔요. 이 눈은 그대로 두고, 3단계에서 그 위만 학습해요.</p>
+            </div>
+            <div class="box">
+                <div class="control-head"><b>특징 뽑기 진행</b><span id="featText" class="mini"></span></div>
+                <div class="meter" style="margin-top:6px"><span id="featMeter"></span></div>
+            </div>
+            <div class="two-col">
+                <div class="box stack">
+                    <h3 id="featTitle">특징 하나를 7×7칸에 칠해 보기</h3>
+                    <canvas class="stage-canvas" id="featCanvas" width="448" height="448" tabindex="0" aria-label="고른 특징 번호의 칸별 값"></canvas>
+                    <p class="mini">칸을 누르면 그 칸의 숫자 320개가 아래에 보여요.</p>
+                </div>
+                <div class="box stack">
+                    <div>
+                        <div class="control-head"><label for="chanSlider">특징 번호</label><output id="chanOut" for="chanSlider">0</output></div>
+                        <input type="range" id="chanSlider" min="0" max="319" step="1" value="0">
+                    </div>
+                    <div class="btn-row">
+                        <button type="button" class="btn" id="chanBest">상자 속 물체에 가장 크게 반응하는 특징 찾기</button>
+                    </div>
+                    <div class="calc" id="featReadout"><p class="empty">특징을 뽑으면 여기에 설명이 나옵니다.</p></div>
+                    <canvas id="featBars" width="640" height="120" style="width:100%;height:auto" aria-label="고른 칸의 특징 320개 막대"></canvas>
+                    <details class="think"><summary>생각해 보기</summary><p>특징마다 반응하는 곳이 다릅니다. 어떤 특징은 동물 얼굴에, 어떤 특징은 배경에 크게 반응합니다. 사람이 “귀 모양”, “털 무늬”라고 이름 붙이지 않았는데도 이런 특징이 생겼습니다.</p></details>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 학습하기 -->
+        <section class="step stack" id="panel-3" role="tabpanel" aria-labelledby="tab-3" hidden>
+            <div>
+                <h2>찾는 부분 학습시키기</h2>
+                <p class="lead">이름마다 20%는 <b>검증용</b>으로 떼어 두고 나머지로 학습해요. <b>오차</b>가 줄어드는 쪽으로 조금씩 고치며, 사진을 한 번 다 보면 <b>1에폭</b>.</p>
+            </div>
+            <div class="box stack">
+                <div class="settings">
+                    <div class="field">
+                        <label for="lrSel">학습률 (한 번에 고치는 크기)</label>
+                        <select id="lrSel">
+                            <option value="0.0003">0.0003 · 작게</option>
+                            <option value="0.002" selected>0.002 · 적당히</option>
+                            <option value="0.03">0.03 · 크게</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="nSel">학습 사진 수</label>
+                        <select id="nSel"><option value="all">올린 사진 전부</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="epSel">학습 횟수</label>
+                        <select id="epSel">
+                            <option value="20">20에폭</option>
+                            <option value="60" selected>60에폭</option>
+                            <option value="120">120에폭</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="seedSel">씨앗 (가중치 출발점)</label>
+                        <select id="seedSel">
+                            <option value="1" selected>1번</option>
+                            <option value="2">2번</option>
+                            <option value="3">3번</option>
+                            <option value="4">4번</option>
+                            <option value="5">5번</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="noiseSel">일부러 틀린 정답 섞기</label>
+                        <select id="noiseSel">
+                            <option value="0" selected>안 섞음</option>
+                            <option value="0.1">학습 사진 10%</option>
+                            <option value="0.3">학습 사진 30%</option>
+                        </select>
+                    </div>
+                    <div class="btn-row">
+                        <button type="button" class="btn btn-primary" id="trainBtn">학습 시작</button>
+                        <button type="button" class="btn" id="pauseBtn" disabled>일시정지</button>
+                        <button type="button" class="btn" id="stopBtn" disabled>멈춤</button>
+                    </div>
+                </div>
+                <div class="train-status" id="trainStatus" aria-live="polite"><span>특징 뽑기가 끝나면 학습할 수 있습니다.</span></div>
+            </div>
+            <div class="charts">
+                <div class="box chart-box"><h4>오차 (낮을수록 좋음)</h4><p>학습 사진과 검증 사진에서 정답과 다른 정도</p><div id="chartLoss"></div></div>
+                <div class="box chart-box"><h4>정답률</h4><p>상자가 정답과 절반 이상 겹치고(IoU ≥ 0.5) 종류도 맞은 비율</p><div id="chartAcc"></div></div>
+                <div class="box chart-box"><h4>‘물체가 있다’ 점수 평균</h4><p>물체를 책임지는 칸과 배경 칸 (학습 사진)</p><div id="chartObj"></div></div>
+                <div class="box chart-box"><h4>분류 vs 탐지 (검증 사진)</h4><p>같은 사진·같은 ‘눈’으로 이름만 맞히는 <b>분류</b>(티처블 머신 방식)와, 위치까지 맞히는 <b>탐지</b>의 정답률</p><div id="chartMode"></div></div>
+            </div>
+            <div class="box stack">
+                <h3>학습 중인 모델의 눈으로 본 사진</h3>
+                <p class="mini">흰 점선 = 정답 상자, 색 상자 = 지금 모델의 답(색 = 이름). 에폭마다 바뀝니다.</p>
+                <div class="photo-grid" id="liveGrid"></div>
+            </div>
+            <div class="box stack">
+                <h3>실험 기록</h3>
+                <p class="mini">설정을 바꿔 다시 학습하고 비교해 보세요. 씨앗만 바꿔도 5~10% 달라지니 여러 번 해 보세요.</p>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>번호</th><th>학습률</th><th>사진</th><th>씨앗</th><th>에폭</th><th>검증 정답률(최고)</th><th>마지막 오차 학습 / 검증</th><th>걸린 시간</th></tr></thead>
+                        <tbody id="runTable"><tr><td colspan="8" class="empty">아직 학습 기록이 없습니다.</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 학습 돌아보기 -->
+        <section class="step stack" id="panel-4" role="tabpanel" aria-labelledby="tab-4" hidden>
+            <div>
+                <h2>학습 과정 되감아 보기</h2>
+                <p class="lead">에폭을 되감아 보세요. 학습 중 생긴 특이한 현상은 ‘보러 가기’로 바로 볼 수 있어요.</p>
+            </div>
+            <div class="pheno" id="phenoList"></div>
+            <div class="box stack">
+                <div>
+                    <div class="control-head"><label for="epochSlider">에폭 고르기</label><output id="epochOut" for="epochSlider">0</output></div>
+                    <input type="range" id="epochSlider" min="0" max="0" step="1" value="0">
+                </div>
+                <div class="btn-row" style="align-items:center">
+                    <div class="seg" role="group" aria-label="볼 사진" id="reviewSet">
+                        <button type="button" data-s="val" aria-pressed="true">검증 사진</button>
+                        <button type="button" data-s="train" aria-pressed="false">학습 사진</button>
+                        <button type="button" data-s="wrong" aria-pressed="false">틀린 사진만</button>
+                    </div>
+                    <label style="display:inline-flex;align-items:center;gap:6px;min-height:44px"><input type="checkbox" id="heatToggle"> 칸별 ‘물체가 있다’ 점수 칠하기</label>
+                </div>
+                <p class="mini" id="reviewSummary"></p>
+                <div class="photo-grid" id="reviewGrid"></div>
+            </div>
+            <div class="two-col">
+                <div class="box stack">
+                    <h3>검증 사진 판정표 (고른 에폭)</h3>
+                    <div class="table-wrap" id="confusion"></div>
+                </div>
+                <div class="box stack">
+                    <h3>그래프 다시 보기</h3>
+                    <div id="chartReview"></div>
+                </div>
+            </div>
+            <div class="box stack">
+                <h3>이름별 결과 (고른 에폭, 검증 사진)</h3>
+                <p class="mini">사진이 적은 이름은 잘 배우지 못하는 경우가 많습니다. 학습 사진 수와 정답률을 비교해 보세요.</p>
+                <div class="table-wrap" id="classTable"></div>
+            </div>
+        </section>
+
+        <!-- 5. 내 사진 판별 -->
+        <section class="step stack" id="panel-5" role="tabpanel" aria-labelledby="tab-5" hidden>
+            <div>
+                <h2>새 사진 판별하고 근거 보기</h2>
+                <p class="lead">새 사진을 넣고, 무엇 때문에 그 이름으로 판별했는지 봐요. 모델은 여러분이 만든 이름만 알아요.</p>
+            </div>
+            <div class="box stack">
+                <div class="btn-row" style="align-items:center">
+                    <input type="file" id="fileInput" accept="image/*" class="visually-hidden" aria-label="판별할 사진 파일 고르기">
+                    <button type="button" class="btn btn-primary" id="uploadBtn"><i class="fa fa-upload" aria-hidden="true"></i>내 사진 올리기</button>
+                    <button type="button" class="btn" id="camBtn"><i class="fa fa-camera" aria-hidden="true"></i>웹캠으로 판별</button>
+                    <span class="mini">또는 시험 사진:</span>
+                    <div class="examples" id="examples"></div>
+                </div>
+                <div class="cam" id="camBox" hidden>
+                    <video id="camVideo" playsinline muted aria-label="웹캠 화면"></video>
+                    <div class="btn-row">
+                        <button type="button" class="btn btn-primary" id="camShot">찰칵! 지금 화면 판별</button>
+                        <label style="display:inline-flex;align-items:center;gap:6px;min-height:44px"><input type="checkbox" id="camAuto"> 1초마다 계속 판별</label>
+                        <button type="button" class="btn" id="camStop">웹캠 끄기</button>
+                    </div>
+                </div>
+                <fieldset style="border:0">
+                    <legend class="mini" style="margin-bottom:4px">판별에 쓸 모델</legend>
+                    <div class="btn-row">
+                        <label style="display:inline-flex;align-items:center;gap:6px;min-height:36px"><input type="radio" name="which" value="best" checked> <span id="whichBest">검증 오차가 가장 낮았던 에폭</span></label>
+                        <label style="display:inline-flex;align-items:center;gap:6px;min-height:36px"><input type="radio" name="which" value="last"> <span id="whichLast">마지막 에폭</span></label>
+                    </div>
+                </fieldset>
+                <p class="mini">사진은 이 기기 밖으로 나가지 않아요.</p>
+                <p class="err-text" id="judgeMsg" role="alert" hidden></p>
+            </div>
+            <div class="two-col" id="judgeArea" hidden>
+                <div class="box stack">
+                    <p class="verdict" id="verdict"></p>
+                    <canvas class="stage-canvas" id="judgeCanvas" width="448" height="448" aria-label="판별 결과"></canvas>
+                    <div class="seg" role="group" aria-label="보여 줄 상자" id="detMode">
+                        <button type="button" data-m="best" aria-pressed="true">가장 자신 있는 하나</button>
+                        <button type="button" data-m="nms" aria-pressed="false">여러 물체 (NMS 후)</button>
+                        <button type="button" data-m="all" aria-pressed="false">NMS 전 후보 전부</button>
+                    </div>
+                    <div id="detControls" hidden>
+                        <div class="control-head"><label for="detThr">후보로 남길 점수 기준 (있다 점수 × 이름 확률)</label><output id="detThrOut" for="detThr">0.15</output></div>
+                        <input type="range" id="detThr" min="0.05" max="0.9" step="0.05" value="0.15">
+                        <div class="control-head"><label for="detIou">겹침 기준 (같은 이름끼리 IoU가 이보다 크면 지움)</label><output id="detIouOut" for="detIou">0.40</output></div>
+                        <input type="range" id="detIou" min="0.1" max="0.9" step="0.05" value="0.4">
+                        <p class="mini" id="detSummary" aria-live="polite"></p>
+                    </div>
+                    <label style="display:inline-flex;align-items:center;gap:6px;min-height:36px"><input type="checkbox" id="judgeHeat" checked> 칸별 ‘물체가 있다’ 점수 칠하기</label>
+                    <div class="calc" id="judgeWhere"></div>
+                </div>
+                <div class="box stack">
+                    <h3>왜 이 이름으로 판별했을까?</h3>
+                    <div class="bars" id="judgeProbs"></div>
+                    <div class="calc" id="judgeCalc"></div>
+                    <h3 style="margin-top:6px">판별을 가장 크게 움직인 숨은 값 5개</h3>
+                    <p class="mini" id="contribNote">숨은 값 × (1등 이름의 가중치 − 2등 이름의 가중치). 오른쪽(+)은 1등 쪽, 왼쪽(−)은 2등 쪽으로 민 양입니다. 사진은 그 숨은 값이 가장 크게 켜졌던 학습 사진입니다.</p>
+                    <div id="contribList"></div>
+                </div>
+            </div>
+            <div class="two-col" id="judgeArea2" hidden>
+                <div class="box stack">
+                    <h3>숨은 값이 가장 닮은 학습 사진</h3>
+                    <div class="neighbors" id="neighborList"></div>
+                    <details class="think"><summary>생각해 보기</summary><p>AI는 “이 사진의 숨은 값은 ○○ 사진들의 숨은 값과 닮았다”는 식으로 판단합니다. 다른 이름의 사진이 섞여 있다면 왜 헷갈렸을지 생각해 보세요.</p></details>
+                </div>
+                <div class="box stack">
+                    <h3>특징 지도</h3>
+                    <p class="mini">숨은 값 32개를 2차원으로 줄인 지도(주성분 분석). 점을 가리키면 사진이 보여요.</p>
+                    <div id="featureMap"></div>
+                </div>
+            </div>
+        </section>
+
+        <details class="credits">
+            <summary>사진 출처 (위키미디어 공용, 자유 라이선스)</summary>
+            <ol id="creditList"></ol>
+        </details>
+        <p class="credit">특징 추출: MobileNetV2 (torchvision, ImageNet 학습 가중치, BSD-3) · 브라우저 실행: ONNX Runtime Web · 탐지 머리와 학습 코드는 이 페이지에서 직접 계산합니다. [임시] 정답지의 상자는 큰 YOLO 모델로 표시한 뒤 사람이 검수했습니다.</p>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed &amp; Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" aria-label="이메일 보내기"><i class="fa-solid fa-envelope" aria-hidden="true"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener"><img src="../../assets/branding/naver.png" alt="네이버 메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';"></a>
+            </div>
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+        </div>
+    </footer>
+
+    <script src="activity14_yolo_lab_head.js"></script>
+    <script src="activity14_yolo_lab_chart.js"></script>
+    <script src="activity14_yolo_lab.js"></script>
+
+    <dialog id="guide" class="guide" aria-labelledby="guideTitle">
+        <h2 id="guideTitle">이렇게 해 보세요</h2>
+        <ol class="guide-steps">
+            <li class="g-card"><span class="g-num">01</span><i class="fa fa-vector-square" aria-hidden="true"></i><b>사진·라벨링</b><span>물체에 상자를 그리고 이름을 붙여요</span></li>
+            <li class="g-card"><span class="g-num">02</span><i class="fa fa-eye" aria-hidden="true"></i><b>특징 뽑기</b><span>AI의 눈이 사진을 숫자로 바꿔요</span></li>
+            <li class="g-card"><span class="g-num">03</span><i class="fa fa-chart-line" aria-hidden="true"></i><b>학습하기</b><span>'학습 시작'을 누르고 그래프를 봐요</span></li>
+            <li class="g-card"><span class="g-num">04</span><i class="fa fa-history" aria-hidden="true"></i><b>학습 돌아보기</b><span>에폭을 되감아 배운 것을 봐요</span></li>
+            <li class="g-card"><span class="g-num">05</span><i class="fa fa-camera" aria-hidden="true"></i><b>내 사진 판별</b><span>새 사진·웹캠으로 시험해요</span></li>
+        </ol>
+        <p class="guide-tip">처음이라면 <a href="downloads/activity14_yolo_sample_lite.zip" download>수업용 사진 묶음(3MB)</a>부터 시작하세요.</p>
+        <div class="guide-foot">
+            <label><input type="checkbox" id="guideHide"> 다시 보지 않기</label>
+            <button type="button" class="btn btn-primary" id="guideClose">시작하기</button>
+        </div>
+    </dialog>
+    <script>
+    (function () {
+        var d = document.getElementById('guide'), KEY = 'yoloLab.guideHidden';
+        if (!d || !d.showModal) return;
+        var open = function () { document.getElementById('guideHide').checked = localStorage.getItem(KEY) === '1'; d.showModal(); document.getElementById('guideClose').focus(); };
+        document.getElementById('guideClose').addEventListener('click', function () { d.close(); });
+        d.addEventListener('close', function () { try { localStorage.setItem(KEY, document.getElementById('guideHide').checked ? '1' : '0'); } catch (e) {} });
+        document.getElementById('guideOpen').addEventListener('click', open);
+        var hidden = false; try { hidden = localStorage.getItem(KEY) === '1'; } catch (e) {}
+        if (!hidden) open();
+    })();
+    </script>
+</body>
+
+</html>

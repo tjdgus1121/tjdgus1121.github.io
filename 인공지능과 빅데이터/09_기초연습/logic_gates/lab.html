@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>논리 연산 체험 | 게이트 실험실 · 회로 만들기 · 퍼셉트론</title>
+<meta name="description" content="스위치를 눌러 진리표를 채우고, 숨은 게이트를 추리하고, 회로를 만들고, 비트 연산과 XOR 암호, 퍼셉트론 학습까지 체험합니다.">
+<link rel="icon" href="../../../favicon.ico">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  /* 체험 페이지: 그림이 주인공. 테두리·꼬리표·그림자를 줄이고 한 화면에 한 가지 일만 */
+  body { background-image: none; background: #f6f5f1; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 20px 56px; }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 26px; overflow-x: auto; }
+  .tab { display: flex; align-items: center; gap: 8px; min-height: 50px; padding: 8px 16px; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; background: none; cursor: pointer; color: var(--muted); font-weight: 650; font-size: 15px; white-space: nowrap; }
+  .tab .no { font-family: var(--mono); font-size: 12px; color: #9a9fab; }
+  .tab .ck { color: var(--ok); font-size: 13px; font-weight: 800; }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+  .tab[aria-selected="true"] .no { color: var(--ink); }
+
+  .act-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .act-head h1 { font-size: clamp(22px, 2.8vw, 28px); letter-spacing: -.02em; color: var(--ink); }
+  .act-head p { color: var(--muted); margin-top: 4px; }
+  .textlink { font-size: 14px; font-weight: 650; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-strong); padding: 6px 0; white-space: nowrap; }
+  .textlink:hover { color: var(--ink); border-color: var(--ink); }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: 0 1px 2px rgba(31, 42, 68, .05); }
+  .card h2 { font-size: 15px; font-weight: 750; color: var(--ink); margin-bottom: 10px; }
+  .lab-main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 16px; align-items: start; }
+  .side > * + * { margin-top: 16px; }
+  .stack > * + * { margin-top: 14px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  svg.fig { display: block; width: 100%; height: auto; }
+  .mini { font-size: 14px; color: var(--muted); }
+  .caption { font-size: 14px; color: var(--muted); margin-top: 8px; min-height: 1.6em; }
+  .note { padding: 11px 14px; border-radius: 10px; background: #fbf6e6; color: #4a3500; font-size: 15px; }
+  .note.ok { background: #e9f5ee; color: #124d31; }
+  .note.err { background: #fcefed; color: #7a1a12; }
+  .why { padding: 12px 14px; border-radius: 10px; background: #f3f5f9; }
+  .why .k { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+  .why .f { font-family: var(--mono); font-weight: 800; font-size: clamp(17px, 2vw, 21px); color: var(--ink); margin-top: 2px; }
+  .why .s { font-size: 14.5px; margin-top: 4px; color: var(--text); }
+  details.more { font-size: 14.5px; color: var(--text); }
+  details.more summary { cursor: pointer; font-weight: 650; color: var(--muted); min-height: 36px; display: flex; align-items: center; }
+
+  /* 고르기 칩 */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button, .gate-pick button, .opsel button {
+    min-height: 40px; padding: 4px 14px; border-radius: 999px; border: 1.5px solid var(--line-strong); background: #fff;
+    color: var(--gc, var(--ink)); font-family: var(--mono); font-weight: 800; font-size: 15px; cursor: pointer;
+  }
+  .gate-pick button:hover, .opsel button:hover { border-color: var(--gc); }
+  .gate-pick button[aria-checked="true"], .opsel button[aria-checked="true"] { background: var(--gc); border-color: var(--gc); color: #fff; }
+  .gate-pick button small { display: none; }
+  .gate-pick button .done { margin-left: 4px; font-size: 12px; }
+  .gate-pick { margin-bottom: 14px; }
+
+  /* 보기 전환 */
+  .views { display: inline-flex; gap: 2px; padding: 3px; background: #f0eee8; border-radius: 10px; margin-bottom: 12px; }
+  .views button { min-height: 36px; padding: 4px 14px; border: 0; border-radius: 8px; background: none; font-weight: 650; font-size: 14px; color: var(--muted); cursor: pointer; }
+  .views button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+  /* 입력 스위치 */
+  .inputs { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 14px 6px 8px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; cursor: pointer; font-weight: 750; font-size: 16px; color: var(--ink); }
+  .toggle:hover { border-color: #a9a291; }
+  .toggle .knob { width: 52px; height: 30px; border-radius: 15px; background: #e6e8ee; position: relative; transition: background .12s; }
+  .toggle .knob::after { content: '0'; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--muted); box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: left .12s; }
+  .toggle[aria-pressed="true"] .knob { background: var(--on); }
+  .toggle[aria-pressed="true"] .knob::after { content: '1'; left: 25px; color: var(--on-dark); }
+  .toggle .kb { display: none; }
+  .progress-line { font-size: 14px; color: var(--muted); }
+
+  /* 정체를 밝혀라 */
+  .obs { width: 100%; border-collapse: collapse; font-family: var(--mono); }
+  .obs th, .obs td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: center; font-size: 16px; }
+  .obs th { color: var(--muted); font-size: 12.5px; font-family: var(--sans); font-weight: 650; }
+  .obs tr.cur td { background: #fbf6e6; }
+  .answers { display: flex; flex-wrap: wrap; gap: 6px; }
+  .answers button { min-height: 42px; padding: 4px 16px; border-radius: 999px; border: 1.5px solid var(--gc); background: #fff; color: var(--gc); font-family: var(--mono); font-weight: 800; font-size: 15px; cursor: pointer; }
+  .answers button:hover:not(:disabled) { background: var(--gc); color: #fff; }
+  .answers button.out { opacity: .35; text-decoration: line-through; }
+  .score { font-size: 14px; color: var(--muted); }
+  .mystery-box { fill: var(--ink); }
+  .mystery-q { font-family: var(--mono); font-weight: 800; font-size: 54px; fill: #fff; }
+  .mystery-q.solved { font-size: 32px; fill: #ffd766; }
+
+  /* 회로 만들기 */
+  .missions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .missions button { min-height: 38px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; cursor: pointer; font-weight: 650; font-size: 14px; color: var(--text); }
+  .missions button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+  .missions button .ck { color: var(--ok); margin-left: 4px; font-weight: 800; }
+  .missions button[aria-pressed="true"] .ck { color: #9be3bd; }
+  .palette { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+  .palette button { min-height: 38px; padding: 4px 14px; border-radius: 999px; border: 1.5px solid var(--gc); background: #fff; color: var(--gc); font-family: var(--mono); font-weight: 800; cursor: pointer; }
+  .palette button:hover { background: var(--gc); color: #fff; }
+  .board { position: relative; border: 1px solid var(--line); border-radius: 12px; background: #fbfaf7; overflow: hidden;
+    background-image: radial-gradient(rgba(31,42,68,.12) 1px, transparent 1px); background-size: 20px 20px; touch-action: none; }
+  .board svg { display: block; width: 100%; height: auto; user-select: none; }
+  .port { cursor: pointer; }
+  .port circle.hit { fill: transparent; }
+  .port circle.dot { fill: #fff; stroke: var(--ink); stroke-width: 3; }
+  .port.armed circle.dot { fill: var(--c-and); stroke: var(--c-and); }
+  .port:focus-visible circle.dot, .port:hover circle.dot { stroke: var(--c-and); stroke-width: 4; }
+  .port:focus-visible { outline: none; }
+  .port.connected circle.dot { fill: var(--ink); }
+  .bgate { cursor: grab; }
+  .bgate.sel .gate-body, .bgate:focus-visible .gate-body { stroke: var(--c-and); stroke-width: 5; }
+  .bgate:focus-visible { outline: none; }
+  .ghost-wire { fill: none; stroke: var(--c-and); stroke-width: 3; stroke-dasharray: 6 5; pointer-events: none; }
+  .bwire { fill: none; stroke: var(--off); stroke-width: 6; stroke-linecap: round; }
+  .bwire.on { stroke: var(--on); stroke-width: 7; }
+  .bwire.undef { stroke: #cfd3db; stroke-dasharray: 3 7; }
+  .bwire-hit { fill: none; stroke: transparent; stroke-width: 18; cursor: pointer; }
+  .tt-check { width: 100%; border-collapse: collapse; font-family: var(--mono); }
+  .tt-check th, .tt-check td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: center; font-size: 16px; }
+  .tt-check th { font-size: 12.5px; color: var(--muted); font-family: var(--sans); font-weight: 650; }
+  .tt-check td.bad { color: var(--err); font-weight: 800; }
+  .tt-check td.good { color: var(--ok); font-weight: 800; }
+  .tt-check tr.cur { background: #fbf6e6; }
+  .bar-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+
+  /* 비트 */
+  .reg { display: grid; grid-template-columns: 72px repeat(8, minmax(0, 1fr)) 120px; gap: 6px; align-items: center; }
+  .reg + .reg { margin-top: 8px; }
+  .reg .nm { font-weight: 750; color: var(--ink); text-align: right; padding-right: 6px; }
+  .reg .info { font-family: var(--mono); font-size: 14px; color: var(--muted); padding-left: 6px; }
+  .bit { min-height: 46px; border-radius: 9px; border: 1px solid var(--line-strong); background: #fff; font-family: var(--mono); font-weight: 800; font-size: 19px; color: var(--muted); cursor: pointer; }
+  .bit.on { background: #ffe39a; border-color: #d6a42b; color: var(--on-dark); }
+  .bit.res { cursor: default; }
+  .bit.focus { outline: 2px solid var(--c-xor); outline-offset: 1px; }
+  .reg.rule { border-top: 2px solid var(--ink); padding-top: 10px; margin-top: 10px; }
+  .opsel { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .quests { display: grid; gap: 6px; }
+  .quest { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #f7f6f2; }
+  .quest .st { font-weight: 800; color: #a3a8b3; }
+  .quest b { font-size: 14.5px; }
+  .quest .d { font-size: 13.5px; color: var(--muted); }
+  .quest .w { font-size: 13.5px; color: var(--ok); }
+  .quest.done { background: #eef7f1; }
+  .quest.done .st { color: var(--ok); }
+  .cipher { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+  .cipher th, .cipher td { padding: 6px; border-bottom: 1px solid var(--line); text-align: center; }
+  .cipher th { color: var(--muted); font-size: 12.5px; font-family: var(--sans); font-weight: 650; text-align: right; white-space: nowrap; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-weight: 650; font-size: 14px; color: var(--ink); }
+  input[type="text"] { min-height: 44px; padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: #fff; font-family: var(--mono); font-size: 16px; }
+  input[type="range"] { width: 100%; accent-color: var(--ink); height: 32px; }
+
+  /* 퍼셉트론 */
+  .sliders { display: grid; gap: 4px; }
+  .sl { display: grid; grid-template-columns: 112px 1fr 52px; gap: 10px; align-items: center; }
+  .sl label { font-size: 14px; font-weight: 650; color: var(--ink); }
+  .sl label i { font-style: normal; font-family: var(--mono); color: var(--muted); font-weight: 700; }
+  .sl output { font-family: var(--mono); font-weight: 800; text-align: right; }
+  .ntable { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 15px; }
+  .ntable th, .ntable td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: center; }
+  .ntable th { color: var(--muted); font-size: 12.5px; font-family: var(--sans); font-weight: 650; }
+  .ntable tbody tr { cursor: pointer; }
+  .ntable tbody tr:hover, .ntable tbody tr:focus-visible, .ntable tbody tr.hl { background: #fbf6e6; outline: none; }
+  .ntable td.good { color: var(--ok); font-weight: 800; }
+  .ntable td.bad { color: var(--err); font-weight: 800; }
+  .calc { font-family: var(--mono); font-size: 14.5px; color: var(--ink); min-height: 1.5em; }
+  .n-plane-bg { fill: #eef2f8; }
+  .n-shade { fill: #ffe7a3; }
+  .n-frame { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+  .n-axis { stroke: rgba(31,42,68,.18); stroke-width: 1.5; }
+  .n-sep { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+  .n-sep2 { stroke: var(--c-nand); }
+  .n-region { font-weight: 700; font-size: 15px; pointer-events: none; }
+  .n-region.one { fill: var(--on-dark); }
+  .n-region.zero { fill: #4a5a78; }
+  .n-pt { fill: #fff; stroke: var(--ink); stroke-width: 3; }
+  .n-pt.one { fill: var(--ink); }
+  .n-pt-t { font-family: var(--mono); font-weight: 800; font-size: 17px; fill: var(--ink); pointer-events: none; }
+  .n-pt.one + .n-pt-t { fill: #fff; }
+  .n-ptg.hl .n-pt { stroke: var(--c-xor); stroke-width: 5; }
+  .n-wrong { fill: none; stroke: var(--err); stroke-width: 3.5; stroke-dasharray: 6 5; }
+  .n-xy { font-family: var(--mono); font-size: 14px; fill: var(--muted); }
+  .n-label { font-weight: 800; font-size: 18px; fill: var(--ink); }
+  .nd-node { fill: #fff; stroke: var(--ink); stroke-width: 2.5; }
+  .nd-node.on { fill: #ffe39a; stroke: var(--on-dark); }
+  .nd-t { font-family: var(--mono); font-weight: 800; font-size: 15px; fill: var(--ink); }
+  .nd-w { font-family: var(--mono); font-weight: 700; font-size: 13px; }
+  .nd-cap { font-size: 12.5px; fill: var(--muted); font-weight: 650; }
+  .learn-msg { font-size: 14.5px; min-height: 1.5em; color: var(--text); }
+  .proof ol { margin: 6px 0 0 1.3em; font-family: var(--mono); font-size: 14.5px; }
+  .proof li + li { margin-top: 4px; }
+
+  @media (max-width: 960px) {
+    .lab-main, .grid2 { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .wrap { padding: 14px 12px 40px; }
+    .card { padding: 14px; }
+    .reg { grid-template-columns: 52px repeat(8, minmax(0, 1fr)); gap: 4px; }
+    .reg .info { grid-column: 2 / -1; padding-left: 0; }
+    .bit { min-height: 40px; font-size: 16px; }
+    .sl { grid-template-columns: 92px 1fr 44px; }
+    .quest { grid-template-columns: 20px 1fr; }
+    .quest .btn { grid-column: 2; justify-self: start; }
+  }
+  @media (prefers-reduced-motion: reduce) { .toggle .knob, .toggle .knob::after { transition: none; } }
+  /* 회로 기호 아래 식, 벤 영역 이름표 */
+  .sym-expr { font-family: var(--mono); font-weight: 700; font-size: 30px; fill: var(--ink); }
+  .vx-pill { fill: #fff; stroke: var(--line-strong); stroke-width: 1.5; }
+  .vx-in { font-family: var(--mono); font-size: 14px; font-weight: 600; fill: var(--muted); }
+  .vx-out { font-family: var(--mono); font-size: 20px; font-weight: 800; fill: #9a9fab; }
+  .vx.is-seen .vx-out, .vx.is-now .vx-out { fill: var(--ink); }
+  .vx-now { display: none; font-size: 13px; font-weight: 800; fill: var(--ink); }
+  .vx.is-now .vx-pill { stroke: var(--ink); stroke-width: 3; }
+  .vx.is-now .vx-now { display: inline; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="chip">LOGIC</span>논리 연산 탐구</a>
+  <nav aria-label="논리 연산 단원">
+    <a href="index.html">안내</a>
+    <a href="motion.html">모션 해설</a>
+    <a href="lab.html" aria-current="page">체험 웹앱</a>
+    <a href="xor-motion.html">XOR 심화 미션</a>
+    <a href="../index.html">기초 연습</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="tabs" role="tablist" aria-label="체험 활동">
+    <button type="button" class="tab" role="tab" id="tab-lab-gate" aria-controls="lab-gate" data-act="lab-gate"><span class="no">1</span>게이트 실험실<span class="ck"></span></button>
+    <button type="button" class="tab" role="tab" id="tab-lab-mystery" aria-controls="lab-mystery" data-act="lab-mystery"><span class="no">2</span>정체를 밝혀라<span class="ck"></span></button>
+    <button type="button" class="tab" role="tab" id="tab-lab-build" aria-controls="lab-build" data-act="lab-build"><span class="no">3</span>회로 만들기<span class="ck"></span></button>
+    <button type="button" class="tab" role="tab" id="tab-lab-bits" aria-controls="lab-bits" data-act="lab-bits"><span class="no">4</span>비트 연산 · 암호<span class="ck"></span></button>
+    <button type="button" class="tab" role="tab" id="tab-lab-neuron" aria-controls="lab-neuron" data-act="lab-neuron"><span class="no">5</span>퍼셉트론<span class="ck"></span></button>
+  </div>
+
+  <!-- 1 게이트 실험실 -->
+  <section class="act" id="lab-gate" role="tabpanel" aria-labelledby="tab-lab-gate">
+    <div class="act-head">
+      <div><h1>게이트 실험실</h1><p>스위치를 눌러 진리표의 <b>?</b>를 모두 열어 보세요.</p></div>
+      <a class="textlink" id="gateMotionLink" href="motion.html#ch-and">모션 해설로 보기 →</a>
+    </div>
+    <div class="gate-pick chips" role="radiogroup" aria-label="게이트 고르기" id="gatePick"></div>
+    <div class="lab-main">
+      <div class="card">
+        <div class="views" role="tablist" aria-label="그림 보기" id="gViews">
+          <button type="button" role="tab" data-v="circ" aria-selected="true">스위치 회로</button>
+          <button type="button" role="tab" data-v="sym" aria-selected="false">회로 기호</button>
+          <button type="button" role="tab" data-v="venn" aria-selected="false">벤 다이어그램</button>
+        </div>
+        <svg class="fig" id="gCirc" viewBox="0 0 720 500" role="img" aria-label="스위치 회로"></svg>
+        <svg class="fig" id="gSym" viewBox="0 40 720 370" role="img" aria-label="회로 기호" hidden></svg>
+        <svg class="fig" id="gVenn" viewBox="0 0 720 300" role="img" aria-label="벤 다이어그램. 영역 하나가 진리표 한 줄입니다" hidden></svg>
+        <p class="caption" id="gCircNote"></p>
+      </div>
+      <div class="side">
+        <div class="card stack">
+          <div class="inputs">
+            <button type="button" class="toggle" id="tgA" aria-pressed="false" aria-keyshortcuts="A"><span class="knob" aria-hidden="true"></span>A</button>
+            <button type="button" class="toggle" id="tgB" aria-pressed="false" aria-keyshortcuts="B"><span class="knob" aria-hidden="true"></span>B</button>
+          </div>
+          <svg class="fig" id="gTT" viewBox="0 0 330 300" role="img" aria-label="진리표"></svg>
+          <p class="progress-line" id="gateProg" aria-live="polite"></p>
+        </div>
+        <div class="why" aria-live="polite"><div class="k">왜 이런 이름일까?</div><div class="f" id="whyF"></div><div class="s" id="whyS"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 정체를 밝혀라 -->
+  <section class="act" id="lab-mystery" role="tabpanel" aria-labelledby="tab-lab-mystery" hidden>
+    <div class="act-head">
+      <div><h1>정체를 밝혀라</h1><p>상자 속 게이트(AND · OR · XOR · NAND · NOR 중 하나)를 실험으로 알아내세요. 적게 실험할수록 좋습니다.</p></div>
+      <a class="textlink" href="motion.html#ch-nandnor">모션 해설로 보기 →</a>
+    </div>
+    <div class="lab-main">
+      <div class="card stack">
+        <h2 id="myRound"></h2>
+        <svg class="fig" id="myFig" viewBox="0 0 720 300" role="img" aria-label="숨은 게이트 상자"></svg>
+        <div class="inputs">
+          <button type="button" class="toggle" id="myA" aria-pressed="false"><span class="knob" aria-hidden="true"></span>A</button>
+          <button type="button" class="toggle" id="myB" aria-pressed="false"><span class="knob" aria-hidden="true"></span>B</button>
+          <button type="button" class="btn btn-primary" id="myTest">실험하기</button>
+        </div>
+        <div><p class="mini" style="margin-bottom:8px">확실해지면 답을 고르세요</p><div class="answers" id="myAnswers"></div></div>
+        <div id="myFeedback" aria-live="polite"></div>
+      </div>
+      <div class="side">
+        <div class="card stack">
+          <h2>실험 기록</h2>
+          <table class="obs"><thead><tr><th>A</th><th>B</th><th>결과</th></tr></thead><tbody id="myObs"></tbody></table>
+          <p class="score" id="myScore"></p>
+          <label class="mini" style="display:flex;gap:8px;align-items:center;min-height:36px"><input type="checkbox" id="myHint"> 아직 가능한 게이트 보기</label>
+          <p class="mini" id="myHintText"></p>
+        </div>
+        <div class="why" id="myLesson" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 회로 만들기 -->
+  <section class="act" id="lab-build" role="tabpanel" aria-labelledby="tab-lab-build" hidden>
+    <div class="act-head">
+      <div><h1>회로 만들기</h1><p id="missionText"></p></div>
+      <a class="textlink" href="motion.html#ch-universal">모션 해설로 보기 →</a>
+    </div>
+    <div class="missions" id="missions" role="group" aria-label="과제 고르기"></div>
+    <div class="lab-main">
+      <div class="card">
+        <div class="palette" id="palette"></div>
+        <div class="board" id="board"><svg id="boardSvg" viewBox="0 0 1000 560" aria-label="회로 판. 끝점을 눌러 선을 잇습니다"></svg></div>
+        <div class="bar-row">
+          <button type="button" class="toggle" id="bA" aria-pressed="false"><span class="knob" aria-hidden="true"></span>A</button>
+          <button type="button" class="toggle" id="bB" aria-pressed="false"><span class="knob" aria-hidden="true"></span>B</button>
+          <span style="flex:1"></span>
+          <button type="button" class="btn btn-small" id="bDel" disabled>지우기</button>
+          <button type="button" class="btn btn-small" id="bClear">판 비우기</button>
+        </div>
+        <details class="more" style="margin-top:10px">
+          <summary>잇는 법</summary>
+          <p>신호가 <b>나오는</b> 점(게이트 오른쪽 끝, 입력 A·B)을 누른 다음 신호가 <b>들어갈</b> 점(게이트 왼쪽 끝, 출력)을 누릅니다. 선을 누르면 끊어집니다. 게이트는 끌어서 옮깁니다. 키보드: Tab으로 점 고르고 Enter, 게이트를 고른 뒤 방향키로 옮기고 Delete로 지우기.</p>
+        </details>
+      </div>
+      <div class="side">
+        <div class="card stack">
+          <h2>진리표 비교</h2>
+          <div id="buildTable"></div>
+          <div id="buildResult" aria-live="polite"></div>
+          <div><button type="button" class="btn btn-small" id="hintBtn">힌트</button></div>
+          <p class="mini" id="hintText"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 비트 연산 -->
+  <section class="act" id="lab-bits" role="tabpanel" aria-labelledby="tab-lab-bits" hidden>
+    <div class="act-head">
+      <div><h1>비트 연산 · XOR 암호</h1><p>8자리 수 두 개에 게이트를 자리마다 적용합니다. 비트를 눌러 바꿔 보세요.</p></div>
+      <a class="textlink" href="motion.html#ch-bits">모션 해설로 보기 →</a>
+    </div>
+    <div class="lab-main">
+      <div class="card">
+        <div class="opsel" role="radiogroup" aria-label="연산 고르기" id="opSel"></div>
+        <div id="regs"></div>
+        <p class="caption" id="bitExplain" aria-live="polite">결과 칸을 가리키면 그 자리의 계산이 보입니다.</p>
+      </div>
+      <div class="side">
+        <div class="card stack"><h2>도전 과제</h2><div class="quests" id="quests"></div></div>
+      </div>
+    </div>
+    <div class="card stack" style="margin-top:16px">
+      <h2>XOR 암호 만들기</h2>
+      <div class="grid2">
+        <div class="field"><label for="cMsg">보낼 말 (영문·숫자, 12자까지)</label><input type="text" id="cMsg" maxlength="12" value="HELLO" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="cKey">비밀 열쇠 <span id="cKeyOut" class="mini"></span></label><input type="range" id="cKey" min="1" max="255" value="181"></div>
+      </div>
+      <p class="mini" id="cMsgErr" aria-live="polite"></p>
+      <div style="overflow-x:auto"><table class="cipher" id="cTable"></table></div>
+      <div class="bar-row">
+        <button type="button" class="btn btn-primary" id="cEnc">① 암호화</button>
+        <button type="button" class="btn" id="cDec" disabled>② 같은 열쇠로 해독</button>
+        <button type="button" class="btn btn-small" id="cWrong" disabled>틀린 열쇠로 해독</button>
+      </div>
+      <div id="cResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- 5 퍼셉트론 -->
+  <section class="act" id="lab-neuron" role="tabpanel" aria-labelledby="tab-lab-neuron" hidden>
+    <div class="act-head">
+      <div><h1>퍼셉트론</h1><p>AI 뉴런은 평면에 직선을 하나 긋고, 한쪽은 1 · 다른 쪽은 0이라고 답합니다. 네 점을 모두 맞혀 보세요.</p></div>
+      <a class="textlink" href="motion.html#ch-neuron">모션 해설로 보기 →</a>
+    </div>
+    <div class="opsel" role="radiogroup" aria-label="목표 게이트" id="nTarget"></div>
+    <div class="lab-main">
+      <div class="card">
+        <svg class="fig" id="nPlane" viewBox="0 0 600 560" role="img" aria-label="입력 평면. 점 네 개와 뉴런의 직선"></svg>
+        <p class="caption">● 목표가 1인 점 · ○ 목표가 0인 점 · 빨간 점선 = 틀린 점</p>
+      </div>
+      <div class="side">
+        <div class="card stack">
+          <svg class="fig" id="nDiagram" viewBox="0 0 360 170" role="img" aria-label="뉴런 그림: 선이 굵을수록 가중치가 큼"></svg>
+          <div class="sliders" id="nSl1"></div>
+          <div id="nTwoBox" hidden>
+            <p class="mini" style="margin-bottom:4px">첫째 뉴런 h₁ (직선 1)</p>
+            <div class="sliders" id="nSlH1"></div>
+            <p class="mini" style="margin:10px 0 4px">둘째 뉴런 h₂ (직선 2) · 출력 = h₁과 h₂가 모두 1인 곳</p>
+            <div class="sliders" id="nSlH2"></div>
+          </div>
+          <div class="bar-row" id="nLearnRow" style="margin-top:0">
+            <button type="button" class="btn btn-small" id="nStep">한 걸음 학습</button>
+            <button type="button" class="btn btn-small" id="nAuto">자동 학습</button>
+            <button type="button" class="btn btn-small" id="nReset">처음 값으로</button>
+          </div>
+          <p class="learn-msg" id="nLearnMsg" aria-live="polite"></p>
+        </div>
+        <div class="card stack">
+          <table class="ntable" id="nTable"></table>
+          <p class="calc" id="nCalc"></p>
+          <div id="nResult" aria-live="polite"></div>
+          <button type="button" class="btn btn-primary" id="nTwo" hidden>뉴런 두 개(두 층)로 풀어 보기</button>
+          <details class="more proof" id="nProof" hidden>
+            <summary>왜 직선 하나로는 안 될까? (식으로 보기)</summary>
+            <ol>
+              <li>(0,0) → 0 이려면  b ≤ 0</li>
+              <li>(1,0) → 1 이려면  w₁ + b &gt; 0</li>
+              <li>(0,1) → 1 이려면  w₂ + b &gt; 0</li>
+              <li>(1,1) → 0 이려면  w₁ + w₂ + b ≤ 0</li>
+              <li>2와 3을 더하면 w₁ + w₂ + 2b &gt; 0, 곧 w₁ + w₂ + b &gt; −b ≥ 0</li>
+              <li>4와 부딪힙니다. 네 조건을 모두 만족하는 값은 없습니다.</li>
+            </ol>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="logic.js"></script>
+<script src="circuits.js"></script>
+<script src="lab.js"></script>
+</body>
+</html>

@@ -1,0 +1,2211 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자카드 유사도 기반 감성 분석</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="./activity-nav.css">
+    <script src="./activity-nav.js" defer></script>
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {darkMode: 'class'};
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        .dark body {
+            background: #020617;
+            color: #e2e8f0;
+        }
+
+        .theme-shell {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(124, 58, 237, 0.13), transparent 32%),
+                radial-gradient(circle at top right, rgba(16, 185, 129, 0.10), transparent 26%),
+                #f1f5f9;
+            transition: background 0.25s ease;
+        }
+
+        .dark .theme-shell {
+            background:
+                radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 34%),
+                radial-gradient(circle at top right, rgba(16, 185, 129, 0.13), transparent 28%),
+                #020617;
+        }
+
+        .panel-card {
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        }
+
+        .dark .panel-card {
+            background: rgba(15, 23, 42, 0.92);
+            border-color: rgba(148, 163, 184, 0.16);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+        }
+
+        .dark .sidebar {
+            background: #020617;
+            border-color: rgba(148, 163, 184, 0.16);
+        }
+
+        .dark .sidebar a {
+            color: #cbd5e1;
+        }
+
+        .dark .sidebar a.active,
+        .dark .sidebar a:hover {
+            background: rgba(124, 58, 237, 0.18);
+            color: #ffffff;
+        }
+
+        .dark .sidebar-toggle {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        .dark .theme-shell h1,
+        .dark .theme-shell h2,
+        .dark .theme-shell h3,
+        .dark .theme-shell label,
+        .dark .theme-shell .primary-text {
+            color: #f8fafc !important;
+        }
+
+        .dark .theme-shell p,
+        .dark .theme-shell .secondary-text,
+        .dark .theme-shell .method-chip,
+        .dark .theme-shell #charCount {
+            color: #cbd5e1 !important;
+        }
+
+        .dark .theme-shell textarea,
+        .dark .theme-shell input,
+        .dark .theme-shell button:not(#analyzeBtn) {
+            color: #e2e8f0;
+        }
+
+        .dark .theme-shell textarea {
+            background: #020617 !important;
+            border-color: rgba(148, 163, 184, 0.32) !important;
+            color: #f8fafc !important;
+        }
+
+        .dark .theme-shell textarea::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1;
+        }
+
+        .dark .theme-shell #sampleBtn,
+        .dark .theme-shell #clearBtn,
+        .dark .theme-shell #darkModeToggle,
+        .dark .theme-shell .tooltip {
+            background: #0f172a !important;
+            border-color: rgba(148, 163, 184, 0.24) !important;
+            color: #e2e8f0 !important;
+        }
+
+        .dark .theme-shell #sampleBtn:hover,
+        .dark .theme-shell #clearBtn:hover,
+        .dark .theme-shell #darkModeToggle:hover {
+            background: #1e293b !important;
+        }
+
+        body.dark-mode-active .theme-shell h1,
+        body.dark-mode-active .theme-shell h2,
+        body.dark-mode-active .theme-shell h3,
+        body.dark-mode-active .theme-shell label {
+            color: #f8fafc !important;
+        }
+
+        body.dark-mode-active .theme-shell p,
+        body.dark-mode-active .theme-shell #charCount {
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode-active .theme-shell textarea {
+            background: #020617 !important;
+            border-color: rgba(148, 163, 184, 0.32) !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-mode-active .theme-shell textarea::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1;
+        }
+
+        .method-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 9999px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.74);
+            color: #334155;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+        }
+
+        .dark .method-chip {
+            background: rgba(15, 23, 42, 0.58);
+            color: #cbd5e1;
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        .status-message {
+            display: none;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            padding: 12px 14px;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .sentiment-card {
+            border-width: 1.5px;
+            background: #ffffff;
+            color: #1e293b;
+        }
+
+        .sentiment-positive {
+            background: #ecfdf5;
+            border-color: #34d399;
+        }
+
+        .sentiment-negative {
+            background: #fff1f2;
+            border-color: #fb7185;
+        }
+
+        .sentiment-neutral {
+            background: #eff6ff;
+            border-color: #60a5fa;
+        }
+
+        .sentiment-positive-text {
+            color: #047857;
+        }
+
+        .sentiment-negative-text {
+            color: #e11d48;
+        }
+
+        .sentiment-neutral-text {
+            color: #2563eb;
+        }
+
+        .sentiment-mark {
+            font-weight: 800;
+        }
+
+        .sentiment-mark.positive {
+            color: #047857;
+        }
+
+        .sentiment-mark.negative {
+            color: #e11d48;
+        }
+
+        .sentiment-mark.neutral {
+            color: #2563eb;
+            font-weight: 800;
+        }
+
+        .sentiment-chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+
+        .sentiment-chip:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+        }
+
+        .sentiment-chip:focus-visible {
+            outline: 3px solid rgba(139, 92, 246, 0.35);
+            outline-offset: 2px;
+        }
+
+        .sentiment-chip.positive {
+            background: #bbf7d0;
+            color: #065f46;
+        }
+
+        .sentiment-chip.negative {
+            background: #fecdd3;
+            color: #9f1239;
+        }
+
+        .sentiment-chip.neutral {
+            background: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .sentiment-stat {
+            border-radius: 9px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .sentiment-stat.positive {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .sentiment-stat.negative {
+            background: #ffe4e6;
+            color: #e11d48;
+        }
+
+        .sentiment-stat.neutral {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .overall-result {
+            border: 1px solid transparent;
+        }
+
+        .overall-result.positive {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            border-color: #86efac;
+            color: #047857;
+        }
+
+        .overall-result.negative {
+            background: linear-gradient(135deg, #ffe4e6, #fecdd3);
+            border-color: #fda4af;
+            color: #be123c;
+        }
+
+        .overall-result.neutral {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border-color: #93c5fd;
+            color: #1d4ed8;
+        }
+
+        .summary-surface {
+            border: 1px solid rgba(226, 232, 240, 0.72);
+        }
+
+        .summary-equation-panel {
+            border: 1px solid rgba(139, 92, 246, 0.14);
+        }
+
+        .dark .sentiment-card,
+        body.dark-mode-active .sentiment-card {
+            color: #e2e8f0;
+        }
+
+        .dark .sentiment-positive,
+        body.dark-mode-active .sentiment-positive {
+            background: rgba(6, 78, 59, 0.30) !important;
+            border-color: #10b981 !important;
+        }
+
+        .dark .sentiment-negative,
+        body.dark-mode-active .sentiment-negative {
+            background: rgba(127, 29, 29, 0.34) !important;
+            border-color: #fb7185 !important;
+        }
+
+        .dark .sentiment-neutral,
+        body.dark-mode-active .sentiment-neutral {
+            background: rgba(30, 64, 175, 0.30) !important;
+            border-color: #60a5fa !important;
+        }
+
+        .dark .sentiment-positive-text,
+        body.dark-mode-active .sentiment-positive-text {
+            color: #6ee7b7 !important;
+        }
+
+        .dark .sentiment-negative-text,
+        body.dark-mode-active .sentiment-negative-text {
+            color: #fda4af !important;
+        }
+
+        .dark .sentiment-neutral-text,
+        body.dark-mode-active .sentiment-neutral-text {
+            color: #93c5fd !important;
+        }
+
+        .dark .sentiment-mark.positive,
+        body.dark-mode-active .sentiment-mark.positive {
+            color: #6ee7b7 !important;
+        }
+
+        .dark .sentiment-mark.negative,
+        body.dark-mode-active .sentiment-mark.negative {
+            color: #fda4af !important;
+        }
+
+        .dark .sentiment-mark.neutral,
+        body.dark-mode-active .sentiment-mark.neutral {
+            color: #93c5fd !important;
+        }
+
+        .dark .sentiment-chip.positive,
+        body.dark-mode-active .sentiment-chip.positive {
+            background: rgba(16, 185, 129, 0.18);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.28);
+        }
+
+        .dark .sentiment-chip.negative,
+        body.dark-mode-active .sentiment-chip.negative {
+            background: rgba(244, 63, 94, 0.18);
+            color: #fda4af;
+            border: 1px solid rgba(244, 63, 94, 0.30);
+        }
+
+        .dark .sentiment-chip.neutral,
+        body.dark-mode-active .sentiment-chip.neutral {
+            background: rgba(59, 130, 246, 0.18);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.30);
+        }
+
+        .dark .sentiment-stat.positive,
+        body.dark-mode-active .sentiment-stat.positive {
+            background: rgba(16, 185, 129, 0.16);
+            color: #6ee7b7;
+        }
+
+        .dark .sentiment-stat.negative,
+        body.dark-mode-active .sentiment-stat.negative {
+            background: rgba(244, 63, 94, 0.16);
+            color: #fda4af;
+        }
+
+        .dark .sentiment-stat.neutral,
+        body.dark-mode-active .sentiment-stat.neutral {
+            background: rgba(59, 130, 246, 0.16);
+            color: #93c5fd;
+        }
+
+        .dark .overall-result.positive,
+        body.dark-mode-active .overall-result.positive {
+            background: rgba(16, 185, 129, 0.16) !important;
+            border-color: rgba(16, 185, 129, 0.36);
+            color: #6ee7b7 !important;
+        }
+
+        .dark .overall-result.negative,
+        body.dark-mode-active .overall-result.negative {
+            background: rgba(244, 63, 94, 0.16) !important;
+            border-color: rgba(244, 63, 94, 0.36);
+            color: #fda4af !important;
+        }
+
+        .dark .overall-result.neutral,
+        body.dark-mode-active .overall-result.neutral {
+            background: rgba(59, 130, 246, 0.16) !important;
+            border-color: rgba(59, 130, 246, 0.36);
+            color: #93c5fd !important;
+        }
+
+        .dark .summary-surface,
+        body.dark-mode-active .summary-surface {
+            background: rgba(15, 23, 42, 0.72) !important;
+            border-color: rgba(148, 163, 184, 0.18);
+            color: #e2e8f0;
+        }
+
+        .dark .summary-equation-panel,
+        body.dark-mode-active .summary-equation-panel {
+            background: rgba(88, 28, 135, 0.14) !important;
+            border-color: rgba(139, 92, 246, 0.24);
+        }
+
+        .dark .sentiment-card .bg-white,
+        .dark .sentiment-card .bg-slate-50,
+        body.dark-mode-active .sentiment-card .bg-white,
+        body.dark-mode-active .sentiment-card .bg-slate-50 {
+            background: rgba(15, 23, 42, 0.72) !important;
+        }
+
+        .dark .sentiment-card .bg-blue-50,
+        body.dark-mode-active .sentiment-card .bg-blue-50 {
+            background: rgba(37, 99, 235, 0.13) !important;
+        }
+
+        .dark .sentiment-card .text-slate-700,
+        .dark .sentiment-card .text-slate-600,
+        .dark .sentiment-card .text-slate-500,
+        body.dark-mode-active .sentiment-card .text-slate-700,
+        body.dark-mode-active .sentiment-card .text-slate-600,
+        body.dark-mode-active .sentiment-card .text-slate-500 {
+            color: #cbd5e1 !important;
+        }
+
+        .dark .sentiment-card .text-slate-200,
+        .dark .sentiment-card .text-slate-300,
+        body.dark-mode-active .sentiment-card .text-slate-200,
+        body.dark-mode-active .sentiment-card .text-slate-300 {
+            color: #f8fafc !important;
+        }
+
+        .dark #positiveWordsList,
+        body.dark-mode-active #positiveWordsList {
+            background: rgba(16, 185, 129, 0.10) !important;
+            border: 1px solid rgba(16, 185, 129, 0.18);
+        }
+
+        .dark #neutralWordsList,
+        body.dark-mode-active #neutralWordsList {
+            background: rgba(59, 130, 246, 0.10) !important;
+            border: 1px solid rgba(59, 130, 246, 0.18);
+        }
+
+        .dark #negativeWordsList,
+        body.dark-mode-active #negativeWordsList {
+            background: rgba(244, 63, 94, 0.10) !important;
+            border: 1px solid rgba(244, 63, 94, 0.18);
+        }
+
+        .emotion-detail-panel {
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.68);
+            padding: 10px 12px;
+        }
+
+        .dark .emotion-detail-panel,
+        body.dark-mode-active .emotion-detail-panel {
+            background: rgba(15, 23, 42, 0.64);
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        .emotion-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border-radius: 9999px;
+            padding: 4px 9px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .emotion-pill.positive {
+            background: #dcfce7;
+            color: #047857;
+            border-color: #bbf7d0;
+        }
+
+        .emotion-pill.negative {
+            background: #ffe4e6;
+            color: #be123c;
+            border-color: #fecdd3;
+        }
+
+        .emotion-pill.neutral {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+
+        .emotion-pill.mixed {
+            background: #f3e8ff;
+            color: #7e22ce;
+            border-color: #e9d5ff;
+        }
+
+        .dark .emotion-pill.positive,
+        body.dark-mode-active .emotion-pill.positive {
+            background: rgba(16, 185, 129, 0.16);
+            color: #6ee7b7;
+            border-color: rgba(16, 185, 129, 0.30);
+        }
+
+        .dark .emotion-pill.negative,
+        body.dark-mode-active .emotion-pill.negative {
+            background: rgba(244, 63, 94, 0.16);
+            color: #fda4af;
+            border-color: rgba(244, 63, 94, 0.30);
+        }
+
+        .dark .emotion-pill.neutral,
+        body.dark-mode-active .emotion-pill.neutral {
+            background: rgba(59, 130, 246, 0.16);
+            color: #93c5fd;
+            border-color: rgba(59, 130, 246, 0.30);
+        }
+
+        .dark .emotion-pill.mixed,
+        body.dark-mode-active .emotion-pill.mixed {
+            background: rgba(168, 85, 247, 0.16);
+            color: #d8b4fe;
+            border-color: rgba(168, 85, 247, 0.30);
+        }
+
+        .emotion-bar {
+            height: 8px;
+            border-radius: 9999px;
+        }
+
+        .emotion-bar.positive { background: #10b981; }
+        .emotion-bar.negative { background: #f43f5e; }
+        .emotion-bar.neutral { background: #3b82f6; }
+        .emotion-bar.mixed { background: #a855f7; }
+
+        .word-move-menu {
+            position: fixed;
+            z-index: 60;
+            min-width: 180px;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+        }
+
+        .word-move-title {
+            padding: 4px 6px 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #475569;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            margin-bottom: 6px;
+        }
+
+        .word-move-option {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            border-radius: 8px;
+            padding: 8px 9px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #334155;
+            transition: background 0.15s ease;
+        }
+
+        .word-move-option:hover {
+            background: rgba(148, 163, 184, 0.14);
+        }
+
+        .word-move-option.active {
+            background: rgba(139, 92, 246, 0.12);
+            color: #7c3aed;
+        }
+
+        .dark .word-move-menu,
+        body.dark-mode-active .word-move-menu {
+            background: rgba(15, 23, 42, 0.98);
+            border-color: rgba(148, 163, 184, 0.24);
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+        }
+
+        .dark .word-move-title,
+        body.dark-mode-active .word-move-title {
+            color: #cbd5e1;
+            border-bottom-color: rgba(148, 163, 184, 0.18);
+        }
+
+        .dark .word-move-option,
+        body.dark-mode-active .word-move-option {
+            color: #e2e8f0;
+        }
+
+        .dark .word-move-option:hover,
+        body.dark-mode-active .word-move-option:hover {
+            background: rgba(148, 163, 184, 0.14);
+        }
+
+        body.dark-mode-active .theme-shell .text-emerald-700,
+        body.dark-mode-active .theme-shell .text-emerald-600 {
+            color: #6ee7b7 !important;
+        }
+
+        body.dark-mode-active .theme-shell .text-rose-700,
+        body.dark-mode-active .theme-shell .text-rose-600 {
+            color: #fda4af !important;
+        }
+
+        body.dark-mode-active .theme-shell .text-indigo-700,
+        body.dark-mode-active .theme-shell .text-indigo-600 {
+            color: #c4b5fd !important;
+        }
+
+        body.dark-mode-active .theme-shell .text-violet-700,
+        body.dark-mode-active .theme-shell .text-violet-600 {
+            color: #d8b4fe !important;
+        }
+
+        .status-message.info {
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
+        }
+
+        .status-message.error {
+            background: #fff1f2;
+            color: #be123c;
+            border: 1px solid #fecdd3;
+        }
+
+        .dark .status-message.info {
+            background: rgba(67, 56, 202, 0.18);
+            color: #c4b5fd;
+            border-color: rgba(129, 140, 248, 0.28);
+        }
+
+        .dark .status-message.error {
+            background: rgba(190, 18, 60, 0.14);
+            color: #fda4af;
+            border-color: rgba(251, 113, 133, 0.26);
+        }
+
+        .focus-ring:focus-visible {
+            outline: 3px solid rgba(139, 92, 246, 0.45);
+            outline-offset: 3px;
+        }
+
+        .theme-toggle {
+            min-width: 116px;
+        }
+
+        .theme-toggle-track {
+            position: relative;
+            width: 46px;
+            height: 24px;
+            border-radius: 9999px;
+            background: #e2e8f0;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 9999px;
+            background: #ffffff;
+            box-shadow: 0 2px 7px rgba(15, 23, 42, 0.24);
+            transition: transform 0.2s ease;
+        }
+
+        .dark .theme-toggle-track {
+            background: #7c3aed;
+        }
+
+        .dark .theme-toggle-thumb {
+            transform: translateX(22px);
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip-trigger:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 min-h-screen transition-colors duration-300">
+    <div class="theme-shell">
+    <div class="mx-auto px-4 py-8 md:py-10" style="max-width: 1440px;">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between mb-5">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-violet-600 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h8m-8 5h12M4 17h6m8-11l2 2-6 6h-2v-2l6-6z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">자카드 유사도 기반 감성 분석</h1>
+                        <p class="text-sm md:text-base text-slate-600 dark:text-slate-400 mt-2">문장을 단어 집합으로 바꾸고, 긍정/부정 집합과의 교집합·합집합을 비교합니다.</p>
+                        <div class="flex flex-wrap gap-2 mt-4">
+                            <span class="method-chip">A = 문장 단어집합</span>
+                            <span class="method-chip">P = 긍정 단어집합</span>
+                            <span class="method-chip">N = 부정 단어집합</span>
+                            <span class="method-chip">J(A,P) vs J(A,N)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Info Button -->
+                    <div class="relative tooltip-trigger">
+                        <button type="button" aria-label="도움말" class="focus-ring w-10 h-10 bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                            <svg class="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </button>
+                        <div class="tooltip absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-10">
+                            <h3 class="font-semibold text-slate-800 dark:text-white mb-2">분석 방식</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
+                                Google Gemini가 문장에서 의미 있는 핵심 단어(명사, 동사, 형용사)를 추출하고 감성을 분석합니다.
+                                AI 연결이 불안정하면 내장 감성사전으로 자동 전환됩니다.
+                            </p>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">
+                                • 키워드 추출: 명사, 용언 위주<br>
+                                • 감성 분석: 긍정/중립/부정<br>
+                                • 자카드 유사도 계산
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Theme Toggle -->
+                    <button id="darkModeToggle" type="button" aria-label="현재 라이트 모드, 다크 모드로 전환" aria-pressed="false" class="theme-toggle focus-ring bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 justify-center border border-slate-200 dark:border-slate-700 px-3 py-2">
+                        <span id="themeIcon" class="text-base" aria-hidden="true">☀</span>
+                        <span id="themeLabel" class="text-sm font-semibold text-slate-700 dark:text-slate-200">라이트</span>
+                        <span class="theme-toggle-track" aria-hidden="true">
+                            <span class="theme-toggle-thumb"></span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="space-y-8">
+            <!-- 1행: 입력 + 전체 요약 + 감성단어사전 -->
+            <div class="grid grid-cols-1 xl:grid-cols-[minmax(360px,0.92fr)_minmax(320px,0.7fr)_minmax(320px,0.8fr)] gap-6">
+                    <!-- 입력 섹션 -->
+                    <div class="panel-card bg-white/90 dark:bg-slate-900/86 backdrop-blur rounded-2xl p-6 md:p-7">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-lg font-semibold text-slate-800 dark:text-white">분석할 문장</h2>
+                        </div>
+                        <label for="inputText" class="sr-only">분석할 텍스트</label>
+                        <textarea 
+                            id="inputText" 
+                            class="w-full h-52 p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 outline-none resize-y min-h-40 text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 transition-all leading-7"
+                            placeholder="예: 이 제품은 사용하기 쉽고 결과가 정확해서 만족스럽다. 하지만 응답 속도는 조금 느리다."
+                            maxlength="300"
+                            aria-describedby="charCount statusMessage"
+                        ></textarea>
+                        <div class="flex items-center justify-between gap-3 mt-2 mb-4">
+                             <div class="flex gap-2">
+                                <button type="button" id="sampleBtn" class="focus-ring text-xs font-semibold px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 transition">예시 입력</button>
+                                <button type="button" id="clearBtn" class="focus-ring text-xs font-semibold px-3 py-2 rounded-lg bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 dark:border-slate-700 dark:text-slate-400 transition">지우기</button>
+                             </div>
+                             <span id="charCount" class="text-sm text-slate-500 dark:text-slate-400">0 / 300</span>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="flex items-start gap-2 mb-4">
+                            <input type="checkbox" id="detailAnalysisCheck" class="w-4 h-4 text-violet-600 bg-gray-100 border-gray-300 rounded focus:ring-violet-500 dark:focus:ring-violet-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <div>
+                                <label for="detailAnalysisCheck" class="text-sm font-medium text-gray-900 dark:text-gray-300">세부 감정 분석</label>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">문장별 카드에 기쁨, 불만, 혼란 같은 세부 감정 칩과 전체 분포를 추가합니다.</p>
+                            </div>
+                        </div>
+                        <div id="statusMessage" class="status-message mb-4" role="status" aria-live="polite"></div>
+
+                        <button 
+                            id="analyzeBtn"
+                            type="button"
+                            class="focus-ring mt-2 w-full bg-slate-950 hover:bg-slate-800 dark:bg-violet-500 dark:hover:bg-violet-400 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            <span class="flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                                AI 키워드 분석하기
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- 전체 요약 섹션 -->
+                    <div id="resultsSection" class="panel-card bg-white/90 dark:bg-slate-900/86 backdrop-blur rounded-2xl p-6 md:p-7 hidden">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-lg font-semibold text-slate-800 dark:text-white">전체 요약</h2>
+                        </div>
+                        
+                        <!-- Sentiment Result -->
+                        <div id="finalSentiment" class="p-4 rounded-xl text-center font-semibold text-lg mb-4"></div>
+
+                        <!-- Formula Display -->
+                        <div class="summary-surface p-4 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                            <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3 text-center">📐 자카드 유사도</h3>
+                            <div id="formulaDisplay" class="text-center text-slate-700 dark:text-slate-300 text-sm"></div>
+                        </div>
+
+                        <!-- Detailed Emotion Result (Optional) -->
+                        <div id="detailEmotionResult" class="summary-surface mt-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl hidden">
+                            <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3 text-center">📊 세부 감정 분포</h3>
+                            <div id="detailEmotionList" class="space-y-2 text-sm text-slate-700 dark:text-slate-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- 감성단어사전으로 분석 -->
+                    <div id="dictionarySection" class="panel-card bg-white/90 dark:bg-slate-900/86 backdrop-blur rounded-2xl p-6 md:p-7 hidden">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-lg font-semibold text-slate-800 dark:text-white">감성사전</h2>
+                        </div>
+                        
+                        <!-- 긍정 단어 -->
+                        <div class="mb-3">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">😊 긍정</span>
+                                <span id="positiveWordCount" class="text-xs px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full font-bold">0개</span>
+                            </div>
+                            <div id="positiveWordsList" class="flex flex-wrap gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg min-h-[50px] items-start text-xs">
+                                <span class="text-slate-400">분석 결과</span>
+                            </div>
+                        </div>
+
+                        <!-- 중립 단어 -->
+                        <div class="mb-3">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-indigo-700 dark:text-indigo-300">😐 중립</span>
+                            <span id="neutralWordCount" class="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full font-bold">0개</span>
+                            </div>
+                            <div id="neutralWordsList" class="flex flex-wrap gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg min-h-[50px] items-start text-xs">
+                                <span class="text-slate-400">분석 결과</span>
+                            </div>
+                        </div>
+
+                        <!-- 부정 단어 -->
+                        <div class="mb-3">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-rose-700 dark:text-rose-300">😢 부정</span>
+                                <span id="negativeWordCount" class="text-xs px-2 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full font-bold">0개</span>
+                            </div>
+                            <div id="negativeWordsList" class="flex flex-wrap gap-2 p-3 bg-rose-50 dark:bg-rose-900/10 rounded-lg min-h-[50px] items-start text-xs">
+                                <span class="text-slate-400">분석 결과</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2행: 문장별 분석 결과 (전체 너비) -->
+                <div id="sentenceResultsSection" class="panel-card bg-white/90 dark:bg-slate-900/86 backdrop-blur rounded-2xl p-6 md:p-7 hidden">
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-5">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-lg font-semibold text-slate-800 dark:text-white">문장별 감성 분석</h2>
+                      </div>
+                      <p class="text-sm text-slate-500 dark:text-slate-400">각 문장의 A 집합을 전체 P/N 집합과 비교합니다.</p>
+                    </div>
+                    <div id="sentenceResultsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const inputText = document.getElementById('inputText');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const dictionarySection = document.getElementById('dictionarySection');
+        const sentenceResultsSection = document.getElementById('sentenceResultsSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeLabel = document.getElementById('themeLabel');
+        const charCount = document.getElementById('charCount');
+        const detailAnalysisCheck = document.getElementById('detailAnalysisCheck');
+        const detailEmotionResult = document.getElementById('detailEmotionResult');
+        const detailEmotionList = document.getElementById('detailEmotionList');
+        const statusMessage = document.getElementById('statusMessage');
+        const sampleBtn = document.getElementById('sampleBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const GEMINI_PROXY_URL = 'https://tfidf.tjdgus1121.workers.dev/gemini-2.5-flash-lite';
+        const API_TIMEOUT_MS = 20000;
+        const LOCAL_POSITIVE_STEMS = [
+            '좋', '만족', '쉽', '정확', '빠르', '안정', '도움', '친절', '신뢰', '깔끔',
+            '유용', '예쁘', '세련', '성공', '행복', '기쁘', '편리', '추천', '잘', '재미'
+        ];
+        const LOCAL_NEGATIVE_STEMS = [
+            '나쁘', '불만', '느리', '오류', '부족', '답답', '어렵', '불편', '헷갈', '낮',
+            '아쉽', '복잡', '떨어', '실패', '싫', '문제', '불안', '위험', '화나', '슬프'
+        ];
+        const LOCAL_STOP_WORDS = new Set([
+            '이', '그', '저', '것', '수', '등', '및', '또', '더', '좀', '조금', '매우',
+            '정말', '그리고', '하지만', '그러나', '때문', '대한', '위한'
+        ]);
+        const IDLE_BUTTON_HTML = analyzeBtn.innerHTML;
+        const SAMPLE_SENTENCES = {
+            positive: [
+                '이 앱은 화면 구성이 깔끔하고 사용 방법이 쉬워서 만족스럽다.',
+                '계산 과정이 자세히 보여서 자카드 유사도를 이해하기 쉬웠다.',
+                '서비스 응답은 빠르고 안정적이어서 학습 활동에 도움이 된다.',
+                '결과 설명이 친절하고 핵심 단어가 잘 드러나서 신뢰가 간다.',
+                '다크모드 대비가 좋아지고 중요한 단어가 눈에 잘 들어온다.'
+            ],
+            negative: [
+                '분석 속도가 느리고 오류 메시지가 부족해서 답답했다.',
+                '입력한 문장이 잘 분석되지 않아 결과를 신뢰하기 어려웠다.',
+                '버튼 위치가 헷갈리고 안내 문구가 부족해서 불편했다.',
+                '글자 대비가 낮아서 어두운 화면에서 읽기 어려웠다.',
+                '부정 단어가 제대로 표시되지 않아 판단 과정이 아쉬웠다.'
+            ],
+            neutral: [
+                '문장마다 단어 집합을 만들고 긍정 집합과 부정 집합을 비교한다.',
+                '자카드 유사도는 교집합 크기를 합집합 크기로 나누어 계산한다.',
+                '중립 문장은 긍정 점수와 부정 점수가 비슷하게 나타날 수 있다.',
+                '분석 결과는 문장별 카드와 전체 요약 영역에 표시된다.'
+            ],
+            mixed: [
+                '디자인은 세련되지만 버튼 위치가 조금 헷갈린다.',
+                '결과는 정확했지만 분석 속도는 느려서 아쉬웠다.',
+                '설명은 친절했지만 오류 원인을 찾기는 어려웠다.',
+                '새 기능은 유용하지만 처음 사용하는 사람에게는 복잡할 수 있다.',
+                '인터페이스는 예쁘지만 긴 문장에서는 가독성이 떨어진다.'
+            ]
+        };
+
+        // 전체 긍정(P)/부정(N) 단어 집합 (자카드 유사도 계산용)
+        let globalP = new Set(); // 긍정 (Positive)
+        let globalN = new Set(); // 부정 (Negative)
+        let latestSentenceResults = [];
+        let latestIsDetailAnalysis = false;
+        let activeWordMoveMenu = null;
+
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function setStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message show ${type}`;
+        }
+
+        function clearStatus() {
+            statusMessage.textContent = '';
+            statusMessage.className = 'status-message';
+        }
+
+        function setLoading(isLoading, message = 'AI 분석 중...') {
+            analyzeBtn.disabled = isLoading;
+            if (isLoading) {
+                analyzeBtn.setAttribute('aria-busy', 'true');
+                analyzeBtn.innerHTML = `<span class="flex items-center justify-center gap-2"><svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>${escapeHTML(message)}</span>`;
+            } else {
+                analyzeBtn.removeAttribute('aria-busy');
+                analyzeBtn.innerHTML = IDLE_BUTTON_HTML;
+            }
+        }
+
+        function splitSentences(text) {
+            return text
+                .replace(/\r/g, '\n')
+                .split(/[.!?。！？]+|\n+/)
+                .map(s => s.trim())
+                .filter(Boolean);
+        }
+
+        function inferLocalEmotion(word, sentiment) {
+            if (/기쁘|행복|만족|재미|좋/.test(word)) return '기쁨';
+            if (/슬프|아쉽|실망|우울/.test(word)) return '슬픔';
+            if (/화나|분노|짜증|답답/.test(word)) return '분노';
+            if (/놀라|신기/.test(word)) return '놀람';
+            if (/두렵|무섭|불안|위험/.test(word)) return '두려움';
+            if (/혐오|싫|불쾌/.test(word)) return '혐오';
+            return sentiment === 'neutral' ? '중립' : (sentiment === 'positive' ? '기쁨' : '슬픔');
+        }
+
+        function localSentimentFallback(sentence, isDetailAnalysis, reason = '') {
+            const rawTokens = sentence.match(/[가-힣A-Za-z0-9]+/g) || [];
+            const seen = new Set();
+            const morphemes = rawTokens
+                .map(token => token.trim())
+                .filter(token => token.length > 1 && !LOCAL_STOP_WORDS.has(token))
+                .filter(token => {
+                    const key = token.toLowerCase();
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                })
+                .map(word => {
+                    const positive = LOCAL_POSITIVE_STEMS.some(stem => word.includes(stem));
+                    const negative = LOCAL_NEGATIVE_STEMS.some(stem => word.includes(stem));
+                    const sentiment = positive && !negative ? 'positive'
+                        : negative && !positive ? 'negative'
+                        : 'neutral';
+                    const item = { word, pos: '단어', sentiment };
+                    if (isDetailAnalysis) item.specific_emotion = inferLocalEmotion(word, sentiment);
+                    return item;
+                });
+
+            const sentimentScores = { positive: 0, neutral: 0, negative: 0 };
+            const emotionScores = {
+                '기쁨': 0, '슬픔': 0, '분노': 0, '놀람': 0,
+                '두려움': 0, '혐오': 0, '중립': 0
+            };
+            morphemes.forEach(item => {
+                sentimentScores[item.sentiment]++;
+                if (isDetailAnalysis) emotionScores[item.specific_emotion]++;
+            });
+            const overall = sentimentScores.positive > sentimentScores.negative ? 'positive'
+                : sentimentScores.negative > sentimentScores.positive ? 'negative'
+                : 'neutral';
+
+            return {
+                sentenceText: sentence,
+                morphemes,
+                overall_sentiment: overall,
+                sentiment_scores: sentimentScores,
+                specific_emotion_scores: emotionScores,
+                analysis_source: 'local',
+                fallback_reason: reason
+            };
+        }
+
+        function normalizeAnalysisResult(result, sentence, isDetailAnalysis) {
+            if (!result || !Array.isArray(result.morphemes)) {
+                throw new Error('AI 응답에 morphemes 배열이 없습니다.');
+            }
+            const morphemes = result.morphemes
+                .map(item => {
+                    const sentiment = normalizeSentiment(item.sentiment);
+                    return {
+                        word: String(item.word || '').trim(),
+                        pos: String(item.pos || '단어').trim(),
+                        sentiment,
+                        specific_emotion: isDetailAnalysis
+                            ? String(item.specific_emotion || inferLocalEmotion(String(item.word || ''), sentiment))
+                            : undefined
+                    };
+                })
+                .filter(item => item.word);
+
+            const sentimentScores = { positive: 0, neutral: 0, negative: 0 };
+            const emotionScores = {
+                '기쁨': 0, '슬픔': 0, '분노': 0, '놀람': 0,
+                '두려움': 0, '혐오': 0, '중립': 0
+            };
+            morphemes.forEach(item => {
+                sentimentScores[item.sentiment]++;
+                if (isDetailAnalysis) {
+                    if (!(item.specific_emotion in emotionScores)) item.specific_emotion = '중립';
+                    emotionScores[item.specific_emotion]++;
+                }
+            });
+
+            return {
+                sentenceText: sentence,
+                morphemes,
+                overall_sentiment: sentimentScores.positive > sentimentScores.negative ? 'positive'
+                    : sentimentScores.negative > sentimentScores.positive ? 'negative'
+                    : 'neutral',
+                sentiment_scores: sentimentScores,
+                specific_emotion_scores: emotionScores,
+                analysis_source: 'gemini'
+            };
+        }
+
+        async function analyzeSentence(sentence, isDetailAnalysis) {
+            const prompt = `다음 한국어 문장을 감성 분석하세요.
+
+문장: "${sentence}"
+
+규칙:
+1. 의미 있는 명사, 동사, 형용사, 부사만 추출하고 조사·어미·문장부호는 제외하세요.
+2. 동사와 형용사는 가능한 경우 기본형으로 쓰세요.
+3. 각 단어의 문맥상 감성을 positive, neutral, negative 중 하나로 분류하세요.
+4. specific_emotion은 기쁨, 슬픔, 분노, 놀람, 두려움, 혐오, 중립 중 하나로 분류하세요.
+5. JSON만 반환하세요.`;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+            try {
+                const response = await fetch(GEMINI_PROXY_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0,
+                            responseMimeType: 'application/json',
+                            responseSchema: {
+                                type: 'object',
+                                properties: {
+                                    morphemes: {
+                                        type: 'array',
+                                        items: {
+                                            type: 'object',
+                                            properties: {
+                                                word: { type: 'string' },
+                                                pos: { type: 'string' },
+                                                sentiment: {
+                                                    type: 'string',
+                                                    enum: ['positive', 'neutral', 'negative']
+                                                },
+                                                specific_emotion: {
+                                                    type: 'string',
+                                                    enum: ['기쁨', '슬픔', '분노', '놀람', '두려움', '혐오', '중립']
+                                                }
+                                            },
+                                            required: ['word', 'pos', 'sentiment', 'specific_emotion']
+                                        }
+                                    },
+                                    overall_sentiment: {
+                                        type: 'string',
+                                        enum: ['positive', 'neutral', 'negative']
+                                    }
+                                },
+                                required: ['morphemes', 'overall_sentiment']
+                            }
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error?.message || errorData.error || `API 호출 실패 (${response.status})`);
+                }
+                const data = await response.json();
+                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!responseText) throw new Error('AI 응답 내용이 비어 있습니다.');
+                const parsed = typeof responseText === 'string'
+                    ? JSON.parse(responseText.replace(/```json|```/g, '').trim())
+                    : responseText;
+                return normalizeAnalysisResult(parsed, sentence, isDetailAnalysis);
+            } catch (error) {
+                console.warn('Gemini 분석 실패, 로컬 감성사전으로 전환:', error);
+                const reason = error.name === 'AbortError' ? 'AI 응답 시간 초과' : error.message;
+                return localSentimentFallback(sentence, isDetailAnalysis, reason);
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
+        function renderWordChips(words, className, sentimentType) {
+            return words.map(word =>
+                `<button type="button" class="${className}" data-dictionary-word="${escapeHTML(word)}" data-current-sentiment="${sentimentType}" title="클릭해서 감성 분류 이동">${escapeHTML(word)}</button>`
+            ).join('');
+        }
+
+        function formatSet(set, limit = 12) {
+            const arr = [...set].slice(0, limit).map(escapeHTML);
+            return `${arr.join(', ')}${set.size > limit ? '...' : ''}`;
+        }
+
+        function getEmotionTone(emotion) {
+            const value = String(emotion ?? '');
+            if (/(기쁨|즐거움|만족|신뢰|흥미|안정|안심|감사|기대|희망|편안|유용|좋음|호감|성공|성취|긍정|친절|추천)/.test(value)) return 'positive';
+            if (/(슬픔|분노|화남|두려움|공포|걱정|혐오|불만|실망|불편|답답|불안|아쉬움|혼란|오류|짜증|피로|부담|어려움|문제|부정)/.test(value)) return 'negative';
+            if (/(놀람|애매|복합|혼합|양가|모호|긴장|의문)/.test(value)) return 'mixed';
+            return 'neutral';
+        }
+
+        function getEmotionCountsFromMorphemes(morphemes) {
+            const counts = new Map();
+            (morphemes || []).forEach(m => {
+                const emotion = String(m.specific_emotion ?? '').trim();
+                if (emotion && emotion !== '중립') {
+                    counts.set(emotion, (counts.get(emotion) || 0) + 1);
+                }
+            });
+            return counts;
+        }
+
+        function renderEmotionPills(counts) {
+            return [...counts.entries()]
+                .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'))
+                .map(([emotion, count]) => {
+                    const tone = getEmotionTone(emotion);
+                    return `<span class="emotion-pill ${tone}">${escapeHTML(emotion)} <span>${count}</span></span>`;
+                }).join('');
+        }
+
+        function renderSentenceEmotionPanel(result) {
+            const counts = getEmotionCountsFromMorphemes(result.morphemes);
+            if (counts.size === 0) {
+                return `
+                    <div class="emotion-detail-panel mb-4">
+                        <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">세부 감정</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">이 문장에서는 별도 세부 감정이 감지되지 않았습니다.</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="emotion-detail-panel mb-4">
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <div class="text-xs font-semibold text-slate-600 dark:text-slate-300">세부 감정</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">${counts.size}종</div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">${renderEmotionPills(counts)}</div>
+                </div>
+            `;
+        }
+
+        function pickRandom(items) {
+            return items[Math.floor(Math.random() * items.length)];
+        }
+
+        function shuffleItems(items) {
+            const result = [...items];
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
+            return result;
+        }
+
+        function generateSampleText() {
+            const required = [
+                pickRandom(SAMPLE_SENTENCES.positive),
+                pickRandom(SAMPLE_SENTENCES.negative),
+                pickRandom(SAMPLE_SENTENCES.mixed)
+            ];
+            const optionalPool = [
+                ...SAMPLE_SENTENCES.neutral,
+                ...SAMPLE_SENTENCES.positive,
+                ...SAMPLE_SENTENCES.negative,
+                ...SAMPLE_SENTENCES.mixed
+            ].filter(sentence => !required.includes(sentence));
+
+            const targetCount = Math.random() < 0.55 ? 3 : 4;
+            const selected = [...required];
+            while (selected.length < targetCount && optionalPool.length > 0) {
+                const next = pickRandom(optionalPool);
+                optionalPool.splice(optionalPool.indexOf(next), 1);
+                selected.push(next);
+            }
+
+            let shuffled = shuffleItems(selected);
+            while (shuffled.join('\n').length > 300 && shuffled.length > 3) {
+                shuffled.pop();
+            }
+            return shuffled.join('\n');
+        }
+
+        function addHighlightVariant(map, term, exactOnly = false) {
+            const normalized = String(term ?? '').trim();
+            if (!normalized) return;
+            const prev = map.get(normalized);
+            map.set(normalized, {
+                term: normalized,
+                exactOnly: prev ? prev.exactOnly && exactOnly : exactOnly
+            });
+        }
+
+        function getHangulParts(char) {
+            const code = char.charCodeAt(0);
+            const base = 0xac00;
+            const syllableCount = 11172;
+            if (code < base || code >= base + syllableCount) return null;
+            const offset = code - base;
+            return {
+                initial: Math.floor(offset / 588),
+                medial: Math.floor((offset % 588) / 28),
+                final: offset % 28
+            };
+        }
+
+        function composeHangul(initial, medial, final = 0) {
+            return String.fromCharCode(0xac00 + (initial * 588) + (medial * 28) + final);
+        }
+
+        function replaceLastSyllable(word, replacer) {
+            if (!word) return null;
+            const last = word[word.length - 1];
+            const parts = getHangulParts(last);
+            if (!parts) return null;
+            const next = replacer(parts);
+            if (!next) return null;
+            return word.slice(0, -1) + composeHangul(next.initial, next.medial, next.final ?? 0);
+        }
+
+        function makeIToYeoForm(stem) {
+            return replaceLastSyllable(stem, parts => {
+                if (parts.medial !== 20 || parts.final !== 0) return null; // ㅣ -> ㅕ
+                return {initial: parts.initial, medial: 6, final: 0};
+            });
+        }
+
+
+        function makeFinalConsonantForm(stem, finalIndex) {
+            return replaceLastSyllable(stem, parts => {
+                if (parts.final !== 0) return null;
+                return {initial: parts.initial, medial: parts.medial, final: finalIndex};
+            });
+        }
+
+        function makeNForm(stem) {
+            return makeFinalConsonantForm(stem, 4); // ㄴ 받침: 헷갈리다 -> 헷갈린다
+        }
+
+        function getWordVariants(word, sentiment = 'neutral') {
+            const raw = String(word ?? '').trim();
+            if (!raw) return [];
+            const variants = new Map();
+            addHighlightVariant(variants, raw, raw.length === 1);
+
+            if (raw.endsWith('다') && raw.length > 1) {
+                const stem = raw.slice(0, -1);
+                addHighlightVariant(variants, stem, false);
+
+                const nForm = makeNForm(stem);
+                if (nForm && nForm !== stem) {
+                    // 헷갈리다 -> 헷갈린다, 고민하다 -> 고민한, 복잡하다 -> 복잡한 같은 ㄴ 활용형
+                    if (nForm.length >= 2) addHighlightVariant(variants, nForm);
+                    [nForm + '다', nForm + '데', nForm + '다고', nForm + '다면', nForm + '지만'].forEach(v => addHighlightVariant(variants, v));
+                }
+
+                if (stem.endsWith('하') && stem.length > 1) {
+                    const base = stem.slice(0, -1);
+                    [base, base + '한', base + '해', base + '했', base + '할', base + '함', base + '하게'].forEach(v => addHighlightVariant(variants, v));
+                }
+
+                if (stem.endsWith('되') && stem.length > 1) {
+                    const base = stem.slice(0, -1);
+                    [base + '된', base + '돼', base + '됐', base + '될'].forEach(v => addHighlightVariant(variants, v));
+                }
+
+                if (stem.endsWith('오') && stem.length > 1) {
+                    const base = stem.slice(0, -1);
+                    [base + '오', base + '온', base + '와', base + '왔', base + '올'].forEach(v => addHighlightVariant(variants, v));
+                }
+
+                const iToYeoForm = makeIToYeoForm(stem);
+                if (iToYeoForm && iToYeoForm !== stem) {
+                    [iToYeoForm, iToYeoForm + '서', iToYeoForm + '도', iToYeoForm + '졌', iToYeoForm + '진'].forEach(v => addHighlightVariant(variants, v));
+                }
+
+                const bieupBase = removeFinalBieup(stem);
+                if (bieupBase && bieupBase !== stem) {
+                    [bieupBase, bieupBase + '운', bieupBase + '워', bieupBase + '웠', bieupBase + '울'].forEach(v => addHighlightVariant(variants, v));
+                }
+            }
+            return [...variants.values()].filter(v => v.term.length >= 1);
+        }
+
+        function removeFinalBieup(word) {
+            if (!word) return word;
+            const last = word.charCodeAt(word.length - 1);
+            const base = 0xac00;
+            const syllableCount = 11172;
+            if (last < base || last >= base + syllableCount) return word;
+            const offset = last - base;
+            const jong = offset % 28;
+            if (jong !== 17) return word; // ㅂ
+            return word.slice(0, -1) + String.fromCharCode(last - jong);
+        }
+
+        function normalizeSentiment(sentiment) {
+            if (sentiment === 'positive' || sentiment === 'negative') return sentiment;
+            return 'neutral';
+        }
+
+        function buildHighlightCandidates(morphemes) {
+            const candidates = [];
+            const seen = new Set();
+            (morphemes || []).forEach(m => {
+                const type = normalizeSentiment(m.sentiment);
+                const sourceKey = String(m.word ?? '').trim();
+                if (!sourceKey) return;
+                getWordVariants(m.word, type).forEach(variant => {
+                    const key = `${variant.term}|${type}|${sourceKey}|${variant.exactOnly ? 1 : 0}`;
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    candidates.push({
+                        word: variant.term,
+                        type,
+                        exactOnly: variant.exactOnly,
+                        sourceKey
+                    });
+                });
+            });
+            return candidates.sort((a, b) => b.word.length - a.word.length);
+        }
+
+        function getTypePriority(type) {
+            if (type === 'positive' || type === 'negative') return 2;
+            return 1;
+        }
+
+        function collectTokenMatches(token, tokenStart, candidates) {
+            const matches = [];
+            candidates.forEach(candidate => {
+                if (candidate.exactOnly) {
+                    if (token !== candidate.word) return;
+                    matches.push({
+                        start: tokenStart,
+                        end: tokenStart + token.length,
+                        tokenStart,
+                        tokenEnd: tokenStart + token.length,
+                        type: candidate.type,
+                        sourceKey: candidate.sourceKey,
+                        score: token.length * 100 + getTypePriority(candidate.type) * 10
+                    });
+                    return;
+                }
+
+                let index = token.indexOf(candidate.word);
+                while (index !== -1) {
+                    matches.push({
+                        start: tokenStart + index,
+                        end: tokenStart + index + candidate.word.length,
+                        tokenStart,
+                        tokenEnd: tokenStart + token.length,
+                        type: candidate.type,
+                        sourceKey: candidate.sourceKey,
+                        score: candidate.word.length * 100 + getTypePriority(candidate.type) * 10 + (index === 0 ? 5 : 0)
+                    });
+                    index = token.indexOf(candidate.word, index + 1);
+                }
+            });
+            return matches;
+        }
+
+        function buildSentenceView(sentence, morphemes) {
+            const source = String(sentence ?? '');
+            const candidates = buildHighlightCandidates(morphemes);
+            const allMatches = [];
+
+            const tokenRegex = /[가-힣]+/g;
+            let match;
+            while ((match = tokenRegex.exec(source)) !== null) {
+                allMatches.push(...collectTokenMatches(match[0], match.index, candidates));
+            }
+
+            const selected = [];
+            allMatches
+                .sort((a, b) => b.score - a.score || a.start - b.start || b.end - a.end)
+                .forEach(item => {
+                    const overlaps = selected.some(range => item.start < range.end && range.start < item.end);
+                    if (!overlaps) selected.push(item);
+                });
+
+            const rangesByToken = new Map();
+            selected.forEach(range => {
+                const key = `${range.tokenStart}:${range.tokenEnd}`;
+                const group = rangesByToken.get(key) || [];
+                group.push(range);
+                rangesByToken.set(key, group);
+            });
+            rangesByToken.forEach(group => {
+                if (group.length === 1) {
+                    group[0].start = group[0].tokenStart;
+                    group[0].end = group[0].tokenEnd;
+                }
+            });
+
+            selected.sort((a, b) => a.start - b.start || a.end - b.end);
+
+            const counts = {positive: 0, neutral: 0, negative: 0};
+            selected.forEach(range => {
+                counts[range.type] = (counts[range.type] || 0) + 1;
+            });
+
+            let html = '';
+            let cursor = 0;
+            selected.forEach(range => {
+                html += escapeHTML(source.slice(cursor, range.start));
+                const cls = `sentiment-mark ${range.type}`;
+                html += `<span class="${cls}" data-source-word="${escapeHTML(range.sourceKey)}">${escapeHTML(source.slice(range.start, range.end))}</span>`;
+                cursor = range.end;
+            });
+            html += escapeHTML(source.slice(cursor));
+
+            return {html, counts, ranges: selected};
+        }
+
+        function syncSentenceDisplayModel(result) {
+            const view = buildSentenceView(result.sentenceText, result.morphemes);
+            result.highlight_view = view;
+            result.sentiment_scores = {
+                positive: view.counts.positive || 0,
+                neutral: view.counts.neutral || 0,
+                negative: view.counts.negative || 0
+            };
+
+            const posCount = result.sentiment_scores.positive;
+            const negCount = result.sentiment_scores.negative;
+            if (posCount > negCount) {
+                result.overall_sentiment = 'positive';
+            } else if (negCount > posCount) {
+                result.overall_sentiment = 'negative';
+            } else {
+                result.overall_sentiment = 'neutral';
+            }
+
+            return view;
+        }
+
+        function highlightSentence(sentence, morphemes) {
+            return buildSentenceView(sentence, morphemes).html;
+        }
+
+        // Character Count
+        function updateCharCount() {
+            const currentLength = inputText.value.length;
+            charCount.textContent = `${currentLength} / 300`;
+            if (currentLength > 300) {
+                charCount.classList.add('text-red-500');
+            } else {
+                charCount.classList.remove('text-red-500');
+            }
+        }
+
+        inputText.addEventListener('input', updateCharCount);
+
+        function applyTheme(isDark) {
+            document.documentElement.classList.toggle('dark', isDark);
+            document.body.classList.toggle('dark-mode-active', isDark);
+            darkModeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            darkModeToggle.setAttribute(
+                'aria-label',
+                isDark ? '현재 다크 모드, 라이트 모드로 전환' : '현재 라이트 모드, 다크 모드로 전환'
+            );
+            themeIcon.textContent = isDark ? '🌙' : '☀';
+            themeLabel.textContent = isDark ? '다크' : '라이트';
+        }
+
+        // Main analysis function - 문장별 분석
+        async function analyzeSentiment() {
+            const text = inputText.value.trim();
+            const isDetailAnalysis = detailAnalysisCheck.checked;
+            
+            if (!text) {
+                setStatus('분석할 텍스트를 먼저 입력하세요.', 'error');
+                inputText.focus();
+                return;
+            }
+
+            if (text.length > 300) {
+                setStatus('텍스트는 300자를 초과할 수 없습니다.', 'error');
+                return;
+            }
+
+            const sentences = splitSentences(text);
+            
+            if (sentences.length === 0) {
+                setStatus('문장을 입력해주세요.', 'error');
+                return;
+            }
+
+            clearStatus();
+            resultsSection.classList.add('hidden');
+            dictionarySection.classList.add('hidden');
+            sentenceResultsSection.classList.add('hidden');
+            setLoading(true, 'AI 분석 중...');
+
+            try {
+                const sentenceResultsList = document.getElementById('sentenceResultsList');
+                sentenceResultsList.innerHTML = '';
+
+                let completed = 0;
+                setLoading(true, `문장별 분석 중... (0/${sentences.length})`);
+                const sentenceResults = await Promise.all(sentences.map(async sentence => {
+                    const result = await analyzeSentence(sentence, isDetailAnalysis);
+                    completed++;
+                    setLoading(true, `문장별 분석 중... (${completed}/${sentences.length})`);
+                    return result;
+                }));
+                latestSentenceResults = sentenceResults;
+                latestIsDetailAnalysis = isDetailAnalysis;
+
+                renderAnalysisFromCurrentDictionary();
+                
+                // Show sections
+                dictionarySection.classList.remove('hidden'); // 감성단어사전 표시 ✨
+                sentenceResultsSection.classList.remove('hidden'); // 문장별 결과 표시
+                resultsSection.classList.remove('hidden'); // 전체 요약 표시
+                const localFallbackCount = sentenceResults.filter(
+                    result => result.analysis_source === 'local'
+                ).length;
+                const sourceNotice = localFallbackCount > 0
+                    ? ` AI 연결이 불안정하여 ${localFallbackCount}개 문장은 내장 감성사전으로 분석했습니다.`
+                    : ' Google Gemini 분석을 사용했습니다.';
+                setStatus(
+                    `${sentences.length}개 문장을 분석했습니다.${sourceNotice} 아래에서 집합과 자카드 계산 과정을 확인하세요.`,
+                    'info'
+                );
+                
+            } catch (error) {
+                console.error('분석 오류:', error);
+                setStatus(`분석 중 오류가 발생했습니다: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function getAllMorphemes(results = latestSentenceResults) {
+            const allMorphemes = [];
+            results.forEach(result => {
+                if (result.morphemes) allMorphemes.push(...result.morphemes);
+            });
+            return allMorphemes;
+        }
+
+        function renderAnalysisFromCurrentDictionary() {
+            if (!latestSentenceResults.length) return;
+
+            displayDictionary({morphemes: getAllMorphemes()});
+
+            const sentenceResultsList = document.getElementById('sentenceResultsList');
+            sentenceResultsList.innerHTML = '';
+
+            latestSentenceResults.forEach((result, i) => {
+                if (result.morphemes) {
+                    result.morphemes.forEach(m => {
+                        if (globalP.has(m.word)) {
+                            m.sentiment = 'positive';
+                        } else if (globalN.has(m.word)) {
+                            m.sentiment = 'negative';
+                        } else {
+                            m.sentiment = 'neutral';
+                        }
+                    });
+                }
+
+                syncSentenceDisplayModel(result);
+                displaySentenceResult(i + 1, result, latestIsDetailAnalysis);
+            });
+
+            displayOverallResults(latestSentenceResults, latestIsDetailAnalysis);
+        }
+
+        // 감성단어사전 표시 함수
+        function displayDictionary(result) {
+            // 단어를 감성별로 분류 (원본 - 중복 제거 전)
+            const wordsOriginal = {
+                positive: [],
+                negative: [],
+                neutral: []
+            };
+
+            if (result.morphemes) {
+                result.morphemes.forEach(m => {
+                    if (m.sentiment === 'positive') wordsOriginal.positive.push(m.word);
+                    else if (m.sentiment === 'negative') wordsOriginal.negative.push(m.word);
+                    else wordsOriginal.neutral.push(m.word);
+                });
+            }
+
+            // 전역 변수 설정 (원본 - 자카드 계산 및 재분류용)
+            globalP = new Set(wordsOriginal.positive);
+            globalN = new Set(wordsOriginal.negative);
+
+            // 화면 표시용 (중복 제거)
+            const words = {
+                positive: removeDuplicates(wordsOriginal.positive),
+                negative: removeDuplicates(wordsOriginal.negative),
+                neutral: removeDuplicates(wordsOriginal.neutral)
+            };
+
+            // 긍정 단어 표시
+            const positiveWordsList = document.getElementById('positiveWordsList');
+            const positiveWordCount = document.getElementById('positiveWordCount');
+            if (words.positive.length > 0) {
+                positiveWordsList.innerHTML = renderWordChips(words.positive, 'sentiment-chip positive', 'positive');
+                positiveWordCount.textContent = `${words.positive.length}개`;
+            } else {
+                positiveWordsList.innerHTML = '<span class="text-xs text-slate-400">없음</span>';
+                positiveWordCount.textContent = '0개';
+            }
+
+            // 중립 단어 표시
+            const neutralWordsList = document.getElementById('neutralWordsList');
+            const neutralWordCount = document.getElementById('neutralWordCount');
+            if (words.neutral.length > 0) {
+                neutralWordsList.innerHTML = renderWordChips(words.neutral, 'sentiment-chip neutral', 'neutral');
+                neutralWordCount.textContent = `${words.neutral.length}개`;
+            } else {
+                neutralWordsList.innerHTML = '<span class="text-xs text-slate-400">없음</span>';
+                neutralWordCount.textContent = '0개';
+            }
+
+            // 부정 단어 표시
+            const negativeWordsList = document.getElementById('negativeWordsList');
+            const negativeWordCount = document.getElementById('negativeWordCount');
+            if (words.negative.length > 0) {
+                negativeWordsList.innerHTML = renderWordChips(words.negative, 'sentiment-chip negative', 'negative');
+                negativeWordCount.textContent = `${words.negative.length}개`;
+            } else {
+                negativeWordsList.innerHTML = '<span class="text-xs text-slate-400">없음</span>';
+                negativeWordCount.textContent = '0개';
+            }
+        }
+
+        // 어근 기반 중복 제거 함수
+        function removeDuplicates(wordList) {
+            // 완전 중복 제거
+            const filtered = [...new Set(wordList)];
+            
+            // 포함 관계 제거: 긴 단어가 짧은 단어를 포함하면 긴 단어 제거
+            const result = [];
+            for (let i = 0; i < filtered.length; i++) {
+                let shouldKeep = true;
+                const word1 = filtered[i];
+                
+                for (let j = 0; j < filtered.length; j++) {
+                    if (i === j) continue;
+                    const word2 = filtered[j];
+                    
+                    // word1이 word2를 포함하고, word1이 더 길면
+                    // word1을 제거하고 짧은 word2를 남김
+                    if (word1.includes(word2) && word1.length > word2.length) {
+                        shouldKeep = false;
+                        break;
+                    }
+                }
+                
+                if (shouldKeep) {
+                    result.push(word1);
+                }
+            }
+            
+            return result;
+        }
+
+        // 문장별 결과 표시 함수
+        function displaySentenceResult(sentenceNum, result, isDetail) {
+            const sentenceResultsList = document.getElementById('sentenceResultsList');
+            
+            // 감성 판단
+            const overall = result.overall_sentiment;
+            let sentimentClass, sentimentEmoji;
+            if (overall === 'positive') {
+                sentimentClass = 'sentiment-card sentiment-positive';
+                sentimentEmoji = '😊';
+            } else if (overall === 'negative') {
+                sentimentClass = 'sentiment-card sentiment-negative';
+                sentimentEmoji = '😢';
+            } else {
+                sentimentClass = 'sentiment-card sentiment-neutral';
+                sentimentEmoji = '😐';
+            }
+
+            // 자카드 유사도 계산: 정확한 벤다이어그램 방식
+            // 문장의 전체 단어 A (긍정+부정+중립 모두 포함)
+            const A = new Set(); // 문장 전체 단어
+            
+            if (result.morphemes) {
+                result.morphemes.forEach(m => {
+                    if (m.word) A.add(String(m.word));
+                });
+            }
+
+            // J(A, P) = |A ∩ P| / |A ∪ P|  (문장 전체 vs 전체 긍정)
+            const intersectionAP = new Set([...A].filter(x => globalP.has(x)));
+            const unionAP = new Set([...A, ...globalP]);
+            const jaccardAP = unionAP.size > 0 ? (intersectionAP.size / unionAP.size * 100) : 0;
+
+            // J(A, N) = |A ∩ N| / |A ∪ N|  (문장 전체 vs 전체 부정)
+            const intersectionAN = new Set([...A].filter(x => globalN.has(x)));
+            const unionAN = new Set([...A, ...globalN]);
+            const jaccardAN = unionAN.size > 0 ? (intersectionAN.size / unionAN.size * 100) : 0;
+
+            // 자카드 유사도로 감성 재판단
+            let jaccard, finalSentiment, finalEmoji, finalClass;
+            if (jaccardAP > jaccardAN) {
+                jaccard = jaccardAP;
+                finalSentiment = '긍정적';
+                finalEmoji = '😊';
+                finalClass = 'sentiment-card sentiment-positive';
+            } else if (jaccardAN > jaccardAP) {
+                jaccard = jaccardAN;
+                finalSentiment = '부정적';
+                finalEmoji = '😢';
+                finalClass = 'sentiment-card sentiment-negative';
+            } else {
+                jaccard = Math.max(jaccardAP, jaccardAN);
+                finalSentiment = '중립적';
+                finalEmoji = '😐';
+                finalClass = 'sentiment-card sentiment-neutral';
+            }
+
+            const pos = result.sentiment_scores.positive || 0;
+            const neu = result.sentiment_scores.neutral || 0;
+            const neg = result.sentiment_scores.negative || 0;
+
+            // 문장 단어에 색상 입히기 (긍정=초록, 중립=파랑, 부정=빨강)
+            const sentenceView = result.highlight_view || syncSentenceDisplayModel(result);
+            const coloredSentence = sentenceView.html;
+
+            const sentenceCard = document.createElement('div');
+            sentenceCard.className = `p-6 rounded-xl ${finalClass}`;
+            sentenceCard.innerHTML = `
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base font-bold text-slate-600 dark:text-slate-300">문장 ${sentenceNum}</span>
+                        <span class="text-2xl">${finalEmoji}</span>
+                        <span class="font-semibold text-base text-slate-700 dark:text-slate-200">${finalSentiment}</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-500 dark:text-slate-400">자카드 유사도</div>
+                        <div class="text-lg font-bold text-violet-600 dark:text-violet-400">${jaccard.toFixed(1)}%</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            J(A,P): ${jaccardAP.toFixed(1)}% / J(A,N): ${jaccardAN.toFixed(1)}%
+                        </div>
+                    </div>
+                </div>
+                <div class="text-base text-slate-700 dark:text-slate-300 mb-4 p-3 bg-white dark:bg-slate-800 rounded-lg">
+                    ${coloredSentence}
+                </div>
+                ${isDetail ? renderSentenceEmotionPanel(result) : ''}
+                
+                <!-- 자카드 유사도 계산 과정 -->
+                <div class="mb-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <div class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">📊 자카드 유사도 계산 과정</div>
+                    
+                    <!-- 문장 단어집합 A -->
+                    <div class="text-xs text-slate-600 dark:text-slate-400 mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                        <div class="font-semibold text-blue-600 dark:text-blue-400 mb-1">문장 단어집합 A</div>
+                        <div class="ml-2">
+                            A = {${formatSet(A, 15)}} = ${A.size}개
+                        </div>
+                    </div>
+                    
+                    <!-- J(A, P) 계산 -->
+                    <div class="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                        <div class="font-semibold sentiment-positive-text mb-1">J(A, P) = 긍정 유사도</div>
+                        <div class="ml-2">
+                            A ∩ P = {${formatSet(intersectionAP, 15)}} = ${intersectionAP.size}개<br>
+                            A ∪ P = {${formatSet(unionAP, 10)}} = ${unionAP.size}개<br>
+                            <span class="font-semibold">J(A,P) = ${intersectionAP.size}/${unionAP.size} = ${jaccardAP.toFixed(1)}%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- J(A, N) 계산 -->
+                    <div class="text-xs text-slate-600 dark:text-slate-400">
+                        <div class="font-semibold sentiment-negative-text mb-1">J(A, N) = 부정 유사도</div>
+                        <div class="ml-2">
+                            A ∩ N = {${formatSet(intersectionAN, 15)}} = ${intersectionAN.size}개<br>
+                            A ∪ N = {${formatSet(unionAN, 10)}} = ${unionAN.size}개<br>
+                            <span class="font-semibold">J(A,N) = ${intersectionAN.size}/${unionAN.size} = ${jaccardAN.toFixed(1)}%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 최종 판단 -->
+                    <div class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 text-xs">
+                        <span class="font-semibold text-violet-600 dark:text-violet-400">
+                            최종: ${jaccardAP.toFixed(1)}% ${jaccardAP > jaccardAN ? '>' : jaccardAP < jaccardAN ? '<' : '='} ${jaccardAN.toFixed(1)}% → ${finalSentiment}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-3 text-sm">
+                    <div class="sentiment-stat positive">
+                        <div class="font-semibold">긍정</div>
+                        <div class="text-2xl font-bold">${pos}</div>
+                    </div>
+                    <div class="sentiment-stat neutral">
+                        <div class="font-semibold">중립</div>
+                        <div class="text-2xl font-bold">${neu}</div>
+                    </div>
+                    <div class="sentiment-stat negative">
+                        <div class="font-semibold">부정</div>
+                        <div class="text-2xl font-bold">${neg}</div>
+                    </div>
+                </div>
+            `;
+            
+            sentenceResultsList.appendChild(sentenceCard);
+        }
+
+        // 전체 요약 표시 함수
+        function displayOverallResults(sentenceResults, isDetail) {
+            const finalSentiment = document.getElementById('finalSentiment');
+            
+            // 전체 긍정/부정 카운트
+            let totalPos = 0, totalNeu = 0, totalNeg = 0;
+            let posCount = 0, negCount = 0, neuCount = 0;
+            
+            sentenceResults.forEach(result => {
+                totalPos += result.sentiment_scores.positive || 0;
+                totalNeu += result.sentiment_scores.neutral || 0;
+                totalNeg += result.sentiment_scores.negative || 0;
+                
+                if (result.overall_sentiment === 'positive') posCount++;
+                else if (result.overall_sentiment === 'negative') negCount++;
+                else neuCount++;
+            });
+
+            const totalSentences = sentenceResults.length;
+            
+            // 전체 감성 판단
+            let overallText, overallClass;
+            if (posCount > negCount) {
+                overallClass = 'overall-result positive';
+                overallText = `😊 전체적으로 긍정적입니다! (긍정 ${posCount}/${totalSentences} 문장)`;
+            } else if (negCount > posCount) {
+                overallClass = 'overall-result negative';
+                overallText = `😢 전체적으로 부정적입니다! (부정 ${negCount}/${totalSentences} 문장)`;
+            } else {
+                overallClass = 'overall-result neutral';
+                overallText = `😐 전체적으로 중립적입니다! (중립 ${neuCount}/${totalSentences} 문장)`;
+            }
+
+            finalSentiment.className = `p-4 rounded-xl text-center font-semibold text-lg mb-4 ${overallClass}`;
+            finalSentiment.textContent = overallText;
+
+            // 전체 긍정 vs 전체 부정 자카드 유사도
+            const allPosIntersection = new Set([...globalP].filter(x => globalN.has(x)));
+            const allPosUnion = new Set([...globalP, ...globalN]);
+            const overallJaccard = allPosUnion.size > 0 ? (allPosIntersection.size / allPosUnion.size * 100) : 0;
+
+            document.getElementById('formulaDisplay').innerHTML = `
+                <div class="space-y-2">
+                    <div class="text-xl font-bold text-slate-700 dark:text-slate-300">전체 통계</div>
+                    <div class="grid grid-cols-3 gap-3 mt-3">
+                        <div class="sentiment-stat positive">
+                            <div class="text-sm">긍정</div>
+                            <div class="text-3xl font-bold">${totalPos}</div>
+                        </div>
+                        <div class="sentiment-stat neutral">
+                            <div class="text-sm">중립</div>
+                            <div class="text-3xl font-bold">${totalNeu}</div>
+                        </div>
+                        <div class="sentiment-stat negative">
+                            <div class="text-sm">부정</div>
+                            <div class="text-3xl font-bold">${totalNeg}</div>
+                        </div>
+                    </div>
+                    <div class="summary-equation-panel mt-4 p-4 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
+                        <div class="text-base text-slate-600 dark:text-slate-400 mb-2">
+                            J(P, N) = |P ∩ N| / |P ∪ N|
+                        </div>
+                        <div class="text-base">
+                            = ${allPosIntersection.size} / ${allPosUnion.size} = 
+                            <strong class="text-violet-600 dark:text-violet-400 text-2xl">${overallJaccard.toFixed(1)}%</strong>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                            전체 긍정단어 P(${globalP.size}개)와 부정단어 N(${globalN.size}개)의 유사도
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            renderDetailEmotion(sentenceResults, isDetail);
+        }
+
+        function renderDetailEmotion(sentenceResults, isDetail) {
+            if (!isDetail) {
+                detailEmotionResult.classList.add('hidden');
+                detailEmotionList.innerHTML = '';
+                return;
+            }
+
+            const counts = new Map();
+            sentenceResults.forEach(result => {
+                getEmotionCountsFromMorphemes(result.morphemes).forEach((count, emotion) => {
+                    counts.set(emotion, (counts.get(emotion) || 0) + count);
+                });
+            });
+
+            if (counts.size === 0) {
+                detailEmotionList.innerHTML = `
+                    <div class="text-slate-500 dark:text-slate-400 leading-relaxed">
+                        세부 감정 단어가 감지되지 않았습니다. API 응답에 <code>specific_emotion</code> 값이 없거나 모두 중립으로 분류된 경우입니다.
+                    </div>
+                `;
+                detailEmotionResult.classList.remove('hidden');
+                return;
+            }
+
+            const total = [...counts.values()].reduce((sum, value) => sum + value, 0);
+            detailEmotionList.innerHTML = [...counts.entries()]
+                .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'))
+                .map(([emotion, count]) => {
+                    const pct = Math.round((count / total) * 100);
+                    const tone = getEmotionTone(emotion);
+                    return `
+                        <div class="emotion-detail-panel">
+                            <div class="flex items-center justify-between gap-3 mb-2">
+                                <span class="emotion-pill ${tone}">${escapeHTML(emotion)}</span>
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">${count}개 · ${pct}%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div class="emotion-bar ${tone}" style="width:${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            detailEmotionResult.classList.remove('hidden');
+        }
+
+        function getSentimentLabel(type) {
+            if (type === 'positive') return '긍정';
+            if (type === 'negative') return '부정';
+            return '중립';
+        }
+
+        function getSentimentEmoji(type) {
+            if (type === 'positive') return '😊';
+            if (type === 'negative') return '😢';
+            return '😐';
+        }
+
+        function closeWordMoveMenu() {
+            if (activeWordMoveMenu) {
+                activeWordMoveMenu.remove();
+                activeWordMoveMenu = null;
+            }
+        }
+
+        function moveDictionaryWord(word, targetSentiment) {
+            const normalizedWord = String(word ?? '').trim();
+            if (!normalizedWord || !latestSentenceResults.length) return;
+
+            latestSentenceResults.forEach(result => {
+                if (!result.morphemes) return;
+                result.morphemes.forEach(m => {
+                    if (m.word === normalizedWord) {
+                        m.sentiment = targetSentiment;
+                    }
+                });
+            });
+
+            closeWordMoveMenu();
+            renderAnalysisFromCurrentDictionary();
+            setStatus(`"${normalizedWord}" 단어를 ${getSentimentLabel(targetSentiment)}으로 이동했습니다.`, 'info');
+        }
+
+        function showWordMoveMenu(chip) {
+            closeWordMoveMenu();
+
+            const word = chip.dataset.dictionaryWord;
+            const current = chip.dataset.currentSentiment || 'neutral';
+            const menu = document.createElement('div');
+            menu.className = 'word-move-menu';
+            menu.innerHTML = `
+                <div class="word-move-title">${escapeHTML(word)} 이동</div>
+                ${['positive', 'neutral', 'negative'].map(type => `
+                    <button type="button" class="word-move-option ${type === current ? 'active' : ''}" data-target-sentiment="${type}">
+                        <span>${getSentimentEmoji(type)} ${getSentimentLabel(type)}</span>
+                        <span>${type === current ? '현재' : '이동'}</span>
+                    </button>
+                `).join('')}
+            `;
+
+            menu.addEventListener('click', event => {
+                event.stopPropagation();
+                const option = event.target.closest('[data-target-sentiment]');
+                if (!option) return;
+                moveDictionaryWord(word, option.dataset.targetSentiment);
+            });
+
+            document.body.appendChild(menu);
+            activeWordMoveMenu = menu;
+
+            const rect = chip.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            const left = Math.min(Math.max(12, rect.left), window.innerWidth - menuRect.width - 12);
+            const top = Math.min(rect.bottom + 8, window.innerHeight - menuRect.height - 12);
+            menu.style.left = `${left}px`;
+            menu.style.top = `${Math.max(12, top)}px`;
+        }
+
+        // Dark mode toggle
+        darkModeToggle.addEventListener('click', () => {
+            const nextMode = !document.documentElement.classList.contains('dark');
+            applyTheme(nextMode);
+            localStorage.setItem('darkMode', String(nextMode));
+        });
+
+        // Load dark mode preference
+        applyTheme(localStorage.getItem('darkMode') === 'true');
+
+        // Event listeners
+        analyzeBtn.addEventListener('click', analyzeSentiment);
+        dictionarySection.addEventListener('click', event => {
+            const chip = event.target.closest('[data-dictionary-word]');
+            if (!chip) return;
+            event.stopPropagation();
+            showWordMoveMenu(chip);
+        });
+        document.addEventListener('click', event => {
+            if (activeWordMoveMenu && !activeWordMoveMenu.contains(event.target)) {
+                closeWordMoveMenu();
+            }
+        });
+        sampleBtn.addEventListener('click', () => {
+            inputText.value = generateSampleText();
+            updateCharCount();
+            setStatus('테마에 맞는 예시 문장을 랜덤으로 넣었습니다. 다시 누르면 다른 조합이 나옵니다.', 'info');
+            inputText.focus();
+        });
+        clearBtn.addEventListener('click', () => {
+            inputText.value = '';
+            updateCharCount();
+            clearStatus();
+            resultsSection.classList.add('hidden');
+            dictionarySection.classList.add('hidden');
+            sentenceResultsSection.classList.add('hidden');
+            latestSentenceResults = [];
+            latestIsDetailAnalysis = false;
+            closeWordMoveMenu();
+            inputText.focus();
+        });
+        inputText.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                analyzeSentiment();
+            }
+        });
+        updateCharCount();
+    </script>
+</body>
+</html>

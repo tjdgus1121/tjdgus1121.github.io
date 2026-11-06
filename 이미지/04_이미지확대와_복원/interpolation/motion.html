@@ -1,0 +1,1663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="작은 사진을 크게 키울 때 생기는 빈 픽셀을 최근접 이웃·양선형·바이큐빅 보간으로 채우는 원리를 내레이션 모션그래픽으로 설명합니다.">
+<link rel="canonical" href="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/04_%EC%9D%B4%EB%AF%B8%EC%A7%80%ED%99%95%EB%8C%80%EC%99%80_%EB%B3%B5%EC%9B%90/interpolation/motion.html">
+<meta property="og:title" content="이미지 보간법 모션그래픽">
+<meta property="og:description" content="빈 픽셀은 어떻게 채울까? 최근접 이웃·양선형·바이큐빅 보간의 계산 과정을 한 단계씩.">
+<meta property="og:image" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/04_%EC%9D%B4%EB%AF%B8%EC%A7%80%ED%99%95%EB%8C%80%EC%99%80_%EB%B3%B5%EC%9B%90/interpolation/thumb_motion.jpg">
+<meta property="og:url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/04_%EC%9D%B4%EB%AF%B8%EC%A7%80%ED%99%95%EB%8C%80%EC%99%80_%EB%B3%B5%EC%9B%90/interpolation/motion.html">
+<link rel="icon" href="../../../favicon.ico">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>이미지 보간법 모션그래픽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 글꼴 CSS가 화면 그리기를 막지 않게 print로 받은 뒤 적용(막으면 받는 동안 빈 화면). 도착은 스크립트의 loadFonts()가 기다림 -->
+<link id="fontCss" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all';window.__fontCss=1" onerror="window.__fontCss=2">
+<!-- 수식: KaTeX (katex/ 폴더 — 인터넷 없이 동작) -->
+<link rel="stylesheet" href="katex/katex.min.css">
+<style>
+:root{
+  --bg:#fffcf2; --ink:#2b2540; --sub:#6b6680; --line:#e7e1cf; --frame:#211e33;
+  --purple:#6a4fd8; --purple-soft:#ece7ff; --red:#e5484d;
+  --nn:#e8590c; --nn-s:#fff0e6; --bl:#0d9488; --bl-s:#dcf5f1; --bc:#6a4fd8; --bc-s:#ece7ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--frame);font-family:'Noto Sans KR',sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;overflow:hidden}
+#app{display:flex;flex-direction:column;align-items:center;gap:10px}
+#app:fullscreen{background:var(--frame);justify-content:center}
+#stageWrap{position:relative;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45);cursor:pointer}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  background-color:#fbf7ec;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42  0 0 0 0 .36  0 0 0 0 .25  0 0 0 .10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .09' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .55  0 0 0 0 .48  0 0 0 0 .33  0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"),radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.7) 0%,rgba(255,255,255,0) 60%,rgba(120,95,40,.10) 100%);
+  background-size:320px 320px,600px 600px,100% 100%}
+/* 도화지 위에 붙인 종이 카드 + 마스킹테이프 */
+.paper{background-color:#fffdf8;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42  0 0 0 0 .36  0 0 0 0 .25  0 0 0 .10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:320px 320px;border-radius:4px;
+  box-shadow:0 1px 1px rgba(90,70,30,.12),0 10px 22px -6px rgba(90,70,30,.18)}
+.tape:before{content:'';position:absolute;top:-13px;left:50%;width:96px;height:26px;margin-left:-48px;transform:rotate(-3deg);
+  background:linear-gradient(90deg,rgba(236,214,150,.72),rgba(244,226,170,.72));box-shadow:0 1px 2px rgba(90,70,30,.12);
+  -webkit-mask:linear-gradient(90deg,transparent 0,#000 3px,#000 calc(100% - 3px),transparent 100%);z-index:3}
+.sheet.tape:before{left:56px;margin-left:0;transform:rotate(-8deg)}
+.sheet{position:absolute;animation:sheetIn .6s ease-out both}
+@keyframes sheetIn{from{opacity:0;transform:translateY(16px) rotate(var(--rot,0deg))}to{opacity:1;transform:rotate(var(--rot,0deg))}}
+#scene{position:absolute;inset:0}
+.abs{position:absolute}
+.cx{position:absolute;left:0;right:0;text-align:center}
+.tag{position:absolute;left:34px;top:22px;font-weight:700;font-size:15px;color:var(--purple);background:var(--purple-soft);padding:6px 14px;border-radius:999px;z-index:5}
+.brand{position:absolute;right:34px;top:24px;font-family:'Do Hyeon';color:#bdb6a2;font-size:19px;z-index:5}
+#caption{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(43,37,64,.93);color:#fff;
+  font-size:23px;font-weight:500;padding:11px 28px;border-radius:14px;max-width:1200px;text-align:center;z-index:6;white-space:nowrap}
+#caption.in{animation:capIn .45s ease-out}
+@keyframes capIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+#caption b{color:#ffd166}
+#caption .katex{font-size:1.02em}
+#caption .k-nn{color:#ffa86b}#caption .k-bl{color:#5eead4}#caption .k-bc{color:#b9a8ff}
+
+.big-title{font-family:'Do Hyeon';font-size:100px;line-height:1;color:var(--ink)}
+.big-title .hl{color:var(--purple)}
+.sub{font-size:25px;color:var(--sub);font-weight:500}
+.h2{font-family:'Do Hyeon';font-size:42px;color:var(--ink);white-space:nowrap}
+.h2 em{font-style:normal}
+.h2 small{font-family:'Noto Sans KR';font-size:19px;color:var(--sub);font-weight:500;margin-left:10px}
+.k-nn{color:var(--nn)}.k-bl{color:var(--bl)}.k-bc{color:var(--bc)}
+.mpill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 22px;font-weight:700;font-size:22px;color:#fff;white-space:nowrap}
+.mpill small{font-weight:500;font-size:15px;opacity:.85}
+.mpill.nn{background:var(--nn)}.mpill.bl{background:var(--bl)}.mpill.bc{background:var(--bc)}
+.pill{display:inline-block;background:var(--ink);color:#fff;border-radius:16px;padding:12px 28px;font-weight:700;font-size:24px}
+.pill b{color:#ffd166}
+
+.card{position:absolute;background-color:#fffdf8;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42  0 0 0 0 .36  0 0 0 0 .25  0 0 0 .10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:320px 320px;border:1px solid #efe6cf;border-radius:5px;
+  box-shadow:0 1px 1px rgba(90,70,30,.12),0 10px 22px -6px rgba(90,70,30,.2)}
+.card:before{content:'';position:absolute;top:-13px;left:50%;width:92px;height:26px;margin-left:-46px;transform:rotate(-3deg);
+  background:linear-gradient(90deg,rgba(236,214,150,.72),rgba(244,226,170,.72));box-shadow:0 1px 2px rgba(90,70,30,.12);z-index:3}
+.ctitle{font-weight:700;font-size:16px;color:var(--sub);display:flex;align-items:center;gap:8px}
+.ctitle i{font-style:normal;width:9px;height:9px;border-radius:50%;background:currentColor;display:inline-block}
+.calc{position:absolute;left:18px;right:14px;font-size:17px;line-height:1.45;white-space:nowrap;font-variant-numeric:tabular-nums}
+.calc .lab{display:inline-block;font-weight:700;font-size:13px;color:#fff;background:var(--ink);border-radius:6px;padding:1px 7px;margin-right:6px;vertical-align:2px}
+.calc .m{font-family:'Do Hyeon';font-size:22px;letter-spacing:.3px}
+.pp{font-family:'Noto Sans KR';font-weight:500;margin:0 1px}
+.calc.sm{font-size:15.5px}
+.calc .note{font-family:'Noto Sans KR';font-size:14px;font-weight:500;color:var(--sub)}
+.calc .big{font-family:'Do Hyeon';font-size:28px}
+.r{color:#e03131}.g{color:#2f9e44}.b{color:#1c7ed6}
+.sw{display:inline-block;width:26px;height:26px;border-radius:7px;vertical-align:-6px;margin-left:8px;border:2px solid rgba(0,0,0,.15)}
+.note{font-family:'Gaegu',cursive;font-size:19px;color:#6b5f4a;font-weight:700}
+/* 수식(KaTeX) 크기 맞춤 */
+.calc .katex{font-size:1.1em}
+.calc.sm .katex{font-size:1em}
+.calc .note .katex{font-size:1.05em}
+.calc .big .katex{font-size:.92em}
+.fcard .fm .katex{font-size:.78em}
+.scard .katex{font-size:1em}
+.calc .katex-display{margin:0}
+/* 계산 짚기: 지금 읽는 줄 아래에 색연필 밑줄이 그어짐 */
+.ci{position:relative;display:inline-block}
+.uline{position:absolute;left:-6px;bottom:-9px;height:14px;overflow:visible;pointer-events:none;visibility:hidden}
+.uline path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+.fcard{position:absolute;top:110px;height:128px;background:#fffdf8;border:1px solid #efe6cf;border-radius:5px;box-shadow:0 1px 1px rgba(90,70,30,.12),0 10px 22px -6px rgba(90,70,30,.2);padding:12px 18px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.fcard .ft{font-weight:700;font-size:15px;color:var(--sub)}
+.fcard .fm{font-family:'Do Hyeon';font-size:31px;color:var(--ink);white-space:nowrap}
+.fcard .fm .v{color:var(--purple)}
+.fcard .fs{font-size:15px;color:var(--sub);white-space:nowrap}
+.fcard.dark{background:var(--ink);border-color:var(--ink)}
+.fcard.dark .ft{color:#c9c2e8}.fcard.dark .fm{color:#fff}.fcard.dark .fm .v{color:#ffd166}.fcard.dark .fs{color:#c9c2e8}
+.farrow{position:absolute;top:156px;font-family:'Do Hyeon';font-size:40px;color:#c9c0a6}
+
+.panel{position:absolute;width:300px;height:300px;display:flex;align-items:center;justify-content:center}
+.panel canvas{border-radius:6px;box-shadow:0 0 0 3px #fff,0 0 0 5px var(--line);
+  background-color:#fff;background-image:linear-gradient(45deg,#eee 25%,transparent 25%,transparent 75%,#eee 75%),linear-gradient(45deg,#eee 25%,transparent 25%,transparent 75%,#eee 75%);
+  background-size:16px 16px;background-position:0 0,8px 8px}
+.plabel{position:absolute;text-align:center;font-weight:700;font-size:18px}
+.plabel span{display:inline-block;border-radius:999px;padding:4px 16px;color:#fff}
+
+.tile{position:absolute;border-radius:16px;overflow:hidden;box-shadow:0 0 0 4px #fff,0 10px 24px rgba(0,0,0,.12)}
+.tname{position:absolute;text-align:center;font-weight:700;font-size:20px}
+
+.scard{position:absolute;width:360px;background:#fffdf8;border:1px solid #efe6cf;border-radius:6px;overflow:hidden;box-shadow:0 1px 1px rgba(90,70,30,.12),0 12px 24px -6px rgba(90,70,30,.2)}
+.scard .hd{color:#fff;padding:14px 20px;font-family:'Do Hyeon';font-size:32px;display:flex;justify-content:space-between;align-items:center}
+.scard .hd small{font-family:'Noto Sans KR';font-size:15px;font-weight:500;opacity:.9}
+.scard .row{display:flex;padding:9px 20px;border-top:1px solid #f0ebdc;font-size:17px;align-items:center;gap:10px}
+.scard .row .k{width:78px;flex:none;color:var(--sub);font-weight:700;font-size:15px}
+.scard .row .v{font-weight:500}
+.dots{display:grid;gap:3px}
+.dots i{width:10px;height:10px;border-radius:3px;background:currentColor;display:block}
+.stars{letter-spacing:2px;color:#f59f00}.stars .off{color:#e6dfc8}
+
+/* ── 키네틱 타이포그래피 ── */
+.ch{display:inline-block;animation:chIn .6s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes chIn{from{opacity:0;transform:translateY(.55em) rotate(10deg) scale(.7)}to{opacity:1;transform:none}}
+#caption .w{display:inline-block;animation:wIn .45s cubic-bezier(.2,.9,.3,1.25) both}
+@keyframes wIn{from{opacity:0;transform:translateY(14px) scale(.9);filter:blur(5px)}to{opacity:1;transform:none;filter:none}}
+.darkbg{position:absolute;inset:0;background:#1f1b33}
+.kt{position:absolute;white-space:nowrap}
+.kt span,.kline span{display:inline-block;white-space:pre}
+.kline{position:absolute;left:0;right:0;text-align:center;white-space:nowrap}
+.onum{font-family:'Do Hyeon';font-size:320px;line-height:1;color:transparent;-webkit-text-stroke:3px currentColor}
+.spaced{letter-spacing:10px;font-weight:700;font-size:17px}
+.stamp{font-family:'Do Hyeon';font-size:54px;color:#e5484d;border:6px solid #e5484d;border-radius:14px;padding:2px 18px;background:rgba(255,252,242,.85)}
+.hlbar{position:absolute;background:#ffd166;border-radius:8px}
+.tchip{display:inline-block;border-radius:999px;padding:7px 20px;font-weight:700;font-size:22px;color:#1f1b33}
+#endOverlay{position:absolute;inset:0;background:rgba(33,30,51,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:10}
+#endOverlay.show{display:flex}
+#endOverlay button{font:700 26px 'Noto Sans KR';background:#fff;color:var(--ink);border:0;border-radius:999px;padding:16px 38px;cursor:pointer;display:flex;align-items:center;gap:10px;box-shadow:0 14px 30px rgba(10,8,30,.4)}
+#endOverlay button:hover{transform:translateY(-3px)}
+#startOv{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(31,27,51,.55);z-index:9}
+#startOv.show{display:flex}
+#startOv button{font:700 30px 'Noto Sans KR';background:#fff;color:var(--ink);border:0;border-radius:999px;padding:20px 44px;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 14px 30px rgba(10,8,30,.4)}
+#startOv button small{display:block;font-size:15px;font-weight:500;color:var(--sub)}
+#startOv button:focus-visible{outline:4px solid #a48dff;outline-offset:4px}
+
+#controls{display:flex;align-items:center;gap:8px;color:#e8e4f5;font-size:14px;user-select:none}
+#controls button{background:rgba(255,255,255,.08);border:0;color:#fff;width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 6px rgba(0,0,0,.25)}
+#controls button:hover{background:rgba(255,255,255,.18)}
+#controls button svg{width:18px;height:18px;fill:currentColor}
+#speed{font:700 14px 'Noto Sans KR'}
+#bar{position:relative;flex:1;height:30px;cursor:pointer;display:flex;align-items:center;min-width:80px}
+#segs{position:absolute;left:0;right:0;height:8px;display:flex;gap:3px}
+#segs div{height:100%;background:rgba(255,255,255,.18);border-radius:4px;position:relative;overflow:hidden}
+#segs div i{position:absolute;left:0;top:0;bottom:0;background:#a48dff;width:0}
+#time{font-variant-numeric:tabular-nums;min-width:86px;text-align:center;flex:none}
+#loadErr{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;font-size:22px;color:var(--ink);z-index:20;background:var(--bg);line-height:1.7}
+@media (max-width:600px){#time{display:none}#speed{display:none!important}}
+/* 처음 불러오는 동안 보이는 진행 화면 (웹 글꼴 도착 전이라 시스템 글꼴로 먼저 그림) */
+#loader{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:var(--frame);color:#e8e4f5;
+  font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;transition:opacity .35s}
+#loader.done{opacity:0;pointer-events:none}
+.ld-box{width:min(440px,84vw)}
+.ld-title{font-size:26px;font-weight:700;color:#fff;margin-bottom:18px}
+.ld-track{height:12px;border-radius:6px;background:rgba(255,255,255,.14);overflow:hidden}
+.ld-fill{height:100%;width:0;background:#a48dff;border-radius:6px;transition:width .25s ease-out}
+.ld-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:12px;font-size:15px;color:#c9c2e6}
+.ld-row b{font-size:20px;color:#fff;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.ld-fill,#loader{transition:none}}
+</style>
+</head>
+<body>
+<div id="loader" role="progressbar" aria-label="모션그래픽 불러오는 중" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <div class="ld-box">
+    <div class="ld-title">이미지 보간법</div>
+    <div class="ld-track"><div class="ld-fill" id="ldFill"></div></div>
+    <div class="ld-row"><span id="ldStep">불러오는 중…</span><b id="ldPct">0%</b></div>
+  </div>
+</div>
+<div id="app">
+  <div id="stageWrap">
+    <div id="stage">
+      <div class="tag" id="tag"></div>
+      <div class="brand">인공지능 수학 · 이미지 보간</div>
+      <div id="scene"></div>
+      <div id="caption"></div>
+      <div id="endOverlay"><button id="replay"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>다시 보기</button></div>
+      <div id="startOv"><button id="startBtn" type="button"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg><span>시작하기<small>내레이션 소리가 함께 나와요</small></span></button></div>
+      <div id="loadErr"><div>이미지 데이터 파일(<b>interpolation_images.js</b>)을 찾지 못했어요.<br>이 HTML과 같은 폴더에 두고 다시 열어 주세요.</div></div>
+    </div>
+  </div>
+  <div id="controls">
+    <a id="toHub" href="index.html" title="이미지 보간법 안내로" aria-label="이미지 보간법 안내로 돌아가기" style="background:rgba(255,255,255,.08);color:#fff;height:40px;padding:0 14px;border-radius:10px;display:flex;align-items:center;gap:6px;text-decoration:none;font:700 14px 'Noto Sans KR',sans-serif;flex:none;white-space:nowrap">← 안내</a>
+        <button id="prev" title="이전 장면 (←)"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+    <button id="play" title="재생/일시정지 (Space)"><svg viewBox="0 0 24 24" id="playIcon"></svg></button>
+    <button id="next" title="다음 장면 (→)"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+    <div id="bar"><div id="segs"></div></div>
+    <span id="time">0:00 / 0:00</span>
+    <button id="speed" title="재생 속도">1×</button>
+    <button id="fs" title="전체 화면"><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+  </div>
+</div>
+
+<audio id="nar" preload="auto"></audio>
+<script src="katex/katex.min.js"></script>
+<script src="narration.js"></script>
+<script src="interpolation_images.js"></script>
+<script>
+// ───────────────────────── 유틸 ─────────────────────────
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo=x=>1-Math.pow(1-x,3);
+const eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const back=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+const lerp=(a,b,p)=>a+(b-a)*p;
+function h(tag,cls,html,css){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;if(css)Object.assign(e.style,css);return e;}
+function at(el,x,y,w,hh){el.classList.add('abs');el.style.left=x+'px';el.style.top=y+'px';if(w)el.style.width=w+'px';if(hh)el.style.height=hh+'px';return el;}
+function atc(el,y){el.classList.add('cx');el.style.top=y+'px';return el;}
+function show(el,p,dy=20){el.style.opacity=p;el.style.transform=`translateY(${(1-p)*dy}px)`;el.style.visibility=p<=0?'hidden':'';}
+function pop(el,p){el.style.opacity=p>0?1:0;el.style.transform=`scale(${Math.max(0,back(p))})`;}
+function mkc(w,hh,R=2){const c=document.createElement('canvas');c.width=Math.round(w*R);c.height=Math.round(hh*R);c.style.width=w+'px';c.style.height=hh+'px';const x=c.getContext('2d');x.R=R;x.W=w;x.H=hh;return c;}
+function clr(ctx){ctx.setTransform(ctx.R,0,0,ctx.R,0,0);ctx.clearRect(0,0,ctx.W,ctx.H);ctx.globalAlpha=1;}
+const rgb=c=>`rgb(${c.map(v=>Math.round(clamp(v,0,255))).join(',')})`;
+const tri=c=>`(<span class=r>${Math.round(c[0])}</span>, <span class=g>${Math.round(c[1])}</span>, <span class=b>${Math.round(c[2])}</span>)`;
+const sw=c=>`<span class="sw" style="background:${rgb(c)}"></span>`;
+const fx2=v=>(v<0?'−':'')+Math.abs(v).toFixed(2);
+const sgn2=v=>(v<0?'−':'+')+Math.abs(v).toFixed(2);
+const nf=v=>{const r=Math.round(v*100)/100;return (r<0?'−':'')+String(Math.abs(r));};
+const MC={nn:'#e8590c',bl:'#0d9488',bc:'#6a4fd8'};
+const LIGHT={nn:'#ff8a3d',bl:'#2dd4bf',bc:'#a594ff'};
+const MNAME={nn:'최근접 이웃',bl:'양선형',bc:'바이큐빅'};
+const MEN={nn:'Nearest',bl:'Bilinear',bc:'Bicubic'};
+const METHODS=['nn','bl','bc'];
+
+// ─────────────────── 수식 (KaTeX) ───────────────────
+const RC_={r:'#e03131',g:'#2f9e44',b:'#1c7ed6'};
+const tex=s=>window.katex?katex.renderToString(s,{throwOnError:false,strict:'ignore',output:'html'}):`<span class=m>${s}</span>`;
+const tn=(v,d=4)=>String(+(+v).toFixed(d));                       // 수식용 숫자 (음수는 -)
+const tcol=(c,s)=>`\\textcolor{${c}}{${s}}`;
+const tbold=(c,s)=>tcol(c,`\\mathbf{${s}}`);
+const triT=c=>`(${tcol(RC_.r,Math.round(c[0]))},\\ ${tcol(RC_.g,Math.round(c[1]))},\\ ${tcol(RC_.b,Math.round(c[2]))})`;
+// a×x + b×y + … (부호 정리)
+const sumT=terms=>terms.map(([w,v],k)=>{const s=`${tn(Math.abs(w))}\\times ${v}`;return k===0?(w<0?'-':'')+s:(w<0?'-':'+')+s;}).join('');
+const addT=vals=>vals.map((v,k)=>k===0?tn(v,2):(v<0?'-':'+')+tn(Math.abs(v),2)).join('');
+
+// ─────────────────── 계산 짚기: 색연필 밑줄 ───────────────────
+// 줄이 나타난 직후 그 줄 아래로 밑줄이 왼쪽→오른쪽으로 그어지고, 앞의 줄은 살짝 흐려져 눈이 지금 줄을 따라가게 함
+const SVGNS='http://www.w3.org/2000/svg';
+function uline(ci){
+  const s=document.createElementNS(SVGNS,'svg');s.setAttribute('class','uline');
+  const p=[0,1].map(()=>{const e=document.createElementNS(SVGNS,'path');s.appendChild(e);return e;});
+  ci.appendChild(s);return {s,p,w:0,len:[0,0]};
+}
+function drawU(u,q,col){
+  if(!u)return;if(q<=0){u.s.style.visibility='hidden';return;}
+  const w=u.s.parentNode.offsetWidth;
+  if(w>0&&w!==u.w){u.w=w;u.s.setAttribute('width',w+12);u.s.setAttribute('height',14);
+    // 손으로 그은 듯 살짝 휘고, 두 번 겹쳐 그은 색연필 느낌
+    u.p[0].setAttribute('d',`M4 7 C ${w*.28} 4.5, ${w*.6} 9.5, ${w+8} 6`);
+    u.p[1].setAttribute('d',`M8 9.5 C ${w*.34} 7.5, ${w*.66} 11.5, ${w+5} 8.5`);
+    u.len=u.p.map(e=>e.getTotalLength());}
+  u.s.style.visibility='visible';
+  u.p.forEach((e,k)=>{const L=u.len[k]||1,qq=k?seg(q,.15,1):seg(q,0,.85);
+    e.style.stroke=col;e.style.strokeWidth=k?1.6:3.4;e.style.opacity=k?.4:.78;
+    e.style.strokeDasharray=L;e.style.strokeDashoffset=L*(1-eio(qq));});
+}
+// 한 화면 안의 밑줄 색: 장면 색 + 비슷한 채도의 두 색을 줄마다 번갈아 (너무 튀지 않게)
+const PENCIL={nn:['#e8590c','#cf9a1c','#4a7fc8'],bl:['#0d9488','#cf9a1c','#4a7fc8'],bc:['#6a4fd8','#cf9a1c','#c24d7d'],ink:['#6a4fd8','#cf9a1c','#4a7fc8']};
+// 줄 목록 els[i]가 times[i]에 나타날 때: 나타남 + 밑줄 + 앞줄 흐리게. col: 색 하나 또는 색 목록(줄마다 번갈아), e.uc가 있으면 그 색
+function drawLines(els,times,t,col){
+  let newest=-1;times.forEach((tt,i)=>{if(t>=tt)newest=i;});
+  let k=0;
+  els.forEach((e,i)=>{
+    if(e._uc===undefined)e._uc=e.uc||(Array.isArray(col)?col[k%col.length]:col);if(e.u)k++;
+    const a=eo(seg(t,times[i],times[i]+.5));show(e,a,10);
+    const dim=i<newest?1-.42*seg(t,times[newest],times[newest]+.4):1;e.style.opacity=a*dim;
+    drawU(e.u,seg(t,times[i]+.3,times[i]+1.1),e._uc);});
+}
+// 연습장 페이지를 카드 안에 여백 없이 꽉 차게 키움 (글꼴이 새로 들어오면 다시 잼)
+let FONTV=0;if(document.fonts)document.fonts.addEventListener('loadingdone',()=>FONTV++);
+function fitPage(P){P.fitV=FONTV;let R=0,B=0;
+  [...P.el.children].forEach(c=>{const w=c.classList.contains('calc')?c.firstChild.offsetWidth:c.offsetWidth;R=Math.max(R,c.offsetLeft+w);B=Math.max(B,c.offsetTop+c.offsetHeight);});
+  P.s=R>0&&B>0?clamp(Math.min(666/R,408/B),1,1.5):1;}
+// 왼쪽 그림의 짚을 곳 (무대 좌표). 그림 캔버스는 (24, 120)에 있음
+function worldPt(key){let p;
+  if(key==='P')p=V(PX,PY);else if(key==='A')p=V(PX,1);else if(key==='B')p=V(PX,2);
+  else if(key==='abar'){const q=V((1+PX)/2,2);p=[q[0],q[1]+80];}
+  else if(key==='bbar'){const q=V(2,(1+PY)/2);p=[q[0]+62,q[1]];}
+  else{const [kind,rest]=key.split(':'),n=rest.split(',').map(Number);
+    p=kind==='p'?V(n[0],n[1]):kind==='s'?V(SAMPLES[n[0]][0]/ZOOM,SAMPLES[n[0]][1]/ZOOM):kind==='c'?V(n[0],-.5):V(-.5,n[0]);}
+  return [p[0]+24,p[1]+120];}
+// 지금 읽는 줄 → 왼쪽 그림의 해당 위치로 점선 화살표 (밑줄과 같은 색)
+function drawPointer(S){
+  const c=S.pt.getContext('2d');clr(c);const f=S.focus;if(!f)return;
+  const sr=stage.getBoundingClientRect(),k=sr.width/1280;if(!k)return;
+  const er=f.el.firstChild.getBoundingClientRect(),sx=(er.left-sr.left)/k-10,sy=(er.top+er.height/2-sr.top)/k;
+  f.to.forEach((key,i)=>{const [tx0,ty0]=worldPt(key),p=eo(seg(f.a,i*.12,1));if(p<=0)return;
+    const mx=(sx+tx0)/2,my=Math.min(sy,ty0)-46-i*16,ang=Math.atan2(ty0-my,tx0-mx),tx=tx0-Math.cos(ang)*17,ty=ty0-Math.sin(ang)*17;
+    c.globalAlpha=clamp(f.a*1.5)*.92;c.strokeStyle=f.col;c.lineWidth=2.6;c.setLineDash([7,5]);c.beginPath();c.moveTo(sx,sy);
+    for(let q=.04;q<=p+1e-6;q+=.04){const u=Math.min(q,p);c.lineTo((1-u)*(1-u)*sx+2*(1-u)*u*mx+u*u*tx,(1-u)*(1-u)*sy+2*(1-u)*u*my+u*u*ty);}
+    c.stroke();c.setLineDash([]);
+    if(p>.96){c.fillStyle=f.col;c.beginPath();c.moveTo(tx,ty);c.lineTo(tx-13*Math.cos(ang-.42),ty-13*Math.sin(ang-.42));c.lineTo(tx-13*Math.cos(ang+.42),ty-13*Math.sin(ang+.42));c.fill();
+      c.lineWidth=3;c.strokeStyle=f.col;c.beginPath();c.arc(tx0,ty0,14,0,7);c.stroke();}});
+  c.globalAlpha=1;}
+
+// ─────────────────── 보간 핵심 (실제로 계산) ───────────────────
+// 3차(바이큐빅) 가중치 함수 W(t), a = −0.5 (Keys / Catmull-Rom)
+const KA=-.5;
+function W(t){t=Math.abs(t);return t<=1?(KA+2)*t*t*t-(KA+3)*t*t+1:t<2?KA*t*t*t-5*KA*t*t+8*KA*t-4*KA:0;}
+// src: {w,h,data(RGBA)} · (x,y): 원본 좌표(픽셀 중심이 정수) · m: nn|bl|bc
+function sampleAt(src,x,y,m,o,oi,outside){
+  const Wd=src.w,Hd=src.h,d=src.data;
+  if(outside&&(x<-.5||y<-.5||x>Wd-.5||y>Hd-.5)){o[oi+3]=0;return;}
+  const ix=i=>i<0?0:i>=Wd?Wd-1:i,iy=j=>j<0?0:j>=Hd?Hd-1:j;
+  let r=0,g=0,b=0,al=0;
+  if(m==='nn'){const k=(iy(Math.round(y))*Wd+ix(Math.round(x)))*4;r=d[k];g=d[k+1];b=d[k+2];al=d[k+3];}
+  else if(m==='bl'){
+    const x0=Math.floor(x),y0=Math.floor(y),a=x-x0,c=y-y0;
+    const tap=(i,j,w)=>{const k=(iy(j)*Wd+ix(i))*4;r+=d[k]*w;g+=d[k+1]*w;b+=d[k+2]*w;al+=d[k+3]*w;};
+    tap(x0,y0,(1-a)*(1-c));tap(x0+1,y0,a*(1-c));tap(x0,y0+1,(1-a)*c);tap(x0+1,y0+1,a*c);
+  }else{
+    const x0=Math.floor(x),y0=Math.floor(y);
+    const wx=[],wy=[];for(let k=-1;k<=2;k++){wx.push(W(x-(x0+k)));wy.push(W(y-(y0+k)));}
+    for(let n=0;n<4;n++){const row=iy(y0-1+n)*Wd;for(let mm=0;mm<4;mm++){const w=wx[mm]*wy[n];if(!w)continue;const k=(row+ix(x0-1+mm))*4;r+=d[k]*w;g+=d[k+1]*w;b+=d[k+2]*w;al+=d[k+3]*w;}}
+  }
+  o[oi]=r;o[oi+1]=g;o[oi+2]=b;o[oi+3]=al;
+}
+// 역방향 매핑: 새 픽셀 (x',y') → 원본 좌표 inv(x',y') 에서 값을 읽어 옴
+function transform(src,W2,H2,inv,m,outside){
+  const c=document.createElement('canvas');c.width=W2;c.height=H2;const ctx=c.getContext('2d');
+  const im=ctx.createImageData(W2,H2);
+  for(let y=0;y<H2;y++)for(let x=0;x<W2;x++){const [sx,sy]=inv(x,y);sampleAt(src,sx,sy,m,im.data,(y*W2+x)*4,outside);}
+  ctx.putImageData(im,0,0);return c;
+}
+function shrink(img,size){ // 정사각 이미지를 단계적으로 줄여 원본(저해상도) 만들기
+  let c=img,s=img.width||img.naturalWidth;
+  while(s/2>size){const n=document.createElement('canvas');n.width=n.height=Math.round(s/2);const x=n.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(c,0,0,n.width,n.height);c=n;s=n.width;}
+  const n=document.createElement('canvas');n.width=n.height=size;const x=n.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(c,0,0,size,size);
+  const id=x.getImageData(0,0,size,size);return {cv:n,src:{w:size,h:size,data:id.data}};
+}
+
+// ─────────────────── 타이포그래피: 글자도 실제로 보간해서 키움 ───────────────────
+// 작은 글자(srcH px)를 그린 뒤 보간 방법 m 으로 scale 배 확대 → 글자 자체가 보간법의 견본이 됨
+const RASTER={};
+const hex2rgb=hx=>[1,3,5].map(i=>parseInt(hx.slice(i,i+2),16));
+function rasterText(txt,m,srcH,scale,col){
+  const key=[txt,m,srcH,scale,col].join('|');
+  if(!RASTER[key]){
+    const c=document.createElement('canvas'),x=c.getContext('2d'),font=`900 ${srcH}px "Noto Sans KR"`;x.font=font;
+    const pad=Math.max(1,Math.round(srcH*.15)),w=Math.ceil(x.measureText(txt).width)+2*pad,hh=Math.ceil(srcH*1.3)+2*pad;c.width=w;c.height=hh;
+    x.font=font;x.fillStyle='#000';x.textBaseline='alphabetic';x.fillText(txt,pad,pad+Math.round(srcH*1.02));
+    const id=x.getImageData(0,0,w,hh),[R,G,B]=hex2rgb(col);
+    for(let i=0;i<id.data.length;i+=4){id.data[i]=R;id.data[i+1]=G;id.data[i+2]=B;}
+    const W2=Math.round(w*scale),H2=Math.round(hh*scale);
+    const out=transform({w,h:hh,data:id.data},W2,H2,(X,Y)=>[(X+.5)*w/W2-.5,(Y+.5)*hh/H2-.5],m,false);
+    RASTER[key]={cv:out,w:W2,h:H2,adv:(w-2*pad)*scale,pad:pad*scale};
+  }
+  const r=RASTER[key],c=document.createElement('canvas');c.width=r.cv.width;c.height=r.cv.height;c.getContext('2d').drawImage(r.cv,0,0);
+  return {cv:c,w:r.w,h:r.h,adv:r.adv,pad:r.pad};
+}
+// 한 글자씩 래스터 → 절대 위치로 배치 (가운데 정렬)
+// levels 를 주면: 같은 글자를 더 큰 원본(srcH)으로 다시 그려 겹쳐 둠 → setSharp 로 점점 선명하게
+function rasterWord(root,word,m,srcH,scale,col,cx,top,gap=0,levels=null){
+  const D=srcH*scale,L=[...word].map(ch=>ch===' '?null:rasterText(ch,m,srcH,scale,col));
+  const sp=srcH*.35*scale,adv=L.map(l=>l?l.adv+gap:sp),tw=adv.reduce((a,b)=>a+b,0)-gap;
+  let x=cx-tw/2;const out=[];
+  L.forEach((l,i)=>{if(l){
+    let el;
+    if(!levels){el=at(l.cv,x-l.pad,top);el.style.width=l.w+'px';el.style.height=l.h+'px';}
+    else{el=at(h('div'),x-l.pad,top,l.w,l.h);const ch=[...word][i];
+      el.lv=[l.cv,...levels.map(sh=>rasterText(ch,m,sh,D/sh,col).cv)];
+      el.lv.forEach((c,k)=>{Object.assign(c.style,{position:'absolute',left:0,top:0,width:'100%',height:'100%',opacity:k?0:1});el.appendChild(c);});}
+    el.style.transformOrigin='50% 70%';root.appendChild(el);out.push(el);}x+=adv[i];});
+  return out;
+}
+// q: 0 = 처음(작은 원본) … levels.length = 가장 선명 (사이 값은 교차 페이드)
+function setSharp(el,q){el.lv.forEach((c,k)=>{c.style.opacity=clamp(1-Math.abs(q-k));});}
+const LV_CH=[24,36,60,160],LV_OUT=[12,20,48];
+function prewarmRaster(){ // 오프닝 재생 중에 조금씩 나눠서 미리 계산 (화면 멈춤 방지)
+  const tasks=[];
+  const add=(w,m,srcH,scale,col,levels)=>[...w].forEach(ch=>{tasks.push(()=>rasterText(ch,m,srcH,scale,col));levels.forEach(sh=>tasks.push(()=>rasterText(ch,m,sh,srcH*scale/sh,col)));});
+  [['NEAREST','nn'],['BILINEAR','bl'],['BICUBIC','bc']].forEach(([w,m])=>{add(w,m,16,10,LIGHT[m],LV_CH);add(w,m,8,6,MC[m],LV_OUT);});
+  const pump=()=>{const t0=performance.now();while(tasks.length&&performance.now()-t0<10)tasks.shift()();if(tasks.length)setTimeout(pump,20);};
+  setTimeout(pump,600);
+}
+// 키네틱 글자/단어 쪼개기 (CSS 애니메이션 지연으로 순차 등장)
+function splitNodes(el,mode,cls,step,base=0){
+  const tw=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement&&n.parentElement.closest('.katex')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}),nodes=[];while(tw.nextNode())nodes.push(tw.currentNode);
+  let k=0;
+  nodes.forEach(n=>{
+    const parts=mode==='char'?[...n.textContent]:n.textContent.split(/(\s+)/);const f=document.createDocumentFragment();
+    parts.forEach(p=>{if(!p)return;if(/^\s+$/.test(p)){f.appendChild(document.createTextNode(p));return;}
+      const s=document.createElement('span');s.className=cls;s.textContent=p;s.style.animationDelay=(base+k*step).toFixed(3)+'s';k++;f.appendChild(s);});
+    n.parentNode.replaceChild(f,n);
+  });
+  // 수식 덩어리도 한 단어처럼 순서대로 등장
+  const ks=el.querySelectorAll('.katex');if(ks.length){ks.forEach(x=>x.classList.add(cls));[...el.querySelectorAll('.'+cls)].forEach((x,i)=>x.style.animationDelay=(base+i*step).toFixed(3)+'s');}
+}
+const kineticChars=el=>splitNodes(el,'char','ch',.028,.05);
+const kineticWords=el=>splitNodes(el,'word','w',.07);
+// 타이포 블록: 시간 기반 등장 (탐색해도 같은 화면)
+function tIn(el,p,{dy=60,dx=0,rot=0,sc=1,blur=0}={}){
+  const q=clamp(p),e=back(q);el.style.opacity=clamp(q*1.6);el.style.visibility=q<=0?'hidden':'';
+  el.style.transform=`translate(${(1-e)*dx}px,${(1-e)*dy}px) rotate(${(1-e)*rot}deg) scale(${lerp(sc,1,e)})`;
+  el.style.filter=blur?`blur(${(1-eo(q))*blur}px)`:'';
+}
+// ─────────────────── 이미지 준비 ───────────────────
+const IMG_DEFS=[
+  {key:'dog',name:'강아지',emoji:'🐶',zoom:[.47,.33],patch:[.41,.27]},
+  {key:'car',name:'자동차',emoji:'🚗',zoom:[.56,.56],patch:[.56,.55]},
+  {key:'chrysanthemum',name:'국화꽃',emoji:'🌼',zoom:[.31,.45],patch:[.3,.45]}];
+const SRC=60,UP=6,OUT=SRC*UP,KS=320/SRC; // 60×60 → 360×360 (6배)
+const IMGS=[];
+// 변환 장면용 (24×24 원본)
+const TS=24;
+const TF=[];
+function loadImg(url){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});}
+// ─────────────────── 불러오기 진행 표시 ───────────────────
+// 글꼴(인터넷)과 사진 계산은 동시에 진행 → 두 진행률을 가중치로 합쳐 % 하나로 보여 줌
+const LOAD={font:0,img:0,final:0,imgLabel:''};
+function setLoad(){
+  const p=Math.round(clamp(LOAD.font*.25+LOAD.img*.65+LOAD.final*.1)*100);
+  const step=LOAD.final>0?'장면 준비 중…':LOAD.img<1?LOAD.imgLabel||'사진 준비 중…':LOAD.font<1?'글꼴 받는 중… (인터넷)':'거의 다 됐어요';
+  document.getElementById('ldFill').style.width=p+'%';document.getElementById('ldPct').textContent=p+'%';
+  document.getElementById('ldStep').textContent=step;document.getElementById('loader').setAttribute('aria-valuenow',p);
+}
+// 계산 사이사이에 브라우저가 화면(진행 표시줄)을 다시 그릴 틈을 줌
+const breathe=()=>new Promise(r=>setTimeout(r,0));
+async function prepareImages(){
+  const D=window.INTERP_IMAGES;if(!D)throw new Error('no data');
+  const units=IMG_DEFS.length*(1+METHODS.length)+1;let done=0;
+  const tick=async label=>{done++;LOAD.img=done/units;LOAD.imgLabel=label;setLoad();await breathe();};
+  for(const def of IMG_DEFS){
+    const img=await loadImg(D[def.key]);
+    const orig=document.createElement('canvas');orig.width=orig.height=OUT;orig.getContext('2d').drawImage(img,0,0,OUT,OUT);
+    const s40=shrink(orig,SRC),s24=shrink(orig,TS);
+    const o={...def,orig,small:s40.cv,src:s40.src,small24:s24.cv,src24:s24.src};
+    await tick(`사진 준비 중… ${def.name}`);
+    const inv=(x,y)=>[(x+.5)/UP-.5,(y+.5)/UP-.5];
+    for(const m of METHODS){o[m]=transform(o.src,OUT,OUT,inv,m,false);await tick(`사진 계산 중… ${def.name} · ${MNAME[m]}`);}
+    IMGS.push(o);
+  }
+  buildTransforms();await tick('변환 예시 계산 중…');
+}
+// 글꼴: CSS 도착 → 실제 글꼴 파일 도착까지 기다림(제목 글자를 글꼴로 래스터하므로). 인터넷이 없거나 느리면 4초 뒤 시스템 글꼴로 진행
+function loadFonts(){
+  const css=new Promise(res=>{const l=document.getElementById('fontCss');if(window.__fontCss||!l)return res();l.addEventListener('load',res);l.addEventListener('error',res);});
+  const wait=css.then(()=>{LOAD.font=.4;setLoad();
+    const fs=[document.fonts.load('900 16px "Noto Sans KR"','ABCDEFGHIJKLMNOPQRSTUVWXYZ크게'),document.fonts.load('700 20px Gaegu','xy=0123456789'),
+      document.fonts.load('20px KaTeX_Main','0123456789=+'),document.fonts.load('italic 20px KaTeX_Math','xyαβ')];
+    fs.forEach(p=>p.then(()=>{LOAD.font=Math.min(.95,LOAD.font+.28);setLoad();},()=>{}));
+    return Promise.all(fs).then(()=>document.fonts.ready);});
+  return Promise.race([wait,new Promise(r=>setTimeout(r,4000))]).catch(()=>{}).then(()=>{LOAD.font=1;setLoad();});
+}
+const DEG=20,CO=Math.cos(DEG*Math.PI/180),SI=Math.sin(DEG*Math.PI/180),RC=(TS-1)/2;
+const TDEFS=[
+  {key:'sx',img:0,title:'가로 2배 확대',W2:TS*2,H2:TS,inv:(x,y)=>[x/2,y],outside:false,wipe:'x',
+    fwd:"x'=\\textcolor{#6a4fd8}{2}\\cdot x,\\quad y'=y",invT:"x=x'\\div\\textcolor{#ffd166}{2},\\quad y=y'",ex:[29,11]},
+  {key:'sy',img:2,title:'세로 3배 확대',W2:TS,H2:TS*3,inv:(x,y)=>[x,y/3],outside:false,wipe:'y',
+    fwd:"x'=x,\\quad y'=\\textcolor{#6a4fd8}{3}\\cdot y",invT:"x=x',\\quad y=y'\\div\\textcolor{#ffd166}{3}",ex:[12,40]},
+  {key:'tr',img:1,title:'평행이동 (오른쪽 2.5칸, 아래 1.5칸)',W2:TS,H2:TS,inv:(x,y)=>[x-2.5,y-1.5],outside:true,wipe:'x',
+    fwd:"x'=x\\textcolor{#6a4fd8}{+2.5},\\quad y'=y\\textcolor{#6a4fd8}{+1.5}",invT:"x=x'\\textcolor{#ffd166}{-2.5},\\quad y=y'\\textcolor{#ffd166}{-1.5}",ex:[10,8]},
+  {key:'rot',img:0,title:'회전 (20°)',W2:TS,H2:TS,outside:true,wipe:'y',
+    inv:(x,y)=>{const dx=x-RC,dy=y-RC;return [RC+CO*dx+SI*dy,RC-SI*dx+CO*dy];},
+    fwd:"x'=\\cos\\theta\\,x-\\sin\\theta\\,y",fwd2:"y'=\\sin\\theta\\,x+\\cos\\theta\\,y",invT:"x=\\cos\\theta\\,x'+\\sin\\theta\\,y'",inv2:"y=-\\sin\\theta\\,x'+\\cos\\theta\\,y'",ex:[17,5]},
+];
+function buildTransforms(){for(const T of TDEFS){const im=IMGS[T.img];T.out={};for(const m of METHODS)T.out[m]=transform(im.src24,T.W2,T.H2,T.inv,m,T.outside);TF.push(T);}}
+
+// ─────────────────── 원리 설명용 4×4 RGB 픽셀 (노란 꽃잎 → 초록 잎 경계) ───────────────────
+const PATCH=[
+ [[255,220,60],[250,210,45],[230,190,40],[180,165,55]],
+ [[255,215,50],[250,200,40],[200,170,50],[120,140,55]],
+ [[240,200,45],[160,150,60],[60,120,50],[40,100,40]],
+ [[150,150,60],[70,125,50],[45,105,40],[35,90,35]]];
+const PX=1.3,PY=1.6;
+const mixc=(a,b,p)=>a.map((v,i)=>v+(b[i]-v)*p);
+const NNV=PATCH[Math.round(PY)][Math.round(PX)];
+const AL=PX-1,BE=PY-1;
+const BLA=mixc(PATCH[1][1],PATCH[1][2],AL),BLB=mixc(PATCH[2][1],PATCH[2][2],AL),BLV=mixc(BLA,BLB,BE);
+const WX=[0,1,2,3].map(i=>W(i-PX)),WY=[0,1,2,3].map(j=>W(j-PY));
+const BCV=[0,1,2].map(ch=>{let s=0;for(let j=0;j<4;j++)for(let i=0;i<4;i++)s+=WX[i]*WY[j]*PATCH[j][i][ch];return s;}).map(v=>clamp(v,0,255));
+
+// 격자 그리기 (원리 장면 공통) — 격자 원점 (GX,GY), 칸 100px, 픽셀 (i,j)의 중심 = 좌표 (i,j)
+const GX=40,GY=8,CELL=100;
+const cc=(x,y)=>[GX+CELL*x+CELL/2,GY+CELL*y+CELL/2];
+const [PPX,PPY]=cc(PX,PY);
+function drawPatch(ctx,o){
+  for(let j=0;j<4;j++)for(let i=0;i<4;i++){
+    const a=seg(o.appear,(i+j)*.06,(i+j)*.06+.45);if(a<=0)continue;
+    const dim=o.dim?o.dim(i,j):1,c=PATCH[j][i],x=GX+i*CELL,y=GY+j*CELL;
+    ctx.globalAlpha=a*dim;ctx.fillStyle=rgb(c);
+    ctx.beginPath();ctx.roundRect(x+3,y+3,CELL-6,CELL-6,10);ctx.fill();
+    // RGB 라벨: P에서 먼 쪽 모서리에 배치
+    const [cx,cy]=cc(i,j),ox=cx<PPX?-17:17,oy=cy<PPY?-17:17,lx=cx+ox,ly=cy+oy;
+    const ta=(o.rgbA!=null?o.rgbA:1);
+    if(ta>0){
+      ctx.globalAlpha=a*dim*ta;ctx.fillStyle='rgba(25,20,45,.62)';ctx.beginPath();ctx.roundRect(lx-28,ly-26,56,52,8);ctx.fill();
+      ctx.font='700 13px "Noto Sans KR"';ctx.textAlign='left';ctx.textBaseline='middle';
+      [['R','#ff8a8a'],['G','#8ce99a'],['B','#74c0fc']].forEach(([L,col],k)=>{ctx.fillStyle=col;ctx.fillText(L,lx-23,ly-15+k*15);ctx.fillStyle='#fff';ctx.textAlign='right';ctx.fillText(c[k],lx+23,ly-15+k*15);ctx.textAlign='left';});
+    }
+  }
+  ctx.globalAlpha=seg(o.appear,.3,1);
+  // 좌표축 숫자
+  ctx.fillStyle='#7a6f58';ctx.font='700 20px Gaegu';ctx.textAlign='center';ctx.textBaseline='middle';
+  for(let i=0;i<4;i++){ctx.fillText('x='+i,GX+CELL*i+CELL/2,GY+4*CELL+16);}
+  ctx.textAlign='right';for(let j=0;j<4;j++)ctx.fillText('y='+j,GX-6,GY+CELL*j+CELL/2);
+  ctx.globalAlpha=1;
+}
+function drawP(ctx,p,fill,label='P'){
+  if(p<=0)return;const s=Math.max(0,back(p));
+  ctx.save();ctx.translate(PPX,PPY);ctx.scale(s,s);
+  if(fill){ctx.fillStyle=rgb(fill);ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.fill();}
+  ctx.lineWidth=5;ctx.strokeStyle='#fff';ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.stroke();
+  ctx.lineWidth=3;ctx.strokeStyle='#e5484d';ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.stroke();
+  if(!fill){ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(8,0);ctx.moveTo(0,-8);ctx.lineTo(0,8);ctx.stroke();}
+  ctx.font='900 17px "Noto Sans KR"';ctx.textAlign='left';ctx.textBaseline='middle';ctx.lineWidth=4;ctx.strokeStyle='#fff';
+  ctx.strokeText(label+'(1.3, 1.6)',18,-16);ctx.fillStyle='#e5484d';ctx.fillText(label+'(1.3, 1.6)',18,-16);
+  ctx.restore();
+}
+function marker(ctx,x,y,txt,col,p=1){
+  if(p<=0)return;const s=back(p);ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ctx.fillStyle=col;ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,12,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='900 14px "Noto Sans KR"';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,0,1);ctx.restore();
+}
+function chip(ctx,x,y,txt,bg,fg='#fff',fs=13){
+  ctx.font=`700 ${fs}px "Noto Sans KR"`;const w=ctx.measureText(txt).width+12;
+  ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(x-w/2,y-fs*.8,w,fs*1.6,6);ctx.fill();
+  ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,x,y+1);
+}
+function arrowLine(ctx,x1,y1,x2,y2,p,col,w=3,dash){
+  if(p<=0)return;const x=lerp(x1,x2,p),y=lerp(y1,y2,p);
+  ctx.strokeStyle=col;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x,y);ctx.stroke();ctx.setLineDash([]);
+  if(p>.98){const a=Math.atan2(y2-y1,x2-x1);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-14*Math.cos(a-.4),y2-14*Math.sin(a-.4));ctx.lineTo(x2-14*Math.cos(a+.4),y2-14*Math.sin(a+.4));ctx.fill();}
+}
+
+// 1차원 신호 그래프
+const S1=[60,90,200,180,80,120];
+function recon(S,x,m){const n=S.length,g=i=>S[clamp(i,0,n-1)];
+  if(m==='nn')return g(Math.round(x));const i0=Math.floor(x),f=x-i0;
+  if(m==='bl')return g(i0)*(1-f)+g(i0+1)*f;let v=0;for(let k=-1;k<=2;k++)v+=g(i0+k)*W(f-k);return v;}
+function drawSignal(ctx,S,o){
+  const w=ctx.W,hh=ctx.H,pl=o.pl||14,pr=o.pr||14,pt=o.pt||10,pb=o.pb||14,n=S.length;
+  const X=i=>pl+i*(w-pl-pr)/(n-1),Y=v=>pt+(1-(v-(o.vmin??0))/((o.vmax??255)-(o.vmin??0)))*(hh-pt-pb);
+  ctx.strokeStyle='#e7e1cf';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(pl-6,hh-pb);ctx.lineTo(w-pr+6,hh-pb);ctx.stroke();
+  const dp=o.dots??1;
+  for(let i=0;i<n;i++){const a=seg(dp,i/n*.7,i/n*.7+.3);if(a<=0)continue;ctx.globalAlpha=a*.5;ctx.strokeStyle='#c9c0a6';ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(X(i),hh-pb);ctx.lineTo(X(i),Y(S[i]));ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
+  for(const c of (o.curves||[])){
+    if(c.p<=0)continue;const end=c.p*(n-1);ctx.strokeStyle=c.col;ctx.lineWidth=c.w||3;ctx.lineJoin='round';ctx.beginPath();
+    for(let x=0;x<=end+1e-9;x+=.005){const xx=Math.min(x,end),px=X(xx),py=Y(recon(S,xx,c.m));x===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.stroke();
+    if(c.p<1){ctx.fillStyle=c.col;ctx.beginPath();ctx.arc(X(end),Y(recon(S,end,c.m)),5,0,7);ctx.fill();}
+  }
+  for(let i=0;i<n;i++){const a=seg(dp,i/n*.7,i/n*.7+.3);if(a<=0)continue;const s=back(a);ctx.fillStyle='#2b2540';ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(i),Y(S[i]),(o.r||6)*s,0,7);ctx.fill();ctx.stroke();}
+  return {X,Y};
+}
+// 이미지 일부 확대해서 그리기 (픽셀 그대로)
+function drawCrop(ctx,cv,focus,z,dw,dh,alpha=1){
+  const S=cv.width,cs=S/z,cx=clamp(focus[0]*S,cs/2,S-cs/2),cy=clamp(focus[1]*S,cs/2,S-cs/2);
+  ctx.imageSmoothingEnabled=false;ctx.globalAlpha=alpha;ctx.drawImage(cv,cx-cs/2,cy-cs/2,cs,cs,0,0,dw,dh);ctx.globalAlpha=1;
+}
+
+// drawCrop 과 같은 영역을 기준으로 픽셀 격자를 겹쳐 그림 (S: 결과 이미지 한 변 픽셀 수)
+function drawPixelGrid(ctx,S,focus,z,dw,a){
+  const cs=S/z,x0=clamp(focus[0]*S,cs/2,S-cs/2)-cs/2,y0=clamp(focus[1]*S,cs/2,S-cs/2)-cs/2,k=dw/cs;
+  const lines=(step,w,al)=>{ctx.globalAlpha=al;ctx.lineWidth=w;ctx.beginPath();
+    for(let u=Math.ceil(x0/step)*step;u<=x0+cs;u+=step){const X=(u-x0)*k;ctx.moveTo(X,0);ctx.lineTo(X,dw);}
+    for(let v=Math.ceil(y0/step)*step;v<=y0+cs;v+=step){const Y=(v-y0)*k;ctx.moveTo(0,Y);ctx.lineTo(dw,Y);}ctx.stroke();};
+  ctx.strokeStyle='#fff';
+  if(k>=8)lines(1,1,a*.28);          // 새 픽셀 (화면에서 8px 이상일 때만)
+  lines(UP,2.5,a*.85);               // 원본 픽셀 = 새 픽셀 UP×UP
+  ctx.globalAlpha=1;
+}
+
+// ─────────────────── 공통 장면 블록 ───────────────────
+function sheet(root,x,y,w,hh,rot=-.6){const e=at(h('div','sheet paper tape'),x,y,w,hh);e.style.setProperty('--rot',rot+'deg');root.appendChild(e);return e;}
+function methodHeader(root,m,num,sub){
+  const el=at(h('div','h2',`<em class="k-${m}">${num} ${MNAME[m]} 보간</em><small>${MEN[m]} Interpolation · ${sub}</small>`),40,62);root.appendChild(el);return el;
+}
+function signalCard(root,x,y,w,hh,m){
+  const card=at(h('div','card'),x,y,w,hh);card.appendChild(at(h('div','ctitle',`<i style="color:${MC[m]}"></i>1차원으로 보면`),14,10));
+  const cv=mkc(w-22,hh-46);at(cv,8,38);card.appendChild(cv);root.appendChild(card);return {card,ctx:cv.getContext('2d')};
+}
+function resultCard(root,x,y,m){
+  const card=at(h('div','card'),x,y,264,286);
+  card.appendChild(at(h('div','ctitle',`<i style="color:${MC[m]}"></i>실제 사진 6배 확대`),14,10));
+  const cv=mkc(200,200);at(cv,29,38);cv.style.borderRadius='10px';card.appendChild(cv);
+  const names=at(h('div','',''),0,246,258);names.style.cssText+='display:flex;justify-content:center;gap:6px;font-size:14px;font-weight:700';
+  const chips=IMG_DEFS.map(d=>{const s=h('span','',d.emoji+' '+d.name,{padding:'3px 9px',borderRadius:'999px',background:'#f3efe2',color:'#8a8499'});names.appendChild(s);return s;});
+  card.appendChild(names);root.appendChild(card);return {card,ctx:cv.getContext('2d'),chips};
+}
+function drawResult(r,m,t0,t){
+  const p=seg(t,t0,t0+.6);show(r.card,eo(p));if(p<=0)return;
+  const per=2.6,tt=Math.max(0,t-t0),k=Math.floor(tt/per)%3,f=tt<per?1:seg(tt%per,0,.4);
+  clr(r.ctx);const prev=(k+2)%3;
+  if(f<1)drawCrop(r.ctx,IMGS[prev][m],IMGS[prev].zoom,1.6,200,200);
+  drawCrop(r.ctx,IMGS[k][m],IMGS[k].zoom,1.6,200,200,f);
+  r.chips.forEach((c,i)=>{c.style.background=i===k?MC[m]:'#f3efe2';c.style.color=i===k?'#fff':'#8a8499';});
+}
+function calcCard(root,x,y,w,hh,m,title){
+  const card=at(h('div','card'),x,y,w,hh);card.appendChild(at(h('div','ctitle',`<i style="color:${MC[m]}"></i>${title}`),16,10));root.appendChild(card);return card;
+}
+// 수식이 들어 있는 줄에는 색연필 밑줄(el.u)을 붙임
+function line(card,y,html,cls=''){const el=at(h('div','calc '+cls,`<span class=ci>${html}</span>`),18,y);el.style.left='18px';card.appendChild(el);
+  if(html.includes('class="katex"'))el.u=uline(el.firstChild);return el;}
+
+// ─────────────────── 장면 정의 ───────────────────
+const scenes=[];
+
+// 1. 인트로
+scenes.push({name:'시작',dur:8,
+  captions:[[0,'작은 사진을 크게 키우면, 원래 없던 픽셀은 <b>어떤 색</b>으로 채워질까요?'],[4,'오늘 비교할 세 가지: <b class=k-nn>최근접 이웃</b> · <b class=k-bl>양선형</b> · <b class=k-bc>바이큐빅</b> 보간']],
+  build(root){
+    const r={};
+    r.title=atc(h('div','big-title','이미지 <span class=hl>보간법</span>'),96);root.appendChild(r.title);
+    r.sub=atc(h('div','sub','Image Interpolation — 없는 픽셀을 주변 픽셀로 계산해서 채우기'),212);root.appendChild(r.sub);
+    r.pills=atc(h('div','',''),268);r.pills.style.cssText+='display:flex;justify-content:center;gap:14px';
+    r.pl=METHODS.map(m=>{const p=h('span','mpill '+m,`${MNAME[m]} <small>${MEN[m]}</small>`);r.pills.appendChild(p);return p;});root.appendChild(r.pills);
+    r.tiles=IMGS.map((im,i)=>{const cv=mkc(190,190,1.6);const t=at(h('div','tile'),305+i*235,345,190,190);t.appendChild(cv);root.appendChild(t);
+      const n=at(h('div','tname',im.emoji+' '+im.name),305+i*235,550,190);root.appendChild(n);return {t,n,ctx:cv.getContext('2d'),im};});
+    return r;
+  },
+  draw(r,t){
+    show(r.title,eo(seg(t,.1,.9)),30);show(r.sub,eo(seg(t,.6,1.4)));
+    r.pl.forEach((p,i)=>pop(p,seg(t,4+i*.35,4.6+i*.35)));
+    r.tiles.forEach((o,i)=>{const p=seg(t,1.2+i*.3,2+i*.3);pop(o.t,p);show(o.n,eo(p));
+      // 고해상도 → 저해상도(60×60)로 픽셀이 굵어지는 연출
+      const q=seg(t,2.6+i*.3,3.6+i*.3);clr(o.ctx);o.ctx.imageSmoothingEnabled=q<.5;
+      o.ctx.drawImage(q<.5?o.im.orig:o.im.small,0,0,190,190);});
+  }});
+
+// 2. 왜 빈칸이 생길까
+scenes.push({name:'빈 픽셀',dur:13,
+  captions:[[0,'60×60 픽셀짜리 작은 강아지 사진이 있어요. 한 칸 = 색 하나 = <b>(R, G, B)</b> 세 숫자'],[2.2,'눈 근처 <b>4×4 픽셀</b>을 떼어 확대해 봅시다'],
+    [5.2,'가로·세로 <b>2배</b>로 늘리면 원래 픽셀 사이가 <b>벌어지고</b>'],[8,'사이사이에 원본에 없던 <b>빈 픽셀(?)</b>이 생깁니다'],[10.2,'원래 있던 픽셀보다 <b>빈칸</b>이 더 많아요 — 왜, 얼마나 생기는지 따져 볼까요?']],
+  build(root){
+    const r={};r.h=atc(h('div','h2','이미지를 키우면 왜 <em style="color:var(--purple)">빈칸</em>이 생길까?'),62);root.appendChild(r.h);
+    const im=IMGS[0];r.im=im;
+    sheet(root,94,144,352,380,.8);r.left=mkc(320,320,1.5);at(r.left,110,160);r.left.style.borderRadius='10px';root.appendChild(r.left);
+    r.ll=at(h('div','note','원본 60 × 60 픽셀'),110,490,320);r.ll.style.textAlign='center';root.appendChild(r.ll);
+    sheet(root,684,124,456,456,-.7);r.right=mkc(424,424);at(r.right,700,138);root.appendChild(r.right);
+    r.ov=mkc(1280,720,1.5);at(r.ov,0,0);r.ov.style.pointerEvents='none';root.appendChild(r.ov);
+    r.sx=clamp(Math.round(im.patch[0]*SRC)-2,0,SRC-4);r.sy=clamp(Math.round(im.patch[1]*SRC)-2,0,SRC-4);
+    r.col=(i,j)=>{const k=((r.sy+j)*SRC+r.sx+i)*4,d=im.src.data;return [d[k],d[k+1],d[k+2]];};
+    return r;
+  },
+  draw(r,t){
+    show(r.h,eo(seg(t,0,.7)));
+    const L=r.left.getContext('2d');clr(L);L.globalAlpha=eo(seg(t,.2,1));L.imageSmoothingEnabled=false;L.drawImage(r.im.small,0,0,320,320);L.globalAlpha=1;show(r.ll,eo(seg(t,.5,1.2)));
+    const sp=seg(t,2.2,3);if(sp>0){L.strokeStyle='#e5484d';L.lineWidth=3;L.globalAlpha=sp;L.strokeRect(r.sx*KS,r.sy*KS,4*KS,4*KS);L.globalAlpha=1;}
+    const R=r.right.getContext('2d');clr(R);
+    const spread=eio(seg(t,5.2,7.4));
+    // 빈칸 (홀수 자리)
+    const qa=seg(t,7.8,9.4);
+    if(qa>0)for(let b=0;b<7;b++)for(let a=0;a<7;a++){if(a%2===0&&b%2===0)continue;const p=seg(qa,((a+b)%7)/7*.6,((a+b)%7)/7*.6+.4);if(p<=0)continue;
+      const x=a*60+2,y=b*60+2;R.globalAlpha=p;R.setLineDash([5,4]);R.strokeStyle='#c9bf9f';R.lineWidth=2;R.beginPath();R.roundRect(x+2,y+2,52,52,8);R.stroke();R.setLineDash([]);
+      R.fillStyle='#b5aa88';R.font='700 26px "Do Hyeon"';R.textAlign='center';R.textBaseline='middle';R.fillText('?',x+28,y+29);R.globalAlpha=1;}
+    for(let j=0;j<4;j++)for(let i=0;i<4;i++){const a=seg(t,3+(i+j)*.08,3.5+(i+j)*.08);if(a<=0)continue;
+      const x=lerp(92+i*60,i*120,spread)+2,y=lerp(92+j*60,j*120,spread)+2;R.globalAlpha=a;R.fillStyle=rgb(r.col(i,j));R.beginPath();R.roundRect(x+2,y+2,52,52,8);R.fill();R.globalAlpha=1;}
+    // 연결선 + RGB 말풍선
+    const O=r.ov.getContext('2d');clr(O);
+    const lp=seg(t,2.6,3.2)*(1-seg(t,4.8,5.2));if(lp>0){O.globalAlpha=lp;O.strokeStyle='#e5484d';O.lineWidth=2;O.setLineDash([6,5]);
+      O.beginPath();O.moveTo(110+(r.sx+4)*KS,160+r.sy*KS);O.lineTo(700+92,138+92);O.moveTo(110+(r.sx+4)*KS,160+(r.sy+4)*KS);O.lineTo(700+92,138+332);O.stroke();O.setLineDash([]);O.globalAlpha=1;}
+    const ca=seg(t,.8,1.4)*(1-seg(t,4.6,5.2));
+    if(ca>0){const c=r.col(1,1),x=700+lerp(92+60,120,spread)+30,y=138+lerp(92+60,120,spread)+30;
+      O.globalAlpha=ca*seg(t,3.4,3.8);if(O.globalAlpha>0){O.strokeStyle='#2b2540';O.lineWidth=2;O.beginPath();O.moveTo(x,y);O.lineTo(1150,110);O.stroke();
+      chip(O,1150,110,`(R, G, B) = (${c.join(', ')})`,'#2b2540','#fff',16);}O.globalAlpha=1;}
+  }});
+
+// 2-1. 빈칸이 생기는 이유를 칸 수로 따져 보기
+//  ① 원본 4×4 → 2배 8×8: 원본 픽셀 (x, y)는 (2x, 2y) 자리로만 감
+//     → 같은 줄 안에서는 한 칸씩 비고(가로 틈), 원본이 하나도 없는 줄이 한 줄씩 끼어듦(세로 틈)
+//  ② 원본 1칸이 차지하던 자리가 n×n칸으로 쪼개짐 → 빈칸 비율 (n²−1)/n²
+const GAP_ROW=PATCH[2];
+const GAP_N=[2,3,6];
+// 왼쪽 격자 배치 (캔버스 좌표): 원본 4×4 칸 34px, 새 8×8 칸 36px
+const GO={x:24,y:118,c:34},GN={x:214,y:46,c:36};
+scenes.push({name:'빈칸 세기',dur:24,
+  captions:[[0,'확대한다는 건 <b>칸(픽셀)의 수</b>를 늘리는 것 — 4×4 이미지를 2배로 키워 볼게요'],[1.8,'가로·세로 <b>2배</b> → <b>8×8 = 64칸</b>이 필요해요'],
+    [2.8,'원본 픽셀 (x, y)는 새 이미지의 <b>(2x, 2y)</b> 자리로 옮겨 가요'],
+    [5.4,'원본이 있는 줄에서도 픽셀과 픽셀 사이마다 <b>한 칸씩</b> 비고 (가로 틈)'],
+    [6.8,'원본 픽셀이 <b>하나도 없는 줄</b>이 한 줄씩 끼어들어요 (세로 틈)'],
+    [8.2,'64칸 중 원본은 16칸뿐 → <b>빈칸 48칸 (75%)</b>'],
+    [9.4,'원본 1칸을 기준으로 보면 2배: 2×2 = 4칸 중 원본은 1칸뿐 → <b>빈칸 3칸 (75%)</b>'],[12.2,'3배: 3×3 = 9칸 → <b>빈칸 8칸 (89%)</b>'],
+    [15,'6배: 6×6 = 36칸 → <b>빈칸 35칸 (97%)</b> — 뒤의 사진 비교가 바로 이 경우'],
+    [17.8,'새 이미지의 칸 대부분은 원본에 <b>없는</b> 칸이에요'],[20.2,'이 빈 픽셀 값을 주변 픽셀로 계산해 채우는 것 = <b>보간(Interpolation)</b>']],
+  build(root){
+    const r={};r.h=atc(h('div','h2','확대하면 왜 <em style="color:var(--purple)">빈칸</em>이 생길까? <small>칸 수로 따져 보기</small>'),62);root.appendChild(r.h);
+    r.sh=sheet(root,40,124,560,470,.6);
+    r.cv=mkc(540,400);at(r.cv,50,140);root.appendChild(r.cv);
+    r.fm=at(h('div','calc',tex('(x,\\ y)\\ \\to\\ (2x,\\ 2y)')),66,420);r.fm.style.cssText+='right:auto;font-size:19px';root.appendChild(r.fm);
+    r.ln=at(h('div','calc','',{}),60,548);r.ln.style.cssText+='right:auto;width:520px;text-align:center';
+    r.ln.innerHTML='64칸 중 원본이 채운 칸은 <b>16칸</b>, 나머지 <b style="color:#e5484d">48칸은 빈칸 (75%)</b>';root.appendChild(r.ln);
+    // 오른쪽: 원본 1칸이 차지하던 자리
+    const card=at(h('div','card'),640,124,600,470);root.appendChild(card);r.card=card;
+    card.appendChild(at(h('div','ctitle','<i style="color:var(--purple)"></i>원본 픽셀 1개가 차지하던 자리 → 확대하면'),16,12));
+    r.rows=GAP_N.map((n,k)=>{const y=52+k*124;
+      const cv=mkc(100,100);at(cv,22,y);card.appendChild(cv);
+      const tl=line(card,y-4,`<b style="font-size:20px">${n}배</b> &nbsp;${tex(`${n}\\times ${n}=${n*n}`)}칸 중 원본 1칸 · 빈칸 <b style="color:#e5484d">${n*n-1}칸</b>`);tl.style.left='140px';
+      const tr=at(h('div',''),140,y+50,330,16);tr.style.cssText+='background:#ece6d4;border-radius:8px;overflow:hidden';
+      const fl=h('div','',null,{height:'100%',width:'0',background:'#e5484d',borderRadius:'8px'});tr.appendChild(fl);card.appendChild(tr);
+      const pc=at(h('div','',''),484,y+40);pc.style.cssText+='font:400 30px "Do Hyeon";color:#e5484d';card.appendChild(pc);
+      const sub=at(h('div','note',k===2?'← 이번 사진 비교 (60×60 → 360×360)':''),140,y+70);sub.style.fontSize='17px';card.appendChild(sub);
+      return {n,cv,ctx:cv.getContext('2d'),tl,fl,pc,sub,pct:(n*n-1)/(n*n)*100};});
+    r.sum=line(card,424,'360×360 = '+tex('129{,}600')+'칸 중 원본은 '+tex('60\\times60=3{,}600')+'칸 뿐');r.sum.style.textAlign='center';r.sum.style.left='0';r.sum.style.right='0';
+    return r;
+  },
+  draw(r,t){
+    show(r.h,eo(seg(t,0,.7)));
+    const c=r.cv.getContext('2d');clr(c);
+    c.font='700 15px "Noto Sans KR"';c.textAlign='center';c.textBaseline='middle';
+    const cellO=(i,j)=>[GO.x+i*GO.c,GO.y+j*GO.c],cellN=(i,j)=>[GN.x+i*GN.c,GN.y+j*GN.c];
+    // 제목
+    c.globalAlpha=seg(t,.4,1);c.fillStyle='#6b6680';c.fillText('원본 4 × 4 = 16칸',GO.x+2*GO.c,GO.y-24);
+    c.globalAlpha=seg(t,1.8,2.4);c.fillText('2배 → 8 × 8 = 64칸',GN.x+4*GN.c,GN.y-24);c.globalAlpha=1;
+    // 원본 격자 자리(점선)와 번호
+    const oa=seg(t,.4,1);
+    if(oa>0){c.globalAlpha=oa;c.fillStyle='#8a8499';c.font='700 13px "Noto Sans KR"';
+      for(let i=0;i<4;i++){const [x,y]=cellO(i,3);c.fillText(i,x+GO.c/2,y+GO.c+12);}
+      for(let j=0;j<4;j++){const [x,y]=cellO(0,j);c.fillText(j,x-10,y+GO.c/2);}c.globalAlpha=1;}
+    // 새 격자 (점선 빈칸) + 번호
+    const na=seg(t,1.8,2.8);
+    for(let j=0;j<8;j++)for(let i=0;i<8;i++){const a=seg(na,(i+j)/14*.6,(i+j)/14*.6+.4);if(a<=0)continue;const [x,y]=cellN(i,j);
+      c.globalAlpha=a;c.setLineDash([4,3]);c.strokeStyle='#cfc5a6';c.lineWidth=1.5;c.beginPath();c.roundRect(x+2,y+2,GN.c-4,GN.c-4,6);c.stroke();c.setLineDash([]);}
+    if(na>0){c.globalAlpha=na;c.fillStyle='#8a8499';c.font='700 13px "Noto Sans KR"';
+      for(let i=0;i<8;i++){const [x,y]=cellN(i,7);c.fillText(i,x+GN.c/2,y+GN.c+12);}
+      for(let j=0;j<8;j++){const [x,y]=cellN(0,j);c.fillText(j,x-11,y+GN.c/2);}c.globalAlpha=1;}
+    // 줄 강조: 원본이 있는 줄(짝수 줄) → 원본이 없는 줄(홀수 줄)
+    const rowA=winA(t,5.4,8.2),rowB=winA(t,6.8,8.2);
+    const band=(j,col,a)=>{if(a<=0)return;const [x,y]=cellN(0,j);c.globalAlpha=a;c.fillStyle=col;c.beginPath();c.roundRect(x-1,y+1,8*GN.c+2,GN.c-2,8);c.fill();c.globalAlpha=1;};
+    for(let j=0;j<8;j+=2)band(j,'rgba(106,79,216,.12)',rowA*(1-rowB*.6));
+    for(let j=1;j<8;j+=2)band(j,'rgba(229,72,77,.13)',rowB);
+    // 빈칸의 ? : 먼저 원본 줄 안의 틈(가로) → 그다음 원본이 없는 줄(세로)
+    for(let j=0;j<8;j++)for(let i=0;i<8;i++){if(i%2===0&&j%2===0)continue;
+      const t0=j%2===0?5.4+i*.06+j*.04:6.8+j*.06+i*.03,q=seg(t,t0,t0+.35);if(q<=0)continue;const [x,y]=cellN(i,j);
+      c.globalAlpha=q;c.strokeStyle='#e5484d';c.lineWidth=2;c.beginPath();c.roundRect(x+2,y+2,GN.c-4,GN.c-4,6);c.stroke();
+      c.fillStyle='#e5484d';c.font='400 20px "Do Hyeon"';c.fillText('?',x+GN.c/2,y+GN.c/2+1);c.globalAlpha=1;}
+    // 원본 픽셀: 4×4 → (2x, 2y) 자리로 이동 (떠난 자리에는 흐린 자국)
+    for(let j=0;j<4;j++)for(let i=0;i<4;i++){const a=seg(t,.6+(i+j)*.08,1.1+(i+j)*.08);if(a<=0)continue;
+      const st=2.8+(i+j)*.22,q=eio(seg(t,st,st+.9));const [sx,sy]=cellO(i,j),[ex,ey]=cellN(2*i,2*j);
+      const s=lerp(GO.c,GN.c,q),x=lerp(sx,ex,q),y=lerp(sy,ey,q)-Math.sin(q*Math.PI)*30,col=rgb(PATCH[j][i]);
+      if(q>0){c.globalAlpha=a*.25*seg(q,0,.3);c.fillStyle=col;c.beginPath();c.roundRect(sx+2,sy+2,GO.c-4,GO.c-4,6);c.fill();}
+      c.globalAlpha=a;c.fillStyle=col;c.beginPath();c.roundRect(x+2,y+2,s-4,s-4,6);c.fill();c.globalAlpha=1;}
+    // 오른쪽 카드 '2배' 줄과 연결: 원본 1칸 = 2×2 블록 하나
+    const bk=winA(t,9.2,12);if(bk>0){const [x,y]=cellN(2,2);c.globalAlpha=bk;c.strokeStyle='#6a4fd8';c.lineWidth=3.5;c.beginPath();c.roundRect(x-1,y-1,2*GN.c+2,2*GN.c+2,9);c.stroke();c.globalAlpha=1;}
+    show(r.fm,eo(seg(t,3,3.6)),10);drawU(r.fm.u,0);
+    show(r.ln,eo(seg(t,8.2,8.8)),10);
+    // 오른쪽 카드
+    show(r.card,eo(seg(t,8.4,9)));
+    r.rows.forEach((o,k)=>{const t0=9.2+k*2.8,a=eo(seg(t,t0,t0+.5));
+      show(o.tl,a,10);drawU(o.tl.u,seg(t,t0+.3,t0+1.1),PENCIL.ink[k]);show(o.sub,eo(seg(t,t0+1.4,t0+1.9)),6);
+      const x=o.ctx;clr(x);const n=o.n,cs=96/n;x.globalAlpha=a;
+      for(let j=0;j<n;j++)for(let i=0;i<n;i++){const X=2+i*cs,Y=2+j*cs;
+        if(i===0&&j===0){x.fillStyle=rgb(GAP_ROW[1]);x.beginPath();x.roundRect(X+1,Y+1,cs-2,cs-2,Math.min(6,cs*.2));x.fill();continue;}
+        const q=seg(t,t0+.4+(i+j)/(2*n)*.6,t0+.7+(i+j)/(2*n)*.6);if(q<=0)continue;x.globalAlpha=a*q;
+        x.setLineDash(cs>20?[4,3]:[]);x.strokeStyle=cs>20?'#c9bf9f':'#e3d9bd';x.lineWidth=cs>20?2:1;x.beginPath();x.roundRect(X+1.5,Y+1.5,cs-3,cs-3,Math.min(6,cs*.2));x.stroke();x.setLineDash([]);
+        if(cs>20){x.fillStyle='#e5484d';x.font=`400 ${Math.round(cs*.5)}px "Do Hyeon"`;x.textAlign='center';x.textBaseline='middle';x.fillText('?',X+cs/2,Y+cs/2+1);}
+        x.globalAlpha=a;}
+      x.globalAlpha=1;
+      const bp=eio(seg(t,t0+.9,t0+1.9));o.fl.style.width=(o.pct*bp)+'%';o.fl.parentNode.style.opacity=a;
+      o.pc.textContent=bp>0?`빈칸 ${Math.round(o.pct*bp)}%`:'';o.pc.style.opacity=a;});
+    show(r.sum,eo(seg(t,17.8,18.4)),10);drawU(r.sum.u,seg(t,18.2,19.2),'#e5484d');
+  }});
+
+// 3. 좌표 거꾸로 따라가기 (역방향 매핑)
+scenes.push({name:'좌표 계산',dur:18,
+  captions:[[0,'가로 <b>2배</b>, 세로 <b>3배</b>로 키우면 원본 4×3 → 새 이미지 8×9'],[2.4,'원본 좌표 (x, y)는 새 이미지에서 <b>x\' = 2x, y\' = 3y</b> 로 이동'],
+    [4.6,'새 이미지의 각 칸에서 <b>거꾸로</b> 계산: x = x\' ÷ 2, y = y\' ÷ 3 (역방향 매핑)'],[7,'새 픽셀 (3, 4) → 원본 (1.5, 1.33…) — <b>정수가 아니라 원본에 없는 자리!</b>'],
+    [10.8,'새 픽셀 (4, 6) → 원본 (2, 2) — 정수라서 <b>그대로 복사</b>'],[13.6,'소수 좌표가 나온 나머지 칸은 모두 <b>보간</b>으로 값을 계산해야 해요']],
+  build(root){
+    const r={};r.h=atc(h('div','h2','새 픽셀의 색은 어디서 가져올까?'),62);root.appendChild(r.h);
+    sheet(root,36,150,360,330,.7);r.L=mkc(330,280);at(r.L,52,190);root.appendChild(r.L);
+    r.lt=at(h('div','note','<b style="color:var(--ink)">원본</b> 4 × 3'),52,160,330);r.lt.style.textAlign='center';root.appendChild(r.lt);
+    sheet(root,866,96,394,470,-.6);r.R=mkc(370,420);at(r.R,880,128);root.appendChild(r.R);
+    r.rt=at(h('div','note','<b style="color:var(--ink)">새 이미지</b> 8 × 9 (가로 2배·세로 3배)'),860,118-14,400);r.rt.style.textAlign='center';root.appendChild(r.rt);
+    const card=at(h('div','card'),410,140,450,440);root.appendChild(card);r.card=card;
+    r.ov=mkc(1280,720,1.5);at(r.ov,0,0);r.ov.style.pointerEvents='none';root.appendChild(r.ov);
+    r.l=[
+      line(card,18,'<span class=lab>변환</span>원본 → 새 이미지'),
+      line(card,46,tex("x' = 2\\cdot x,\\quad y' = 3\\cdot y")),
+      line(card,100,'<span class=lab>역변환</span>새 픽셀 → 원본 좌표'),
+      line(card,128,tex("\\textcolor{#6a4fd8}{x = x'\\div 2,\\quad y = y'\\div 3}")),
+      line(card,190,'<span class=lab style="background:#e5484d">예 ①</span>새 픽셀 '+tex('(3,\\ 4)')),
+      line(card,218,tex('x = 3\\div 2 = 1.5,\\quad y = 4\\div 3 = 1.33\\cdots')),
+      line(card,252,'→ 원본 픽셀 사이! <b style="color:#e5484d">보간 필요</b>'),
+      line(card,304,'<span class=lab style="background:#2f9e44">예 ②</span>새 픽셀 '+tex('(4,\\ 6)')),
+      line(card,332,tex('x = 4\\div 2 = 2,\\quad y = 6\\div 3 = 2')),
+      line(card,366,'→ 원본 픽셀 (2, 2) 위치 → <b style="color:#2f9e44">그대로 복사</b>')];
+    r.lT=[1,2,4.6,4.9,7,7.6,8.6,10.8,11.3,12];
+    const im=IMGS[0],sx=clamp(Math.round(im.patch[0]*SRC)-1,0,SRC-4),sy=clamp(Math.round(im.patch[1]*SRC)-1,0,SRC-3);
+    r.col=(i,j)=>{const k=((sy+j)*SRC+sx+i)*4,d=im.src.data;return [d[k],d[k+1],d[k+2]];};
+    return r;
+  },
+  draw(r,t){
+    show(r.h,eo(seg(t,0,.7)));show(r.lt,eo(seg(t,.3,1)));show(r.rt,eo(seg(t,.8,1.5)));show(r.card,eo(seg(t,.9,1.6)));
+    drawLines(r.l,r.lT,t,PENCIL.ink);
+    // 원본 격자 (칸 64, 원점 40,10)
+    const L=r.L.getContext('2d');clr(L);const C=64,ox=50,oy=6;
+    L.globalAlpha=eo(seg(t,.2,1));
+    for(let j=0;j<3;j++)for(let i=0;i<4;i++){L.fillStyle=rgb(r.col(i,j));L.beginPath();L.roundRect(ox+i*C+2,oy+j*C+2,C-4,C-4,8);L.fill();}
+    L.fillStyle='#8a8499';L.font='700 14px "Noto Sans KR"';L.textAlign='center';L.textBaseline='middle';
+    for(let i=0;i<4;i++)L.fillText(i,ox+i*C+C/2,oy+3*C+16);L.textAlign='right';for(let j=0;j<3;j++)L.fillText(j,ox-10,oy+j*C+C/2);
+    L.textAlign='center';L.fillText('x →',ox+4*C-10,oy+3*C+36);L.save();L.translate(ox-32,oy+3*C-14);L.fillText('y ↓',0,0);L.restore();
+    L.globalAlpha=1;
+    // 새 격자 (칸 38, 원점 40,30)
+    const R=r.R.getContext('2d');clr(R);const D=38,rx=46,ry=26;
+    const ga=eo(seg(t,1.4,2.4)),cp=seg(t,2.6,4.2);
+    for(let j=0;j<9;j++)for(let i=0;i<8;i++){
+      const isInt=i%2===0&&j%3===0,x=rx+i*D,y=ry+j*D;
+      R.globalAlpha=ga;R.setLineDash([4,3]);R.strokeStyle='#d3c9aa';R.lineWidth=1.5;R.beginPath();R.roundRect(x+2,y+2,D-4,D-4,6);R.stroke();R.setLineDash([]);
+      if(isInt){const p=seg(cp,(i/2+j/3)*.1,(i/2+j/3)*.1+.5);if(p>0){R.globalAlpha=p;R.fillStyle=rgb(r.col(i/2,j/3));R.beginPath();R.roundRect(x+2,y+2,D-4,D-4,6);R.fill();}}
+      else{const q=seg(t,13.6+((i+j)%6)*.08,14.2+((i+j)%6)*.08);if(q>0){R.globalAlpha=q;R.fillStyle='#b5aa88';R.font='22px "Do Hyeon"';R.textAlign='center';R.textBaseline='middle';R.fillText('?',x+D/2,y+D/2+1);}}
+    }
+    R.globalAlpha=ga;R.fillStyle='#8a8499';R.font='700 12px "Noto Sans KR"';R.textAlign='center';R.textBaseline='middle';
+    for(let i=0;i<8;i++)R.fillText(i,rx+i*D+D/2,ry+9*D+12);R.textAlign='right';for(let j=0;j<9;j++)R.fillText(j,rx-8,ry+j*D+D/2);
+    R.globalAlpha=1;
+    // 예시 강조
+    const O=r.ov.getContext('2d');clr(O);
+    const ex=(nx,ny,sxv,syv,col,t0)=>{
+      const a=seg(t,t0,t0+.4);if(a<=0)return;const fade=1-seg(t,t0+3.4,t0+3.8);if(fade<=0)return;
+      const bx=880+rx+nx*D,by=128+ry+ny*D;O.globalAlpha=a*fade;O.strokeStyle=col;O.lineWidth=4;O.beginPath();O.roundRect(bx,by,D,D,6);O.stroke();
+      const tx=52+ox+(sxv+.5)*C,ty=190+oy+(syv+.5)*C;
+      const lp=seg(t,t0+.6,t0+1.6);
+      if(lp>0){O.setLineDash([7,6]);O.strokeStyle=col;O.lineWidth=2.5;O.beginPath();const mx=lerp(bx,tx,eo(lp)),my=lerp(by+D/2,ty,eo(lp));
+        O.moveTo(bx,by+D/2);O.quadraticCurveTo((bx+tx)/2,Math.min(by,ty)-120,mx,my);O.stroke();O.setLineDash([]);}
+      const dp=seg(t,t0+1.6,t0+2);if(dp>0){O.save();O.translate(tx,ty);O.scale(back(dp),back(dp));O.fillStyle=col;O.strokeStyle='#fff';O.lineWidth=3;O.beginPath();O.arc(0,0,9,0,7);O.fill();O.stroke();O.restore();
+        chip(O,tx,ty+(sxv%1?-24:26),`(${nf(sxv)}, ${nf(syv)})`,col,'#fff',14);}
+      O.globalAlpha=1;
+    };
+    ex(3,4,1.5,4/3,'#e5484d',7);ex(4,6,2,2,'#2f9e44',10.8);
+  }});
+
+// ═════════ 계산 단계 페이지 (STEP 1 → 2 → …, 천천히 한 줄씩) ═════════
+const fN=(v,d=4)=>{const s=String(+(+v).toFixed(d));return s.replace('-','−');};
+const sgn3=v=>(v<0?'−':'+')+Math.abs(v).toFixed(3);
+// a·x + b·y + … 형태 문자열 (부호 정리)
+const sumStr=terms=>terms.map(([w,v],k)=>{const s=`${fN(Math.abs(w))}×${v}`;return k===0?(w<0?'−':'')+s:(w<0?' − ':' + ')+s;}).join('');
+const addStr=vals=>vals.map((v,k)=>k===0?fN(v,2):(v<0?' − ':' + ')+fN(Math.abs(v),2)).join('');
+const CH3=[['R','r'],['G','g'],['B','b']];
+// pages: [{t0,t1,title,lines:[{t,y,html,cls}]}] · tB: 넓은 카드 → 요약 카드로 줄어드는 시각
+function stepCard(root,m,pages,tB,summary){
+  const card=at(h('div','card'),548,120,688,468);root.appendChild(card);
+  const tt=at(h('div','ctitle',''),16,10);card.appendChild(tt);
+  const n=pages.length;const dots=at(h('div','',pages.map(()=>'<i></i>').join('')),0,14);dots.style.cssText+=`right:16px;left:auto;display:flex;gap:6px`;
+  [...dots.children].forEach(d=>Object.assign(d.style,{display:'block',width:'22px',height:'7px',borderRadius:'4px',background:'#ece6d4'}));card.appendChild(dots);
+  const P=pages.map(pg=>{const el=at(h('div',''),0,44);el.style.cssText+='left:0;right:0;bottom:0';card.appendChild(el);
+    const L=pg.lines.map(l=>{const e=line(el,l.y,l.html,l.cls||'');if(l.uc)e.uc=l.uc;return e;});return {el,L,pg};});
+  const sum=at(h('div',''),0,44);sum.style.cssText+='left:0;right:0;bottom:0';card.appendChild(sum);
+  const SL=summary.map(l=>line(sum,l.y,l.html,l.cls||''));
+  const pt=mkc(1280,720,1.25);at(pt,0,0);pt.style.pointerEvents='none';pt.style.zIndex=4;root.appendChild(pt);
+  return {card,tt,dots:[...dots.children],P,sum,SL,summary,tB,m,cur:-2,pt};
+}
+function drawStepCard(S,t){
+  show(S.card,eo(seg(t,.4,1)));
+  const shrink=eio(seg(t,S.tB,S.tB+.7));S.card.style.width=lerp(688,404,shrink)+'px';
+  let curK=-1;S.focus=null;
+  S.P.forEach((P,k)=>{const {el,L,pg}=P;
+    const a=eo(seg(t,pg.t0,pg.t0+.5)),b=eo(seg(t,pg.t1-.45,pg.t1)),op=a*(1-b);
+    if(op>0&&P.fitV!==FONTV)fitPage(P);
+    el.style.opacity=op;el.style.visibility=op<=0?'hidden':'';el.style.transformOrigin='0 0';el.style.transform=`translateX(${(1-a)*50-b*50}px) scale(${P.s||1})`;
+    if(t>=pg.t0&&t<pg.t1)curK=k;
+    drawLines(L,pg.lines.map(l=>l.t),t,PENCIL[S.m]);
+    // 가장 최근 줄이 왼쪽 그림의 어디를 말하는지 (l.to) → 화살표
+    if(op>0&&t<S.tB){let n=-1;pg.lines.forEach((l,i)=>{if(t>=l.t)n=i;});const l=pg.lines[n];
+      if(l&&l.to){const nt=n+1<pg.lines.length?pg.lines[n+1].t:pg.t1-.45,fa=seg(t,l.t+.35,l.t+.95)*(1-seg(t,nt,nt+.25))*op;
+        if(fa>0)S.focus={el:L[n],to:l.to,a:fa,col:L[n]._uc||MC[S.m]};}}
+  });
+  const sa=eo(seg(t,S.tB+.5,S.tB+1.1));S.sum.style.opacity=sa;S.sum.style.visibility=sa<=0?'hidden':'';
+  S.SL.forEach((e,i)=>{show(e,eo(seg(t,S.tB+.6+i*.25,S.tB+1.1+i*.25)),10);drawU(e.u,0);});
+  const key=t>=S.tB?-1:curK;
+  if(key!==S.cur){S.cur=key;
+    S.tt.innerHTML=key<0?`<i style="color:${MC[S.m]}"></i>${t>=S.tB?'정리':'계산 과정'}`:`<i style="color:${MC[S.m]}"></i><b style="color:${MC[S.m]}">STEP ${key+1}</b>&nbsp;/ ${S.P.length} · ${S.P[key].pg.title}`;
+    kineticChars(S.tt);}
+  S.dots.forEach((d,k)=>{d.style.background=k===curK&&t<S.tB?MC[S.m]:k<curK||t>=S.tB?'#cfc6ae':'#ece6d4';d.style.opacity=t>=S.tB?0:1;});
+}
+function colBand(ctx,i,a,col){if(a<=0)return;ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(GX+i*CELL+1,GY+1,CELL-2,4*CELL-2,12);ctx.stroke();ctx.globalAlpha=1;}
+function rowBand(ctx,j,a,col){if(a<=0)return;ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(GX+1,GY+j*CELL+1,4*CELL-2,CELL-2,12);ctx.stroke();ctx.globalAlpha=1;}
+const winA=(t,a,b)=>seg(t,a,a+.3)*(1-seg(t,b-.3,b));
+
+// ═════════ 원본 픽셀을 떨어뜨리고 → 확대 → 빈칸(새 픽셀) 하나를 계산 → 빈칸 전체 채우기 ═════════
+// 좌표계: 원본 픽셀 (i, j)의 중심 = (i, j).  10배로 키운 새 픽셀 (x', y') 의 원본 좌표 = (x'/10, y'/10)
+const SCX=240,SCY=212,ZOOM=10,PXP=13,PYP=16,DI=8; // DI: 앞부분(빈칸 만들기) 길이
+let CAM={cx:1.5,cy:1.5,u:100};
+const V=(x,y)=>[SCX+CAM.u*(x-CAM.cx),SCY+CAM.u*(y-CAM.cy)];
+function camAt(t,tgt){const p=eio(seg(t,3.3,5.2));CAM={cx:lerp(1.5,tgt.cx,p),cy:lerp(1.5,tgt.cy,p),u:lerp(100,tgt.u,p)};}
+const PSRC=(()=>{const d=new Uint8ClampedArray(64);PATCH.forEach((row,j)=>row.forEach((c,i)=>{const k=(j*4+i)*4;d[k]=c[0];d[k+1]=c[1];d[k+2]=c[2];d[k+3]=255;}));return {w:4,h:4,data:d};})();
+const NPC={};
+function npColor(m,xp,yp){const k=m+xp+','+yp;if(!NPC[k]){const o=[0,0,0,0];sampleAt(PSRC,xp/ZOOM,yp/ZOOM,m,o,0,false);NPC[k]=o.slice(0,3).map(v=>clamp(Math.round(v),0,255));}return NPC[k];}
+const shiftPages=(pages,d)=>pages.map(p=>({...p,t0:p.t0+d,t1:p.t1+d,lines:p.lines.map(l=>({...l,t:l.t+d}))}));
+const shiftCaps=(caps,d)=>caps.map(([t,c])=>[t+d,c]);
+const SAMPLES=[[17,12],[11,19]];
+// 공통 앞부분 STEP: 빈칸 만들기
+const introPage={t0:1.4,t1:DI+1.8,title:'빈칸 만들기 (10배 확대)',lines:[
+  {t:1.8,y:0,html:'<span class=lab>원본</span>4 × 4 픽셀 — 한 칸 = (R, G, B) 세 숫자'},
+  {t:3.4,y:46,html:'<span class=lab>10배 확대</span>원본 픽셀은 10칸 간격으로 <b>띄엄띄엄</b> 놓이고'},
+  {t:4.4,y:84,html:'그 사이에 원본에 없던 <b>빈칸(새 픽셀)</b>이 9칸씩 생겨요'},
+  {t:5.8,y:136,html:'<span class=lab style="background:#e5484d">빈칸 P</span>새 픽셀 (13, 16)',to:['P']},
+  {t:6.6,y:176,html:'원본 좌표 = '+tex('(13\\div 10,\\ 16\\div 10)=(1.3,\\ 1.6)'),to:['P']},
+  {t:7.6,y:226,html:'→ 둘레 원본 픽셀의 RGB로 P의 RGB를 <b>계산</b>해요'}]};
+const introCaps=[[0,'원본 이미지의 4×4 픽셀 — 각 칸에는 이미 색(RGB)이 있어요'],[1.6,'이 이미지를 <b>10배</b>로 키우면 원본 픽셀은 띄엄띄엄 떨어지고'],
+  [3.4,'그 사이를 확대해 보면 아직 색이 없는 <b>빈칸(새 픽셀)</b>이 가득해요'],[5.6,'빈칸 하나 <b>P = 새 픽셀 (13, 16)</b> → 원본 좌표 (1.3, 1.6). 이 칸의 RGB는?']];
+function fillPage(t0,m,count,result){
+  const c=SAMPLES.map(([a,b])=>npColor(m,a,b));
+  return {t0,t1:t0+7,title:'빈칸 전체 채우기',lines:[
+    {t:t0+.3,y:0,html:'같은 계산을 빈칸 <b>하나하나</b>에 모두 반복하면'},
+    {t:t0+1.2,y:44,html:count},
+    ...SAMPLES.map(([a,b],k)=>({t:t0+2.6+k*.8,y:96+k*42,to:[`s:${k}`],html:`예) 새 픽셀 ${tex(`(${a},\\ ${b})\\ \\to\\ `)}원본 ${tex(`(${tn(a/10,1)},\\ ${tn(b/10,1)})\\ \\to\\ ${triT(c[k])}`)}${sw(c[k])}`})),
+    {t:t0+4.6,y:190,html:result}]};
+}
+function drawWorld(ctx,o){
+  const u=CAM.u,cs=u/ZOOM;
+  // ① 채워진 새 픽셀 (P에서 퍼져 나가듯)
+  if(o.fill&&o.fill.p>0){const F=o.fill,maxD=Math.hypot(Math.max(PXP-F.x0,F.x1-PXP),Math.max(PYP-F.y0,F.y1-PYP))+2,R=F.p*maxD;
+    for(let yp=F.y0;yp<=F.y1;yp++)for(let xp=F.x0;xp<=F.x1;xp++){const a=clamp((R-Math.hypot(xp-PXP,yp-PYP))/1.5);if(a<=0)continue;
+      const [sx,sy]=V(xp/ZOOM-.05,yp/ZOOM-.05);ctx.globalAlpha=a;ctx.fillStyle=rgb(npColor(F.m,xp,yp));ctx.fillRect(sx,sy,cs+.6,cs+.6);}
+    ctx.globalAlpha=1;}
+  // ② 새 픽셀 격자 (빈칸)
+  if(o.fineA>0&&cs>=4){const [x0,y0]=V(-.05,-.05),[x1,y1]=V(3.05,3.05);   // 새 픽셀 0~30만 (원본 밖 −1, −2 칸은 의미 없음)
+    ctx.globalAlpha=o.fineA*clamp((cs-4)/8)*.85;ctx.strokeStyle='#cbbf9c';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();
+    for(let k=-1;k<=30;k++){const [x]=V(k/ZOOM+.05,0),[,y]=V(0,k/ZOOM+.05);
+      if(x>=x0-1&&x<=x1+1&&x>-2&&x<ctx.W+2){ctx.moveTo(x,Math.max(0,y0));ctx.lineTo(x,Math.min(ctx.H,y1));}
+      if(y>=y0-1&&y<=y1+1&&y>-2&&y<ctx.H+2){ctx.moveTo(Math.max(0,x0),y);ctx.lineTo(Math.min(ctx.W,x1),y);}}
+    ctx.stroke();ctx.setLineDash([]);
+    // 원본 픽셀 중심을 지나는 좌표선 x = 0…3, y = 0…3
+    ctx.globalAlpha=o.fineA*.95;ctx.strokeStyle='#9a8c63';ctx.lineWidth=1.8;ctx.beginPath();
+    for(let k=0;k<4;k++){const [x]=V(k,0),[,y]=V(0,k);
+      if(x>-2&&x<ctx.W+2){ctx.moveTo(x,Math.max(0,y0));ctx.lineTo(x,Math.min(ctx.H,y1));}
+      if(y>-2&&y<ctx.H+2){ctx.moveTo(Math.max(0,x0),y);ctx.lineTo(Math.min(ctx.W,x1),y);}}
+    ctx.stroke();ctx.globalAlpha=1;}
+  // ③ 원본 픽셀 (줄어들며 떨어짐)
+  const sh=eio(o.shrink),sz=lerp(.94,1/ZOOM,sh);
+  for(let j=0;j<4;j++)for(let i=0;i<4;i++){
+    const a=seg(o.appear,(i+j)*.06,(i+j)*.06+.45);if(a<=0)continue;const dim=o.dim?o.dim(i,j):1,c=PATCH[j][i],[x,y]=V(i,j),s=u*sz;
+    ctx.globalAlpha=a*dim;ctx.fillStyle=rgb(c);ctx.beginPath();ctx.roundRect(x-s/2,y-s/2,s,s,Math.min(10,s*.15));ctx.fill();
+    if(sh>.25){ctx.globalAlpha=a*dim*seg(sh,.25,.6);ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.strokeRect(x-s/2-1.5,y-s/2-1.5,s+3,s+3);ctx.strokeStyle='#2b2540';ctx.lineWidth=1.2;ctx.strokeRect(x-s/2-3,y-s/2-3,s+6,s+6);}
+    // RGB 라벨: 처음엔 칸 안, 떨어진 뒤엔 칸 옆
+    const la=o.labA*a*dim;if(la<=0)continue;
+    const side=o.labRight||i>=PX?1:-1,lx=sh<.5?x:x+side*(s/2+33),ly=y;
+    ctx.globalAlpha=la;ctx.fillStyle='rgba(25,20,45,.66)';ctx.beginPath();ctx.roundRect(lx-28,ly-26,56,52,8);ctx.fill();
+    ctx.font='700 13px "Noto Sans KR"';ctx.textBaseline='middle';
+    [['R','#ff8a8a'],['G','#8ce99a'],['B','#74c0fc']].forEach(([L,col],k)=>{ctx.textAlign='left';ctx.fillStyle=col;ctx.fillText(L,lx-23,ly-15+k*15);ctx.fillStyle='#fff';ctx.textAlign='right';ctx.fillText(c[k],lx+23,ly-15+k*15);});
+  }
+  ctx.globalAlpha=1;
+  // ④ 좌표 눈금 (화면 가장자리)
+  ctx.globalAlpha=seg(o.appear,.3,1);ctx.fillStyle='#7a6f58';ctx.font='700 19px Gaegu';ctx.textBaseline='middle';
+  ctx.textAlign='center';for(let i=0;i<4;i++){const [x]=V(i,0);if(x>20&&x<ctx.W-20)ctx.fillText('x='+i,x,ctx.H-9);}
+  ctx.textAlign='left';for(let j=0;j<4;j++){const [,y]=V(0,j);if(y>12&&y<ctx.H-24)ctx.fillText('y='+j,2,y);}
+  ctx.globalAlpha=1;
+}
+function drawPcell(ctx,a,fill){
+  if(a<=0)return;const [x,y]=V(PXP/ZOOM,PYP/ZOOM),s=Math.max(12,CAM.u/ZOOM),sc=back(a);
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.globalAlpha=clamp(a*1.5);
+  ctx.fillStyle=fill?rgb(fill):'rgba(255,255,255,.92)';ctx.fillRect(-s/2,-s/2,s,s);
+  ctx.strokeStyle='#e5484d';ctx.lineWidth=3;ctx.strokeRect(-s/2-1.5,-s/2-1.5,s+3,s+3);
+  if(!fill){ctx.fillStyle='#e5484d';ctx.font=`700 ${Math.max(11,s*.75)}px "Do Hyeon"`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('?',0,1);}
+  ctx.restore();
+  ctx.globalAlpha=clamp(a*1.5);chip(ctx,x+s/2+64,y-s/2-12,'P · 새 픽셀 (13, 16)','#e5484d','#fff',13);ctx.globalAlpha=1;
+}
+function drawSamples(ctx,a,m){
+  if(a<=0)return;const cs=CAM.u/ZOOM;
+  SAMPLES.forEach(([xp,yp],k)=>{const q=seg(a,k*.3,k*.3+.7);if(q<=0)return;const [x,y]=V(xp/ZOOM,yp/ZOOM),c=npColor(m,xp,yp);
+    ctx.globalAlpha=q;ctx.strokeStyle='#2b2540';ctx.lineWidth=2.5;ctx.strokeRect(x-cs/2-2,y-cs/2-2,cs+4,cs+4);
+    // 꼬리표는 칸 위에 단다(아래에 달면 (11,19)의 꼬리표가 원본 픽셀 (1,2)의 RGB 상자를 가림)
+    chip(ctx,x,y-cs/2-16,`(${xp},${yp}) → (${c.join(', ')})`,'#2b2540','#fff',12);ctx.globalAlpha=1;});
+}
+const PPt=()=>V(PX,PY);
+
+// 4. 최근접 이웃 ─────────────────────────────────────
+(()=>{
+  const NB=[[1,1],[2,1],[1,2],[2,2]];
+  const dLine=([i,j])=>{const dx=Math.abs(i-PX),dy=Math.abs(j-PY),s=dx*dx+dy*dy,d=Math.sqrt(s),ex=Math.abs(d-Math.round(d*100)/100)<1e-9;
+    return `(${i},${j}):\\ \\sqrt{${tn(dx,1)}^2+${tn(dy,1)}^2}=\\sqrt{${tn(dx*dx,2)}+${tn(dy*dy,2)}}=\\sqrt{${tn(s,2)}}${ex?'=':'\\approx'}\\mathbf{${d.toFixed(2)}}`;};
+  const TD=[3.4,5.3,7.2,9.1];
+  const calc=[
+    {t0:1.8,t1:12.4,title:'거리 재기',lines:[
+      {t:2,y:0,html:'<span class=lab>공식</span>'+tex('d=\\sqrt{(x-x_i)^2+(y-y_i)^2}')},
+      {t:2.6,y:44,html:'<span class=note>P(1.3, 1.6)에서 둘레 4개 원본 픽셀까지의 거리</span>'},
+      ...NB.map((n,k)=>({t:TD[k],y:84+k*46,html:tex(k===2?tcol(MC.nn,dLine(n)):dLine(n)),to:['p:'+n.join(',')]})),
+      {t:10.8,y:276,html:'<span class=lab style="background:var(--nn)">결론</span>가장 가까운 원본 픽셀 = <b style="color:var(--nn)">(1, 2)</b> &nbsp;(거리 0.50)',to:['p:1,2']}]},
+    {t0:12.4,t1:19.6,title:'반올림으로 확인하기',lines:[
+      {t:12.8,y:0,html:'가장 가까운 정수 좌표 = 각 좌표를 <b>반올림</b>한 것'},
+      {t:14,y:50,html:'<span class=lab>x</span>'+tex('1.3')+' → 소수 부분 '+tex('0.3<0.5')+' → 내림 → '+tex('1')},
+      {t:15.6,y:100,html:'<span class=lab>y</span>'+tex('1.6')+' → 소수 부분 '+tex('0.6\\ge 0.5')+' → 올림 → '+tex('2')},
+      {t:17.2,y:160,html:tex('(\\operatorname{round}1.3,\\ \\operatorname{round}1.6)=(1,\\ 2)')+' &nbsp;✓ 거리 비교와 같은 답'}]},
+    {t0:19.6,t1:27.4,title:'빈칸 P 칠하기',lines:[
+      {t:20,y:0,html:'원본 픽셀 (1, 2)의 RGB를 <b>계산 없이</b> 그대로 가져와요'},
+      ...CH3.map(([C,c],k)=>({t:21.2+k*.9,y:52+k*44,uc:RC_[c],to:['p:1,2'],html:tex(`${tcol(RC_[c],'\\mathbf{'+C+'}')}(P)=${tcol(RC_[c],'\\mathbf{'+C+'}')}(1,2)=${tbold(RC_[c],NNV[k])}`)})),
+      {t:24.6,y:200,html:`<span class=big>${tex('P='+triT(NNV))}</span>${sw(NNV)}`,to:['P']},
+      {t:25.6,y:256,html:'<span class=note>곱셈 0번 · 비교와 반올림만 → 가장 빠른 방법</span>'}]}];
+  const F0=DI+27.4,tB=F0+7.4;
+  const pages=[introPage,...shiftPages(calc,DI),fillPage(F0,'nn','원본 4칸 사이의 새 픽셀 11 × 11 = <b>121칸</b>','→ 가장 가까운 원본 색이 그대로 퍼져 <b style="color:var(--nn)">네 덩어리(블록)</b>가 생겨요')];
+  const summary=[{y:0,html:`<span class=big>${tex('P='+triT(NNV))}</span>${sw(NNV)}`},{y:58,html:'① 거리 비교 (= 좌표 반올림)'},{y:90,html:'② 가장 가까운 1개 픽셀 복사'},{y:122,html:'<span class=note>곱셈 0번 · 참고 픽셀 1개</span>'}];
+  scenes.push({name:'최근접 이웃',dur:tB+10,
+    captions:[...introCaps,...shiftCaps([[2,'<b class=k-nn>STEP 2</b> 피타고라스 정리로 둘레 4개 원본 픽셀까지 <b>거리</b>를 계산해요'],
+      [7.2,'(1, 2)까지는 '+tex('\\sqrt{0.09+0.16}=\\sqrt{0.25}=\\textcolor{#ffd166}{\\mathbf{0.5}}')],[9.1,'(2, 2)까지는 '+tex('\\sqrt{0.49+0.16}=\\sqrt{0.65}\\approx\\textcolor{#ffd166}{\\mathbf{0.81}}')],
+      [10.8,'네 거리 중 <b>0.5</b>가 가장 짧아요 → 가장 가까운 원본 픽셀은 <b>(1, 2)</b>'],
+      [12.6,'<b class=k-nn>STEP 3</b> 사실 이건 좌표를 <b>반올림</b>한 것과 같아요'],[17.2,'1.3 → 1,  1.6 → 2  →  (1, 2)'],
+      [19.8,'<b class=k-nn>STEP 4</b> (1, 2)의 R, G, B를 빈칸 P에 <b>그대로 복사</b>'],[24.6,'빈칸 P = (160, 150, 60) — 칠했어요!']],DI),
+      [F0+.2,'<b class=k-nn>STEP 5</b> 같은 계산을 <b>모든 빈칸</b>에 반복하면'],[F0+4.6,'가장 가까운 원본 색이 퍼져서 <b>네 덩어리 블록</b>이 돼요'],
+      [tB+.4,'1차원으로 보면 값이 <b>계단</b>처럼 뚝뚝 끊깁니다'],[tB+4,'그래서 크게 키우면 <b>모자이크·계단 현상</b> — 대신 계산이 가장 빠릅니다']],
+    build(root){
+      const r={};r.h=methodHeader(root,'nn','①','참고 픽셀 1개');
+      sheet(root,14,112,486,484);r.cv=mkc(500,460);at(r.cv,24,120);root.appendChild(r.cv);
+      r.S=stepCard(root,'nn',pages,tB,summary);
+      r.sig=signalCard(root,972,120,264,180,'nn');r.res=resultCard(root,972,314,'nn');
+      return r;
+    },
+    draw(r,t){
+      show(r.h,eo(seg(t,0,.6)));drawStepCard(r.S,t);
+      camAt(t,{cx:1.5,cy:1.5,u:260});const T=t-DI;
+      const ctx=r.cv.getContext('2d');clr(ctx);
+      const isNb=(i,j)=>NB.some(([a,b])=>a===i&&b===j);
+      const dimNb=1-.5*winA(T,19.8,27.4);
+      drawWorld(ctx,{appear:seg(t,.1,1.3),shrink:seg(t,1.6,3.2),fineA:seg(t,2.6,3.6),labA:t<3?1-seg(t,1.4,1.8):seg(t,5,5.6),
+        dim:(i,j)=>!isNb(i,j)?.6:(i===1&&j===2?1:dimNb),fill:{m:'nn',p:seg(t,F0+.4,F0+3.6),x0:10,x1:20,y0:10,y1:20}});
+      const [Px,Py]=PPt();
+      NB.forEach(([i,j],k)=>{const p=eo(seg(T,TD[k],TD[k]+.8))*(1-seg(t,F0,F0+.4));if(p<=0)return;const [x,y]=V(i,j),near=i===1&&j===2,on=near&&T>10.8;
+        const active=winA(T,TD[k],TD[k]+1.9)>0;ctx.globalAlpha=(near?1:dimNb)*(1-seg(t,F0,F0+.4));
+        arrowLine(ctx,Px,Py,x,y,eo(seg(T,TD[k],TD[k]+.8)),on||active?MC.nn:'#6b6680',on||active?4:2,[5,4]);
+        if(p>.95)chip(ctx,lerp(Px,x,.45),lerp(Py,y,.45),Math.hypot(i-PX,j-PY).toFixed(2),on||active?MC.nn:'#6b6680');ctx.globalAlpha=1;});
+      const hp=seg(T,10.8,11.3)*(1-seg(t,F0,F0+.4));if(hp>0){const [x,y]=V(1,2),s=CAM.u/ZOOM+18;ctx.globalAlpha=hp;ctx.strokeStyle=MC.nn;ctx.lineWidth=5;ctx.beginPath();ctx.roundRect(x-s/2,y-s/2,s,s,8);ctx.stroke();ctx.globalAlpha=1;}
+      const ra=winA(T,13.8,19.6);if(ra>0){ctx.globalAlpha=ra;const by=V(0,2)[1]+62,bx=V(2,0)[0]+62;
+        arrowLine(ctx,Px,by,V(1,0)[0]+4,by,eo(seg(T,14,14.8)),MC.nn,3);chip(ctx,Px+18,by-16,'1.3 → 1',MC.nn);
+        if(T>15.6){arrowLine(ctx,bx,Py,bx,V(0,2)[1]-4,eo(seg(T,15.6,16.4)),MC.nn,3);chip(ctx,bx,Py-18,'1.6 → 2',MC.nn);}ctx.globalAlpha=1;}
+      const mp=seg(T,21.2,24.4);if(mp>0&&mp<1){const [x,y]=V(1,2),q=eio(mp);ctx.fillStyle=rgb(NNV);ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(lerp(x,Px,q),lerp(y,Py,q),11,0,7);ctx.fill();ctx.stroke();}
+      drawPcell(ctx,seg(t,5.4,5.9),T>24.6?NNV:null);
+      drawSamples(ctx,seg(t,F0+2.6,F0+3.8),'nn');
+      clr(r.sig.ctx);drawSignal(r.sig.ctx,S1,{dots:seg(t,tB+.8,tB+1.6),curves:[{m:'nn',p:seg(t,tB+1.6,tB+3.8),col:MC.nn}]});
+      show(r.sig.card,eo(seg(t,tB+.6,tB+1.2)));
+      drawResult(r.res,'nn',tB+4,t);drawPointer(r.S);
+    }});
+})();
+
+// 5. 양선형 ─────────────────────────────────────
+(()=>{
+  const f11=PATCH[1][1],f21=PATCH[1][2],f12=PATCH[2][1],f22=PATCH[2][2];
+  const chLines=(t0,wa,wb,ca,cb,res,y0,to)=>CH3.map(([C,c],k)=>({t:t0+k*1.4,y:y0+k*42,uc:RC_[c],to,
+    html:tex(`${tbold(RC_[c],C)}:\\ ${tn(wa)}\\times ${ca[k]}+${tn(wb)}\\times ${cb[k]}=${tn(wa*ca[k],2)}+${tn(wb*cb[k],2)}=${tbold(RC_[c],tn(res[k],2))}`)}));
+  const W4=[(1-AL)*(1-BE),AL*(1-BE),(1-AL)*BE,AL*BE];
+  const calc=[
+    {t0:1.8,t1:10,title:'비율 α, β 구하기',lines:[
+      {t:2,y:0,html:'빈칸 P(1.3, 1.6)을 둘러싼 원본 네 픽셀: <b>(1,1) (2,1) (1,2) (2,2)</b>'},
+      {t:3.6,y:52,html:'<span class=lab>가로</span>'+tex('\\alpha=1.3-\\lfloor 1.3\\rfloor=1.3-1=0.3'),to:['abar']},
+      {t:5.2,y:100,html:'<span class=lab>세로</span>'+tex('\\beta=1.6-\\lfloor 1.6\\rfloor=1.6-1=0.6'),to:['bbar']},
+      {t:6.8,y:156,html:'가까운 쪽을 더 많이 섞어요 → 왼쪽 '+tex('\\mathbf{1-\\alpha=0.7}')+', 오른쪽 '+tex('\\mathbf{\\alpha=0.3}')},
+      {t:8,y:198,html:'위쪽 '+tex('\\mathbf{1-\\beta=0.4}')+', 아래쪽 '+tex('\\mathbf{\\beta=0.6}')}]},
+    {t0:10,t1:18.4,title:'위쪽 줄 섞기 → A',lines:[
+      {t:10.4,y:0,html:tex('A=(1-\\alpha)\\,f(1,1)+\\alpha\\,f(2,1)=0.7\\,f(1,1)+0.3\\,f(2,1)'),to:['p:1,1','p:2,1']},
+      {t:11.4,y:44,html:`<span class=note>${tex(`f(1,1)=${triT(f11)},\\quad f(2,1)=${triT(f21)}`)}</span>`},
+      ...chLines(12.4,1-AL,AL,f11,f21,BLA,88,['A']),
+      {t:16.6,y:222,html:`<span class=big>${tex('A='+triT(BLA))}</span>${sw(BLA)}`,to:['A']}]},
+    {t0:18.4,t1:26.8,title:'아래쪽 줄 섞기 → B',lines:[
+      {t:18.8,y:0,html:tex('B=(1-\\alpha)\\,f(1,2)+\\alpha\\,f(2,2)=0.7\\,f(1,2)+0.3\\,f(2,2)'),to:['p:1,2','p:2,2']},
+      {t:19.8,y:44,html:`<span class=note>${tex(`f(1,2)=${triT(f12)},\\quad f(2,2)=${triT(f22)}`)}</span>`},
+      ...chLines(20.8,1-AL,AL,f12,f22,BLB,88,['B']),
+      {t:25,y:222,html:`<span class=big>${tex('B='+triT(BLB))}</span>${sw(BLB)}`,to:['B']}]},
+    {t0:26.8,t1:35.2,title:'세로로 A, B 섞기 → P',lines:[
+      {t:27.2,y:0,html:tex('P=(1-\\beta)\\,A+\\beta\\,B=0.4\\,A+0.6\\,B'),to:['A','B']},
+      {t:28.2,y:44,html:`<span class=note>${tex(`A=${triT(BLA)},\\quad B=${triT(BLB)}`)}</span>`},
+      ...chLines(29.2,1-BE,BE,BLA,BLB,BLV,88,['P']),
+      {t:33.4,y:222,html:`<span class=big>${tex('P\\approx'+triT(BLV))}</span>${sw(BLV)} <span class=note>&nbsp;(51.4 → 반올림 51)</span>`,to:['P']}]},
+    {t0:35.2,t1:42.2,title:'검산: 한 번에 쓰기',lines:[
+      {t:35.6,y:0,html:'네 픽셀의 가중치 = <b>마주 보는 칸의 넓이</b>'},
+      {t:36.8,y:44,html:tex(`(1-\\alpha)(1-\\beta)=0.7\\times0.4=\\mathbf{${tn(W4[0])}},\\quad \\alpha(1-\\beta)=0.3\\times0.4=\\mathbf{${tn(W4[1])}}`),to:['p:1,1','p:2,1']},
+      {t:37.6,y:84,html:tex(`(1-\\alpha)\\beta=0.7\\times0.6=\\mathbf{${tn(W4[2])}},\\quad \\alpha\\beta=0.3\\times0.6=\\mathbf{${tn(W4[3])}}`)+' &nbsp;<span class=note>(합 = 1)</span>',to:['p:1,2','p:2,2']},
+      {t:38.8,y:136,html:tex(`${tbold(RC_.r,'R')}=${sumT([[W4[0],f11[0]],[W4[1],f21[0]],[W4[2],f12[0]],[W4[3],f22[0]]])}`),uc:RC_.r,to:['P']},
+      {t:39.8,y:176,html:tex(`\\phantom{R}=${addT([W4[0]*f11[0],W4[1]*f21[0],W4[2]*f12[0],W4[3]*f22[0]])}=${tbold(RC_.r,tn(BLV[0],2))}`)+' ✓',uc:RC_.r,to:['P']}]}];
+  const F0=DI+42.2,tB=F0+7.4;
+  const pages=[introPage,...shiftPages(calc,DI),fillPage(F0,'bl','원본 4칸 사이의 새 픽셀 11 × 11 = <b>121칸</b>','→ 네 색이 거리 비율대로 섞여 <b style="color:var(--bl)">부드러운 그라데이션</b>이 돼요')];
+  const summary=[{y:0,html:`<span class=big>${tex('P\\approx'+triT(BLV))}</span>${sw(BLV)}`},{y:58,html:'① 가로로 두 번 섞기 → A, B'},{y:90,html:'② 세로로 한 번 섞기 → P'},{y:122,html:'<span class=note>채널마다 곱셈 6번 · 참고 픽셀 4개</span>'}];
+  scenes.push({name:'양선형',dur:tB+10.5,
+    captions:[...introCaps,...shiftCaps([[2,'<b class=k-bl>STEP 2</b> 빈칸 P가 원본 네 픽셀 사이 어디쯤인지 비율을 구해요'],
+      [5.2,'가로로 0.3, 세로로 0.6 만큼 — 이걸 <b>α, β</b>라고 불러요'],[6.8,'가까운 픽셀일수록 <b>더 많이</b> 섞어요 (거리와 반대 비율)'],
+      [10.2,'<b class=k-bl>STEP 3</b> 위쪽 줄: 0.7 × 왼쪽 + 0.3 × 오른쪽 → <b>A</b>'],[12.4,'R, G, B를 <b>채널마다 따로</b> 계산해요'],
+      [18.6,'<b class=k-bl>STEP 4</b> 아래쪽 줄도 똑같이 → <b>B</b>'],
+      [27,'<b class=k-bl>STEP 5</b> 이번엔 세로로: 0.4 × A + 0.6 × B → <b>P</b>'],[33.4,'빈칸 P ≈ (172, 161, 51) — 칠했어요!'],
+      [35.4,'<b>검산</b>: 네 가중치를 곱해 한 번에 더해도 같은 값']],DI),
+      [F0+.2,'<b class=k-bl>STEP 7</b> 같은 계산을 <b>모든 빈칸</b>에 반복하면'],[F0+4.6,'네 색이 부드럽게 이어지는 <b>그라데이션</b>이 돼요'],
+      [tB+.4,'1차원으로 보면 점과 점을 <b>직선</b>으로 잇는 것 — 가로·세로 두 번이라 “양(兩)선형”'],[tB+4.6,'계단은 사라지지만 경계가 <b>살짝 흐릿</b>해집니다']],
+    build(root){
+      const r={};r.h=methodHeader(root,'bl','②','참고 픽셀 4개 (2×2)');
+      sheet(root,14,112,486,484);r.cv=mkc(500,460);at(r.cv,24,120);root.appendChild(r.cv);
+      r.S=stepCard(root,'bl',pages,tB,summary);
+      r.sig=signalCard(root,972,120,264,180,'bl');r.res=resultCard(root,972,314,'bl');
+      return r;
+    },
+    draw(r,t){
+      show(r.h,eo(seg(t,0,.6)));drawStepCard(r.S,t);
+      camAt(t,{cx:1.5,cy:1.5,u:260});const T=t-DI,off=1-seg(t,F0,F0+.4);
+      const ctx=r.cv.getContext('2d');clr(ctx);
+      const NB=[[1,1],[2,1],[1,2],[2,2]],isNb=(i,j)=>NB.some(([a,b])=>a===i&&b===j);
+      const use=(i,j)=>{if(!isNb(i,j))return .6;
+        if(T>=10&&T<18.4)return j===1?1:.4;if(T>=18.4&&T<26.8)return j===2?1:.4;return 1;};
+      drawWorld(ctx,{appear:seg(t,.1,1.3),shrink:seg(t,1.6,3.2),fineA:seg(t,2.6,3.6),labA:t<3?1-seg(t,1.4,1.8):seg(t,5,5.6),
+        dim:use,fill:{m:'bl',p:seg(t,F0+.4,F0+3.6),x0:10,x1:20,y0:10,y1:20}});
+      const C=MC.bl,[x1,y1]=V(1,1),[x2,y2]=V(2,2),[Px,Py]=PPt();
+      ctx.globalAlpha=off;
+      const sq=seg(T,2,2.6);if(sq>0){ctx.globalAlpha=sq*off;ctx.setLineDash([6,5]);ctx.strokeStyle=C;ctx.lineWidth=2.5;ctx.strokeRect(x1,y1,x2-x1,y2-y1);ctx.setLineDash([]);}
+      const ra=seg(T,3.6,4.3);if(ra>0){ctx.globalAlpha=ra*off;const by=y2+62;
+        ctx.strokeStyle='#bdb6a2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x1,by);ctx.lineTo(x2,by);ctx.stroke();
+        ctx.strokeStyle=C;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x1,by);ctx.lineTo(lerp(x1,Px,eo(ra)),by);ctx.stroke();chip(ctx,(x1+Px)/2,by+18,'α=0.3',C);chip(ctx,(Px+x2)/2,by+18,'1−α=0.7','#8a8499');}
+      const rb=seg(T,5.2,5.9);if(rb>0){ctx.globalAlpha=rb*off;const bx=x2+62;
+        ctx.strokeStyle='#bdb6a2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(bx,y1);ctx.lineTo(bx,y2);ctx.stroke();
+        ctx.strokeStyle=C;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(bx,y1);ctx.lineTo(bx,lerp(y1,Py,eo(rb)));ctx.stroke();chip(ctx,bx,(y1+Py)/2,'β=0.6',C);chip(ctx,bx,(Py+y2)/2,'0.4','#8a8499');}
+      const wa=Math.max(winA(T,6.8,10),winA(T,36.6,42.2));
+      if(wa>0)NB.forEach(([i,j],k)=>{const [cx,cy]=V(i,j),s=CAM.u/ZOOM;ctx.globalAlpha=wa*off;chip(ctx,cx+(i===1?1:-1)*(s/2+34),cy+(j===1?1:-1)*(s/2+16),'×'+fN(T<20?[.7,.3,.7,.3][k]:W4[k]),C,'#fff',14);});
+      ctx.globalAlpha=off;
+      const ap=eo(seg(T,10.4,11.6)),bp=eo(seg(T,18.8,20));
+      if(ap>0){ctx.strokeStyle=C;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y1);ctx.stroke();
+        const ax=lerp(x1,Px,ap);if(T>16.6){ctx.fillStyle=rgb(BLA);ctx.beginPath();ctx.arc(ax,y1,13,0,7);ctx.fill();}marker(ctx,ax,y1,'A',C,1);}
+      if(bp>0){ctx.strokeStyle=C;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x1,y2);ctx.lineTo(x2,y2);ctx.stroke();
+        const bxp=lerp(x1,Px,bp);if(T>25){ctx.fillStyle=rgb(BLB);ctx.beginPath();ctx.arc(bxp,y2,13,0,7);ctx.fill();}marker(ctx,bxp,y2,'B',C,1);}
+      const vp=eo(seg(T,27.2,28.4));if(vp>0){ctx.strokeStyle='#e5484d';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(Px,y1+13);ctx.lineTo(Px,lerp(y1+13,Py-16,vp));ctx.stroke();
+        ctx.beginPath();ctx.moveTo(Px,y2-13);ctx.lineTo(Px,lerp(y2-13,Py+16,vp));ctx.stroke();
+        ctx.globalAlpha=winA(T,27.6,35.2)*off;chip(ctx,Px-34,(y1+Py)/2,'0.6',C);chip(ctx,Px-34,(y2+Py)/2+6,'0.4',C);}
+      ctx.globalAlpha=1;
+      drawPcell(ctx,seg(t,5.4,5.9),T>33.4?BLV:null);
+      drawSamples(ctx,seg(t,F0+2.6,F0+3.8),'bl');
+      clr(r.sig.ctx);drawSignal(r.sig.ctx,S1,{dots:seg(t,tB+.8,tB+1.6),curves:[{m:'bl',p:seg(t,tB+1.6,tB+3.8),col:MC.bl}]});
+      show(r.sig.card,eo(seg(t,tB+.6,tB+1.2)));
+      drawResult(r.res,'bl',tB+4.4,t);drawPointer(r.S);
+    }});
+})();
+
+// 6. 바이큐빅 ─────────────────────────────────────
+(()=>{
+  const wLines=(axis,pos,ts,y0)=>[0,1,2,3].map(k=>{const tt=k-pos,a=Math.abs(tt),A=tn(a,1);let f,v;
+    if(a<=1){f=`1.5(${A})^3-2.5(${A})^2+1`;v=`${tn(1.5*a**3)}-${tn(2.5*a*a)}+1`;}
+    else{f=`-0.5(${A})^3+2.5(${A})^2-4(${A})+2`;v=`-${tn(.5*a**3)}+${tn(2.5*a*a)}-${tn(4*a)}+2`;}
+    const tg=[`${axis==='i'?'c':'r'}:${k}`];
+    return [{t:ts[k],y:y0+k*72,to:tg,html:`<span class=lab>${axis}=${k}</span>${tex(`t=${k}-${pos}=${tn(tt,1)},\\quad |t|=${A}`)} <span class=note>(${a<=1?'|t| ≤ 1':'1 < |t| < 2'} 식)</span>`},
+            {t:ts[k]+.7,y:y0+k*72+33,to:tg,html:tex(`W=${f}=${v}=${tbold(MC.bc,tn(W(tt)))}`),cls:'sm'}];}).flat();
+  const rowV=[0,1,2,3].map(j=>[0,1,2].map(ch=>[0,1,2,3].reduce((s,i)=>s+WX[i]*PATCH[j][i][ch],0)));
+  const TX=[11.6,13.8,16,18.2],TY=[23.6,25.8,28,30.2],TR=[35.4,37.4,39.4,41.4];
+  const calc=[
+    {t0:1.8,t1:10.6,title:'가중치 함수 W(t)',lines:[
+      {t:2,y:0,html:tex('W(t)=\\begin{cases}1.5|t|^3-2.5|t|^2+1 & (|t|\\le 1)\\\\ -0.5|t|^3+2.5|t|^2-4|t|+2 & (1<|t|<2)\\\\ 0 & (|t|\\ge 2)\\end{cases}')},
+      {t:7.6,y:268,html:'<span class=note>'+tex('t=0\\to 1,\\quad t=\\pm1,\\ \\pm2\\to 0')+' ,&nbsp; '+tex('1<|t|<2')+' 구간은 <b style="color:#e5484d">음수</b></span>'}]},
+    {t0:10.6,t1:22.4,title:'가로 가중치 Wx',lines:[
+      {t:10.9,y:0,html:'가로 거리 '+tex('t=i-1.3')+' &nbsp;('+tex('i=0,1,2,3')+' · 네 열)'},
+      ...wLines('i',PX,TX,36),
+      {t:20.6,y:330,html:`<span class=lab style="background:var(--bc)">합</span>${tex(addT(WX.map(v=>+v.toFixed(4)))+'=\\mathbf{1}')} ✓`}]},
+    {t0:22.4,t1:34.2,title:'세로 가중치 Wy',lines:[
+      {t:22.7,y:0,html:'세로 거리 '+tex('t=j-1.6')+' &nbsp;('+tex('j=0,1,2,3')+' · 네 줄)'},
+      ...wLines('j',PY,TY,36),
+      {t:32.4,y:330,html:`<span class=lab style="background:var(--bc)">합</span>${tex(addT(WY)+'=\\mathbf{1}')} ✓`}]},
+    {t0:34.2,t1:44.4,title:'가로로 먼저 (R 채널)',lines:[
+      {t:34.5,y:0,html:'각 줄 j 마다 '+tex('r_j=\\sum_{i=0}^{3} W_x(i)\\,R(i,j)')},
+      ...[0,1,2,3].map(j=>({t:TR[j],y:48+j*48,to:[`r:${j}`],html:`<span class=lab>j=${j}</span>${tex(`${sumT([0,1,2,3].map(i=>[WX[i],PATCH[j][i][0]]))}=${tbold(RC_.r,tn(rowV[j][0],2))}`)}`,cls:'sm'})),
+      {t:43,y:250,html:'<span class=note>줄마다 4개를 섞어서 → 값 4개 '+tex('(r_0,\\ r_1,\\ r_2,\\ r_3)')+'</span>'}]},
+    {t0:44.4,t1:54.6,title:'세로로 합치기 → P',lines:[
+      {t:44.7,y:0,html:tex('P_R=\\sum_{j=0}^{3} W_y(j)\\,r_j'),to:['P']},
+      {t:46,y:48,html:tex(`\\phantom{P_R}=${sumT([0,1,2,3].map(j=>[WY[j],tn(rowV[j][0],2)]))}`),cls:'sm'},
+      {t:47.4,y:84,html:tex(`\\phantom{P_R}=${addT([0,1,2,3].map(j=>WY[j]*rowV[j][0]))}\\approx ${tbold(RC_.r,tn(BCV[0],1))}`),cls:'sm'},
+      {t:49,y:128,html:'G, B 채널도 똑같이 → '+tex(`${tbold(RC_.g,'G')}\\approx ${tn(BCV[1],1)},\\quad ${tbold(RC_.b,'B')}\\approx ${tn(BCV[2],1)}`)},
+      {t:50.6,y:176,html:`<span class=big>${tex('P\\approx'+triT(BCV))}</span>${sw(BCV)}`,to:['P']},
+      {t:52,y:236,html:'<span class=note>한 번에 쓰면 '+tex('w(i,j)=W_x(i)\\,W_y(j)')+' — 원본 픽셀 아래 16개 숫자 (합 = 1)</span>'}]}];
+  const F0=DI+54.6,tB=F0+7.4;
+  const pages=[introPage,...shiftPages(calc,DI),fillPage(F0,'bc','4×4 원본 영역의 새 픽셀 31 × 31 = <b>961칸</b>','→ 16칸을 보고 계산해서 <b style="color:var(--bc)">또렷하면서 부드러운 면</b>이 돼요')];
+  const summary=[{y:0,html:`<span class=big>${tex('P\\approx'+triT(BCV))}</span>${sw(BCV)}`},{y:58,html:'① 3차 함수로 Wx, Wy 계산'},{y:90,html:'② 가로로 섞고 → 세로로 섞기'},{y:122,html:'<span class=note>채널마다 곱셈 20번 · 참고 픽셀 16개</span>'}];
+  scenes.push({name:'바이큐빅',dur:tB+11,
+    captions:[...introCaps.map(([t,c],k)=>[t,k===2?'바이큐빅은 빈칸 둘레 <b>4×4 = 16개</b> 원본 픽셀을 모두 봐요':c]),...shiftCaps([[2,'<b class=k-bc>STEP 2</b> 가중치는 거리 t에 따라 <b>3차 함수 W(t)</b>로 정해요'],
+      [7.6,'가까우면 크게, 멀면 작게 — 1~2칸 떨어진 곳은 <b>음수(−)</b>가 돼요'],
+      [10.8,'<b class=k-bc>STEP 3</b> 네 열까지의 가로 거리 t를 W(t)에 넣어요'],[11.6,'i = 0: 1.3칸 떨어짐 → 두 번째 식 → <b>−0.0735</b>'],[13.8,'i = 1: 0.3칸 → 첫 번째 식 → <b>0.8155</b> (가장 큼)'],
+      [20.6,'네 가중치를 더하면 정확히 <b>1</b> — 평균이 되는 이유'],
+      [22.6,'<b class=k-bc>STEP 4</b> 세로도 똑같이: 네 줄까지의 거리 t = j − 1.6'],
+      [34.4,'<b class=k-bc>STEP 5</b> R 채널로 계산: 각 줄을 <b>가로로</b> 먼저 섞어요'],
+      [44.6,'<b class=k-bc>STEP 6</b> 줄마다 나온 4개 값을 <b>세로로</b> 섞으면'],[47.4,`R ≈ ${fN(BCV[0],1)} — G, B도 같은 방법`],[50.6,`빈칸 P ≈ (${BCV.map(Math.round).join(', ')}) — 칠했어요!`]],DI),
+      [F0+.2,'<b class=k-bc>STEP 7</b> 같은 계산을 <b>모든 빈칸</b>에 반복하면'],[F0+4.6,'16칸을 보고 섞어서 <b>또렷하면서 부드러운 면</b>이 돼요'],
+      [tB+.4,'1차원으로 보면 점들을 <b>부드러운 곡선</b>으로 잇습니다'],[tB+4.6,'경계는 또렷하고 부드러움 — 대신 <b>계산량이 가장 많아요</b>']],
+    build(root){
+      const r={};r.h=methodHeader(root,'bc','③','참고 픽셀 16개 (4×4)');
+      sheet(root,14,112,486,484);r.cv=mkc(500,460);at(r.cv,24,120);root.appendChild(r.cv);
+      r.S=stepCard(root,'bc',pages,tB,summary);
+      r.kc=mkc(600,150);at(r.kc,24,106);r.S.P[1].el.appendChild(r.kc);
+      r.sig=signalCard(root,972,120,264,180,'bc');r.res=resultCard(root,972,314,'bc');
+      return r;
+    },
+    draw(r,t){
+      show(r.h,eo(seg(t,0,.6)));drawStepCard(r.S,t);
+      const T=t-DI,off=1-seg(t,F0,F0+.4);
+      const K=r.kc.getContext('2d');clr(K);const kp=seg(T,3.6,6.4);
+      if(kp>0){const w=K.W,hh=K.H,X=v=>20+(v+2.2)/4.4*(w-40),Y=v=>12+(1.05-v)/1.25*(hh-30);
+        K.strokeStyle='#e7e1cf';K.lineWidth=1.5;K.beginPath();K.moveTo(X(-2.2),Y(0));K.lineTo(X(2.2),Y(0));K.moveTo(X(0),Y(1.08));K.lineTo(X(0),Y(-.18));K.stroke();
+        K.fillStyle='#8a8499';K.font='700 12px "Noto Sans KR"';K.textAlign='center';[-2,-1,1,2].forEach(v=>K.fillText(v,X(v),Y(0)+14));K.fillText('t',X(2.15),Y(0)-8);K.textAlign='left';K.fillText('W(t)',X(0)+6,Y(1.02));
+        K.strokeStyle=MC.bc;K.lineWidth=3;K.beginPath();for(let v=-2.2;v<=-2.2+4.4*kp;v+=.01)v===-2.2?K.moveTo(X(v),Y(W(v))):K.lineTo(X(v),Y(W(v)));K.stroke();
+        const ng=seg(T,7.6,8.2);if(ng>0){K.globalAlpha=ng*.18;K.fillStyle='#e5484d';K.fillRect(X(1),Y(0),X(2)-X(1),Y(-.1)-Y(0));K.fillRect(X(-2),Y(0),X(-1)-X(-2),Y(-.1)-Y(0));K.globalAlpha=1;}}
+      camAt(t,{cx:1.5,cy:1.5,u:104});
+      const ctx=r.cv.getContext('2d');clr(ctx);
+      const busy=Math.max(winA(T,10.8,34.2),seg(T,51.6,52.2)*off);
+      drawWorld(ctx,{appear:seg(t,.1,1.3),shrink:seg(t,1.6,3.2),fineA:seg(t,2.6,3.6),labA:(t<3?1-seg(t,1.4,1.8):seg(t,5,5.6))*(1-.6*busy),labRight:true,
+        fill:{m:'bc',p:seg(t,F0+.4,F0+3.8),x0:0,x1:30,y0:0,y1:30}});
+      const [bx0,by0]=V(-.5,-.5),u=CAM.u,[Px,Py]=PPt();
+      const box=seg(T,1.6,2.2)*off;if(box>0){ctx.globalAlpha=box;ctx.strokeStyle=MC.bc;ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.strokeRect(bx0,by0,4*u,4*u);ctx.setLineDash([]);ctx.globalAlpha=1;}
+      [0,1,2,3].forEach(i=>{const a=winA(T,TX[i],i<3?TX[i+1]:20.6);if(a<=0)return;const [cx]=V(i,0);
+        ctx.globalAlpha=a;ctx.strokeStyle=MC.bc;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(cx-u/2,by0,u,4*u,10);ctx.stroke();
+        const by=by0+4*u+16;arrowLine(ctx,Px,by,cx,by,1,MC.bc,3);chip(ctx,(Px+cx)/2,by-16,'t='+fN(i-PX,1),MC.bc);chip(ctx,cx,by0+14,'Wx='+fN(WX[i],3),MC.bc,'#fff',13);ctx.globalAlpha=1;});
+      [0,1,2,3].forEach(j=>{const a=winA(T,TY[j],j<3?TY[j+1]:32.4);if(a<=0)return;const [,cy]=V(0,j);
+        ctx.globalAlpha=a;ctx.strokeStyle=MC.bc;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(bx0,cy-u/2,4*u,u,10);ctx.stroke();
+        chip(ctx,bx0+58,cy-u/2+14,'t='+fN(j-PY,1)+' → Wy='+fN(WY[j],3),MC.bc,'#fff',13);ctx.globalAlpha=1;});
+      [0,1,2,3].forEach(j=>{const a=winA(T,TR[j],j<3?TR[j+1]:44.4);if(a<=0)return;const [,cy]=V(0,j);
+        ctx.globalAlpha=a;ctx.strokeStyle='#e03131';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(bx0,cy-u/2,4*u,u,10);ctx.stroke();
+        chip(ctx,bx0+4*u-40,cy-u/2+14,'r'+j+' = '+fN(rowV[j][0],1),'#e03131','#fff',13);ctx.globalAlpha=1;});
+      const order=[];for(let j=0;j<4;j++)for(let i=0;i<4;i++)order.push([i,j,Math.hypot(i-PX,j-PY)]);order.sort((a,b)=>a[2]-b[2]);
+      order.forEach(([i,j],k)=>{const p=seg(T,52+k*.08,52.4+k*.08)*off;if(p<=0)return;const w=WX[i]*WY[j],[cx,cy]=V(i,j);
+        ctx.globalAlpha=p;chip(ctx,cx,cy+u/ZOOM/2+16,sgn3(w),w<0?'#e5484d':MC.bc,'#fff',12);ctx.globalAlpha=1;});
+      drawPcell(ctx,seg(t,5.4,5.9),T>50.6?BCV:null);
+      drawSamples(ctx,seg(t,F0+2.6,F0+3.8),'bc');
+      clr(r.sig.ctx);drawSignal(r.sig.ctx,S1,{dots:seg(t,tB+.8,tB+1.6),curves:[{m:'bc',p:seg(t,tB+1.6,tB+3.8),col:MC.bc}]});
+      show(r.sig.card,eo(seg(t,tB+.6,tB+1.2)));
+      drawResult(r.res,'bc',tB+4.4,t);drawPointer(r.S);
+    }});
+})();
+
+// 7. 1차원 비교
+const S2=[60,70,65,75,205,210,200,205,90,80,85];
+scenes.push({name:'곡선 비교',dur:11,
+  captions:[[0,'같은 점들을 세 가지 방법으로 이어 볼까요?'],[1.2,'<b class=k-nn>최근접</b>: 가장 가까운 점 값 → <b>계단</b>'],[3.6,'<b class=k-bl>양선형</b>: 이웃한 두 점을 <b>직선</b>으로'],
+    [6,'<b class=k-bc>바이큐빅</b>: 이웃한 네 점으로 <b>3차 곡선</b>'],[8.4,'바이큐빅은 경계에서 살짝 <b>넘쳤다(오버슈트)</b> 돌아와서 더 또렷해 보여요']],
+  build(root){
+    const r={};r.h=atc(h('div','h2','1차원 신호로 비교하기 <small>밝기 값의 변화를 선으로</small>'),62);root.appendChild(r.h);
+    const card=at(h('div','card'),70,130,1140,470);root.appendChild(card);r.card=card;
+    r.cv=mkc(1110,400);at(r.cv,14,52);card.appendChild(r.cv);
+    r.leg=at(h('div','',METHODS.map(m=>`<span class="mpill ${m}" style="font-size:17px;padding:5px 16px">${MNAME[m]}</span>`).join('')),24,12);r.leg.style.cssText+='display:flex;gap:10px';card.appendChild(r.leg);
+    r.legs=[...r.leg.children];return r;
+  },
+  draw(r,t){
+    show(r.h,eo(seg(t,0,.6)));show(r.card,eo(seg(t,.2,.8)));
+    r.legs.forEach((e,i)=>pop(e,seg(t,[1.2,3.6,6][i],[1.2,3.6,6][i]+.5)));
+    const ctx=r.cv.getContext('2d');clr(ctx);
+    const hl=seg(t,8.4,9);
+    if(hl>0){ctx.globalAlpha=hl*.18;ctx.fillStyle=MC.bc;const X=i=>40+i*(1110-80)/10;ctx.beginPath();ctx.roundRect(X(2.5),20,X(4.5)-X(2.5),360,16);ctx.fill();ctx.beginPath();ctx.roundRect(X(6.5),20,X(8.5)-X(6.5),360,16);ctx.fill();ctx.globalAlpha=1;}
+    drawSignal(ctx,S2,{dots:seg(t,.4,1.2),pl:40,pr:40,pt:30,pb:30,vmin:20,vmax:240,r:8,
+      curves:[{m:'nn',p:seg(t,1.2,3.2),col:MC.nn,w:3.5},{m:'bl',p:seg(t,3.6,5.6),col:MC.bl,w:3.5},{m:'bc',p:seg(t,6,8),col:MC.bc,w:4.5}]});
+  }});
+
+// 평행이동 연출: 원본 24×24 픽셀이 오른쪽 열부터 하나씩 → 오른쪽 2.5칸, 다음 ↓ 아래 1.5칸으로 옮겨 가 자리를 잡음.
+// 옮겨진 픽셀은 새 격자(점선)와 반 칸 어긋나 걸쳐 있고, 보간 결과가 왼쪽부터 덮으며(w) 칸을 채움
+const SH_DX=2.5,SH_DY=1.5,SH_T0=5.2;
+function drawShiftPixels(c,src,d,Wd,Hd,w,t){
+  const n=src.w,D=src.data;
+  c.save();c.beginPath();c.rect(Wd*w,0,Wd*(1-w),Hd);c.clip();
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){
+    const st=SH_T0+(n-1-i)/(n-1)*1.5+j/(n-1)*.6,q=seg(t,st,st+1);
+    const qx=eio(seg(q,0,.6)),qy=eio(seg(q,.45,1));
+    const k=(j*n+i)*4;c.fillStyle=`rgb(${D[k]},${D[k+1]},${D[k+2]})`;
+    c.fillRect((i+SH_DX*qx)*d+.5,(j+SH_DY*qy)*d+.5,d-1,d-1);
+  }
+  // 새 격자: 옮겨진 픽셀이 칸 경계에 걸친 모습을 보여 줌
+  const ga=seg(t,6.4,7.2);
+  if(ga>0){c.globalAlpha=ga*.5;c.strokeStyle='#e5484d';c.lineWidth=1;c.setLineDash([3,3]);c.beginPath();
+    for(let x=0;x<=Wd+.1;x+=d){c.moveTo(x,0);c.lineTo(x,Hd);}for(let y=0;y<=Hd+.1;y+=d){c.moveTo(0,y);c.lineTo(Wd,y);}
+    c.stroke();c.setLineDash([]);c.globalAlpha=1;}
+  c.restore();
+}
+
+// 8~11. 다양한 변환
+TDEFS.forEach((T,ti)=>{
+  const exInv=T.inv(T.ex[0],T.ex[1]);
+  const exStr=tex(`(${T.ex[0]},\\ ${T.ex[1]})\\to(${tn(Math.round(exInv[0]*100)/100,2)},\\ ${tn(Math.round(exInv[1]*100)/100,2)})`);
+  // 평행이동만: 원본 픽셀이 먼저 오른쪽(→아래)으로 옮겨 가 자리를 잡은 뒤, 새 격자 칸을 보간으로 채움
+  const TRN=T.key==='tr',tFill=TRN?9.2:5.2,tEx=TRN?12:8;
+  const caps={
+    sx:[[0,'이번엔 실제 사진에 <b>변환</b>을 적용해 볼게요 — 먼저 <b>가로만 2배</b>'],[2.2,'역변환 x = x\' ÷ 2 → 홀수 칸은 x가 <b>.5</b>로 끝나서 보간이 필요해요'],[5.2,'같은 변환, 세 가지 보간 결과를 나란히 비교'],[8.6,'<b class=k-nn>최근접</b>은 가로로 늘어난 <b>블록</b>, <b class=k-bl>양선형</b>·<b class=k-bc>바이큐빅</b>은 가로 방향이 매끄러워요']],
+    sy:[[0,'<b>세로만 3배</b> 늘리기: y\' = 3y'],[2.2,'역변환 y = y\' ÷ 3 → 소수 부분이 0, 0.33, 0.67 로 반복돼요'],[5.2,'세로 방향으로 계산하며 채워 나갑니다'],[8.6,'<b class=k-nn>최근접</b>은 같은 줄이 <b>3번씩 반복</b>, 나머지는 줄 사이를 부드럽게 이어요']],
+    tr:[[0,'<b>평행이동</b>: 오른쪽 2.5칸, 아래 1.5칸'],[2.2,'정수만큼 이동하면 그냥 복사지만, <b>0.5칸</b>은 픽셀 사이 → 보간이 필요'],
+      [5.2,'먼저 원본 픽셀을 하나씩 <b>오른쪽 2.5칸</b>, <b>아래 1.5칸</b> 옮겨 놓으면'],[7.6,'픽셀이 새 격자의 칸과 칸 사이에 <b>반씩 걸쳐요</b> — 이대로는 칸을 칠할 수 없어요'],
+      [9.2,'새 격자 칸마다 <b>보간</b>으로 색을 계산해 채우고, 원본 밖 자리는 비워 둬요 (체크무늬)'],[12.2,'<b class=k-nn>최근접</b>은 반올림해 정수 칸만 이동, 나머지는 섞어서 <b>0.5칸</b>을 표현해요']],
+    rot:[[0,'<b>회전</b>: 가운데를 중심으로 20° 돌리기'],[2.2,'회전 행렬의 역(= 반대로 20°)을 써서 원본 좌표를 구해요 — 거의 모든 칸이 소수 좌표!'],[5.2,'변환 + 보간은 회전·기울이기 같은 모든 기하 변환의 기본'],[8.6,'<b class=k-nn>최근접</b>은 경계가 <b>톱니</b>처럼 거칠고, <b class=k-bc>바이큐빅</b>이 가장 매끄러워요']]};
+  scenes.push({name:['가로 2배','세로 3배','평행이동','회전'][ti],dur:TRN?15:12,captions:caps[T.key],
+    build(root){
+      const r={};r.h=at(h('div','h2',`변환 ${ti+1}. <em style="color:var(--purple)">${T.title}</em> <small>원본 24×24 → ${T.W2}×${T.H2}</small>`),40,58);root.appendChild(r.h);
+      r.f=[];
+      const isRot=T.key==='rot';
+      const c1=at(h('div','fcard',`<div class=ft>변환 (원본 → 새 이미지)</div><div class=fm ${isRot?'style="font-size:25px"':''}>${tex(T.fwd)}</div>${isRot?`<div class=fm style="font-size:25px">${tex(T.fwd2)}</div>`:''}`),40,0,350);
+      const c2=at(h('div','fcard dark',`<div class=ft>역변환 (새 픽셀 → 원본 좌표)</div><div class=fm ${isRot?'style="font-size:25px"':''}>${tex(T.invT)}</div>${isRot?`<div class=fm style="font-size:25px">${tex(T.inv2)}</div>`:''}`),440,0,380);
+      const c3=at(h('div','fcard',`<div class=ft>예) 새 픽셀 → 원본 좌표</div><div class=fm style="font-size:28px">${exStr}</div><div class=fs>${isRot?tex('\\cos 20^\\circ\\approx0.94,\\ \\sin 20^\\circ\\approx0.34')+' · 중심 (11.5, 11.5)':'소수 좌표 → 주변 픽셀로 보간'}</div>`),870,0,370);
+      [c1,c2,c3].forEach(c=>{c.style.top='110px';root.appendChild(c);r.f.push(c);});
+      r.ar=[at(h('div','farrow','→'),400,150),at(h('div','farrow','→'),830,150)];r.ar.forEach(a=>root.appendChild(a));
+      // 원본
+      const d0=Math.min(200/TS,8);r.d0=d0;r.op=at(h('div','panel'),24,288,220,300);r.ocv=mkc(TS*d0,TS*d0);r.op.appendChild(r.ocv);root.appendChild(r.op);
+      r.ol=at(h('div','plabel','<span style="background:#6b6680">원본</span>'),24,258,220);root.appendChild(r.ol);
+      const d=Math.min(300/T.W2,300/T.H2);r.d=d;
+      r.ps=METHODS.map((m,k)=>{const p=at(h('div','panel'),268+k*330,288);const cv=mkc(T.W2*d,T.H2*d);p.appendChild(cv);root.appendChild(p);
+        const l=at(h('div','plabel',`<span style="background:${MC[m]}">${MNAME[m]}</span>`),268+k*330,258,300);root.appendChild(l);return {p,cv,l,m};});
+      return r;
+    },
+    draw(r,t){
+      show(r.h,eo(seg(t,0,.6)));
+      r.f.forEach((c,i)=>show(c,eo(seg(t,.5+i*.9,1.1+i*.9))));r.ar.forEach((a,i)=>show(a,eo(seg(t,1+i*.9,1.5+i*.9)),0));
+      const oa=eo(seg(t,3.6,4.2));show(r.op,oa);show(r.ol,oa);
+      const im=IMGS[T.img],oc=r.ocv.getContext('2d');clr(oc);oc.imageSmoothingEnabled=false;oc.drawImage(im.small24,0,0,TS*r.d0,TS*r.d0);
+      const mk=seg(t,4.4,4.9);
+      if(mk>0){const [ex,ey]=exInv;oc.globalAlpha=mk;oc.strokeStyle='#fff';oc.lineWidth=4;oc.beginPath();oc.arc((ex+.5)*r.d0,(ey+.5)*r.d0,6,0,7);oc.stroke();oc.fillStyle='#e5484d';oc.beginPath();oc.arc((ex+.5)*r.d0,(ey+.5)*r.d0,5,0,7);oc.fill();oc.globalAlpha=1;}
+      r.ps.forEach(({p,cv,l,m},k)=>{const a=eo(seg(t,4.2+k*.2,4.8+k*.2));show(p,a);show(l,a);
+        const c=cv.getContext('2d');clr(c);const w=seg(t,tFill+k*.35,tFill+2.4+k*.35);
+        c.imageSmoothingEnabled=false;const Wd=T.W2*r.d,Hd=T.H2*r.d;
+        if(TRN&&a>0&&w<1)drawShiftPixels(c,im.src24,r.d,Wd,Hd,w,t);
+        if(w<=0)return;
+        c.save();c.beginPath();T.wipe==='x'?c.rect(0,0,Wd*w,Hd):c.rect(0,0,Wd,Hd*w);c.clip();c.clearRect(0,0,Wd,Hd);c.drawImage(T.out[m],0,0,Wd,Hd);c.restore();
+        if(w<1){c.strokeStyle=MC[m];c.lineWidth=3;c.beginPath();T.wipe==='x'?(c.moveTo(Wd*w,0),c.lineTo(Wd*w,Hd)):(c.moveTo(0,Hd*w),c.lineTo(Wd,Hd*w));c.stroke();}
+        const ep=seg(t,tEx,tEx+.4);if(ep>0){c.globalAlpha=ep;c.strokeStyle='#fff';c.lineWidth=4;c.strokeRect(T.ex[0]*r.d,T.ex[1]*r.d,r.d,r.d);c.strokeStyle='#e5484d';c.lineWidth=2.5;c.strokeRect(T.ex[0]*r.d,T.ex[1]*r.d,r.d,r.d);c.globalAlpha=1;}
+      });
+    }});
+});
+
+// 12. 실제 사진 6배 확대 비교
+// 사진마다 15초: 전체(6배) → ×2.2 → ×15(원본 픽셀 하나가 새 픽셀 6×6) → 다시 전체(6배)
+const PC_SEG=15;
+const zlog=(a,b,p)=>Math.exp(lerp(Math.log(a),Math.log(b),p));
+function photoZoom(tt){
+  let z=lerp(1,2.2,eio(seg(tt,2.6,5.4)));
+  const pin=eio(seg(tt,7.8,10.2)),pout=eio(seg(tt,12.2,14.2));
+  if(pin>0)z=zlog(2.2,15,pin);if(pout>0)z=zlog(15,1,pout);
+  return z;
+}
+// 15배로 들어갈 때는 경계가 뚜렷한 곳으로 초점을 옮김:
+// 원본 60×60에서 patch 좌표 주변(±8칸)의 4×4 창 중 밝기 분산이 가장 큰 곳 (15배 화면 = 원본 4×4칸)
+function deepFocus(im){
+  if(im.deep)return im.deep;
+  const d=im.src.data,n=SRC,L=(x,y)=>{const k=(y*n+x)*4;return .299*d[k]+.587*d[k+1]+.114*d[k+2];};
+  const px=Math.round(im.patch[0]*n),py=Math.round(im.patch[1]*n);let best=-1,bx=px,by=py;
+  for(let y=Math.max(0,py-8);y<=Math.min(n-4,py+8);y++)for(let x=Math.max(0,px-8);x<=Math.min(n-4,px+8);x++){
+    let s=0,s2=0;for(let j=0;j<4;j++)for(let i=0;i<4;i++){const v=L(x+i,y+j);s+=v;s2+=v*v;}
+    const v=s2/16-(s/16)**2-((x+2-px)**2+(y+2-py)**2)*2;   // 가까운 곳을 약간 우선
+    if(v>best){best=v;bx=x;by=y;}}
+  return im.deep=[(bx+2)/n,(by+2)/n];
+}
+function photoFocus(im,tt){
+  const q=eio(seg(tt,7.8,10.2))*(1-eio(seg(tt,12.2,14.2))),D=deepFocus(im);
+  return [lerp(im.zoom[0],D[0],q),lerp(im.zoom[1],D[1],q)];
+}
+scenes.push({name:'사진 비교',dur:PC_SEG*3,
+  captions:[[0,'<b>강아지</b> — 60×60 원본을 <b>6배(360×360)</b>로 키웠어요'],[3,'눈 주변을 확대해 보면 차이가 확실히 보여요'],[6,'<b class=k-nn>최근접</b>은 각지고, <b class=k-bl>양선형</b>은 흐릿하고, <b class=k-bc>바이큐빅</b>은 또렷해요'],
+    [7.8,'더 가까이 — <b>15배</b>까지 확대해서 픽셀 하나하나를 봐요'],[10.4,'굵은 선 한 칸 = 원본 픽셀 1개 = 새 픽셀 <b>6×6 = 36칸</b> — 이 36칸을 어떻게 칠했을까요?'],[12.2,'다시 <b>6배</b> 전체 모습으로'],
+    [15,'<b>자동차</b> — 헤드라이트처럼 경계가 뚜렷한 부분'],[18,'직선 경계에서 <b>계단 현상</b>이 가장 잘 드러나요'],
+    [22.8,'<b>15배</b>: <b class=k-nn>최근접</b>은 36칸이 모두 같은 색, 나머지는 칸 안에서 색이 조금씩 변해요'],[27.2,'다시 <b>6배</b>로'],
+    [30,'<b>국화꽃</b> — 가는 꽃잎이 많은 사진'],[33,'꽃잎 경계: <b class=k-bc>바이큐빅</b>이 가장 자연스럽게 살아나요'],
+    [37.8,'<b>15배</b>: <b class=k-bc>바이큐빅</b>은 경계 양옆을 살짝 더 밝게·어둡게 칠해 <b>대비</b>를 살려요'],[42.2,'다시 <b>6배</b> — 멀리서 보면 차이가 이렇게 보여요']],
+  build(root){
+    const r={};r.h=atc(h('div','h2',''),58);root.appendChild(r.h);
+    r.ps=METHODS.map((m,k)=>{const cv=mkc(360,360,1.5);const t=at(h('div','tile'),60+k*400,170,360,360);t.appendChild(cv);root.appendChild(t);
+      const l=at(h('div','plabel',`<span style="background:${MC[m]}">${MNAME[m]} <small style="font-weight:500;opacity:.85">${MEN[m]}</small></span>`),60+k*400,126,360);root.appendChild(l);
+      return {t,l,ctx:cv.getContext('2d'),m};});
+    r.thumb=mkc(80,80,2);at(r.thumb,1150,546);r.thumb.style.borderRadius='8px';r.thumb.style.boxShadow='0 0 0 3px #fff,0 4px 12px rgba(0,0,0,.15)';root.appendChild(r.thumb);
+    r.tl=at(h('div','note','원본 60×60'),1130,630,120);r.tl.style.textAlign='center';root.appendChild(r.tl);
+    r.zl=at(h('div','note',''),60,548,1060);r.zl.style.textAlign='center';r.zl.style.fontSize='18px';root.appendChild(r.zl);
+    r.k=-1;return r;
+  },
+  draw(r,t){
+    const k=Math.min(2,Math.floor(t/PC_SEG)),tt=t-k*PC_SEG,im=IMGS[k];
+    if(r.k!==k){r.k=k;r.h.innerHTML=`${im.emoji} ${im.name} <small>60×60 → 360×360 (6배)</small>`;kineticChars(r.h);}
+    show(r.h,eo(seg(tt,0,.6)));
+    const fade=seg(tt,0,.7)*(1-seg(tt,PC_SEG-.6,PC_SEG));
+    const z=photoZoom(tt);
+    // 깊이 확대했을 때: 가는 선 = 새 픽셀 한 칸, 굵은 선 = 원본 픽셀 한 칸(새 픽셀 6×6)
+    const ga=seg(z,5,11),fc=photoFocus(im,tt);
+    r.ps.forEach((p,i)=>{show(p.l,eo(seg(t,.2+i*.15,.8+i*.15)));p.t.style.opacity=fade;clr(p.ctx);drawCrop(p.ctx,im[p.m],fc,z,360,360);
+      if(ga>0)drawPixelGrid(p.ctx,im[p.m].width,fc,z,360,ga);});
+    const T=r.thumb.getContext('2d');clr(T);T.imageSmoothingEnabled=false;T.globalAlpha=fade;T.drawImage(im.small,0,0,80,80);
+    const cs=80/z,cx=clamp(fc[0]*80,cs/2,80-cs/2),cy=clamp(fc[1]*80,cs/2,80-cs/2);if(z>1.02){T.strokeStyle='#e5484d';T.lineWidth=2;T.strokeRect(cx-cs/2,cy-cs/2,cs,cs);}T.globalAlpha=1;
+    r.zl.innerHTML=z>=14?'확대 ×15 — <b>굵은 선 한 칸 = 원본 픽셀 1개</b> = 새 픽셀 6×6 = 36칸 (가는 선 = 새 픽셀)'
+      :z>1.02?`확대 ×${z.toFixed(1)} — 한 원본 픽셀이 ${(UP*z).toFixed(0)}px 크기로 보여요`:tt>12?'다시 전체 — 6배 확대 결과 (360×360)':'';show(r.zl,fade);
+  }});
+
+// 13. 정리
+scenes.push({name:'정리',dur:13,
+  captions:[[0,'세 가지 보간법을 정리해 볼게요'],[1,'<b class=k-nn>최근접 이웃</b>: 가장 가까운 1개 픽셀 복사 — 빠르지만 계단 현상'],[3.4,'<b class=k-bl>양선형</b>: 2×2 픽셀을 거리 비율로 섞기 — 부드럽지만 약간 흐림'],
+    [5.8,'<b class=k-bc>바이큐빅</b>: 4×4 픽셀을 3차 함수 가중치로 — 선명하지만 계산이 많음'],[8.6,'세 방법의 차이는 ②에서 <b>몇 개 픽셀을, 어떤 가중치로</b> 섞느냐뿐이에요']],
+  build(root){
+    const r={};r.h=atc(h('div','h2','한눈에 정리'),56);root.appendChild(r.h);
+    const D={nn:{n:1,px:'1개',sp:3,q:1,f:tex('P=f(\\operatorname{round}x,\\ \\operatorname{round}y)'),ft:'계단(모자이크) 현상',use:'픽셀아트·도트 게임, 라벨 영상'},
+      bl:{n:2,px:'4개 (2×2)',sp:2,q:2,f:'가로로 섞고 → 세로로 섞기',ft:'부드럽지만 흐릿',use:'실시간 영상·게임 텍스처'},
+      bc:{n:4,px:'16개 (4×4)',sp:1,q:3,f:tex('\\sum W_x W_y\\, f')+' (3차 가중치)',ft:'선명·부드러움',use:'사진 편집, 고화질 확대'}};
+    const st=(n)=>'★'.repeat(n)+'<span class=off>'+'★'.repeat(3-n)+'</span>';
+    r.cards=METHODS.map((m,k)=>{const d=D[m];const c=at(h('div','scard'),60+k*400,118);
+      c.innerHTML=`<div class=hd style="background:${MC[m]}">${MNAME[m]}<small>${MEN[m]}</small></div>
+      <div class=row><span class=k>참고 픽셀</span><span class=v style="display:flex;align-items:center;gap:10px"><span class=dots style="grid-template-columns:repeat(${d.n},10px);color:${MC[m]}">${'<i></i>'.repeat(d.n*d.n)}</span>${d.px}</span></div>
+      <div class=row><span class=k>계산 방법</span><span class=v>${d.f}</span></div>
+      <div class=row><span class=k>속도</span><span class="v stars">${st(d.sp)}</span></div>
+      <div class=row><span class=k>화질</span><span class="v stars">${st(d.q)}</span></div>
+      <div class=row><span class=k>특징</span><span class=v>${d.ft}</span></div>
+      <div class=row><span class=k>주로 쓰는 곳</span><span class=v>${d.use}</span></div>`;
+      root.appendChild(c);return c;});
+    r.bar=atc(h('div','','<span class=pill>① 역변환으로 원본 좌표 계산 &nbsp;→&nbsp; ② 주변 픽셀 RGB의 <b>가중 평균</b> &nbsp;→&nbsp; ③ 새 픽셀 색</span>'),540);root.appendChild(r.bar);
+    return r;
+  },
+  draw(r,t){
+    show(r.h,eo(seg(t,0,.6)));
+    r.cards.forEach((c,k)=>{const p=seg(t,1+k*2.4,1.6+k*2.4);pop(c,p);});
+    show(r.bar,eo(seg(t,8.6,9.3)));
+  }});
+
+// ═════════════════ 키네틱 타이포그래피 장면 ═════════════════
+// 글자 단위 줄 만들기: 시간에 맞춰 tIn 으로 한 글자씩 등장
+function charLine(root,html,y,css){
+  const el=atc(h('div','kline',html,css),y);root.appendChild(el);
+  splitNodes(el,'char','c',0);const sp=[...el.querySelectorAll('.c')];sp.forEach(x=>{x.style.animation='none';});return sp;
+}
+
+// 0. 오프닝
+const opening={name:'오프닝',dur:9,captions:[],
+  say:[[.2,'작은 사진을 크게 키우면?'],[3.5,'깨진다?'],[5.6,'원래 없던 픽셀은, 어떻게 채울까요?']],
+  build(root){
+    const r={};r.g=at(h('div'),0,0,1280,720);root.appendChild(r.g);
+    r.a=charLine(r.g,'작은 사진을',96,{font:'400 84px "Do Hyeon"',color:'#2b2540'});
+    r.big=rasterWord(r.g,'크게','nn',12,17,'#6a4fd8',600,196,10);
+    r.c=charLine(r.g,'키우면?',512,{font:'400 84px "Do Hyeon"',color:'#2b2540'});
+    r.stamp=at(h('div','stamp','깨진다?!'),935,236);r.g.appendChild(r.stamp);
+    r.note=at(h('div','note','↑ 12px 글자를 ×17 최근접 이웃 보간으로 키운 모습'),0,612,1280);r.note.style.textAlign='center';r.g.appendChild(r.note);
+    r.q1=charLine(root,'없던 픽셀은',190,{font:'400 92px "Do Hyeon"',color:'#2b2540'});
+    r.q2=charLine(root,'어떻게 <span style="color:#6a4fd8">채울까?</span>',310,{font:'400 170px "Do Hyeon"',color:'#2b2540'});
+    r.bar=at(h('div','hlbar'),0,505,0,16);r.bar.style.background='#6a4fd8';root.appendChild(r.bar);
+    return r;
+  },
+  draw(r,t){
+    r.a.forEach((c,i)=>tIn(c,seg(t,.2+i*.07,.7+i*.07),{dy:70,rot:-12}));
+    r.big.forEach((c,i)=>{const p=seg(t,1.1+i*.18,2.5+i*.18);c.style.opacity=p>0?1:0;c.style.transform=`scale(${lerp(.1,1,eio(p))}) rotate(${(1-eo(p))*(i?14:-14)}deg)`;});
+    r.c.forEach((c,i)=>tIn(c,seg(t,2.6+i*.07,3.1+i*.07),{dy:-60,rot:10}));
+    tIn(r.stamp,seg(t,3.5,3.9),{dy:0,rot:-40,sc:2.6});if(t>=3.5)r.stamp.style.transform+=' rotate(-8deg)';
+    show(r.note,eo(seg(t,3.9,4.4)),8);
+    const out=seg(t,5,5.6);r.g.style.opacity=1-out;r.g.style.transform=`translateY(${-out*80}px) scale(${1-out*.08})`;
+    r.q1.forEach((c,i)=>tIn(c,seg(t,5.6+i*.06,6.1+i*.06),{dy:50,blur:8}));
+    r.q2.forEach((c,i)=>tIn(c,seg(t,6.1+i*.09,6.7+i*.09),{dy:-120,rot:i%2?16:-16,sc:.5}));
+    const bp=eio(seg(t,7.3,8));r.bar.style.left=(640-330*bp)+'px';r.bar.style.width=(660*bp)+'px';r.bar.style.opacity=bp>0?1:0;
+  }};
+
+// 챕터 카드: 글자를 직접 그 보간법으로 키워 보여 줌
+const ORD={'01':'첫 번째','02':'두 번째','03':'세 번째'};
+function chapter(num,word,m,ko,tagline){
+  return {name:'CH '+num,dur:6.6,captions:[],
+    say:[[.5,`${ORD[num]} 방법, ${ko}.`],[2,tagline.replace('1개','한 개').replace('4개','네 개').replace('16개','열여섯 개')+'.'],[3.3,'원본 글자를 크게 할수록 채울 빈칸이 줄어서, 점점 선명해져요.']],
+    build(root){
+      const r={};r.g=at(h('div'),0,0,1280,720);root.appendChild(r.g);
+      r.bg=h('div','darkbg');r.g.appendChild(r.bg);
+      r.num=at(h('div','onum',num),40,-10);r.num.style.webkitTextStroke='3px '+LIGHT[m];r.g.appendChild(r.num);
+      r.lab=atc(h('div','spaced',`CHAPTER ${num} · ${MEN[m].toUpperCase()} INTERPOLATION`),120);r.lab.style.color=LIGHT[m];r.g.appendChild(r.lab);
+      r.L=rasterWord(r.g,word,m,16,10,LIGHT[m],640,150,6,LV_CH);
+      r.res=atc(h('div','',''),118);r.res.style.cssText+='font:700 15px "Noto Sans KR";color:#9d96bd';r.g.appendChild(r.res);r.resK=-1;
+      r.ko=charLine(r.g,ko,404,{font:'400 66px "Do Hyeon"',color:'#fff'});
+      r.tag=atc(h('div','',''),498);r.tag.style.cssText+='font-size:27px;font-weight:500;color:#d6d0ee';r.g.appendChild(r.tag);r.tagT=tagline;
+      r.hint=atc(h('div','',`↑ 16px로 쓴 글자를 <b style="color:${LIGHT[m]}">${MNAME[m]} 보간</b>으로 10배 키웠어요 — 글자 가장자리를 보세요`),590);
+      r.hint2=atc(h('div','',`원본을 16 → 24 → 36 → 60 → 160px로 키우면 <b style="color:${LIGHT[m]}">채울 빈칸이 줄어서</b> 점점 선명해져요`),590);
+      r.hint2.style.cssText+='font-size:18px;color:#d6d0ee';r.g.appendChild(r.hint2);
+      r.hint.style.cssText+='font-size:18px;color:#9d96bd';r.g.appendChild(r.hint);
+      return r;
+    },
+    draw(r,t){
+      r.bg.style.clipPath=`circle(${eo(seg(t,0,.55))*80}% at 50% 50%)`;
+      tIn(r.num,seg(t,.2,.8),{dx:-120,dy:0});r.num.style.opacity=.45*clamp(seg(t,.2,.8)*1.6);
+      tIn(r.lab,seg(t,.35,.85),{dy:20,blur:6});
+      r.L.forEach((c,i)=>tIn(c,seg(t,.5+i*.08,1.05+i*.08),{dy:-170,rot:i%2?20:-20,sc:.6}));
+      r.ko.forEach((c,i)=>tIn(c,seg(t,1.4+i*.045,1.9+i*.045),{dy:40,blur:6}));
+      const n=Math.floor(seg(t,2,3.2)*r.tagT.length);r.tag.textContent=r.tagT.slice(0,n)+(t<4.4&&Math.floor(t*3)%2?'▍':' ');
+      show(r.hint,eo(seg(t,1.8,2.3))*(1-seg(t,3,3.3)),10);show(r.hint2,eo(seg(t,3.3,3.8)),10);
+      // 원본 해상도를 올려 가며 다시 보간 → 선명해짐 (글자마다 살짝 시차)
+      r.L.forEach((c,i)=>setSharp(c,seg(t,3.2+i*.08,4.9+i*.08)*LV_CH.length));
+      const lvl=Math.round(seg(t,3.2,5.2)*LV_CH.length),SZ=[16,...LV_CH];
+      if(lvl!==r.resK){r.resK=lvl;r.res.innerHTML=lvl>=LV_CH.length?'원본 160px → 확대 없음 (선명)':`원본 ${SZ[lvl]}px → ×${fN(160/SZ[lvl],1)} 확대`;}
+      r.res.style.opacity=seg(t,1.8,2.3)*(1-seg(t,5.8,6.2));r.lab.style.opacity=(+r.lab.style.opacity)*(1-seg(t,1.6,1.9));
+      const out=seg(t,6,6.6);r.g.style.opacity=1-out;r.g.style.transform=`scale(${1+out*.06})`;
+    }};
+}
+
+// 변환 챕터: 글자 하나하나에 실제 변환을 걸어 봄
+const tChapter={name:'CH 04',dur:6,captions:[],
+  say:[[.5,'이번엔 모양을 바꾸는 기하 변환이에요.'],[2.8,'모양을 바꿔도, 새 픽셀은 보간으로 채웁니다.']],
+  build(root){
+    const r={};r.g=at(h('div'),0,0,1280,720);root.appendChild(r.g);
+    r.bg=h('div','darkbg');r.g.appendChild(r.bg);
+    r.num=at(h('div','onum','04'),40,-10);r.num.style.webkitTextStroke='3px #ffd166';r.g.appendChild(r.num);
+    r.lab=atc(h('div','spaced','CHAPTER 04 · GEOMETRIC TRANSFORM'),120);r.lab.style.color='#ffd166';r.g.appendChild(r.lab);
+    r.w=charLine(r.g,'TRANSFORM',196,{font:'400 190px "Do Hyeon"',color:'#fff',letterSpacing:'6px'});
+    r.cols=['#ffa86b','#5eead4','#b9a8ff','#ffd166'];
+    r.chips=atc(h('div','',['가로 2배','세로 3배','평행이동','회전'].map((x,i)=>`<span class=tchip style="background:${r.cols[i]}">${x}</span>`).join(' ')),428);
+    r.chips.style.cssText+='display:flex;justify-content:center;gap:14px';r.g.appendChild(r.chips);r.cs=[...r.chips.children];
+    r.ko=charLine(r.g,'모양을 바꿔도, 새 픽셀은 <span style="color:#ffd166">보간</span>으로 채운다',505,{font:'400 52px "Do Hyeon"',color:'#fff'});
+    return r;
+  },
+  draw(r,t){
+    r.bg.style.clipPath=`circle(${eo(seg(t,0,.55))*80}% at 50% 50%)`;
+    tIn(r.num,seg(t,.2,.8),{dx:-120,dy:0});r.num.style.opacity=.45*clamp(seg(t,.2,.8)*1.6);
+    tIn(r.lab,seg(t,.35,.85),{dy:20,blur:6});
+    const k1=eio(seg(t,1.6,2.5))*(1-eio(seg(t,3.6,4.3)));
+    r.w.forEach((c,i)=>{const p=seg(t,.45+i*.06,1+i*.06);tIn(c,p,{dy:-150,rot:i%2?18:-18});if(p<1)return;
+      const ty=i%4;c.style.color=k1>.02?r.cols[ty]:'#fff';
+      c.style.transformOrigin='50% 85%';
+      c.style.transform=ty===0?`scaleX(${1+.5*k1})`:ty===1?`scaleY(${1+.35*k1})`:ty===2?`translate(${22*k1}px,${-30*k1}px)`:`rotate(${20*k1}deg)`;});
+    r.cs.forEach((c,i)=>pop(c,seg(t,1.7+i*.15,2.2+i*.15)));
+    r.ko.forEach((c,i)=>tIn(c,seg(t,2.8+i*.03,3.3+i*.03),{dy:40,blur:6}));
+    const out=seg(t,5.4,6);r.g.style.opacity=1-out;r.g.style.transform=`scale(${1+out*.06})`;
+  }};
+
+// 아웃트로: 핵심 한 문장
+const outro={name:'핵심 한 문장',dur:11,captions:[],
+  say:[[.2,'새 픽셀의 색은, 거꾸로 원본 좌표를 찾아서,'],[3.2,'주변 픽셀 RGB의 가중 평균으로 정해요!'],[6.6,'최근접 이웃, 양선형, 바이큐빅. 차이는 몇 개를, 어떤 가중치로 섞느냐뿐이에요.']],
+  build(root){
+    const r={};
+    r.a=charLine(root,'새 픽셀의 색은',70,{font:'400 58px "Do Hyeon"',color:'#6b6680'});
+    r.b=charLine(root,'거꾸로',128,{font:'400 170px "Do Hyeon"',color:'#6a4fd8'});
+    r.c=charLine(root,'원본 좌표를 찾아서',305,{font:'400 58px "Do Hyeon"',color:'#2b2540'});
+    r.d=charLine(root,'주변 픽셀 RGB의',368,{font:'400 58px "Do Hyeon"',color:'#2b2540'});
+    r.bar=at(h('div','hlbar'),0,540,0,30);root.appendChild(r.bar);
+    r.e=charLine(root,'가중 평균!',420,{font:'400 150px "Do Hyeon"',color:'#2b2540'});
+    r.R=METHODS.map((m,k)=>rasterWord(root,MEN[m].toUpperCase(),m,8,6,MC[m],250+k*390,598,2,LV_OUT));
+    return r;
+  },
+  draw(r,t){
+    r.a.forEach((c,i)=>tIn(c,seg(t,.2+i*.05,.7+i*.05),{dy:40,blur:6}));
+    r.b.forEach((c,i)=>{const p=seg(t,1+i*.15,1.7+i*.15);tIn(c,p,{dy:0,sc:.2});c.style.transform+=` rotateY(${(1-eo(p))*90}deg)`;});
+    r.c.forEach((c,i)=>tIn(c,seg(t,2.4+i*.04,2.9+i*.04),{dx:-60,dy:0}));
+    r.d.forEach((c,i)=>tIn(c,seg(t,3.2+i*.04,3.7+i*.04),{dx:60,dy:0}));
+    r.e.forEach((c,i)=>tIn(c,seg(t,4.3+i*.08,4.8+i*.08),{dy:0,sc:2.6,blur:10}));
+    const bp=eio(seg(t,5.3,6.1));r.bar.style.left=(640-330*bp)+'px';r.bar.style.width=(660*bp)+'px';r.bar.style.opacity=bp>0?.85:0;
+    r.R.forEach((L,k)=>L.forEach((c,i)=>{tIn(c,seg(t,6.6+k*.45+i*.04,7.1+k*.45+i*.04),{dy:-50,rot:i%2?12:-12});setSharp(c,seg(t,8.6+k*.2+i*.05,9.8+k*.2+i*.05)*LV_OUT.length);}));
+  }};
+
+// 양선형 들어가기 전: 내분점(비율로 섞기) 짚기 — 양선형의 α = 0.3과 같은 숫자를 씀
+const ratioScene={name:'내분점',dur:25,
+  captions:[[0,'양선형 보간에 들어가기 전에, <b>비율로 섞는 법</b>을 먼저 짚고 갈게요'],[1.2,'두 점 A, B 사이를 <b>m : n</b>으로 나누는 점 = <b>내분점</b>'],
+    [3.4,'P = 1.3이면 A까지 0.3, B까지 0.7 → AB를 <b>3 : 7</b>로 내분'],[6.4,'공식에 넣어 보면 위치도 정확히 1.3 ✓'],
+    [8.8,'이번엔 두 점에 <b>값</b>이 있다면? f(A) = 100, f(B) = 200'],[10.6,'두 값을 <b>직선</b>으로 이으면 P 위의 높이는?'],
+    [12.4,'위치와 <b>같은 비율</b>로 섞으면 f(P) = 130'],[14.6,'가까운 A 쪽 값을 <b>더 많이(7/10)</b> — 거리와 반대 비율로 섞어요'],
+    [17,'비율을 α = 0.3으로 쓰면 f(P) = (1 − α)·f(A) + α·f(B)'],[21.2,'양선형 보간은 이 계산을 <b>가로로 두 번, 세로로 한 번</b> 하는 거예요']],
+  build(root){
+    const r={};r.h=atc(h('div','h2','먼저 짚고 가기 — <em style="color:var(--bl)">내분점</em>과 비율'),62);root.appendChild(r.h);
+    sheet(root,40,124,580,470,.6);r.cv=mkc(560,440);at(r.cv,50,140);root.appendChild(r.cv);
+    const card=at(h('div','card'),660,124,580,470);root.appendChild(card);r.card=card;
+    card.appendChild(at(h('div','ctitle','<i style="color:var(--bl)"></i>내분점 → 비율로 섞기'),16,12));
+    const L=[
+      [1.2,44,'<span class=lab style="background:var(--bl)">내분점</span>선분 AB를 '+tex('m:n')+'으로 나누는 점 P'],
+      [2.2,82,tex('P=\\dfrac{n\\,A+m\\,B}{m+n}')],
+      [4.4,150,tex('\\overline{AP}:\\overline{PB}=0.3:0.7=3:7')+' &nbsp;<span class=note>(m = 3, n = 7)</span>'],
+      [6.4,192,tex('P=\\dfrac{7\\times1+3\\times2}{3+7}=\\dfrac{13}{10}=1.3')+' ✓'],
+      [12.4,262,'<span class=lab style="background:var(--bl)">값도</span>'+tex('f(P)=\\dfrac{7\\times100+3\\times200}{10}=\\mathbf{130}')],
+      [17,334,'<span class=lab style="background:var(--bl)">α로</span>'+tex('f(P)=(1-\\alpha)\\,f(A)+\\alpha\\,f(B)')+' &nbsp;<span class=note>(α = 0.3)</span>'],
+      [18.8,376,tex('\\phantom{f(P)}=0.7\\times100+0.3\\times200=\\mathbf{130}')],
+      [21.2,424,'<span class=note>양선형 보간 = 이 계산을 <b>가로로 2번</b> (A, B) + <b>세로로 1번</b> (P)</span>']];
+    r.lt=L.map(l=>l[0]);r.l=L.map(([,y,html])=>line(card,y,html));
+    return r;
+  },
+  draw(r,t){
+    show(r.h,eo(seg(t,0,.7)));show(r.card,eo(seg(t,.6,1.2)));
+    drawLines(r.l,r.lt,t,PENCIL.bl);
+    const c=r.cv.getContext('2d');clr(c);
+    const X=v=>60+(v-.7)/1.6*440,BY=330,VY=v=>BY-v*1.15,C=MC.bl;
+    const A=1,B=2,P=1.3;
+    // 수직선
+    const ax=eo(seg(t,.4,1.2));c.globalAlpha=ax;c.strokeStyle='#8a8499';c.lineWidth=2.5;c.beginPath();c.moveTo(X(.75),BY);c.lineTo(lerp(X(.75),X(2.25),ax),BY);c.stroke();
+    c.font='700 18px "Noto Sans KR"';c.textAlign='center';c.textBaseline='middle';
+    [A,B].forEach(v=>{c.fillStyle='#8a8499';c.fillText(v,X(v),BY+48);});c.globalAlpha=1;
+    // A, B 점
+    [[A,'A',1.2],[B,'B',1.5]].forEach(([v,n,t0])=>{const p=seg(t,t0,t0+.4);if(p>0){marker(c,X(v),BY,n,'#2b2540',p);}});
+    // P
+    const pp=seg(t,2.6,3);if(pp>0){marker(c,X(P),BY,'P','#e5484d',pp);c.globalAlpha=pp;c.fillStyle='#e5484d';c.fillText('1.3',X(P),BY+48);c.globalAlpha=1;}
+    // 거리 0.3 / 0.7
+    const dp=seg(t,3.4,4.2);if(dp>0){c.globalAlpha=dp;const y=BY+20;
+      c.strokeStyle=C;c.lineWidth=5;c.beginPath();c.moveTo(X(A),y);c.lineTo(lerp(X(A),X(P),eo(dp)),y);c.stroke();
+      c.strokeStyle='#bdb6a2';c.beginPath();c.moveTo(X(P),y);c.lineTo(lerp(X(P),X(B),eo(dp)),y);c.stroke();
+      chip(c,(X(A)+X(P))/2,y+48,'0.3',C,'#fff',15);chip(c,(X(P)+X(B))/2,y+48,'0.7','#8a8499','#fff',15);c.globalAlpha=1;}
+    // 3 : 7 칩은 P 위로 높이 막대가 올라오기 전에 사라짐
+    const rp=seg(t,4.4,4.9)*(1-seg(t,12,12.4));if(rp>0){c.globalAlpha=rp;chip(c,X(P),BY-34,'3 : 7 내분',C,'#fff',15);c.globalAlpha=1;}
+    // 값 (높이)
+    [[A,100,8.8],[B,200,9.4]].forEach(([v,val,t0])=>{const p=eo(seg(t,t0,t0+.6));if(p<=0)return;
+      c.globalAlpha=p;c.strokeStyle='#2b2540';c.lineWidth=6;c.lineCap='round';c.beginPath();c.moveTo(X(v),BY-14);c.lineTo(X(v),lerp(BY-14,VY(val),p));c.stroke();c.lineCap='butt';
+      c.fillStyle='#2b2540';c.beginPath();c.arc(X(v),VY(val),8,0,7);c.fill();
+      chip(c,X(v)+(v===A?-62:62),VY(val),`f(${v===A?'A':'B'}) = ${val}`,'#2b2540','#fff',15);c.globalAlpha=1;});
+    // 직선으로 잇기
+    const lp=eo(seg(t,10.6,11.6));if(lp>0){c.strokeStyle=C;c.lineWidth=3.5;c.setLineDash([8,5]);c.beginPath();c.moveTo(X(A),VY(100));c.lineTo(lerp(X(A),X(B),lp),lerp(VY(100),VY(200),lp));c.stroke();c.setLineDash([]);}
+    // P 위의 높이 130
+    const hp=eo(seg(t,12.4,13.2));if(hp>0){c.strokeStyle='#e5484d';c.lineWidth=6;c.lineCap='round';c.beginPath();c.moveTo(X(P),BY-16);c.lineTo(X(P),lerp(BY-16,VY(130),hp));c.stroke();c.lineCap='butt';
+      if(hp>.95){c.fillStyle='#e5484d';c.beginPath();c.arc(X(P),VY(130),9,0,7);c.fill();chip(c,X(P)+70,VY(130)-4,'f(P) = 130','#e5484d','#fff',16);}}
+    // 섞는 비율: 가까운 A에 0.7, 먼 B에 0.3
+    const wp=winA(t,14.6,25);if(wp>0){c.globalAlpha=wp;chip(c,X(A),VY(100)-36,'× 0.7',C,'#fff',16);chip(c,X(B),VY(200)-36,'× 0.3','#8a8499','#fff',16);c.globalAlpha=1;}
+  }};
+
+// 장면 배치: 오프닝 → … → 챕터 카드 → … → 아웃트로
+const idxOf=n=>scenes.findIndex(x=>x.name===n);
+scenes.splice(idxOf('최근접 이웃'),0,chapter('01','NEAREST','nn','최근접 이웃 보간','가장 가까운 1개 픽셀의 색을 그대로 복사한다'));
+scenes.splice(idxOf('양선형'),0,chapter('02','BILINEAR','bl','양선형 보간','주변 4개 픽셀을 거리 비율로 섞는다'));
+scenes.splice(idxOf('CH 02'),0,ratioScene);
+scenes.splice(idxOf('바이큐빅'),0,chapter('03','BICUBIC','bc','바이큐빅 보간','주변 16개 픽셀을 3차 함수 가중치로 섞는다'));
+scenes.splice(idxOf('가로 2배'),0,tChapter);
+scenes.unshift(opening);
+scenes.push(outro);
+
+// ───────────────────────── 재생 엔진 ─────────────────────────
+const stage=document.getElementById('stage'),wrap=document.getElementById('stageWrap'),sceneEl=document.getElementById('scene');
+const capEl=document.getElementById('caption'),tagEl=document.getElementById('tag'),endEl=document.getElementById('endOverlay'),segsEl=document.getElementById('segs');
+let SC=scenes,starts=[],total=0,segFills=[];
+let T=0,playing=true,cur=-1,refs=null,capText=null,speed=1,lastTs=null;
+// 내레이션(narration.js): 장면마다 [장면 시간, 실제 시간] 마디. 음성이 자막 간격보다 길면 그 구간을 늦추거나 잠깐 멈춤
+const NARR=window.NARR||null,nar=document.getElementById('nar');
+if(NARR&&nar)nar.src=NARR.audio;
+function warp(s,tr){const K=s.knots;if(!K)return tr;
+  for(let k=1;k<K.length;k++)if(tr<=K[k][1]||k===K.length-1){const [a0,b0]=K[k-1],[a1,b1]=K[k];return b1>b0?a0+(a1-a0)*clamp((tr-b0)/(b1-b0)):a1;}
+  return tr;}
+const useAudio=()=>!!(NARR&&nar&&nar.src);
+const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+const sceneAt=t=>{for(let i=SC.length-1;i>=0;i--)if(t>=starts[i])return i;return 0;};
+function init(){
+  starts=[];total=0;SC.forEach(s=>{const n=NARR&&NARR.scenes[s.name];s.knots=n?n.knots:null;s.real=n?n.real:s.dur;starts.push(total);total+=s.real;});
+  segsEl.innerHTML='';segFills=SC.map(s=>{const d=h('div');d.style.flex=s.real;d.title=s.name;const i=h('i');d.appendChild(i);segsEl.appendChild(d);return i;});
+  const m=location.hash.match(/^#s(\d+)$/);if(m)T=starts[clamp(+m[1]-1,0,SC.length-1)]||0;
+  setPlaying(true);render();
+}
+function render(){
+  const i=sceneAt(T),s=SC[i];
+  if(i!==cur){sceneEl.innerHTML='';refs=s.build(sceneEl);sceneEl.querySelectorAll('.h2,.big-title').forEach(kineticChars);cur=i;tagEl.textContent=`${i+1} / ${SC.length} · ${s.name}`;}
+  const tr=T-starts[i],t=Math.min(s.dur-1e-3,warp(s,tr));s.draw(refs,t);
+  let c='';for(const [ct,tx] of s.captions)if(t>=ct)c=tx;
+  if(c!==capText){capText=c;capEl.innerHTML=c;kineticWords(capEl);capEl.style.display=c?'':'none';capEl.classList.remove('in');void capEl.offsetWidth;capEl.classList.add('in');}
+  segFills.forEach((f,k)=>{f.style.width=(k<i?100:k>i?0:clamp(tr/s.real)*100)+'%';});
+  document.getElementById('time').textContent=`${fmt(T)} / ${fmt(total)}`;
+}
+function setPlaying(p){
+  playing=p;if(p&&T>=total-0.01)T=0;endEl.classList.toggle('show',!p&&T>=total-0.01);
+  document.getElementById('playIcon').innerHTML=p?'<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>':'<path d="M7 5v14l12-7z"/>';
+  if(useAudio()){if(p){nar.playbackRate=speed;if(Math.abs(nar.currentTime-T)>.05)nar.currentTime=T;const pr=nar.play();if(pr)pr.catch(()=>askStart());}else nar.pause();}
+}
+// 브라우저는 소리 있는 자동 재생을 막음 → 처음 한 번은 사용자가 눌러서 시작
+function askStart(){playing=false;document.getElementById('playIcon').innerHTML='<path d="M7 5v14l12-7z"/>';const o=document.getElementById('startOv');o.classList.add('show');document.getElementById('startBtn').focus();}
+document.getElementById('startBtn').onclick=e=>{e.stopPropagation();document.getElementById('startOv').classList.remove('show');setPlaying(true);};
+function seek(t){T=clamp(t,0,total-0.001);endEl.classList.remove('show');if(useAudio())nar.currentTime=T;render();}
+function frame(ts){
+  if(lastTs!=null&&playing){T+=Math.min(.1,(ts-lastTs)/1000)*speed;if(T>=total){T=total-0.001;render();setPlaying(false);endEl.classList.add('show');}
+    // 소리와 화면이 0.3초 넘게 어긋나면 소리를 화면 시간에 맞춤
+    else if(useAudio()&&!nar.paused&&nar.duration&&T<nar.duration-.1&&Math.abs(nar.currentTime-T)>.3)nar.currentTime=T;}
+  lastTs=ts;render();requestAnimationFrame(frame);
+}
+document.getElementById('play').onclick=e=>{e.stopPropagation();setPlaying(!playing);};
+wrap.onclick=()=>setPlaying(!playing);
+document.getElementById('replay').onclick=e=>{e.stopPropagation();T=0;setPlaying(true);};
+const go=d=>{const i=sceneAt(T);const t=T-starts[i];const n=d<0&&t>1.5?i:clamp(i+d,0,SC.length-1);seek(starts[n]);};
+document.getElementById('prev').onclick=()=>go(-1);
+document.getElementById('next').onclick=()=>go(1);
+document.getElementById('bar').onclick=e=>{const b=e.currentTarget.getBoundingClientRect();seek((e.clientX-b.left)/b.width*total);};
+const speeds=[1,1.5,0.75];document.getElementById('speed').onclick=e=>{speed=speeds[(speeds.indexOf(speed)+1)%speeds.length];e.currentTarget.textContent=speed+'×';if(useAudio())nar.playbackRate=speed;};
+document.getElementById('fs').onclick=()=>{const a=document.getElementById('app');document.fullscreenElement?document.exitFullscreen():a.requestFullscreen&&a.requestFullscreen();};
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();setPlaying(!playing);}else if(e.key==='ArrowRight')go(1);else if(e.key==='ArrowLeft')go(-1);});
+function layout(){
+  const W=innerWidth-32,H=innerHeight-32-50;const s=Math.max(.2,Math.min(W/1280,H/720));
+  wrap.style.width=1280*s+'px';wrap.style.height=720*s+'px';stage.style.transform=`scale(${s})`;
+  document.getElementById('controls').style.width=Math.max(320,1280*s)+'px';
+}
+addEventListener('resize',layout);document.addEventListener('fullscreenchange',layout);layout();
+setLoad();
+Promise.all([loadFonts(),prepareImages()])
+  .then(async()=>{
+    LOAD.final=.5;setLoad();await breathe();
+    init();LOAD.final=1;setLoad();
+    // 진행 화면이 걷히는 동안 오프닝이 지나가지 않게 잠깐 멈췄다가 재생
+    setPlaying(false);requestAnimationFrame(frame);
+    const ld=document.getElementById('loader');ld.classList.add('done');
+    setTimeout(()=>{ld.remove();setPlaying(true);prewarmRaster();},350);})
+  .catch(e=>{console.error(e);document.getElementById('loader').remove();document.getElementById('loadErr').style.display='flex';});
+</script>
+</body>
+</html>

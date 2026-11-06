@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인공지능과 빅데이터 | 인공지능 수학 웹앱</title>
+    <meta name="description" content="생일 맞히기, 비트 스위치, 친구와의 이진법 대결로 컴퓨터가 데이터를 0과 1로 표현하는 원리를 체험해 보세요.">
+    <meta name="author" content="황성현">
+    <meta name="theme-color" content="#a18cd1">
+    <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 25%, #a18cd1 50%, #fbc2eb 75%, #8fd3f4 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        a { color: inherit; }
+        a:focus-visible { outline: 3px solid #4338ca; outline-offset: 5px; }
+        .home-nav { position: absolute; top: 1rem; left: 1rem; }
+        .home-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            min-height: 44px;
+            padding: .6rem 1rem;
+            background: rgba(255, 255, 255, .9);
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+            text-decoration: none;
+            font-size: .9rem;
+            font-weight: 700;
+            transition: background .2s, transform .2s;
+        }
+        .home-nav a:hover { background: #fff; transform: translateY(-2px); }
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 2rem 2rem 3rem; }
+        .title-container { text-align: center; margin-bottom: 2rem; }
+        .title-row { display: flex; justify-content: center; align-items: center; gap: 12px; }
+        .logo { width: 5rem; height: auto; flex-shrink: 0; }
+        .title {
+            font-family: 'Gamja Flower', cursive;
+            font-size: clamp(2.6rem, 6vw, 4rem);
+            font-weight: 700;
+            line-height: 1.2;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
+            word-break: keep-all;
+        }
+        .subtitle {
+            margin-top: 1rem;
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #fff;
+            text-shadow: 0 1px 4px rgba(48, 33, 76, .55);
+            word-break: keep-all;
+        }
+        .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+        .card {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: rgba(255, 255, 255, .95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, .1);
+            transition: transform .3s ease, box-shadow .3s ease;
+        }
+        .card:only-child { grid-column: 1 / -1; width: min(100%, 400px); justify-self: center; }
+        .card:hover, .card:focus-within { transform: translateY(-6px); box-shadow: 0 15px 30px rgba(0, 0, 0, .18); }
+        .card-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 3 / 2;
+            background: linear-gradient(135deg, #ece9ff, #d7f3ef);
+            overflow: hidden;
+        }
+        .card-image svg { display: block; width: 100%; height: 100%; transition: transform .4s ease; }
+        .card:hover .card-image svg { transform: scale(1.03); }
+        .card-image--placeholder { position: relative; isolation: isolate; }
+        .card-image--placeholder::before {
+            content: '';
+            position: absolute;
+            inset: 15%;
+            border: 2px dashed rgba(91, 69, 155, .22);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .55);
+            z-index: -1;
+        }
+        .placeholder-number { color: #7964aa; font-size: 4.5rem; font-weight: 700; line-height: 1; }
+        .card--pending:nth-child(3n) .card-image { background: linear-gradient(135deg, #e1f0ff, #e4e4ff); }
+        .card--pending:nth-child(3n + 1) .card-image { background: linear-gradient(135deg, #ffe8e3, #f5e4f5); }
+        .card-body { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-label {
+            align-self: center;
+            margin-bottom: .7rem;
+            padding: .3rem .8rem;
+            border-radius: 50px;
+            background: #eeebfb;
+            color: #5b459b;
+            font-size: .8rem;
+            font-weight: 700;
+        }
+        .card-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 1rem; }
+        .card-text { flex-grow: 1; color: #595959; margin-bottom: 1.5rem; line-height: 1.8; word-break: keep-all; }
+        .btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: .6rem;
+            min-height: 48px;
+            padding: .8rem 1.5rem;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #7352b5, #564393);
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
+            text-align: center;
+            transition: filter .2s, transform .2s;
+        }
+        .btn:hover { filter: brightness(1.12); transform: translateY(-2px); }
+        .btn--pending, .btn--pending:hover {
+            background: #eeebf4;
+            color: #6b617c;
+            filter: none;
+            transform: none;
+        }
+        .footer {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto auto 0;
+            padding: 1.25rem;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, .28);
+            color: #fff;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .footer-title { font-weight: 700; margin-bottom: .25rem; }
+        .creator-info { font-size: .85rem; }
+        .footer a { text-underline-offset: 3px; }
+        @media (max-width: 992px) {
+            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 576px) {
+            body { padding: 1rem; }
+            .home-nav { position: static; margin-bottom: 1.5rem; }
+            .container { padding: 0 0 2rem; }
+            .title-row { flex-direction: column; gap: .5rem; }
+            .logo { width: 3.5rem; }
+            .subtitle { font-size: 1rem; margin-top: .75rem; }
+            .grid { grid-template-columns: minmax(0, 1fr); }
+            .card-body { padding: 1.25rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body { animation: none; }
+            *, *::before, *::after { transition: none !important; }
+            .card:hover, .card:focus-within, .card:hover .card-image svg, .btn:hover, .home-nav a:hover { transform: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="home-nav" aria-label="상위 페이지">
+        <a href="../index.html">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/>
+            </svg>
+            홈으로
+        </a>
+    </nav>
+    <main class="container">
+        <header class="title-container">
+            <div class="title-row">
+                <img src="../assets/home/faviconlogo.png" alt="" class="logo" width="80" height="80">
+                <h1 class="title">인공지능과 빅데이터</h1>
+            </div>
+            <p class="subtitle">0과 1로 표현되는 데이터의 원리를 직접 체험해 봅시다.</p>
+        </header>
+        <div class="grid">
+            <article class="card" aria-labelledby="binary-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="47" cy="48" r="63" fill="#c4b5fd" opacity=".25"/>
+                        <circle cx="366" cy="236" r="83" fill="#7dd3c0" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="white" fill-opacity=".8"/>
+                        <g font-family="Arial, sans-serif" text-anchor="middle" font-size="16" font-weight="700" fill="#71648d">
+                            <text x="89" y="76">8</text><text x="163" y="76">4</text><text x="237" y="76">2</text><text x="311" y="76">1</text>
+                        </g>
+                        <g>
+                            <rect x="59" y="90" width="60" height="64" rx="12" fill="#7455b5"/>
+                            <rect x="133" y="90" width="60" height="64" rx="12" fill="#e8e4f1"/>
+                            <rect x="207" y="90" width="60" height="64" rx="12" fill="#7455b5"/>
+                            <rect x="281" y="90" width="60" height="64" rx="12" fill="#7455b5"/>
+                        </g>
+                        <g font-family="Arial, sans-serif" text-anchor="middle" font-size="38" font-weight="700">
+                            <text x="89" y="136" fill="white">1</text><text x="163" y="136" fill="#8a809c">0</text>
+                            <text x="237" y="136" fill="white">1</text><text x="311" y="136" fill="white">1</text>
+                        </g>
+                        <rect x="104" y="174" width="192" height="34" rx="17" fill="#e9f5f0"/>
+                        <text x="200" y="197" text-anchor="middle" fill="#327665" font-family="Arial, sans-serif" font-size="20" font-weight="700">8 + 2 + 1 = 11</text>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">데이터의 표현</span>
+                    <h2 class="card-title" id="binary-title">이진법 체험</h2>
+                    <p class="card-text">컴퓨터는 숫자를 어떻게 표현할까요? 생일 맞히기와 비트 스위치로 이진법을 익히고, 친구들과 이진법 대결에 도전해 보세요.</p>
+                    <a href="09_기초연습/binary_game.html" class="btn" aria-label="이진법 체험 살펴보기">살펴보기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            <article class="card" aria-labelledby="logic-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="356" cy="44" r="66" fill="#c4b5fd" opacity=".25"/>
+                        <circle cx="40" cy="232" r="78" fill="#7dd3c0" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="white" fill-opacity=".8"/>
+                        <g stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M104 104H170" stroke="#7455b5"/>
+                            <path d="M104 164H170" stroke="#7455b5"/>
+                            <path d="M248 134H300" stroke="#7455b5"/>
+                        </g>
+                        <path d="M170 92H206a42 42 0 0 1 0 84H170Z" fill="#f3f0fb" stroke="#564393" stroke-width="4" stroke-linejoin="round"/>
+                        <text x="203" y="141" text-anchor="middle" fill="#564393" font-family="Arial, sans-serif" font-size="18" font-weight="700">AND</text>
+                        <g font-family="Arial, sans-serif" text-anchor="middle" font-size="22" font-weight="700">
+                            <circle cx="84" cy="104" r="20" fill="#7455b5"/><text x="84" y="112" fill="white">1</text>
+                            <circle cx="84" cy="164" r="20" fill="#7455b5"/><text x="84" y="172" fill="white">1</text>
+                            <circle cx="322" cy="134" r="22" fill="#fde68a" stroke="#b7791f" stroke-width="3"/><text x="322" y="142" fill="#7a4b0c">1</text>
+                        </g>
+                        <rect x="112" y="192" width="176" height="28" rx="14" fill="#e9f5f0"/>
+                        <text x="200" y="212" text-anchor="middle" fill="#327665" font-family="Arial, sans-serif" font-size="16" font-weight="700">AND · OR · NOT · XOR</text>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">논리 연산</span>
+                    <h2 class="card-title" id="logic-title">논리 연산 탐구</h2>
+                    <p class="card-text">컴퓨터는 0과 1을 어떻게 계산할까요? 모션 해설과 체험 실험실로 AND·OR·NOT·XOR·NAND·NOR를 익히고, 회로 만들기와 퍼셉트론까지 도전해 보세요.</p>
+                    <a href="09_기초연습/logic_gates/index.html" class="btn" aria-label="논리 연산 탐구 살펴보기">살펴보기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            <!-- 추가할 활동: 제목과 설명을 수정하고, 준비 중 표시를 실제 활동 링크(a.btn)로 교체하세요. -->
+            <article class="card card--pending" aria-labelledby="activity-03-title">
+                <div class="card-image card-image--placeholder" aria-hidden="true">
+                    <span class="placeholder-number">03</span>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">추가 예정</span>
+                    <h2 class="card-title" id="activity-03-title">활동 03</h2>
+                    <p class="card-text">새로운 탐구 활동을 준비하고 있어요. 곧 이곳에서 만나 보세요.</p>
+                    <span class="btn btn--pending">준비 중</span>
+                </div>
+            </article>
+            <article class="card card--pending" aria-labelledby="activity-04-title">
+                <div class="card-image card-image--placeholder" aria-hidden="true">
+                    <span class="placeholder-number">04</span>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">추가 예정</span>
+                    <h2 class="card-title" id="activity-04-title">활동 04</h2>
+                    <p class="card-text">새로운 탐구 활동을 준비하고 있어요. 곧 이곳에서 만나 보세요.</p>
+                    <span class="btn btn--pending">준비 중</span>
+                </div>
+            </article>
+            <article class="card card--pending" aria-labelledby="activity-05-title">
+                <div class="card-image card-image--placeholder" aria-hidden="true">
+                    <span class="placeholder-number">05</span>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">추가 예정</span>
+                    <h2 class="card-title" id="activity-05-title">활동 05</h2>
+                    <p class="card-text">새로운 탐구 활동을 준비하고 있어요. 곧 이곳에서 만나 보세요.</p>
+                    <span class="btn btn--pending">준비 중</span>
+                </div>
+            </article>
+            <article class="card card--pending" aria-labelledby="activity-06-title">
+                <div class="card-image card-image--placeholder" aria-hidden="true">
+                    <span class="placeholder-number">06</span>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">추가 예정</span>
+                    <h2 class="card-title" id="activity-06-title">활동 06</h2>
+                    <p class="card-text">새로운 탐구 활동을 준비하고 있어요. 곧 이곳에서 만나 보세요.</p>
+                    <span class="btn btn--pending">준비 중</span>
+                </div>
+            </article>
+        </div>
+    </main>
+    <footer class="footer">
+        <p class="footer-title">인공지능과 빅데이터 탐구 활동</p>
+        <p class="creator-info">Designed &amp; Developed by 황성현 · <a href="mailto:tjdgus1121@naver.com">문의하기</a></p>
+    </footer>
+</body>
+</html>

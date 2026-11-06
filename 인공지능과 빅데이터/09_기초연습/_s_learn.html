@@ -1,0 +1,4977 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>이진법 게임 · 십진법 ↔ 이진법</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@600;800&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <style>
+      :root {
+        --indigo: #6366f1;
+        --violet: #8b5cf6;
+        --mint: #10b981;
+        --rose: #f43f5e;
+        --ink: #1e293b;
+        --muted: #64748b;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        background:
+          radial-gradient(1200px 600px at 50% -10%, #c7d2fe 0%, transparent 60%),
+          linear-gradient(160deg, #eef2ff 0%, #ede9fe 45%, #dbeafe 100%);
+        color: var(--ink);
+        min-height: 100vh;
+        padding: 26px 16px 60px;
+        overflow-x: hidden;
+      }
+
+      /* 배경 장식: 떠다니는 0·1 + 로켓 */
+      .bg-deco {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .bg-deco span {
+        position: absolute;
+        font-family: "Orbitron", monospace;
+        font-weight: 900;
+        color: rgba(99, 102, 241, 0.07);
+        font-size: clamp(44px, 8vw, 110px);
+        animation: floaty 9s ease-in-out infinite;
+      }
+      .bg-deco .rocket {
+        font-size: clamp(38px, 6vw, 74px);
+        color: initial;
+        opacity: 0.55;
+        filter: drop-shadow(0 8px 14px rgba(99, 102, 241, 0.2));
+      }
+      @keyframes floaty {
+        0%, 100% { transform: translateY(0) rotate(-4deg); }
+        50% { transform: translateY(-22px) rotate(4deg); }
+      }
+
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      .floating-title {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 28px;
+        align-items: center;
+        width: min(900px, calc(100% - 34px));
+        margin: 0 auto 28px;
+        padding: 23px 30px;
+        border: 1px solid #e4e0f2;
+        border-radius: 22px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.84)),
+          repeating-linear-gradient(to bottom, transparent 0 29px, rgba(99, 102, 241, 0.08) 29px 30px);
+        box-shadow: 0 18px 38px rgba(71, 65, 115, 0.14), 0 5px 0 rgba(67, 56, 202, 0.06);
+        text-align: left;
+      }
+      .floating-title::before {
+        content: "";
+        position: absolute;
+        top: -11px;
+        left: 50%;
+        width: 92px;
+        height: 23px;
+        border: 1px solid rgba(202, 138, 4, 0.12);
+        background: rgba(254, 240, 138, 0.72);
+        box-shadow: 0 3px 8px rgba(161, 98, 7, 0.08);
+        transform: translateX(-50%) rotate(-1.5deg);
+      }
+      .floating-title-copy { min-width: 0; }
+      .floating-title-kicker {
+        display: block;
+        margin-bottom: 5px;
+        color: #5b55a5;
+        font-size: 12px;
+        font-weight: 850;
+      }
+      .floating-title h1 {
+        color: #302d62;
+        font-size: clamp(30px, 5vw, 46px);
+        font-weight: 950;
+        letter-spacing: -0.055em;
+        line-height: 1.22;
+      }
+      .floating-title p {
+        max-width: 660px;
+        margin-top: 7px;
+        color: #667085;
+        font-size: clamp(13px, 2.2vw, 15px);
+        font-weight: 650;
+        line-height: 1.55;
+      }
+      .title-two-states {
+        display: grid;
+        grid-template-columns: repeat(2, 52px);
+        gap: 7px;
+        justify-content: center;
+      }
+      .title-two-states span {
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border: 2px solid #c7d2fe;
+        border-radius: 14px;
+        background: #eef2ff;
+        color: #4338ca;
+        font: 900 25px/1 "JetBrains Mono", monospace;
+        box-shadow: 0 5px 11px rgba(79, 70, 229, 0.11);
+      }
+      .title-two-states span:last-of-type {
+        border-color: #fed7aa;
+        background: #fff7ed;
+        color: #c2410c;
+      }
+      .title-two-states small {
+        grid-column: 1 / -1;
+        color: #7b8193;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      /* segmented controls */
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 22px;
+      }
+      .quiz-control-group {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        width: min(100%, 720px);
+      }
+      .quiz-control-label {
+        color: #59657d;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 900;
+      }
+      .seg {
+        display: inline-flex;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 7px;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.13);
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .seg button {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-family: inherit;
+        font-weight: 800;
+        font-size: clamp(13px, 2.4vw, 16px);
+        padding: 12px 20px;
+        border-radius: 13px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .seg button.on {
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        box-shadow: 0 5px 16px rgba(99, 102, 241, 0.4);
+      }
+      .answer-mode-seg {
+        width: 100%;
+      }
+      .answer-mode-seg button {
+        flex: 1 1 190px;
+      }
+      .answer-mode-seg button.on[data-answer-mode="switch"] {
+        background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      }
+
+      /* stats */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .stats div {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 18px;
+        padding: 16px 8px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 800;
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.08);
+      }
+      .stats b {
+        display: block;
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(26px, 5vw, 38px);
+        color: var(--indigo);
+        margin-top: 4px;
+      }
+
+      /* main card */
+      .card {
+        background: #fff;
+        border-radius: 30px;
+        padding: 30px 26px 30px;
+        box-shadow: 0 20px 60px rgba(99, 102, 241, 0.16);
+        text-align: center;
+      }
+      .q-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        font-weight: 900;
+        font-size: 15px;
+        padding: 7px 22px;
+        border-radius: 999px;
+        letter-spacing: 2px;
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+      }
+      .num-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(8px, 3vw, 26px);
+        margin: 14px 0 6px;
+      }
+      .burst {
+        flex-shrink: 0;
+        width: clamp(28px, 7vw, 54px);
+        height: auto;
+        opacity: 0.9;
+      }
+      .burst.right {
+        transform: scaleX(-1);
+      }
+      .bignum {
+        font-family: "Orbitron", "JetBrains Mono", monospace;
+        font-weight: 900;
+        font-size: clamp(72px, 18vw, 150px);
+        line-height: 1;
+        letter-spacing: 2px;
+        background: linear-gradient(135deg, #1e293b, #4338ca);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        word-break: break-all;
+      }
+      .q-label {
+        font-size: clamp(15px, 3vw, 21px);
+        font-weight: 800;
+        color: var(--violet);
+        margin-bottom: 6px;
+      }
+
+      /* 스위치 풀이 패널 */
+      .bits-panel {
+        background: linear-gradient(180deg, #f5f7ff, #eef1fb);
+        border: 1.5px solid rgba(99, 102, 241, 0.12);
+        border-radius: 24px;
+        padding: 26px 16px;
+        margin: 20px 0 10px;
+      }
+      .bits {
+        display: flex;
+        justify-content: safe center;
+        align-items: flex-start;
+        gap: clamp(3px, 0.7vw, 6px);
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 4px 2px 12px;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+      }
+      .bit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        flex: 0 1 92px;
+        min-width: 56px;
+        --c: var(--indigo);
+      }
+      .place {
+        background: var(--c);
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 800;
+        font-size: clamp(14px, 2vw, 18px);
+        padding: 7px clamp(8px, 1.4vw, 14px);
+        border-radius: 999px;
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 45%, transparent);
+        white-space: nowrap;
+      }
+      .switch {
+        --h: clamp(38px, 5vw, 46px);
+        width: 100%;
+        height: var(--h);
+        border: none;
+        border-radius: 999px;
+        background: #d5dbe6;
+        position: relative;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.22s;
+      }
+      .knob {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        width: calc(var(--h) - 10px);
+        height: calc(var(--h) - 10px);
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 3px 9px rgba(0, 0, 0, 0.22);
+        transition: left 0.22s cubic-bezier(0.34, 1.4, 0.7, 1);
+      }
+      .bit.on .switch {
+        background: var(--c);
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--c) 50%, transparent);
+      }
+      .bit.on .knob {
+        left: calc(100% - var(--h) + 5px);
+      }
+      .bit .val {
+        font-family: "Orbitron", monospace;
+        font-weight: 900;
+        font-size: clamp(30px, 7vw, 46px);
+        color: #b4bccc;
+        transition: color 0.2s;
+      }
+      .bit.on .val {
+        color: var(--c);
+      }
+      .bit .pow {
+        font-size: 12px;
+        color: #a3adc2;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .bit.ok .switch {
+        outline: 4px solid rgba(16, 185, 129, 0.45);
+        outline-offset: 2px;
+      }
+      .bit.bad .switch {
+        outline: 4px solid rgba(244, 63, 94, 0.5);
+        outline-offset: 2px;
+      }
+      .plus {
+        flex: 0 0 20px;
+        font-size: clamp(22px, 3vw, 30px);
+        font-weight: 900;
+        color: #c0c7d6;
+        align-self: center;
+        margin-top: 38px;
+      }
+
+      .hint-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 12px;
+        min-height: 34px;
+        flex-wrap: wrap;
+      }
+      .live-sum {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 800;
+        color: var(--indigo);
+        font-size: clamp(15px, 3vw, 19px);
+      }
+
+      /* 텍스트 직접 입력 풀이 */
+      .text-answer-area {
+        margin: 22px 0 10px;
+      }
+      .text-answer-label {
+        display: block;
+        margin-bottom: 10px;
+        color: #46536f;
+        font-size: 14px;
+        font-weight: 900;
+      }
+      .text-answer-area input {
+        width: min(300px, 82%);
+        text-align: center;
+        font-family: "Orbitron", monospace;
+        font-size: clamp(40px, 9vw, 56px);
+        font-weight: 800;
+        color: var(--ink);
+        padding: 16px 14px;
+        border: 3px solid rgba(99, 102, 241, 0.3);
+        border-radius: 20px;
+        outline: none;
+        background: #f8faff;
+      }
+      .text-answer-area input:focus {
+        border-color: var(--indigo);
+        box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.14);
+      }
+      .text-answer-help {
+        display: block;
+        margin-top: 10px;
+        color: #7c87a1;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+      }
+      button.primary,
+      button.ghost {
+        font-family: inherit;
+        font-weight: 900;
+        font-size: clamp(16px, 3vw, 19px);
+        padding: 16px 40px;
+        border-radius: 16px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: 0.18s;
+      }
+      button.primary {
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        box-shadow: 0 8px 22px rgba(99, 102, 241, 0.38);
+      }
+      button.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(99, 102, 241, 0.45);
+      }
+      button.ghost {
+        background: #fff;
+        color: var(--indigo);
+        border-color: rgba(99, 102, 241, 0.3);
+        font-size: clamp(13px, 2.5vw, 15px);
+        padding: 11px 20px;
+      }
+      button.ghost:hover {
+        background: rgba(99, 102, 241, 0.06);
+      }
+
+      .feedback {
+        margin-top: 20px;
+        min-height: 58px;
+        font-weight: 800;
+        font-size: clamp(15px, 3vw, 18px);
+        border-radius: 18px;
+        padding: 16px 18px;
+        display: none;
+      }
+      .feedback.show {
+        display: block;
+        animation: pop 0.28s ease;
+      }
+      @keyframes pop {
+        from { transform: scale(0.94); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      .feedback.ok {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1.5px solid #6ee7b7;
+      }
+      .feedback.no {
+        background: #fff1f2;
+        color: #9f1239;
+        border: 1.5px solid #fda4af;
+      }
+      .feedback .calc {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 800;
+        margin-top: 8px;
+        font-size: clamp(14px, 2.8vw, 17px);
+        display: block;
+        word-break: break-all;
+      }
+      .footer-note {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 18px;
+        font-weight: 500;
+      }
+      kbd {
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-bottom-width: 2px;
+        border-radius: 6px;
+        padding: 1px 7px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+
+      /* 앱 상단 학습 모드 */
+      .app-tabs {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        max-width: 1120px;
+        margin: 0 auto 24px;
+        padding: 7px;
+        border: 1px solid rgba(99, 102, 241, 0.16);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 8px 26px rgba(99, 102, 241, 0.1);
+      }
+      .app-tabs button {
+        border: 0;
+        border-radius: 14px;
+        background: transparent;
+        color: var(--muted);
+        padding: 13px 10px;
+        font: 800 14px/1.35 "Noto Sans KR", sans-serif;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .app-tabs button[aria-selected="true"] {
+        color: #fff;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.32);
+      }
+      .app-tabs button:focus-visible {
+        outline: 3px solid rgba(67, 56, 202, 0.48);
+        outline-offset: 2px;
+      }
+      .app-view[hidden] { display: none !important; }
+      .app-view { animation: viewIn 0.28s ease; }
+      @keyframes viewIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* 원리 애니메이션 */
+      .learn-shell,
+      .converter-card {
+        border-radius: 30px;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 20px 60px rgba(99, 102, 241, 0.14);
+      }
+      .learn-shell { padding: 28px; }
+      .birthday-view .birthday-icebreaker { margin-bottom: 0; }
+      .birthday-icebreaker {
+        position: relative;
+        margin-bottom: 26px;
+        padding: 22px;
+        overflow: hidden;
+        border: 1px solid #ddd6fe;
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at 92% 10%, rgba(251, 191, 36, 0.2), transparent 28%),
+          linear-gradient(135deg, #fff7ed 0%, #f5f3ff 48%, #eef2ff 100%);
+        box-shadow: 0 12px 28px rgba(124, 58, 237, 0.12);
+      }
+      .birthday-icebreaker::after {
+        content: "🎂";
+        position: absolute;
+        top: 10px;
+        right: 18px;
+        font-size: 42px;
+        opacity: 0.2;
+        transform: rotate(8deg);
+        pointer-events: none;
+      }
+      .birthday-top {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        justify-items: center;
+        text-align: center;
+      }
+      .birthday-copy {
+        display: grid;
+        justify-items: center;
+      }
+      .birthday-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: max-content;
+        margin-bottom: 7px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #fff;
+        color: #7c3aed;
+        font-size: 12px;
+        font-weight: 900;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.12);
+      }
+      .birthday-copy h2 {
+        color: #312e81;
+        font-size: clamp(22px, 3.2vw, 30px);
+        font-weight: 900;
+        line-height: 1.3;
+      }
+      .birthday-date-text {
+        display: inline-block;
+        color: #e11d48;
+        transition: 0.24s;
+      }
+      .birthday-copy p {
+        max-width: 670px;
+        margin: 7px auto 0;
+        color: #596780;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.65;
+      }
+      .birthday-rule {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        width: max-content;
+        padding: 8px 15px;
+        border: 1px solid rgba(124, 58, 237, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #5b21b6;
+        font-weight: 800;
+        box-shadow: 0 5px 14px rgba(124, 58, 237, 0.08);
+      }
+      .birthday-rule .katex { font-size: 1.12em; }
+      .birthday-icebreaker [hidden] { display: none !important; }
+      .birthday-quiz {
+        margin-top: 18px;
+        padding: 17px;
+        border: 1px solid rgba(139, 92, 246, 0.18);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.82);
+      }
+      .birthday-quiz-status {
+        display: grid;
+        grid-template-columns: minmax(170px, auto) 1fr auto;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .birthday-quiz-step {
+        display: block;
+        margin-bottom: 3px;
+        color: #7c3aed;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .birthday-quiz-status strong {
+        color: #334155;
+        font-size: 17px;
+      }
+      .birthday-quiz-dots {
+        display: grid;
+        grid-template-columns: repeat(9, minmax(18px, 1fr));
+        gap: 5px;
+      }
+      .birthday-quiz-dot {
+        display: grid;
+        place-items: center;
+        min-height: 25px;
+        border: 1px solid #d8def0;
+        border-radius: 8px;
+        background: #f8fafc;
+        color: #94a3b8;
+        font: 900 10px/1 "JetBrains Mono", monospace;
+        transition: 0.2s;
+      }
+      .birthday-quiz-dot.current {
+        border-color: #7c3aed;
+        background: #ede9fe;
+        color: #5b21b6;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+        transform: translateY(-2px);
+      }
+      .birthday-quiz-dot.done.on {
+        border-color: #fbbf24;
+        background: #fef3c7;
+        color: #9a3412;
+      }
+      .birthday-quiz-dot.done.off {
+        border-color: #cbd5e1;
+        background: #e2e8f0;
+        color: #64748b;
+      }
+      .birthday-quiz-reset {
+        min-height: 36px;
+        border: 1px solid #ddd6fe;
+        border-radius: 10px;
+        background: #fff;
+        color: #6d28d9;
+        padding: 7px 10px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .birthday-question-card {
+        padding: 17px;
+        border: 2px solid #ddd6fe;
+        border-radius: 18px;
+        background: linear-gradient(145deg, #faf5ff, #eef2ff);
+      }
+      .birthday-question-card.question-in {
+        animation: birthdayQuestionIn 0.42s cubic-bezier(0.2, 0.85, 0.3, 1.2);
+      }
+      @keyframes birthdayQuestionIn {
+        from { opacity: 0; transform: translateX(14px) scale(0.98); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+      }
+      .birthday-question-head {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 13px;
+        text-align: center;
+      }
+      .birthday-question-weight {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 92px;
+        min-height: 64px;
+        border-radius: 15px;
+        background: #312e81;
+        color: #fff;
+        box-shadow: 0 7px 15px rgba(49, 46, 129, 0.22);
+      }
+      .birthday-question-weight .katex { font-size: 1.15em; }
+      .birthday-question-head h3 {
+        color: #312e81;
+        font-size: clamp(18px, 2.8vw, 23px);
+        font-weight: 900;
+      }
+      .birthday-question-head p {
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .birthday-number-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 7px;
+      }
+      .birthday-number {
+        display: grid;
+        place-items: center;
+        flex: 1 0 112px;
+        max-width: 150px;
+        min-height: 42px;
+        border: 1px solid #d8def0;
+        border-radius: 10px;
+        background: #fff;
+        color: #4338ca;
+        font: 900 15px/1 "JetBrains Mono", monospace;
+        box-shadow: 0 3px 7px rgba(99, 102, 241, 0.08);
+        animation: birthdayBitPop 0.3s ease both;
+        animation-delay: calc(var(--number-index) * 18ms);
+      }
+      .birthday-quiz-calc {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        min-height: 51px;
+        margin-top: 12px;
+        padding: 9px 13px;
+        border-radius: 14px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 900;
+      }
+      .birthday-quiz-calc strong {
+        color: #4338ca;
+        font-size: 21px;
+      }
+      .birthday-answer-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        max-width: 1100px;
+        margin: 16px auto 0;
+      }
+      .birthday-answer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        min-height: 78px;
+        border: 0;
+        border-radius: 17px;
+        color: #fff;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 8px 17px rgba(30, 64, 175, 0.16);
+        transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      }
+      .birthday-answer b {
+        display: inline-grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        font: 900 26px/1 "JetBrains Mono", monospace;
+      }
+      .birthday-answer span { text-align: left; }
+      .birthday-answer strong {
+        display: block;
+        font-size: 18px;
+        font-weight: 900;
+        line-height: 1.25;
+      }
+      .birthday-answer small {
+        display: block;
+        margin-top: 2px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .birthday-answer.no {
+        background: linear-gradient(145deg, #3b82f6, #2563eb);
+        box-shadow: 0 8px 17px rgba(37, 99, 235, 0.23);
+      }
+      .birthday-answer.yes {
+        background: linear-gradient(145deg, #fb923c, #ea580c);
+        box-shadow: 0 8px 17px rgba(234, 88, 12, 0.22);
+      }
+      .birthday-answer:hover {
+        transform: translateY(-3px);
+        filter: brightness(1.04);
+        box-shadow: 0 11px 22px rgba(30, 64, 175, 0.24);
+      }
+      .birthday-answer:focus-visible,
+      .birthday-quiz-reset:focus-visible,
+      .birthday-quiz-restart:focus-visible {
+        outline: 3px solid rgba(124, 58, 237, 0.42);
+        outline-offset: 3px;
+      }
+      .birthday-quiz-feedback {
+        min-height: 23px;
+        margin-top: 10px;
+        color: #64748b;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .birthday-quiz-feedback.transition { color: #047857; animation: pop 0.28s ease; }
+      .birthday-quiz-feedback.wrong { color: #be123c; animation: pop 0.28s ease; }
+      .birthday-guess-result {
+        display: grid;
+        grid-template-columns: minmax(210px, 270px) minmax(0, 1fr);
+        gap: 28px;
+        align-items: center;
+        margin-top: 18px;
+        padding: 25px;
+        border: 2px solid #a7f3d0;
+        border-radius: 24px;
+        background: linear-gradient(145deg, #ecfdf5, #f0fdf4);
+        animation: birthdayResultIn 0.55s cubic-bezier(0.2, 0.85, 0.3, 1.2);
+      }
+      @keyframes birthdayResultIn {
+        from { opacity: 0; transform: translateY(10px) scale(0.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .birthday-calendar-sheet {
+        position: relative;
+        width: 100%;
+        max-width: 270px;
+        margin: 8px auto 0;
+        text-align: center;
+        filter: drop-shadow(0 13px 18px rgba(100, 116, 139, 0.2));
+      }
+      .birthday-calendar-ring {
+        position: absolute;
+        z-index: 2;
+        top: -10px;
+        width: 15px;
+        height: 30px;
+        border: 4px solid #cbd5e1;
+        border-radius: 999px;
+        background: #f8fafc;
+        box-shadow: inset 0 0 0 2px #fff;
+      }
+      .birthday-calendar-ring.left { left: 24%; }
+      .birthday-calendar-ring.right { right: 24%; }
+      .birthday-calendar-head {
+        padding: 20px 16px 15px;
+        border-radius: 20px 20px 0 0;
+        background: linear-gradient(145deg, #fb7185, #e11d48);
+        color: #fff;
+      }
+      .birthday-calendar-head small {
+        display: block;
+        margin-bottom: 2px;
+        color: #ffe4e6;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+      .birthday-calendar-head strong {
+        font-size: 28px;
+        font-weight: 950;
+      }
+      .birthday-calendar-body {
+        padding: 11px 18px 17px;
+        border: 2px solid #fecdd3;
+        border-top: 0;
+        border-radius: 0 0 20px 20px;
+        background: #fff;
+      }
+      .birthday-calendar-day-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        color: #be123c;
+      }
+      .birthday-calendar-day-row strong {
+        font: 950 clamp(64px, 8vw, 86px)/1 "JetBrains Mono", monospace;
+        letter-spacing: -0.08em;
+      }
+      .birthday-calendar-day-row span {
+        margin-left: 6px;
+        font-size: 20px;
+        font-weight: 900;
+      }
+      .birthday-calendar-body p {
+        margin-top: 3px;
+        color: #e11d48;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+      }
+      .birthday-result-copy > span {
+        color: #047857;
+        font-size: 13px;
+        font-weight: 900;
+      }
+      .birthday-guess-result h3 {
+        margin-top: 6px;
+        color: #14532d;
+        font-size: clamp(23px, 3.4vw, 32px);
+        font-weight: 900;
+      }
+      .birthday-guess-result p {
+        margin-top: 4px;
+        color: #47705a;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.6;
+      }
+      .birthday-result-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        margin-top: 17px;
+      }
+      .birthday-guess-proof {
+        min-height: 44px;
+        padding: 10px 13px;
+        border-radius: 12px;
+        background: #fff;
+        color: #047857;
+        text-align: center;
+        font-weight: 900;
+      }
+      .birthday-quiz-restart {
+        min-height: 44px;
+        border: 0;
+        border-radius: 12px;
+        background: #047857;
+        color: #fff;
+        padding: 9px 14px;
+        font-family: inherit;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .birthday-reasoning {
+        margin-top: 18px;
+        padding: 24px;
+        border: 2px solid #c7d2fe;
+        border-radius: 24px;
+        background: linear-gradient(145deg, #ffffff, #eef2ff);
+        box-shadow: 0 12px 28px rgba(79, 70, 229, 0.1);
+        animation: birthdayResultIn 0.58s 0.12s cubic-bezier(0.2, 0.85, 0.3, 1.2) both;
+      }
+      .birthday-reasoning-head {
+        max-width: 760px;
+        margin: 0 auto;
+        text-align: center;
+      }
+      .birthday-reasoning-kicker {
+        display: inline-block;
+        margin-bottom: 7px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #e0e7ff;
+        color: #4338ca;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .birthday-reasoning h3 {
+        color: #312e81;
+        font-size: clamp(21px, 3vw, 28px);
+        font-weight: 950;
+      }
+      .birthday-reasoning-head p {
+        margin-top: 7px;
+        color: #596780;
+        font-size: 14px;
+        font-weight: 750;
+        line-height: 1.65;
+      }
+      .birthday-reasoning-flow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 11px;
+        margin-top: 18px;
+      }
+      .birthday-reason-step {
+        position: relative;
+        min-height: 118px;
+        padding: 16px 14px 14px;
+        border: 1px solid #dbe3ff;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        text-align: center;
+      }
+      .birthday-reason-step b {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        margin: 0 auto 8px;
+        border-radius: 50%;
+        background: #4f46e5;
+        color: #fff;
+        font: 900 14px/1 "JetBrains Mono", monospace;
+      }
+      .birthday-reason-step strong {
+        display: block;
+        color: #3730a3;
+        font-size: 14px;
+        font-weight: 900;
+      }
+      .birthday-reason-step span {
+        display: block;
+        margin-top: 5px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+      .birthday-reason-equations {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 13px;
+        margin-top: 15px;
+      }
+      .birthday-reason-equation {
+        padding: 16px;
+        border-radius: 17px;
+        background: #312e81;
+        color: #fff;
+        text-align: center;
+      }
+      .birthday-reason-equation > span {
+        display: block;
+        margin-bottom: 8px;
+        color: #c7d2fe;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .birthday-reason-math {
+        min-height: 38px;
+        color: #fff;
+      }
+      .birthday-reason-math .katex { font-size: 1.16em; }
+      .birthday-reason-equation p {
+        margin-top: 7px;
+        color: #e0e7ff;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+      .birthday-reason-note {
+        margin-top: 14px;
+        padding: 11px 14px;
+        border-radius: 13px;
+        background: #fef3c7;
+        color: #92400e;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .birthday-code-caption {
+        color: #c7d2fe;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: right;
+      }
+      .birthday-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(90px, 1fr)) auto;
+        gap: 9px;
+        align-items: end;
+        margin-top: 18px;
+        transition: 0.22s;
+      }
+      .birthday-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        color: #596780;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .birthday-field select {
+        min-height: 44px;
+        border: 2px solid #ddd6fe;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #312e81;
+        padding: 7px 10px;
+        font: 900 15px "Noto Sans KR", sans-serif;
+        outline: none;
+      }
+      .birthday-field select:focus { border-color: #7c3aed; }
+      .birthday-random {
+        min-height: 44px;
+        border: 0;
+        border-radius: 12px;
+        background: #ede9fe;
+        color: #6d28d9;
+        padding: 9px 13px;
+        font-family: inherit;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .birthday-random:focus-visible,
+      .birthday-reveal:focus-visible {
+        outline: 3px solid rgba(124, 58, 237, 0.42);
+        outline-offset: 3px;
+      }
+      .birthday-code-board {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 18px;
+        align-items: stretch;
+        margin-top: 18px;
+        padding: 20px;
+        border: 2px solid rgba(139, 92, 246, 0.16);
+        border-radius: 24px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 243, 255, 0.9));
+        box-shadow: 0 12px 30px rgba(79, 70, 229, 0.08);
+      }
+      .birthday-part {
+        min-width: 0;
+        padding: 16px;
+        border: 1px solid #e0e7ff;
+        border-radius: 19px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 7px 18px rgba(99, 102, 241, 0.08);
+      }
+      .birthday-part-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 13px;
+        color: #334155;
+        font-size: 15px;
+        font-weight: 900;
+      }
+      .birthday-part-head b {
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 13px;
+      }
+      .birthday-bits {
+        display: grid;
+        grid-template-columns: repeat(var(--bit-count), minmax(40px, 1fr));
+        gap: 9px;
+      }
+      .birthday-bit {
+        display: grid;
+        place-items: center;
+        align-content: center;
+        min-height: 84px;
+        padding: 9px 5px;
+        border: 2px solid #d9dfeb;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #fbfdff, #f1f5f9);
+        color: #94a3b8;
+        box-shadow: inset 0 -5px 9px rgba(100, 116, 139, 0.09), 0 4px 9px rgba(100, 116, 139, 0.07);
+        animation: birthdayBitPop 0.38s cubic-bezier(0.2, 0.85, 0.3, 1.25) both;
+        animation-delay: calc(var(--bit-index) * 55ms);
+      }
+      .birthday-bit strong {
+        font: 950 30px/1 "JetBrains Mono", monospace;
+      }
+      .birthday-bit span {
+        margin-top: 10px;
+        color: #94a3b8;
+        font-size: 17px;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .birthday-bit-power .katex { font-size: 1.14em; }
+      .birthday-bit.on {
+        border-color: #fbbf24;
+        background: radial-gradient(circle at 38% 25%, #fffde7, #fef3c7 55%, #fde68a);
+        color: #9a3412;
+        box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.11), 0 9px 18px rgba(245, 158, 11, 0.2);
+      }
+      .birthday-bit.on span { color: #b45309; }
+      @keyframes birthdayBitPop {
+        from { opacity: 0; transform: translateY(7px) scale(0.88); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .birthday-math {
+        min-height: 38px;
+        margin-top: 13px;
+        color: #4338ca;
+        text-align: center;
+        font-weight: 800;
+      }
+      .birthday-math .katex { font-size: 1.2em; }
+      .birthday-divider {
+        display: grid;
+        place-items: center;
+        align-self: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 5px solid #f5f3ff;
+        background: #ddd6fe;
+        color: #7c3aed;
+        font-size: 24px;
+        font-weight: 900;
+        box-shadow: 0 5px 12px rgba(124, 58, 237, 0.14);
+      }
+      .birthday-challenge {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        margin-top: 16px;
+        padding: 17px 20px;
+        border-radius: 19px;
+        background: linear-gradient(135deg, #312e81, #4338ca);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(49, 46, 129, 0.2);
+      }
+      .birthday-code-label {
+        display: block;
+        margin-bottom: 3px;
+        color: #c7d2fe;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .birthday-code {
+        display: block;
+        font: 900 clamp(25px, 3.7vw, 34px)/1.25 "JetBrains Mono", monospace;
+        letter-spacing: 0.08em;
+      }
+      .birthday-reveal {
+        min-height: 44px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        background: #fff;
+        color: #4338ca;
+        padding: 9px 15px;
+        font-family: inherit;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .birthday-note {
+        margin-top: 10px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+      }
+      .birthday-icebreaker.guessing .birthday-controls {
+        display: none;
+      }
+      .birthday-icebreaker.guessing .birthday-date-text {
+        color: #7c3aed;
+        animation: pop 0.28s ease;
+      }
+      .section-heading {
+        text-align: center;
+        margin-bottom: 22px;
+      }
+      .section-heading h2 {
+        color: #3730a3;
+        font-size: clamp(24px, 4vw, 34px);
+        font-weight: 900;
+      }
+      .section-heading p {
+        margin-top: 7px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .concept-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 22px;
+      }
+      .concept-strip div {
+        padding: 14px;
+        border-radius: 16px;
+        background: #f4f6ff;
+        color: #4f5f82;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .concept-strip b {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--indigo);
+        font-size: 19px;
+      }
+      .number-stage {
+        padding: 24px 18px;
+        border: 1px solid rgba(99, 102, 241, 0.14);
+        border-radius: 24px;
+        background: linear-gradient(180deg, #f8faff, #eef2ff);
+        overflow: hidden;
+      }
+      .stage-number {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .stage-number strong {
+        color: #312e81;
+        font-family: "Orbitron", monospace;
+        font-size: clamp(48px, 9vw, 78px);
+        line-height: 1;
+      }
+      .stage-number span { color: var(--muted); font-weight: 800; }
+      .learn-bits {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(58px, 1fr));
+        gap: 8px;
+        overflow-x: auto;
+        padding: 5px 2px 12px;
+      }
+      .learn-bit {
+        min-width: 58px;
+        min-height: 218px;
+        padding: 12px 5px 10px;
+        border: 2px solid #d9dfeb;
+        border-radius: 17px;
+        background: #fff;
+        color: inherit;
+        font-family: inherit;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .learn-bit:focus-visible {
+        outline: 3px solid rgba(99, 102, 241, 0.42);
+        outline-offset: 3px;
+      }
+      .learn-bit .bulb {
+        display: grid;
+        place-items: center;
+        position: relative;
+        width: 44px;
+        height: 48px;
+        margin: 0 auto 18px;
+        border: 2px solid #cbd3df;
+        border-radius: 50% 50% 44% 44%;
+        background: radial-gradient(circle at 35% 28%, #f8fafc, #dbe1ec 68%);
+        color: #8793aa;
+        font: 900 22px/1 Arial, sans-serif;
+        box-shadow: inset 0 -5px 8px rgba(100, 116, 139, 0.13);
+        transition: 0.25s;
+      }
+      .learn-bit .bulb::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 9px;
+        width: 9px;
+        height: 13px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.72);
+        transform: rotate(28deg);
+      }
+      .learn-bit .bulb::after {
+        content: "";
+        position: absolute;
+        left: 10px;
+        bottom: -13px;
+        width: 20px;
+        height: 13px;
+        border: 2px solid #9aa6b8;
+        border-top: 0;
+        border-radius: 0 0 6px 6px;
+        background: repeating-linear-gradient(to bottom, #cbd5e1 0 3px, #94a3b8 3px 5px);
+      }
+      .learn-bit .weight {
+        color: #7b879d;
+        font: 800 13px/1.2 "JetBrains Mono", monospace;
+      }
+      .learn-bit .power {
+        margin-top: 4px;
+        color: #a0a9ba;
+        font: 700 11px/1.2 "JetBrains Mono", monospace;
+      }
+      .learn-bit .mission-toggle { margin-top: 10px; }
+      .learn-switch-state {
+        display: block;
+        color: #8b96a9;
+        font: 900 10px/1 "JetBrains Mono", monospace;
+      }
+      .learn-bit.on {
+        border-color: #fbbf24;
+        background: #fffbeb;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 22px rgba(245, 158, 11, 0.2);
+      }
+      .learn-bit.on .bulb {
+        border-color: #f59e0b;
+        background: radial-gradient(circle at 35% 28%, #fffce0, #fcd34d 55%, #f59e0b);
+        color: #78350f;
+        box-shadow: 0 0 0 8px rgba(251, 191, 36, 0.13), 0 0 28px rgba(245, 158, 11, 0.5);
+      }
+      .learn-bit.on .learn-switch-state { color: #b45309; }
+      .learn-equation {
+        min-height: 54px;
+        margin-top: 18px;
+        color: #4338ca;
+        text-align: center;
+        font: 800 clamp(15px, 2.6vw, 21px)/1.7 "JetBrains Mono", monospace;
+      }
+      .learn-controls {
+        display: grid;
+        grid-template-columns: minmax(160px, 1fr) 110px auto auto;
+        gap: 10px;
+        align-items: end;
+        margin-top: 20px;
+      }
+      .field-label {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .field-label input {
+        width: 100%;
+        border: 2px solid #d8def0;
+        border-radius: 13px;
+        background: #fff;
+        color: var(--ink);
+        padding: 11px 12px;
+        font: 800 16px "JetBrains Mono", monospace;
+        outline: none;
+      }
+      .field-label input:focus { border-color: var(--indigo); }
+      .field-label input[type="range"] { accent-color: var(--indigo); padding: 0; }
+      .mini-action {
+        min-height: 45px;
+        border: 0;
+        border-radius: 13px;
+        padding: 10px 16px;
+        background: #e8edff;
+        color: #3f51a6;
+        font-family: inherit;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      button.mini-action.primary {
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 13px;
+        font-size: 14px;
+        box-shadow: none;
+      }
+      button.mini-action.primary:hover { transform: none; box-shadow: none; }
+      .preset-row {
+        display: flex;
+        justify-content: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .preset-row button {
+        border: 1px solid #cbd5f5;
+        border-radius: 10px;
+        background: #fff;
+        color: #4c5fa2;
+        padding: 7px 12px;
+        font: 800 13px "JetBrains Mono", monospace;
+        cursor: pointer;
+      }
+
+      /* 큰 자릿값부터 판단하는 목표 숫자 만들기 카드 */
+      .mission-card {
+        margin: 0;
+        padding: 26px;
+        border: 2px solid rgba(99, 102, 241, 0.16);
+        border-radius: 24px;
+        background: linear-gradient(145deg, #ffffff, #f6f8ff);
+        box-shadow: 0 14px 34px rgba(67, 56, 202, 0.1);
+      }
+      .mission-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .mission-kicker {
+        display: inline-block;
+        margin-bottom: 7px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #e8edff;
+        color: #4f46b8;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .mission-head h3 {
+        color: #312e81;
+        font-size: clamp(21px, 3.4vw, 29px);
+        font-weight: 900;
+      }
+      .mission-head h3 strong { color: var(--rose); }
+      .mission-head p {
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 650;
+      }
+      .mission-targets {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .mission-targets button {
+        border: 1px solid #cdd5f4;
+        border-radius: 11px;
+        background: #fff;
+        color: #46589b;
+        padding: 8px 11px;
+        font: 800 12px "JetBrains Mono", monospace;
+        cursor: pointer;
+      }
+      .mission-targets button:hover { background: #eef2ff; }
+      .mission-board {
+        overflow-x: auto;
+        padding: 4px 2px 13px;
+        scrollbar-width: thin;
+      }
+      .mission-lane { min-width: 720px; }
+      .mission-index,
+      .mission-bulbs {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+      }
+      .mission-index { margin-bottom: 10px; }
+      .mission-index-item {
+        position: relative;
+        min-height: 72px;
+        padding: 10px 4px;
+        overflow: hidden;
+        border: 1px solid #dce2f2;
+        border-radius: 11px;
+        background: #f8f9fd;
+        color: #8a94aa;
+        text-align: center;
+        font: 800 14px/1.35 "JetBrains Mono", monospace;
+        transition: 0.22s;
+      }
+      .mission-index-item small {
+        display: block;
+        width: max-content;
+        margin: 0 auto 4px;
+        font: 900 13px/1.25 "Noto Sans KR", sans-serif;
+        transition: 0.22s;
+      }
+      .mission-index-math { display: block; }
+      .mission-index-math .katex { font-size: 1.14em; }
+      .mission-index-item.current {
+        z-index: 2;
+        border: 2px solid var(--indigo);
+        background: linear-gradient(145deg, #eef2ff 8%, #dbe4ff 100%);
+        color: #3730a3;
+        box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.17), 0 12px 25px rgba(79, 70, 229, 0.25);
+        animation: currentStageEnter 0.52s cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+      }
+      .mission-index-item.current small {
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: var(--indigo);
+        color: #fff;
+        box-shadow: 0 4px 9px rgba(79, 70, 229, 0.25);
+        animation: currentStageLabel 1.35s ease-in-out 0.5s infinite;
+      }
+      .mission-index-item.current small::before {
+        content: "지금 ";
+        color: #e0e7ff;
+      }
+      .mission-index-item.current::after {
+        content: "";
+        position: absolute;
+        top: -30%;
+        bottom: -30%;
+        left: -42%;
+        width: 26%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+        transform: rotate(14deg);
+        pointer-events: none;
+        animation: currentStageSweep 1.9s ease-in-out 0.45s infinite;
+      }
+      @keyframes currentStageEnter {
+        0% { transform: translateY(5px) scale(0.92); opacity: 0.55; }
+        62% { transform: translateY(-5px) scale(1.045); opacity: 1; }
+        100% { transform: translateY(-3px) scale(1); opacity: 1; }
+      }
+      @keyframes currentStageLabel {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-2px) scale(1.05); }
+      }
+      @keyframes currentStageSweep {
+        0%, 28% { left: -42%; opacity: 0; }
+        40% { opacity: 1; }
+        68%, 100% { left: 118%; opacity: 0; }
+      }
+      .mission-index-item.done {
+        border-color: #a7f3d0;
+        background: #ecfdf5;
+        color: #047857;
+      }
+      .mission-index-item:not(.current):not(.done) {
+        opacity: 0.48;
+        filter: grayscale(0.18) saturate(0.5);
+        transform: scale(0.965);
+      }
+      .mission-bulb {
+        min-height: 184px;
+        padding: 12px 4px 11px;
+        border: 2px solid #dce2ec;
+        border-radius: 16px;
+        background: #fff;
+        color: #7b879c;
+        font-family: inherit;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.22s;
+      }
+      .mission-bulb:disabled { cursor: default; }
+      .mission-bulb:focus-visible {
+        outline: 3px solid rgba(99, 102, 241, 0.42);
+        outline-offset: 2px;
+      }
+      .mission-bulb:not(.current):not(.done) {
+        opacity: 0.43;
+        filter: grayscale(0.34) saturate(0.48);
+        transform: scale(0.96);
+      }
+      .mission-bulb.done { opacity: 0.82; }
+      .mission-bulb.on {
+        border-color: #fbbf24;
+        background: #fffbeb;
+        color: #92400e;
+      }
+      .mission-bulb.current {
+        position: relative;
+        z-index: 2;
+        border: 3px solid var(--indigo);
+        background: linear-gradient(180deg, #ffffff, #eef2ff);
+        color: #3730a3;
+        opacity: 1;
+        filter: none;
+        transform: translateY(-7px) scale(1.035);
+        box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.16), 0 16px 28px rgba(79, 70, 229, 0.24);
+        animation: currentBulbFocus 1.65s ease-in-out infinite;
+      }
+      .mission-bulb.current.on {
+        border-color: #f59e0b;
+        background: linear-gradient(180deg, #fffef5, #fffbeb);
+        color: #92400e;
+        box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.16), 0 0 0 9px rgba(251, 191, 36, 0.1), 0 16px 30px rgba(245, 158, 11, 0.28);
+      }
+      @keyframes currentBulbFocus {
+        0%, 100% { translate: 0 0; }
+        50% { translate: 0 -2px; }
+      }
+      .mission-lamp {
+        display: grid;
+        place-items: center;
+        position: relative;
+        width: 44px;
+        height: 48px;
+        margin: 0 auto 18px;
+        border: 2px solid #cbd3df;
+        border-radius: 50% 50% 44% 44%;
+        background: radial-gradient(circle at 35% 28%, #f8fafc, #dbe1ea 68%);
+        color: #8490a3;
+        font: 900 21px/1 Arial, sans-serif;
+        box-shadow: inset 0 -5px 8px rgba(100, 116, 139, 0.13);
+        transition: 0.25s;
+      }
+      .mission-lamp::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 9px;
+        width: 9px;
+        height: 13px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.72);
+        transform: rotate(28deg);
+      }
+      .mission-lamp::after {
+        content: "";
+        position: absolute;
+        left: 10px;
+        bottom: -13px;
+        width: 20px;
+        height: 13px;
+        border: 2px solid #9aa6b8;
+        border-top: 0;
+        border-radius: 0 0 6px 6px;
+        background: repeating-linear-gradient(to bottom, #cbd5e1 0 3px, #94a3b8 3px 5px);
+      }
+      .mission-bulb.on .mission-lamp {
+        border-color: #f59e0b;
+        background: radial-gradient(circle at 38% 32%, #fff7b2, #fbbf24 58%, #f59e0b);
+        color: #78350f;
+        box-shadow: 0 0 0 7px rgba(251, 191, 36, 0.13), 0 0 26px rgba(245, 158, 11, 0.5);
+      }
+      .mission-bulb b {
+        display: block;
+        font: 900 13px/1.2 "JetBrains Mono", monospace;
+      }
+      .mission-toggle {
+        display: block;
+        width: 51px;
+        height: 64px;
+        margin: 9px auto 3px;
+        border: 0;
+        background: url("../../assets/rocker-switch-off.svg?v=2") center / contain no-repeat;
+        filter: drop-shadow(0 4px 4px rgba(15, 23, 42, 0.17));
+        transform: translateY(0) scale(1);
+        transition: filter 0.22s ease, transform 0.2s ease;
+      }
+      .mission-toggle-knob {
+        display: none;
+      }
+      .mission-bulb.on .mission-toggle,
+      .learn-bit.on .mission-toggle {
+        background-image: url("../../assets/rocker-switch-on.svg?v=2");
+        filter: drop-shadow(0 4px 5px rgba(124, 45, 18, 0.25)) drop-shadow(0 0 6px rgba(249, 115, 22, 0.28));
+        transform: translateY(1px) scale(0.985);
+      }
+      .mission-bulb.on .mission-toggle-knob,
+      .learn-bit.on .mission-toggle-knob {
+        display: none;
+      }
+      .mission-switch-state {
+        color: #8b96a9;
+        font: 900 10px/1 "JetBrains Mono", monospace;
+      }
+      .mission-bulb.on .mission-switch-state { color: #b45309; }
+      .mission-bulb.current .mission-toggle {
+        outline: 3px solid rgba(99, 102, 241, 0.16);
+        outline-offset: 2px;
+      }
+      .mission-advance-row {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+        min-height: 76px;
+        margin-top: 3px;
+      }
+      .mission-confirm-wrap {
+        --mission-pointer: 25%;
+        position: relative;
+        display: block;
+        padding-top: 16px;
+      }
+      .mission-confirm-wrap::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: var(--mission-pointer);
+        width: 3px;
+        height: 13px;
+        border-radius: 999px;
+        background: var(--indigo);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        transform: translateX(-50%);
+      }
+      .mission-confirm-wrap::after {
+        content: "";
+        position: absolute;
+        top: 9px;
+        left: var(--mission-pointer);
+        border-top: 7px solid var(--indigo);
+        border-right: 6px solid transparent;
+        border-left: 6px solid transparent;
+        transform: translateX(-50%);
+      }
+      .mission-coach {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 13px;
+        align-items: center;
+        margin-top: 4px;
+        padding: 16px;
+        border-radius: 17px;
+        background: #eef2ff;
+      }
+      .mission-step-label {
+        padding: 7px 10px;
+        border-radius: 10px;
+        background: #fff;
+        color: var(--indigo);
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+      .mission-guide {
+        color: #354268;
+        font-size: 14px;
+        font-weight: 750;
+        line-height: 1.55;
+      }
+      .mission-confirm {
+        display: grid;
+        place-items: center;
+        width: 100%;
+        min-height: 58px;
+        border: 0;
+        border-radius: 14px;
+        padding: 8px 10px 9px;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff;
+        font-family: inherit;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .mission-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 11px 22px rgba(79, 70, 229, 0.34);
+      }
+      .mission-confirm-choice {
+        color: #e0e7ff;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+      .mission-confirm-choice b {
+        color: #fff;
+        font: 900 11px/1 "JetBrains Mono", monospace;
+      }
+      .mission-confirm-next {
+        display: block;
+        margin-top: 3px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.3;
+      }
+      .mission-confirm:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+      .mission-formula {
+        margin-top: 15px;
+        padding: 17px;
+        border-radius: 17px;
+        background: #fff;
+        border: 1px solid #dfe5f4;
+        text-align: center;
+      }
+      .mission-formula > span {
+        display: block;
+        margin-bottom: 5px;
+        color: #7c879f;
+        font-size: 12px;
+        font-weight: 850;
+      }
+      .mission-formula strong {
+        display: block;
+        color: #3730a3;
+        font: 900 clamp(15px, 2.7vw, 20px)/1.65 "JetBrains Mono", monospace;
+        overflow-wrap: anywhere;
+      }
+      .mission-index-item .katex { font-size: 1.03em; }
+      .mission-guide-equation {
+        display: inline-flex;
+        align-items: center;
+        min-height: 29px;
+        margin-right: 8px;
+        padding: 3px 8px;
+        border-radius: 8px;
+        background: #fff;
+        color: #3730a3;
+      }
+      .mission-guide-equation .katex { font-size: 1.05em; }
+      .mission-formula .katex-display { margin: 0; }
+      .mission-formula #missionEquation .katex { font-size: clamp(1.05rem, 2.5vw, 1.42rem); }
+      .learn-equation .katex,
+      .convert-result .katex { font-size: 1em; }
+      .mission-formula .new-term {
+        display: inline-block;
+        margin: 0;
+        padding: 0 5px;
+        border-radius: 7px;
+        background: #fef3c7;
+        color: #b45309;
+        font: inherit;
+        font-style: normal;
+        animation: addedTerm 0.45s ease;
+      }
+      @keyframes addedTerm {
+        from { transform: translateY(-8px) scale(1.12); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      .mission-formula.pulse { animation: formulaPulse 0.38s ease; }
+      @keyframes formulaPulse {
+        0% { transform: scale(0.98); background: #fff; }
+        55% { transform: scale(1.015); background: #fffbeb; }
+        100% { transform: scale(1); background: #fff; }
+      }
+      .mission-progress-track {
+        position: relative;
+        height: 10px;
+        margin-top: 11px;
+        border-radius: 999px;
+        background: #e6eaf3;
+        overflow: hidden;
+      }
+      .mission-progress-fill {
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--mint), #22c55e);
+        transition: width 0.35s ease;
+      }
+      .mission-feedback {
+        min-height: 28px;
+        margin-top: 10px;
+        color: #53617c;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .mission-feedback.wrong { color: #be123c; animation: pop 0.25s ease; }
+      .mission-feedback.correct { color: #047857; animation: pop 0.25s ease; }
+
+      /* 변환 실험실 */
+      .converter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .converter-card { padding: 25px; }
+      .converter-card h2 {
+        color: #3730a3;
+        font-size: 22px;
+        margin-bottom: 7px;
+      }
+      .converter-card > p {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 18px;
+      }
+      .converter-fields {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 10px;
+        align-items: end;
+      }
+      .swap-mark {
+        align-self: center;
+        color: var(--violet);
+        font-size: 24px;
+        font-weight: 900;
+        padding-top: 19px;
+      }
+      .convert-result {
+        margin-top: 17px;
+        padding: 15px;
+        border-radius: 15px;
+        background: #f2f5ff;
+        color: #3730a3;
+        text-align: center;
+        font: 800 clamp(14px, 2.2vw, 18px)/1.65 "JetBrains Mono", monospace;
+        overflow-wrap: anywhere;
+      }
+      .place-breakdown {
+        display: flex;
+        gap: 7px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 15px;
+      }
+      .place-chip {
+        min-width: 58px;
+        padding: 9px 7px;
+        border-radius: 11px;
+        background: #eef2ff;
+        color: #7c87a1;
+        text-align: center;
+        font: 800 13px/1.35 "JetBrains Mono", monospace;
+      }
+      .place-chip.on { background: #dcfce7; color: #047857; }
+      .division-toolbar {
+        display: flex;
+        gap: 8px;
+        margin: 18px 0 12px;
+        flex-wrap: wrap;
+      }
+      .division-steps {
+        display: grid;
+        gap: 7px;
+        min-height: 220px;
+        align-content: start;
+      }
+      .division-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        padding: 10px 12px;
+        border-left: 4px solid var(--indigo);
+        border-radius: 10px;
+        background: #f7f8ff;
+        color: #46536f;
+        font: 800 14px "JetBrains Mono", monospace;
+        animation: rowIn 0.3s ease both;
+      }
+      .division-row b { color: var(--rose); }
+      @keyframes rowIn {
+        from { opacity: 0; transform: translateX(-12px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      .division-answer {
+        padding: 13px;
+        border-radius: 12px;
+        background: #ecfdf5;
+        color: #047857;
+        text-align: center;
+        font-weight: 900;
+        animation: pop 0.3s ease;
+      }
+      .quiz-view .controls,
+      .quiz-view .stats,
+      .quiz-view .card,
+      .quiz-view .footer-note { max-width: 860px; margin-left: auto; margin-right: auto; }
+      .quiz-shell {
+        position: relative;
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 30px;
+        overflow: hidden;
+        border: 2px solid rgba(99, 102, 241, 0.14);
+        border-radius: 30px;
+        background:
+          radial-gradient(circle at 96% 5%, rgba(251, 191, 36, 0.13), transparent 24%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(246, 247, 255, 0.95));
+        box-shadow: 0 22px 58px rgba(79, 70, 229, 0.15);
+      }
+      .quiz-shell::after {
+        content: "✓";
+        position: absolute;
+        top: 22px;
+        right: 28px;
+        color: rgba(79, 70, 229, 0.08);
+        font: 950 72px/1 "JetBrains Mono", monospace;
+        transform: rotate(8deg);
+        pointer-events: none;
+      }
+      .quiz-kicker {
+        display: inline-block;
+        margin-bottom: 7px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4f46e5;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .quiz-shell .section-heading { margin-bottom: 18px; }
+      .quiz-view .controls {
+        gap: 10px;
+        margin-bottom: 18px;
+        padding: 16px;
+        border: 1px solid #e0e7ff;
+        border-radius: 20px;
+        background: rgba(238, 242, 255, 0.72);
+      }
+      .quiz-view .seg {
+        box-shadow: 0 5px 14px rgba(99, 102, 241, 0.1);
+      }
+      .quiz-view .stats { gap: 10px; margin-bottom: 18px; }
+      .quiz-view .stats div {
+        border: 1px solid #e5e7f2;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 5px 14px rgba(99, 102, 241, 0.07);
+      }
+      .quiz-view .card {
+        border: 1px solid #e0e7ff;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 13px 30px rgba(79, 70, 229, 0.12);
+      }
+      .quiz-view .footer-note {
+        margin-top: 15px;
+        padding: 10px 13px;
+        border-radius: 12px;
+        background: #f8fafc;
+      }
+
+      /* 1~5단계 공통 메인 컨테이너 */
+      .app-view {
+        width: 100%;
+      }
+      .stage-shell {
+        --stage-tint: #f7f8ff;
+        --stage-glow: rgba(99, 102, 241, 0.12);
+        position: relative;
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 28px;
+        overflow: visible;
+        box-sizing: border-box;
+        border: 2px solid rgba(99, 102, 241, 0.15);
+        border-radius: 30px;
+        background:
+          radial-gradient(circle at 96% 4%, var(--stage-glow), transparent 25%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.98), var(--stage-tint));
+        box-shadow: 0 20px 55px rgba(79, 70, 229, 0.14);
+      }
+      .stage-shell > * { min-width: 0; }
+      .birthday-icebreaker.stage-shell {
+        --stage-tint: #fff8ee;
+        --stage-glow: rgba(251, 191, 36, 0.14);
+      }
+      .learn-shell.stage-shell {
+        --stage-tint: #f1f5ff;
+        --stage-glow: rgba(59, 130, 246, 0.12);
+      }
+      .mission-card.stage-shell {
+        --stage-tint: #f6f7ff;
+        --stage-glow: rgba(124, 58, 237, 0.12);
+      }
+      .converter-shell.stage-shell {
+        --stage-tint: #f3f8ff;
+        --stage-glow: rgba(14, 165, 233, 0.11);
+      }
+      .quiz-shell.stage-shell {
+        --stage-tint: #f7f6ff;
+        --stage-glow: rgba(251, 191, 36, 0.13);
+      }
+      .converter-shell .section-heading { margin-bottom: 22px; }
+      .converter-grid > * { min-width: 0; }
+
+      /* ── 공통 프레임: 초기 컴퓨터 · 도트 매트릭스 (Step 5 기준 통일) ── */
+      body {
+        --case: #bdb19a;
+        --case-light: #d4cab6;
+        --case-edge: #e0d6c0;
+        --case-dark: #766e5f;
+        --case-shadow: #7d725e;
+        --frame: #3f3a31;
+        --screen: #0b0e0b;
+        --screen-up: #182018;
+        --screen-line: #4c5846;
+        --phos: #a7d577;
+        --phos-dim: #829374;
+        --phos-deep: #576452;
+        --amber: #e7ae3f;
+        --mono: "Share Tech Mono", "Noto Sans KR", monospace;
+        --pixel: "Galmuri11", "Share Tech Mono", "Noto Sans KR", monospace;
+        --seg: "DSEG7-Classic", "Galmuri11", "Share Tech Mono", monospace;
+        --indigo: #3f5d33;
+        --violet: #5b5030;
+        --mint: #6f9a49;
+        --rose: #c2673a;
+        --ink: #1d241d;
+        --muted: #4f5a4c;
+        background:
+          repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.09) 0 1px, transparent 1px 3px),
+          linear-gradient(180deg, #3b4438 0%, #2c3429 55%, #333c2b 100%);
+        background-attachment: scroll;
+      }
+      body > a:first-of-type {
+        border: 2px solid #776f60 !important;
+        border-radius: 5px !important;
+        background: linear-gradient(#ded5c3, #aba18e) !important;
+        color: #1d241d !important;
+        box-shadow: 0 4px 0 #514b40 !important;
+        font-family: "Share Tech Mono", "Noto Sans KR", monospace !important;
+      }
+      /* 배경: 오락실 LED 도트 벽 (고정 레이어, 스크롤해도 흔들리지 않음) */
+      .bg-deco {
+        display: block;
+        background:
+          radial-gradient(rgba(255, 214, 130, 0.17) 1.7px, transparent 2.2px) 0 0 / 18px 18px,
+          radial-gradient(rgba(196, 232, 152, 0.13) 1.7px, transparent 2.2px) 9px 9px / 18px 18px;
+      }
+      .bg-deco span { display: none; }
+      .bg-deco::before,
+      .bg-deco::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+      }
+      .bg-deco::before {
+        background:
+          radial-gradient(120% 70% at 50% -12%, rgba(231, 174, 63, 0.12), transparent 58%),
+          radial-gradient(90% 55% at 50% 108%, rgba(167, 213, 119, 0.07), transparent 60%);
+      }
+      .bg-deco::after {
+        background: radial-gradient(115% 85% at 50% 42%, transparent 55%, rgba(0, 0, 0, 0.3) 100%);
+      }
+      .wrap { max-width: 1240px; }
+
+      /* 제목: 기기 명판 */
+      .floating-title {
+        width: min(1120px, calc(100% - 24px));
+        margin-bottom: 26px;
+        padding: 34px 26px 24px;
+        border: 4px solid #2f2b24;
+        border-radius: 14px;
+        background:
+          linear-gradient(115deg, rgba(255, 255, 255, 0.14), transparent 32%),
+          repeating-linear-gradient(0deg, rgba(67, 54, 35, 0.045) 0 1px, transparent 1px 5px),
+          linear-gradient(#d3c8b1, var(--case));
+        box-shadow:
+          inset 0 0 0 3px var(--case-edge),
+          inset 0 0 0 7px var(--case-dark),
+          0 8px 0 var(--case-shadow),
+          0 16px 28px rgba(45, 35, 18, 0.26);
+      }
+      /* 마퀴 전구 줄 */
+      .floating-title::before {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 13px;
+        left: 22px;
+        right: 22px;
+        width: auto;
+        height: 9px;
+        border: 0;
+        border-radius: 0;
+        background:
+          radial-gradient(circle at 5px 4.5px, #ffe1a2 0 2.7px, rgba(231, 174, 63, 0.35) 3.2px, transparent 3.6px)
+          0 0 / 18px 9px repeat-x;
+        box-shadow: none;
+        transform: none;
+      }
+      .floating-title-copy {
+        padding: 15px 20px 16px;
+        border: 3px solid var(--frame);
+        border-radius: 8px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          radial-gradient(circle at 50% 18%, var(--screen-up), var(--screen) 78%);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 26px rgba(0, 0, 0, 0.85);
+      }
+      .floating-title-kicker {
+        width: max-content;
+        margin-bottom: 9px;
+        padding: 3px 8px;
+        border: 1px solid #56644b;
+        border-radius: 3px;
+        background: #222821;
+        color: var(--phos);
+        font: 700 12px/1.35 var(--mono);
+        letter-spacing: 0.04em;
+      }
+      .floating-title h1 {
+        color: var(--amber);
+        font-family: var(--pixel);
+        font-size: clamp(24px, 3.9vw, 40px);
+        font-weight: 400;
+        letter-spacing: 0.01em;
+        text-shadow: 0 0 14px rgba(231, 174, 63, 0.4);
+      }
+      .floating-title p {
+        color: #93a688;
+        font-size: clamp(12px, 1.9vw, 14px);
+      }
+      .title-two-states span {
+        border: 2px solid var(--frame);
+        border-radius: 4px;
+        background: radial-gradient(circle at 50% 28%, var(--screen-up), var(--screen) 78%);
+        color: var(--phos);
+        font: 700 26px/1 var(--mono);
+        text-shadow: 0 0 8px rgba(167, 213, 119, 0.45);
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.85);
+      }
+      .title-two-states span:last-of-type {
+        border-color: var(--frame);
+        background: radial-gradient(circle at 50% 28%, var(--screen-up), var(--screen) 78%);
+        color: var(--amber);
+        text-shadow: 0 0 8px rgba(231, 174, 63, 0.45);
+      }
+      .title-two-states small {
+        color: #4d5348;
+        font-family: var(--mono);
+        letter-spacing: 0.04em;
+      }
+
+      /* 단계 탭: 조작 패널 키 */
+      .app-tabs {
+        gap: 8px;
+        max-width: 1180px;
+        margin-bottom: 26px;
+        padding: 10px 12px;
+        overflow: visible;
+        border: 3px solid var(--frame);
+        border-radius: 8px;
+        background:
+          repeating-linear-gradient(90deg, rgba(60, 52, 34, 0.06) 0 1px, transparent 1px 8px),
+          #9f9582;
+        box-shadow: inset 0 0 0 2px #cfc4ad, 0 5px 0 var(--case-shadow);
+      }
+      .app-tabs button {
+        position: relative;
+        min-height: 66px;
+        padding: 14px 9px 14px 26px;
+        border: 2px solid #776f60;
+        border-radius: 5px;
+        background: linear-gradient(#ded5c3, #aba18e);
+        color: #1d241d;
+        font: 400 clamp(13px, 1.2vw, 16px)/1.45 var(--pixel);
+        letter-spacing: 0.01em;
+        word-break: keep-all;
+        box-shadow: 0 4px 0 #514b40;
+      }
+      .app-tabs button::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 10px;
+        width: 9px;
+        height: 9px;
+        border: 1px solid #5c5445;
+        border-radius: 50%;
+        background: #6f6a56;
+        transform: translateY(-50%);
+      }
+      .app-tabs button[aria-selected="true"] {
+        border-color: #22271f;
+        background:
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.05) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 0%, #232a22, #11150f 82%);
+        color: var(--phos);
+        text-shadow: 0 0 7px rgba(167, 213, 119, 0.4);
+        transform: translateY(2px);
+        box-shadow: inset 0 2px 7px rgba(0, 0, 0, 0.75), 0 2px 0 #3b352c;
+      }
+      .app-tabs button[aria-selected="true"]::after {
+        border-color: #7a5a1c;
+        background: var(--amber);
+        box-shadow: 0 0 8px rgba(231, 174, 63, 0.8);
+      }
+      .app-tabs button:hover { filter: brightness(1.03); }
+      .app-tabs button:focus-visible {
+        outline: 3px solid #6f9a49;
+        outline-offset: 2px;
+      }
+
+      /* 활동 카드: 기기 케이스 */
+      .stage-shell {
+        max-width: 1160px;
+        padding: 26px;
+        border: 4px solid var(--frame);
+        border-radius: 13px;
+        background:
+          linear-gradient(115deg, rgba(255, 255, 255, 0.12), transparent 32%),
+          repeating-linear-gradient(0deg, rgba(67, 54, 35, 0.045) 0 1px, transparent 1px 5px),
+          var(--case);
+        box-shadow:
+          inset 0 0 0 3px var(--case-edge),
+          inset 0 0 0 6px var(--case-dark),
+          0 7px 0 var(--case-shadow),
+          0 14px 26px rgba(53, 42, 24, 0.2);
+      }
+
+      /* ── ⑤ 도전 퀴즈: 초기 컴퓨터 · 도트 매트릭스 (전체 화면 스타일의 기준) ── */
+      .quiz-shell.stage-shell {
+        max-width: 1160px;
+        padding: 26px;
+        overflow: hidden;
+        border: 4px solid #3f3a31;
+        border-radius: 13px;
+        background:
+          linear-gradient(115deg, rgba(255, 255, 255, 0.12), transparent 32%),
+          repeating-linear-gradient(0deg, rgba(67, 54, 35, 0.045) 0 1px, transparent 1px 5px),
+          #bdb19a;
+        box-shadow:
+          inset 0 0 0 3px #e0d6c0,
+          inset 0 0 0 6px #766e5f,
+          0 7px 0 #7d725e,
+          0 14px 26px rgba(53, 42, 24, 0.2);
+      }
+      .quiz-shell::after { display: none; }
+      .quiz-shell .section-heading {
+        margin: 3px 6px 19px;
+        padding: 0 0 17px;
+        border-bottom: 2px solid #6f6759;
+        text-align: left;
+      }
+      .quiz-kicker {
+        margin-bottom: 8px;
+        border: 1px solid #56644b;
+        border-radius: 3px;
+        background: #222821;
+        color: #a7d577;
+        font: 700 12px/1.2 "Share Tech Mono", "JetBrains Mono", monospace;
+        letter-spacing: 0.04em;
+      }
+      .quiz-shell .section-heading h2 {
+        color: #171a17;
+        font-family: "Share Tech Mono", "Noto Sans KR", monospace;
+        font-size: clamp(30px, 4vw, 42px);
+        letter-spacing: -0.03em;
+      }
+      .quiz-shell .section-heading p { color: #484c47; }
+
+      .quiz-view .controls,
+      .quiz-view .stats,
+      .quiz-view .card,
+      .quiz-view .footer-note { max-width: 1040px; }
+      .quiz-view .controls {
+        gap: 8px;
+        margin-bottom: 14px;
+        padding: 14px 16px;
+        border: 2px solid #5d584d;
+        border-radius: 6px;
+        background: #d4cab6;
+        box-shadow: inset 0 0 0 2px #eee6d6, 0 3px 0 #837967;
+      }
+      .quiz-view .quiz-control-label {
+        color: #292d29;
+        font-family: "Share Tech Mono", "Noto Sans KR", monospace;
+      }
+      .quiz-view .seg {
+        gap: 3px;
+        padding: 4px;
+        border: 1px solid #817969;
+        border-radius: 4px;
+        background: #bbb19e;
+        box-shadow: inset 0 1px 3px rgba(41, 35, 26, 0.22);
+      }
+      .quiz-view .seg button {
+        border: 1px solid transparent;
+        border-radius: 3px;
+        color: #343a36;
+        font-family: "Noto Sans KR", sans-serif;
+        box-shadow: none;
+      }
+      .quiz-view .seg button.on,
+      .quiz-view .answer-mode-seg button.on[data-answer-mode="switch"] {
+        border-color: #0d1711;
+        background: #202620;
+        color: #a7d577;
+        box-shadow: inset 0 0 0 1px #475244, 0 2px 0 #080b09;
+      }
+
+      .quiz-view .stats {
+        gap: 0;
+        margin-bottom: 16px;
+        padding: 8px;
+        border: 3px solid #706858;
+        border-radius: 5px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.06) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 4px),
+          #171b17;
+        box-shadow: inset 0 0 12px #050605, 0 3px 0 #8b806c;
+      }
+      .quiz-view .stats div {
+        border: 0;
+        border-right: 1px solid #4c5548;
+        border-radius: 0;
+        background: transparent;
+        color: #c6c8b9;
+        box-shadow: none;
+      }
+      .quiz-view .stats div:last-child { border-right: 0; }
+      .quiz-view .stats b {
+        color: #a7d577;
+        font-family: "Share Tech Mono", "JetBrains Mono", monospace;
+        font-size: clamp(30px, 5vw, 44px);
+        text-shadow: 0 0 6px rgba(167, 213, 119, 0.35);
+      }
+
+      .quiz-view .card {
+        padding: 26px;
+        border: 9px solid #6c6558;
+        border-radius: 12px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 25%, #182018 0%, #0b0e0b 72%);
+        color: #b9ce9b;
+        box-shadow:
+          inset 0 0 0 2px #090b09,
+          inset 0 0 32px rgba(0, 0, 0, 0.85),
+          0 3px 0 #3d392f;
+      }
+      .quiz-view .q-badge {
+        border: 1px solid #89957d;
+        border-radius: 3px;
+        background: #1c231c;
+        color: #a7d577;
+        font: 700 14px/1.2 "Share Tech Mono", "JetBrains Mono", monospace;
+        box-shadow: none;
+      }
+      .quiz-view .burst { display: none; }
+      .quiz-view .bignum {
+        background: none;
+        color: #e7ae3f;
+        -webkit-text-fill-color: #e7ae3f;
+        font-family: "Share Tech Mono", "JetBrains Mono", monospace;
+        font-size: clamp(74px, 15vw, 138px);
+        letter-spacing: 0.04em;
+        text-shadow: 0 0 9px rgba(231, 174, 63, 0.35);
+      }
+      .quiz-view .q-label {
+        color: #a7d577;
+        font-family: "Share Tech Mono", "Noto Sans KR", monospace;
+        letter-spacing: 0.02em;
+      }
+      .quiz-view .bits-panel {
+        border: 1px solid #4c5846;
+        border-radius: 6px;
+        background: rgba(5, 8, 6, 0.55);
+      }
+      .quiz-view .place {
+        border: 1px solid #737c68;
+        border-radius: 3px;
+        background: #272e27;
+        color: #d8d0b8;
+        box-shadow: none;
+      }
+      .quiz-view .switch {
+        --h: 74px;
+        flex: 0 0 74px;
+        width: 74px;
+        height: 74px;
+        border: 0;
+        border-radius: 0;
+        background: url("../../assets/retro-rocker-switch-sprite.png") left center / 200% 100% no-repeat;
+        box-shadow: none;
+        filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.42));
+      }
+      .quiz-view .switch .knob { display: none; }
+      .quiz-view .bit.on .switch {
+        background: url("../../assets/retro-rocker-switch-sprite.png") right center / 200% 100% no-repeat;
+        box-shadow: none;
+      }
+      .quiz-view .bit .val {
+        color: #576452;
+        font-family: "Share Tech Mono", "JetBrains Mono", monospace;
+      }
+      .quiz-view .bit.on .val {
+        color: #e7ae3f;
+        text-shadow: 0 0 7px rgba(231, 174, 63, 0.4);
+      }
+      .quiz-view .bit .pow,
+      .quiz-view .plus { color: #829374; }
+      .quiz-view .live-sum { color: #a7d577; }
+      .quiz-view .hint-row button.ghost {
+        border-color: #66715d;
+        background: #202720;
+        color: #a7d577;
+      }
+
+      .quiz-view .text-answer-label,
+      .quiz-view .text-answer-help { color: #a7d577; }
+      .quiz-view .text-answer-area input {
+        border: 2px solid #6c7c61;
+        border-radius: 4px;
+        background: #070a08;
+        color: #e7ae3f;
+        font-family: "Share Tech Mono", "JetBrains Mono", monospace;
+        box-shadow: inset 0 0 13px rgba(0, 0, 0, 0.8);
+      }
+      .quiz-view .text-answer-area input:focus {
+        border-color: #a7d577;
+        box-shadow: 0 0 0 3px rgba(167, 213, 119, 0.15), inset 0 0 13px #000;
+      }
+      .quiz-view .actions button.primary,
+      .quiz-view .actions button.ghost {
+        border: 2px solid #776f60;
+        border-radius: 5px;
+        background: linear-gradient(#ded5c3, #aba18e);
+        color: #1d241d;
+        box-shadow: 0 4px 0 #514b40;
+        font-family: "Share Tech Mono", "Noto Sans KR", monospace;
+      }
+      .quiz-view .actions button.primary:hover,
+      .quiz-view .actions button.ghost:hover {
+        transform: translateY(1px);
+        box-shadow: 0 3px 0 #514b40;
+      }
+      .quiz-view .feedback {
+        border-radius: 4px;
+        background: #151b15;
+        font-family: "Share Tech Mono", "Noto Sans KR", monospace;
+      }
+      .quiz-view .feedback.ok { border-color: #789a5e; color: #b4df89; }
+      .quiz-view .feedback.no { border-color: #9a5f4c; color: #f09b78; }
+      .quiz-view .footer-note {
+        border: 1px solid #6c6558;
+        border-radius: 4px;
+        background: #9f9582;
+        color: #202620;
+        font-family: "Share Tech Mono", "Noto Sans KR", monospace;
+      }
+      .quiz-view kbd {
+        border-color: #61594b;
+        border-radius: 3px;
+        background: #ded5c3;
+        color: #1d241d;
+      }
+
+      /* ── ①~④ 화면도 Step 5(초기 컴퓨터 · 도트 매트릭스) 스타일로 통일 ── */
+
+      /* 제목과 설명 */
+      :is(.learn-shell, .converter-shell) .section-heading h2,
+      .birthday-copy h2,
+      .mission-head h3,
+      .converter-card h2,
+      .birthday-reasoning h3,
+      .birthday-guess-result h3 {
+        color: #171a17;
+        font-family: var(--mono);
+        letter-spacing: -0.02em;
+      }
+      :is(.learn-shell, .converter-shell) .section-heading p,
+      .birthday-copy p,
+      .mission-head p,
+      .converter-card > p,
+      .birthday-reasoning-head p,
+      .birthday-guess-result p {
+        color: #484c47;
+      }
+      .mission-head h3 strong,
+      .birthday-date-text,
+      .birthday-icebreaker.guessing .birthday-date-text {
+        color: #9c5426;
+        font-family: var(--mono);
+      }
+
+      /* 상태 배지 */
+      .birthday-kicker,
+      .mission-kicker,
+      .birthday-reasoning-kicker {
+        border: 1px solid #56644b;
+        border-radius: 3px;
+        background: #222821;
+        color: var(--phos);
+        font: 700 12px/1.4 var(--mono);
+        letter-spacing: 0.03em;
+        box-shadow: none;
+      }
+      .birthday-rule {
+        border: 2px solid #6f6759;
+        border-radius: 5px;
+        background: var(--case-light);
+        color: #2b312a;
+        font-family: var(--mono);
+        box-shadow: inset 0 0 0 2px #eee6d6;
+      }
+
+      /* 조작 키 */
+      .mini-action,
+      .preset-row button,
+      .mission-targets button,
+      .birthday-quiz-reset,
+      .birthday-quiz-restart,
+      .birthday-reveal,
+      .birthday-random,
+      .mission-confirm {
+        border: 2px solid #776f60;
+        border-radius: 5px;
+        background: linear-gradient(#ded5c3, #aba18e);
+        color: #1d241d;
+        font-family: var(--mono);
+        font-weight: 700;
+        box-shadow: 0 4px 0 #514b40;
+      }
+      .mini-action:hover,
+      .preset-row button:hover,
+      .mission-targets button:hover,
+      .birthday-quiz-reset:hover,
+      .birthday-quiz-restart:hover,
+      .birthday-reveal:hover,
+      .mission-confirm:hover {
+        background: linear-gradient(#e7dfcf, #b5ab97);
+        transform: translateY(1px);
+        box-shadow: 0 3px 0 #514b40;
+      }
+      button.mini-action.primary {
+        border: 2px solid #22271f;
+        border-radius: 5px;
+        background: linear-gradient(#2c342b, #161c15);
+        color: var(--phos);
+        text-shadow: 0 0 7px rgba(167, 213, 119, 0.35);
+        box-shadow: 0 4px 0 #0d110c;
+      }
+      button.mini-action.primary:hover {
+        background: linear-gradient(#354030, #1b221a);
+        transform: translateY(1px);
+        box-shadow: 0 3px 0 #0d110c;
+      }
+      .mission-confirm:disabled { opacity: 0.42; box-shadow: 0 4px 0 #514b40; }
+
+      /* 입력 */
+      .field-label,
+      .birthday-field {
+        color: #3a4136;
+        font-family: var(--mono);
+      }
+      .field-label input,
+      .birthday-field select {
+        border: 2px solid #6c7c61;
+        border-radius: 4px;
+        background: #070a08;
+        color: var(--amber);
+        font: 700 16px var(--mono);
+        box-shadow: inset 0 0 13px rgba(0, 0, 0, 0.8);
+      }
+      .field-label input:focus,
+      .birthday-field select:focus {
+        border-color: var(--phos);
+        box-shadow: 0 0 0 3px rgba(167, 213, 119, 0.16), inset 0 0 13px #000;
+      }
+      .field-label input[type="range"] {
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        accent-color: #6f9a49;
+      }
+      .app-view:not(.quiz-view) :is(button, input, select):focus-visible {
+        outline: 3px solid #6f9a49;
+        outline-offset: 2px;
+      }
+
+      /* ① 생일 아이스브레이킹 */
+      .birthday-icebreaker::after { opacity: 0.14; filter: grayscale(1); }
+      .birthday-quiz {
+        border: 2px solid #6f6759;
+        border-radius: 6px;
+        background: var(--case-light);
+        box-shadow: inset 0 0 0 2px #eee6d6, 0 3px 0 #837967;
+      }
+      .birthday-quiz-step {
+        color: #3f4a38;
+        font-family: var(--mono);
+        letter-spacing: 0.02em;
+      }
+      .birthday-quiz-status strong {
+        color: #1d241d;
+        font-family: var(--mono);
+      }
+      .birthday-quiz-dot {
+        border: 1px solid #6f7a62;
+        border-radius: 3px;
+        background: #1b211b;
+        color: #8b9c81;
+        font-family: var(--mono);
+      }
+      .birthday-quiz-dot.current {
+        border-color: #b98a2c;
+        background: #241f14;
+        color: var(--amber);
+        box-shadow: 0 0 0 2px rgba(231, 174, 63, 0.2);
+        transform: none;
+      }
+      .birthday-quiz-dot.done.on {
+        border-color: #6f8f4f;
+        background: #26301d;
+        color: var(--phos);
+      }
+      .birthday-quiz-dot.done.off {
+        border-color: #6b7264;
+        background: #2b2f2a;
+        color: #a9b0a4;
+      }
+      .birthday-question-card {
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 18%, var(--screen-up) 0%, var(--screen) 76%);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 28px rgba(0, 0, 0, 0.8), 0 3px 0 #8b806c;
+      }
+      .birthday-question-weight {
+        border: 1px solid #6f7a62;
+        border-radius: 4px;
+        background: #1c231c;
+        color: var(--amber);
+        box-shadow: none;
+      }
+      .birthday-question-head h3 {
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+      .birthday-question-head p { color: #93a688; }
+      .birthday-number {
+        border: 1px solid #737c68;
+        border-radius: 3px;
+        background: #232b23;
+        color: #d8d0b8;
+        font: 700 16px/1 var(--mono);
+        box-shadow: none;
+      }
+      .birthday-quiz-calc {
+        border: 2px solid #5d584d;
+        border-radius: 5px;
+        background: #171b17;
+        color: #93a688;
+        font-family: var(--mono);
+        box-shadow: inset 0 0 12px #050605;
+      }
+      .birthday-quiz-calc strong {
+        color: var(--amber);
+        font-family: var(--mono);
+      }
+      .birthday-answer,
+      .birthday-answer.no,
+      .birthday-answer.yes {
+        border: 2px solid #776f60;
+        border-radius: 5px;
+        background: linear-gradient(#ded5c3, #aba18e);
+        color: #1d241d;
+        box-shadow: 0 5px 0 #514b40;
+      }
+      .birthday-answer b {
+        width: 54px;
+        height: 54px;
+        border: 1px solid #4b5346;
+        border-radius: 4px;
+        background: #171b17;
+        font-family: var(--mono);
+      }
+      .birthday-answer.no b { color: #b9ce9b; }
+      .birthday-answer.yes b { color: var(--amber); }
+      .birthday-answer strong { font-family: var(--mono); }
+      .birthday-answer small { color: #4b5245; }
+      .birthday-answer:hover {
+        filter: none;
+        transform: translateY(2px);
+        box-shadow: 0 3px 0 #514b40;
+      }
+      .birthday-quiz-feedback {
+        color: #4f5a4c;
+        font-family: var(--mono);
+      }
+      .birthday-quiz-feedback.transition { color: #33682f; }
+      .birthday-quiz-feedback.wrong { color: #a8442a; }
+
+      /* ① 추리 결과: 도트 프린터 출력물 */
+      .birthday-guess-result {
+        border: 2px solid #6f6759;
+        border-radius: 6px;
+        background:
+          repeating-linear-gradient(0deg, rgba(111, 154, 73, 0.16) 0 22px, transparent 22px 44px),
+          #efeadb;
+        box-shadow: inset 0 0 0 2px #f7f3e7, 0 3px 0 #837967;
+      }
+      .birthday-calendar-sheet { filter: drop-shadow(0 6px 10px rgba(53, 42, 24, 0.25)); }
+      .birthday-calendar-ring {
+        border-color: #8b806c;
+        background: #ded5c3;
+        box-shadow: inset 0 0 0 2px #f2ece0;
+      }
+      .birthday-calendar-head {
+        border-radius: 5px 5px 0 0;
+        background: linear-gradient(#2c342b, #161c15);
+        color: var(--phos);
+      }
+      .birthday-calendar-head small {
+        color: #93a688;
+        font-family: var(--mono);
+      }
+      .birthday-calendar-head strong { font-family: var(--mono); }
+      .birthday-calendar-body {
+        border: 2px solid #8b806c;
+        border-top: 0;
+        border-radius: 0 0 5px 5px;
+        background:
+          repeating-linear-gradient(0deg, rgba(111, 154, 73, 0.14) 0 18px, transparent 18px 36px),
+          #f6f2e6;
+      }
+      .birthday-calendar-day-row { color: #1d241d; }
+      .birthday-calendar-day-row strong { font-family: var(--mono); }
+      .birthday-calendar-body p {
+        color: #4a6a2f;
+        font-family: var(--mono);
+      }
+      .birthday-result-copy > span {
+        color: #3f6b33;
+        font-family: var(--mono);
+      }
+      .birthday-guess-proof {
+        border: 1px solid #6f7a62;
+        border-radius: 4px;
+        background: #171b17;
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+
+      /* ① 원리 해설 */
+      .birthday-reasoning {
+        border: 2px solid #6f6759;
+        border-radius: 6px;
+        background: var(--case-light);
+        box-shadow: inset 0 0 0 2px #eee6d6, 0 3px 0 #837967;
+      }
+      .birthday-reason-step {
+        border: 1px solid #8b806c;
+        border-radius: 4px;
+        background: #efe9db;
+      }
+      .birthday-reason-step b {
+        border-radius: 3px;
+        background: #222821;
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+      .birthday-reason-step strong {
+        color: #1d241d;
+        font-family: var(--mono);
+      }
+      .birthday-reason-step span { color: #4f5a4c; }
+      .birthday-reason-equation {
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 20%, var(--screen-up) 0%, var(--screen) 76%);
+        color: #b9ce9b;
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 24px rgba(0, 0, 0, 0.8);
+      }
+      .birthday-reason-equation > span { color: #93a688; }
+      .birthday-reason-math { color: var(--amber); }
+      .birthday-reason-equation p { color: #b9ce9b; }
+      .birthday-reason-note {
+        border: 1px dashed #8b7a4e;
+        border-radius: 4px;
+        background: #e6dbba;
+        color: #4a3d1c;
+        font-family: var(--mono);
+      }
+
+      /* ① 이진 코드 결과판 */
+      .birthday-code-board {
+        border: 2px solid #6f6759;
+        border-radius: 6px;
+        background: var(--case-light);
+        box-shadow: inset 0 0 0 2px #eee6d6, 0 3px 0 #837967;
+      }
+      .birthday-part {
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 20%, var(--screen-up) 0%, var(--screen) 76%);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 24px rgba(0, 0, 0, 0.8);
+      }
+      .birthday-part-head {
+        color: #93a688;
+        font-family: var(--mono);
+      }
+      .birthday-part-head b {
+        border: 1px solid #6f7a62;
+        border-radius: 3px;
+        background: #1c231c;
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+      .birthday-bit {
+        border: 1px solid #737c68;
+        border-radius: 3px;
+        background: #232b23;
+        color: #7d8a76;
+        box-shadow: none;
+      }
+      .birthday-bit strong { font-family: var(--mono); }
+      .birthday-bit span { color: #6f7a62; }
+      .birthday-bit.on {
+        border-color: #b98a2c;
+        background: #2b2415;
+        color: var(--amber);
+        box-shadow: 0 0 12px rgba(231, 174, 63, 0.25);
+      }
+      .birthday-bit.on span { color: #c79233; }
+      .birthday-math { color: var(--phos); }
+      .birthday-divider {
+        border: 3px solid #8b806c;
+        border-radius: 4px;
+        background: #ded5c3;
+        color: #4f5a4c;
+        box-shadow: none;
+      }
+      .birthday-challenge {
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 20%, var(--screen-up) 0%, var(--screen) 76%);
+        color: #b9ce9b;
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 24px rgba(0, 0, 0, 0.8);
+      }
+      .birthday-code-label,
+      .birthday-code-caption {
+        color: #93a688;
+        font-family: var(--mono);
+      }
+      .birthday-code {
+        color: var(--amber);
+        font-family: var(--mono);
+        text-shadow: 0 0 8px rgba(231, 174, 63, 0.35);
+      }
+      .birthday-note {
+        color: #4f5a4c;
+        font-family: var(--mono);
+      }
+
+      /* ② 원리 파악하기 */
+      .concept-strip div {
+        border: 2px solid #6f6759;
+        border-radius: 5px;
+        background: var(--case-light);
+        color: #4f5a4c;
+        box-shadow: inset 0 0 0 2px #eee6d6;
+      }
+      .concept-strip b {
+        color: #1d241d;
+        font-family: var(--mono);
+      }
+      .number-stage {
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 18%, var(--screen-up) 0%, var(--screen) 76%);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 30px rgba(0, 0, 0, 0.8), 0 3px 0 #8b806c;
+      }
+      .stage-number strong {
+        background: none;
+        color: var(--amber);
+        -webkit-text-fill-color: var(--amber);
+        font-family: var(--mono);
+        text-shadow: 0 0 10px rgba(231, 174, 63, 0.35);
+      }
+      .stage-number span {
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+      .learn-bit {
+        border: 1px solid #4c5846;
+        border-radius: 4px;
+        background: rgba(5, 8, 6, 0.55);
+      }
+      .learn-bit.on {
+        border-color: #b98a2c;
+        background: #1d2317;
+        transform: none;
+        box-shadow: 0 0 14px rgba(231, 174, 63, 0.22);
+      }
+      .learn-bit .weight {
+        color: #d8d0b8;
+        font-family: var(--mono);
+      }
+      .learn-bit .power { color: var(--phos-dim); }
+      .learn-switch-state {
+        color: var(--phos-deep);
+        font-family: var(--mono);
+      }
+      .learn-bit.on .learn-switch-state { color: var(--amber); }
+      .learn-equation {
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+
+      /* ②③ 표시등 */
+      .learn-bit .bulb,
+      .mission-lamp {
+        border-color: #4a5347;
+        background: radial-gradient(circle at 38% 30%, #39413a, #1b211b 72%);
+        color: #7b8a74;
+        font-family: var(--mono);
+        box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.55);
+      }
+      .learn-bit .bulb::before,
+      .mission-lamp::before { background: rgba(255, 255, 255, 0.16); }
+      .learn-bit .bulb::after,
+      .mission-lamp::after {
+        border-color: #6b6355;
+        background: repeating-linear-gradient(to bottom, #8b806c 0 3px, #5a5449 3px 5px);
+      }
+      .learn-bit.on .bulb,
+      .mission-bulb.on .mission-lamp {
+        border-color: #b98a2c;
+        background: radial-gradient(circle at 38% 30%, #ffe9a8, var(--amber) 55%, #a9761d);
+        color: #2b1f05;
+        box-shadow: 0 0 0 6px rgba(231, 174, 63, 0.12), 0 0 22px rgba(231, 174, 63, 0.5);
+      }
+
+      /* ③ 전구로 숫자 만들기 */
+      .mission-board {
+        padding: 14px 12px 16px;
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 12%, var(--screen-up) 0%, var(--screen) 78%);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 30px rgba(0, 0, 0, 0.8), 0 3px 0 #8b806c;
+      }
+      .mission-index-item {
+        border: 1px solid #4c5846;
+        border-radius: 4px;
+        background: rgba(5, 8, 6, 0.55);
+        color: #93a688;
+        font-family: var(--mono);
+      }
+      .mission-index-item.current {
+        border: 2px solid #b98a2c;
+        background: #241f14;
+        color: var(--amber);
+        box-shadow: 0 0 0 3px rgba(231, 174, 63, 0.16), 0 0 18px rgba(231, 174, 63, 0.25);
+      }
+      .mission-index-item.done {
+        border-color: #6f8f4f;
+        background: #1c2618;
+        color: var(--phos);
+      }
+      .mission-bulb {
+        border: 1px solid #4c5846;
+        border-radius: 4px;
+        background: rgba(5, 8, 6, 0.55);
+        color: #93a688;
+      }
+      .mission-bulb.on {
+        border-color: #b98a2c;
+        background: #1d2317;
+        color: var(--amber);
+      }
+      .mission-bulb.current {
+        border: 2px solid var(--phos);
+        background: #131a12;
+        color: var(--phos);
+        transform: translateY(-4px);
+        box-shadow: 0 0 0 4px rgba(167, 213, 119, 0.12), 0 0 20px rgba(167, 213, 119, 0.22);
+      }
+      .mission-bulb.current.on {
+        border-color: var(--amber);
+        background: #221d12;
+        color: var(--amber);
+        box-shadow: 0 0 0 4px rgba(231, 174, 63, 0.14), 0 0 22px rgba(231, 174, 63, 0.3);
+      }
+      .mission-bulb b { font-family: var(--mono); }
+      .mission-switch-state {
+        color: var(--phos-deep);
+        font-family: var(--mono);
+      }
+      .mission-bulb.on .mission-switch-state { color: var(--amber); }
+      .mission-confirm-wrap::before {
+        background: var(--amber);
+        box-shadow: 0 0 0 4px rgba(231, 174, 63, 0.14);
+      }
+      .mission-confirm-wrap::after { border-top-color: var(--amber); }
+      .mission-confirm-choice { color: #4b5245; }
+      .mission-confirm-choice b {
+        color: #7a5a1c;
+        font-family: var(--mono);
+      }
+      .mission-confirm-next {
+        color: #1d241d;
+        font-family: var(--mono);
+      }
+      .mission-coach {
+        border: 2px solid #6f6759;
+        border-radius: 6px;
+        background: var(--case-light);
+        box-shadow: inset 0 0 0 2px #eee6d6;
+      }
+      .mission-step-label {
+        border: 1px solid #56644b;
+        border-radius: 3px;
+        background: #222821;
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+      .mission-guide { color: #3a4136; }
+      .mission-guide-equation {
+        border-radius: 3px;
+        background: #1c231c;
+        color: var(--phos);
+      }
+      .mission-formula {
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 20%, var(--screen-up) 0%, var(--screen) 76%);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 24px rgba(0, 0, 0, 0.8);
+      }
+      .mission-formula > span {
+        color: #93a688;
+        font-family: var(--mono);
+      }
+      .mission-formula strong {
+        color: var(--amber);
+        font-family: var(--mono);
+        text-shadow: 0 0 8px rgba(231, 174, 63, 0.3);
+      }
+      .mission-formula .new-term {
+        border-radius: 3px;
+        background: #2b3323;
+        color: var(--phos);
+      }
+      .mission-progress-track {
+        border: 1px solid #4c5846;
+        background: #0d110d;
+      }
+      .mission-progress-fill { background: linear-gradient(90deg, #6f9a49, var(--phos)); }
+      .mission-feedback {
+        color: #4f5a4c;
+        font-family: var(--mono);
+      }
+      .mission-feedback.correct { color: #33682f; }
+      .mission-feedback.wrong { color: #a8442a; }
+
+      /* ④ 변환 실험실 */
+      .converter-card {
+        border: 2px solid #6f6759;
+        border-radius: 6px;
+        background: var(--case-light);
+        box-shadow: inset 0 0 0 2px #eee6d6, 0 3px 0 #837967;
+      }
+      .swap-mark { color: #6f6759; }
+      .convert-result {
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 20%, var(--screen-up) 0%, var(--screen) 76%);
+        color: var(--phos);
+        font-family: var(--mono);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 22px rgba(0, 0, 0, 0.8);
+      }
+      .place-chip {
+        border: 1px solid #737c68;
+        border-radius: 3px;
+        background: #232b23;
+        color: #93a688;
+        font-family: var(--mono);
+      }
+      .place-chip.on {
+        border-color: #6f8f4f;
+        background: #26301d;
+        color: var(--phos);
+      }
+      .division-steps {
+        padding: 12px;
+        border: 3px solid #6c6558;
+        border-radius: 6px;
+        background:
+          radial-gradient(rgba(196, 224, 166, 0.07) 1px, transparent 1.5px) 0 0 / 5px 5px,
+          repeating-linear-gradient(0deg, rgba(196, 224, 166, 0.03) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at 50% 12%, var(--screen-up) 0%, var(--screen) 78%);
+        box-shadow: inset 0 0 0 2px #090b09, inset 0 0 22px rgba(0, 0, 0, 0.8);
+      }
+      .division-steps .convert-result {
+        border: 0;
+        background: none;
+        color: #93a688;
+        box-shadow: none;
+      }
+      .division-row {
+        border: 1px solid #4c5846;
+        border-left: 4px solid var(--amber);
+        border-radius: 3px;
+        background: rgba(5, 8, 6, 0.55);
+        color: #b9ce9b;
+        font-family: var(--mono);
+      }
+      .division-row b { color: var(--amber); }
+      .division-answer {
+        border: 1px solid #6f8f4f;
+        border-radius: 3px;
+        background: #1c2618;
+        color: var(--phos);
+        font-family: var(--mono);
+      }
+
+      /* ②③ 스위치도 ⑤와 같은 레트로 로커 스위치 */
+      .mission-toggle {
+        width: 56px;
+        height: 56px;
+        margin: 10px auto 4px;
+        background: url("../../assets/retro-rocker-switch-sprite.png") left center / 200% 100% no-repeat;
+        filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.42));
+      }
+      .mission-bulb.on .mission-toggle,
+      .learn-bit.on .mission-toggle {
+        background-image: url("../../assets/retro-rocker-switch-sprite.png");
+        background-position: right center;
+        filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 7px rgba(231, 174, 63, 0.35));
+        transform: none;
+      }
+      .mission-bulb.current .mission-toggle {
+        outline: 3px solid rgba(167, 213, 119, 0.35);
+        outline-offset: 2px;
+      }
+      .birthday-icebreaker::after { display: none; }
+
+      /* ── 숫자 표시: 엘리베이터 표시기 같은 7세그먼트 ── */
+      .quiz-view .bignum,
+      .stage-number strong,
+      .birthday-calendar-day-row strong,
+      .quiz-view .stats b,
+      .quiz-view .bit .val,
+      .birthday-bit strong,
+      .birthday-quiz-dot,
+      .title-two-states span,
+      .birthday-answer b,
+      .learn-bit .bulb,
+      .mission-lamp {
+        font-family: var(--seg);
+        font-weight: bold;
+        font-style: normal;
+        letter-spacing: 0.06em;
+      }
+      /* 큰 표시 숫자는 LED 도트로 채운 세그먼트 */
+      .quiz-view .bignum,
+      .stage-number strong,
+      .birthday-calendar-day-row strong {
+        --dot: 4.5px;
+        -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 40%, transparent 46%);
+        mask-image: radial-gradient(circle at 50% 50%, #000 0 40%, transparent 46%);
+        -webkit-mask-size: var(--dot) var(--dot);
+        mask-size: var(--dot) var(--dot);
+        -webkit-mask-repeat: repeat;
+        mask-repeat: repeat;
+      }
+      .stage-number strong {
+        font-size: clamp(54px, 8.5vw, 88px);
+        line-height: 1;
+      }
+      .quiz-view .bignum { font-size: clamp(84px, 16vw, 150px); }
+
+      /* ── 스위치를 실제로 누른 느낌으로 ── */
+      .quiz-view .switch,
+      .mission-toggle {
+        transition: transform 0.11s ease, filter 0.14s ease;
+      }
+      .quiz-view .switch:active,
+      .learn-bit:active .mission-toggle,
+      .mission-bulb:not(:disabled):active .mission-toggle {
+        transform: translateY(2px) scale(0.96);
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+      }
+      .quiz-view .switch.pressed,
+      .mission-toggle.pressed {
+        animation: rockerClunk 0.17s ease-out;
+      }
+      @keyframes rockerClunk {
+        0% { transform: translateY(3px) scale(0.95); }
+        55% { transform: translateY(-1px) scale(1.03); }
+        100% { transform: translateY(0) scale(1); }
+      }
+
+      /* ⑤ 문제 설정: 3줄 → 한 줄에 모듈 3개 */
+      .quiz-view .controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr) minmax(0, 0.98fr);
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px;
+      }
+      .quiz-view .quiz-control-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-content: start;
+        gap: 8px;
+        width: 100%;
+        padding: 9px;
+        border: 2px solid #6f6759;
+        border-radius: 5px;
+        background: #c6bca6;
+        box-shadow: inset 0 0 0 2px #e4dcc9;
+      }
+      .quiz-view .quiz-control-label {
+        justify-self: center;
+        padding: 2px 9px;
+        border: 1px solid #56644b;
+        border-radius: 3px;
+        background: #222821;
+        color: var(--phos);
+        text-align: center;
+        font: 700 11px/1.6 var(--mono);
+        letter-spacing: 0.04em;
+      }
+      .quiz-view .seg {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: 4px;
+        width: 100%;
+        padding: 4px;
+      }
+      .quiz-view .seg button {
+        min-height: 44px;
+        padding: 8px 3px;
+        font-size: clamp(9.5px, 0.85vw, 12px);
+        line-height: 1.35;
+        word-break: keep-all;
+      }
+      .quiz-view .answer-mode-seg button { flex: none; }
+
+      /* 게임 화면용 픽셀 서체: 제목·라벨·버튼 */
+      :is(.learn-shell, .converter-shell, .quiz-shell) .section-heading h2,
+      .birthday-copy h2,
+      .mission-head h3,
+      .converter-card h2,
+      .birthday-reasoning h3,
+      .birthday-guess-result h3,
+      .birthday-question-head h3 {
+        font-family: var(--pixel);
+        font-weight: 400;
+        letter-spacing: 0.01em;
+      }
+      .floating-title-kicker,
+      .quiz-kicker,
+      .birthday-kicker,
+      .mission-kicker,
+      .birthday-reasoning-kicker,
+      .mission-step-label,
+      .quiz-view .quiz-control-label,
+      .quiz-view .q-badge,
+      .birthday-quiz-step {
+        font-family: var(--pixel);
+        font-weight: 400;
+      }
+      .app-tabs button,
+      .mini-action,
+      .preset-row button,
+      .mission-targets button,
+      .birthday-quiz-reset,
+      .birthday-quiz-restart,
+      .birthday-reveal,
+      .mission-confirm-next,
+      .birthday-answer strong,
+      .quiz-view .seg button,
+      .quiz-view .actions button.primary,
+      .quiz-view .actions button.ghost {
+        font-family: var(--pixel);
+        font-weight: 400;
+      }
+      .quiz-view .stats div {
+        font-family: var(--pixel);
+        font-size: 13px;
+      }
+
+      @media (max-width: 760px) {
+        body { padding-top: 68px; }
+        .floating-title {
+          grid-template-columns: 1fr;
+          width: calc(100% - 18px);
+          padding: 15px 14px 16px;
+          border-radius: 10px;
+          text-align: center;
+        }
+        .floating-title::before { display: none; }
+        .floating-title h1 { font-size: clamp(28px, 10vw, 42px); }
+        .title-two-states { display: none; }
+        .app-tabs { grid-template-columns: repeat(2, 1fr); }
+        .app-tabs button:last-child { grid-column: 1 / -1; }
+        .concept-strip { grid-template-columns: 1fr; }
+        .quiz-control-group { grid-template-columns: 1fr; gap: 6px; }
+        .quiz-view .controls { grid-template-columns: 1fr; }
+        .quiz-control-label { text-align: center; }
+        .learn-shell, .converter-card { padding: 20px 14px; border-radius: 6px; }
+        .birthday-icebreaker { padding: 18px 14px; }
+        .birthday-top { grid-template-columns: 1fr; gap: 8px; }
+        .birthday-rule { justify-content: center; }
+        .birthday-quiz { padding: 14px 11px; }
+        .birthday-quiz-status { grid-template-columns: 1fr auto; }
+        .birthday-quiz-dots { grid-column: 1 / -1; grid-row: 2; }
+        .birthday-question-head { align-items: center; }
+        .birthday-question-weight { width: 78px; min-height: 56px; }
+        .birthday-number { flex-basis: 68px; max-width: 96px; }
+        .birthday-answer-buttons { grid-template-columns: 1fr; }
+        .birthday-quiz-calc { flex-direction: column; gap: 3px; }
+        .birthday-guess-result { grid-template-columns: 1fr; }
+        .birthday-reasoning { padding: 19px 13px; }
+        .birthday-reasoning-flow,
+        .birthday-reason-equations { grid-template-columns: 1fr; }
+        .birthday-code-caption { text-align: left; }
+        .birthday-code-board { grid-template-columns: 1fr; }
+        .birthday-divider { margin: -2px auto; }
+        .birthday-challenge { grid-template-columns: 1fr; }
+        .birthday-reveal { width: 100%; }
+        .learn-controls { grid-template-columns: 1fr 90px; }
+        .learn-controls .mini-action { width: 100%; }
+        .mission-card { padding: 20px 14px; }
+        .mission-head { flex-direction: column; }
+        .mission-targets { justify-content: flex-start; }
+        .mission-coach { grid-template-columns: 1fr; }
+        .mission-step-label { width: max-content; }
+        .mission-confirm-wrap { width: 100%; }
+        .mission-confirm { width: 100%; }
+        .converter-grid { grid-template-columns: 1fr; }
+        .converter-fields { grid-template-columns: 1fr; }
+        .swap-mark { padding: 0; text-align: center; transform: rotate(90deg); }
+        .stats { grid-template-columns: repeat(2, 1fr); }
+        .quiz-shell { padding: 20px 12px; border-radius: 10px; }
+        .quiz-shell::after { display: none; }
+        .stage-shell {
+          width: 100%;
+          padding: 20px 14px;
+          border-radius: 10px;
+        }
+        .app-tabs {
+          gap: 7px;
+          padding: 10px;
+          border-radius: 8px;
+        }
+        .app-tabs button { min-height: 52px; padding: 10px 7px; font-size: 12px; }
+        .app-tabs button::after { display: none; }
+        .quiz-shell.stage-shell { padding: 16px 10px; }
+        .quiz-view .stats { grid-template-columns: repeat(2, 1fr); }
+        .quiz-view .stats div:nth-child(2) { border-right: 0; }
+        .quiz-view .stats div:nth-child(-n+2) { border-bottom: 1px solid #4c5548; }
+        .quiz-view .card { padding: 20px 10px; border-width: 6px; }
+        .quiz-view .switch {
+          --h: 62px;
+          flex-basis: 62px;
+          width: 62px;
+          height: 62px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      }
+    </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="../../nav.css">
+<script src="../../nav.js"></script>
+<style>.sidebar nav{font-family:'Pretendard','Malgun Gothic',sans-serif}.sidebar-toggle:not(.open) i{color:#e9dfc4}.sidebar-toggle:not(.open) i:hover{color:#fff}</style>
+</head>
+  <body>
+<div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+<aside class="sidebar">
+        <nav>
+            <div class="nav-sec">시작</div>
+            <a href="../../이미지/indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="../../이미지/01_이미지와_RGB/activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
+            <a href="../../이미지/01_이미지와_RGB/activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="../../이미지/01_이미지와_RGB/activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="../../이미지/01_이미지와_RGB/activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+            <a href="../../이미지/01_이미지와_RGB/activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="../../이미지/02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="../../이미지/02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
+            <a href="../../이미지/02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="../../이미지/02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
+            <a href="../../이미지/03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="../../이미지/03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="../../이미지/03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="../../이미지/03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
+            <a href="../../이미지/04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../../이미지/04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="../../이미지/05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="../../이미지/05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../../이미지/06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../../이미지/06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
+            <a href="../../이미지/07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../../이미지/07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../../이미지/07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../../이미지/08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
+
+    <div class="bg-deco" aria-hidden="true">
+      <span style="top: 10%; left: 5%">1</span>
+      <span style="top: 26%; left: 90%; animation-delay: 1.5s">0</span>
+      <span style="top: 55%; left: 3%; animation-delay: 0.8s">1</span>
+      <span style="top: 70%; left: 92%; animation-delay: 2.2s">0</span>
+      <span style="top: 44%; left: 84%; animation-delay: 3s; font-size: 60px">1</span>
+      <span style="top: 84%; left: 12%; animation-delay: 1.1s; font-size: 56px">0</span>
+      <span class="rocket" style="top: 16%; right: 4%; animation-delay: 0.5s">🚀</span>
+    </div>
+
+    <div class="wrap">
+      <header class="floating-title">
+        <div class="floating-title-copy">
+          <span class="floating-title-kicker">수학 · 정보 체험 활동</span>
+          <h1>이진법, 0과 1의 숫자 세계로</h1>
+          <p>생일 맞히기부터 이진수 변환까지, 직접 누르고 더하면서 0과 1의 원리를 알아봅니다.</p>
+        </div>
+        <div class="title-two-states" aria-hidden="true"><span>0</span><span>1</span><small>두 가지 약속</small></div>
+      </header>
+
+      <nav class="app-tabs" id="appTabs" aria-label="이진법 학습 모드">
+        <button type="button" data-view="birthday" aria-selected="true">① 생일 아이스브레이킹</button>
+        <button type="button" data-view="learn" aria-selected="false">② 원리 파악하기</button>
+        <button type="button" data-view="mission" aria-selected="false">③ 전구로 숫자 만들기</button>
+        <button type="button" data-view="convert" aria-selected="false">④ 변환 실험실</button>
+        <button type="button" data-view="quiz" aria-selected="false">⑤ 도전 퀴즈</button>
+      </nav>
+
+      <section class="app-view" id="missionView" aria-labelledby="missionTitle" hidden>
+          <article class="mission-card stage-shell" aria-labelledby="missionTitle">
+            <div class="mission-head">
+              <div>
+                <span class="mission-kicker">단계별 학습 카드</span>
+                <h3 id="missionTitle">전구를 켜서 <strong id="missionTarget">37</strong> 만들기</h3>
+                <p>가장 큰 자릿값부터 살펴보고, 목표 수에 넣을 수 있는 전구만 켜보세요.</p>
+              </div>
+              <div class="mission-targets" aria-label="목표 숫자 선택">
+                <button type="button" data-mission-target="13">13 만들기</button>
+                <button type="button" data-mission-target="37">37 만들기</button>
+                <button type="button" data-mission-target="90">90 만들기</button>
+                <button type="button" id="missionRandomBtn">🎲 새 숫자</button>
+              </div>
+            </div>
+
+            <div class="mission-board" aria-label="2의 거듭제곱 순서와 전구">
+              <div class="mission-lane">
+                <div class="mission-index" id="missionIndex"></div>
+                <div class="mission-bulbs" id="missionBulbs"></div>
+                <div class="mission-advance-row" aria-label="현재 단계 선택 확정">
+                  <div class="mission-confirm-wrap" id="missionConfirmWrap">
+                    <button class="mission-confirm" id="missionConfirmBtn" type="button">
+                      <span class="mission-confirm-choice">1단계 · OFF 선택</span>
+                      <strong class="mission-confirm-next">선택 확정하고 2단계로 →</strong>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mission-coach">
+              <span class="mission-step-label" id="missionStepLabel">1 / 8 단계</span>
+              <div class="mission-guide" id="missionGuide" aria-live="polite"></div>
+            </div>
+
+            <div class="mission-formula" id="missionFormula">
+              <span>켜진 전구의 자릿값을 더한 현재 합</span>
+              <strong id="missionEquation">현재 합 = 0</strong>
+              <div class="mission-progress-track" aria-hidden="true">
+                <div class="mission-progress-fill" id="missionProgressFill"></div>
+              </div>
+            </div>
+            <div class="mission-feedback" id="missionFeedback" aria-live="polite">
+              위에서 강조된 첫 번째 자릿값부터 판단해보세요.
+            </div>
+          </article>
+
+      </section>
+
+      <section class="app-view birthday-view" id="birthdayView" aria-labelledby="birthdayTitle">
+          <section class="birthday-icebreaker stage-shell" id="birthdayIcebreaker" aria-labelledby="birthdayTitle">
+            <div class="birthday-top">
+              <div class="birthday-copy">
+                <span class="birthday-kicker">🎈 30초 아이스브레이킹</span>
+                <h2 id="birthdayTitle">웹앱이 내 생일을 맞힐 수 있을까?</h2>
+                <p>목록에 내 생일의 월 또는 일이 있으면 <b>있어요(1)</b>, 없으면 <b>없어요(0)</b>를 선택하세요. 웹앱이 켜진 자릿값을 더해 생일을 추리합니다.</p>
+              </div>
+              <div class="birthday-rule">
+                <span>총 9번만 대답해요</span>
+                <span id="birthdayRuleMath" aria-label="월과 일에 필요한 비트 수"></span>
+              </div>
+            </div>
+
+            <div class="birthday-quiz" id="birthdayQuiz">
+              <div class="birthday-quiz-status">
+                <div>
+                  <span class="birthday-quiz-step" id="birthdayQuizStep">월 찾기 · 1 / 4</span>
+                  <strong id="birthdayQuizSumLabel">현재 월 후보값 0</strong>
+                </div>
+                <div class="birthday-quiz-dots" id="birthdayQuizDots" aria-label="생일 맞히기 진행도"></div>
+                <button class="birthday-quiz-reset" id="birthdayQuizResetBtn" type="button">↻ 처음부터</button>
+              </div>
+
+              <div class="birthday-question-card" id="birthdayQuestionCard">
+                <div class="birthday-question-head">
+                  <span class="birthday-question-weight" id="birthdayQuestionWeight"></span>
+                  <div>
+                    <h3 id="birthdayQuestionTitle">태어난 월이 이 목록에 있나요?</h3>
+                    <p id="birthdayQuestionHelp">생일의 월을 찾아 있으면 1, 없으면 0을 선택하세요.</p>
+                  </div>
+                </div>
+                <div class="birthday-number-grid" id="birthdayNumberGrid" aria-label="이번 질문의 숫자 목록"></div>
+              </div>
+
+              <div class="birthday-quiz-calc">
+                <span id="birthdayQuizCalcLabel">지금까지 선택한 월 자릿값의 합</span>
+                <strong id="birthdayQuizEquation" aria-live="polite"></strong>
+              </div>
+              <div class="birthday-answer-buttons">
+                <button class="birthday-answer no" id="birthdayNoBtn" type="button">
+                  <b>0</b><span><strong>목록에 없어요</strong><small>0으로 기록</small></span>
+                </button>
+                <button class="birthday-answer yes" id="birthdayYesBtn" type="button">
+                  <b>1</b><span><strong>목록에 있어요</strong><small>1로 기록</small></span>
+                </button>
+              </div>
+              <p class="birthday-quiz-feedback" id="birthdayQuizFeedback" aria-live="polite">목록을 천천히 살펴본 뒤 답해보세요.</p>
+            </div>
+
+            <div class="birthday-guess-result" id="birthdayGuessResult" hidden>
+              <div class="birthday-calendar-sheet" id="birthdayCalendarSheet" aria-label="웹앱이 찾은 생일 8월 15일">
+                <span class="birthday-calendar-ring left" aria-hidden="true"></span>
+                <span class="birthday-calendar-ring right" aria-hidden="true"></span>
+                <div class="birthday-calendar-head">
+                  <small>BIRTHDAY CALENDAR</small>
+                  <strong id="birthdayCalendarMonth">8월</strong>
+                </div>
+                <div class="birthday-calendar-body">
+                  <div class="birthday-calendar-day-row"><strong id="birthdayCalendarDay">15</strong><span>일</span></div>
+                  <p>🎂 HAPPY BIRTHDAY</p>
+                </div>
+              </div>
+              <div class="birthday-result-copy">
+                <span>✨ 웹앱의 추리 결과</span>
+                <h3><strong class="birthday-date-text" id="birthdayDateText">8월 15일</strong>을 찾았어요!</h3>
+                <p>‘있어요’를 고른 카드의 자릿값만 더해 월과 일을 찾았습니다.</p>
+                <div class="birthday-result-actions">
+                  <div class="birthday-guess-proof" id="birthdayGuessProof"></div>
+                  <button class="birthday-quiz-restart" id="birthdayQuizRestartBtn" type="button">↻ 다시 맞혀보기</button>
+                </div>
+              </div>
+            </div>
+
+            <section class="birthday-reasoning" id="birthdayReasoning" aria-labelledby="birthdayReasoningTitle" hidden>
+              <div class="birthday-reasoning-head">
+                <span class="birthday-reasoning-kicker">🔍 이진법 원리 해설</span>
+                <h3 id="birthdayReasoningTitle">왜 8월 15일을 골라낼 수 있었을까요?</h3>
+                <p>웹앱이 생일을 찍은 것이 아닙니다. 목록에 대한 답을 월 4자리와 일 5자리의 이진수로 바꾸어 읽었습니다.</p>
+              </div>
+              <div class="birthday-reasoning-flow" aria-label="생일을 찾는 세 단계">
+                <div class="birthday-reason-step"><b>1</b><strong>각 목록은 하나의 자릿값</strong><span>각 질문은 2ⁿ 자리가 1인 숫자만 모아둔 목록입니다.</span></div>
+                <div class="birthday-reason-step"><b>2</b><strong>있어요는 1, 없어요는 0</strong><span>목록에 생일이 있으면 그 자리를 켜고, 없으면 끕니다.</span></div>
+                <div class="birthday-reason-step"><b>3</b><strong>1인 자릿값만 더하기</strong><span>켜진 2ⁿ의 값을 더하면 월과 일이 각각 완성됩니다.</span></div>
+              </div>
+              <div class="birthday-reason-equations">
+                <article class="birthday-reason-equation">
+                  <span>월에서 ‘있어요’라고 답한 자리</span>
+                  <div class="birthday-reason-math" id="birthdayMonthReasonMath"></div>
+                  <p id="birthdayMonthReasonText"></p>
+                </article>
+                <article class="birthday-reason-equation">
+                  <span>일에서 ‘있어요’라고 답한 자리</span>
+                  <div class="birthday-reason-math" id="birthdayDayReasonMath"></div>
+                  <p id="birthdayDayReasonText"></p>
+                </article>
+              </div>
+              <p class="birthday-reason-note">핵심: 0인 자리는 더하지 않고, 1인 자리의 2ⁿ 값만 더합니다.</p>
+            </section>
+
+            <div class="birthday-code-board" id="birthdayCodeBoard" aria-label="추리한 생일의 월과 일을 이진법으로 나타낸 결과" hidden>
+              <div class="birthday-part">
+                <div class="birthday-part-head"><span>월 코드 · 4비트</span><b id="birthdayMonthLabel">8월</b></div>
+                <div class="birthday-bits" id="birthdayMonthBits" aria-label="월 이진수 전구"></div>
+                <div class="birthday-math" id="birthdayMonthMath"></div>
+              </div>
+              <div class="birthday-divider" aria-hidden="true">·</div>
+              <div class="birthday-part">
+                <div class="birthday-part-head"><span>일 코드 · 5비트</span><b id="birthdayDayLabel">15일</b></div>
+                <div class="birthday-bits" id="birthdayDayBits" aria-label="일 이진수 전구"></div>
+                <div class="birthday-math" id="birthdayDayMath"></div>
+              </div>
+            </div>
+
+            <div class="birthday-challenge" id="birthdayChallenge" hidden>
+              <div>
+                <span class="birthday-code-label">웹앱이 모은 답 · 월 4자리 | 일 5자리</span>
+                <strong class="birthday-code" id="birthdayCode" aria-live="polite">1000 | 01111</strong>
+              </div>
+              <span class="birthday-code-caption">1인 자리만 더하면 생일이 됩니다.</span>
+            </div>
+            <p class="birthday-note" id="birthdayNote" hidden>가운데 구분선은 월과 일을 나누는 표시이며, 두 코드를 붙인 하나의 이진수는 아닙니다.</p>
+          </section>
+      </section>
+
+      <section class="app-view" id="learnView" aria-labelledby="learnTitle" hidden>
+        <div class="learn-shell stage-shell">
+          <div class="section-heading">
+            <h2 id="learnTitle">전구가 켜지면 1, 꺼지면 0</h2>
+            <p>각 자리는 오른쪽에서 왼쪽으로 갈수록 1, 2, 4, 8…처럼 두 배가 됩니다. 전구를 직접 눌러도 됩니다.</p>
+          </div>
+          <div class="concept-strip">
+            <div><b>0 또는 1</b>각 자리는 두 상태만 사용해요</div>
+            <div><b>2배씩 증가</b>1 · 2 · 4 · 8 · 16…</div>
+            <div><b>켜진 자리의 합</b>1인 자릿값만 더해요</div>
+          </div>
+          <div class="number-stage">
+            <div class="stage-number"><strong id="learnDecimal">13</strong><span>십진수</span></div>
+            <div class="learn-bits" id="learnBits" aria-label="8비트 자리값 전구"></div>
+            <div class="learn-equation" id="learnEquation" aria-live="polite"></div>
+          </div>
+          <div class="learn-controls">
+            <label class="field-label">숫자를 움직여 보기
+              <input id="learnRange" type="range" min="0" max="255" value="13" />
+            </label>
+            <label class="field-label">십진수
+              <input id="learnInput" type="number" min="0" max="255" value="13" inputmode="numeric" />
+            </label>
+            <button class="mini-action" id="learnStepBtn" type="button">+1 증가</button>
+            <button class="mini-action primary" id="learnPlayBtn" type="button">▶ 0부터 재생</button>
+          </div>
+          <div class="preset-row" aria-label="애니메이션 예시">
+            <button type="button" data-learn-value="5">5 · 4+1</button>
+            <button type="button" data-learn-value="13">13 · 8+4+1</button>
+            <button type="button" data-learn-value="42">42 · 교차 패턴</button>
+            <button type="button" data-learn-value="173">173 · 8비트</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="app-view" id="convertView" aria-labelledby="convertTitle" hidden>
+        <div class="converter-shell stage-shell">
+          <div class="section-heading">
+            <h2 id="convertTitle">십진법 ↔ 이진법 변환 실험실</h2>
+            <p>자릿값 합과 2로 나누기, 두 가지 방법으로 같은 결과를 확인하세요.</p>
+          </div>
+          <div class="converter-grid">
+          <article class="converter-card">
+            <h2>자유 변환기</h2>
+            <p>한쪽 값을 바꾸면 반대쪽 값과 자릿값 풀이가 바로 연결됩니다.</p>
+            <div class="converter-fields">
+              <label class="field-label">십진수 (0~255)
+                <input id="convDecimal" type="number" min="0" max="255" value="42" inputmode="numeric" />
+              </label>
+              <span class="swap-mark" aria-hidden="true">⇄</span>
+              <label class="field-label">이진수 (최대 8자리)
+                <input id="convBinary" type="text" value="00101010" inputmode="numeric" maxlength="8" />
+              </label>
+            </div>
+            <div class="convert-result" id="convertResult" aria-live="polite"></div>
+            <div class="place-breakdown" id="convertPlaces" aria-label="이진수 자릿값 분해"></div>
+          </article>
+
+          <article class="converter-card">
+            <h2>2로 나누기 애니메이션</h2>
+            <p>몫이 0이 될 때까지 나누고, 나머지를 아래에서 위로 읽습니다.</p>
+            <div class="division-toolbar">
+              <button class="mini-action primary" id="divisionPlayBtn" type="button">▶ 단계별 재생</button>
+              <button class="mini-action" id="divisionNextBtn" type="button">한 단계</button>
+              <button class="mini-action" id="divisionResetBtn" type="button">초기화</button>
+            </div>
+            <div class="division-steps" id="divisionSteps" aria-live="polite"></div>
+          </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="app-view quiz-view" id="quizView" aria-labelledby="quizTitle" hidden>
+        <div class="quiz-shell stage-shell">
+        <div class="section-heading">
+          <span class="quiz-kicker">마지막 단계 · 실력 확인</span>
+          <h2 id="quizTitle">변환 퀴즈</h2>
+          <p>방향과 비트 수를 선택해 실력을 확인하세요.</p>
+        </div>
+      <div class="controls">
+        <div class="quiz-control-group">
+          <span class="quiz-control-label">문제 방향</span>
+          <div class="seg" id="modeSeg">
+            <button data-mode="dec2bin" class="on">십진법 → 이진법</button>
+            <button data-mode="bin2dec">이진법 → 십진법</button>
+            <button data-mode="random">랜덤 섞기</button>
+          </div>
+        </div>
+        <div class="quiz-control-group">
+          <span class="quiz-control-label">문제 범위</span>
+          <div class="seg" id="bitsSeg">
+            <button data-bits="4" class="on">4비트 · 0~15</button>
+            <button data-bits="6">6비트 · 0~63</button>
+            <button data-bits="8">8비트 · 0~255</button>
+          </div>
+        </div>
+        <div class="quiz-control-group">
+          <span class="quiz-control-label">풀이 방식</span>
+          <div class="seg answer-mode-seg" id="answerModeSeg" aria-label="퀴즈 풀이 방식">
+            <button type="button" data-answer-mode="text" aria-pressed="false">⌨️ 직접 입력</button>
+            <button type="button" data-answer-mode="switch" class="on" aria-pressed="true">🎚️ 스위치로 만들기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div>점수<b id="score">0</b></div>
+        <div>연속 정답<b id="streak">0</b></div>
+        <div>최고 연속<b id="best">0</b></div>
+        <div>푼 문제<b id="solved">0</b></div>
+      </div>
+
+      <main class="card">
+        <div class="q-badge">문제</div>
+        <div class="num-wrap">
+          <svg class="burst left" viewBox="0 0 46 90" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round">
+            <line x1="10" y1="45" x2="42" y2="45" />
+            <line x1="10" y1="24" x2="38" y2="12" />
+            <line x1="10" y1="66" x2="38" y2="78" />
+          </svg>
+          <div class="bignum" id="bigNum">0</div>
+          <svg class="burst right" viewBox="0 0 46 90" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round">
+            <line x1="10" y1="45" x2="42" y2="45" />
+            <line x1="10" y1="24" x2="38" y2="12" />
+            <line x1="10" y1="66" x2="38" y2="78" />
+          </svg>
+        </div>
+        <div class="q-label" id="qLabel"></div>
+
+        <!-- 스위치로 자릿값을 조합하는 풀이 -->
+        <div class="bits-panel" id="bitsPanel">
+          <div class="bits" id="bitsArea"></div>
+          <div class="hint-row" id="hintRow">
+            <button class="ghost" id="hintBtn">💡 자릿값 합계 보기</button>
+            <span class="live-sum" id="liveSum"></span>
+          </div>
+        </div>
+
+        <!-- 키보드로 정답을 직접 입력하는 풀이 -->
+        <div class="text-answer-area" id="textAnswerArea" style="display: none">
+          <label class="text-answer-label" id="answerInputLabel" for="answerInput">정답 입력</label>
+          <input id="answerInput" type="text" inputmode="numeric" autocomplete="off" placeholder="?" />
+          <small class="text-answer-help" id="answerInputHelp"></small>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="submitBtn">제출</button>
+          <button class="ghost" id="nextBtn" style="display: none">다음 문제 ▶</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+      </main>
+
+      <p class="footer-note" id="quizFooterNote">
+        <kbd>Enter</kbd> 제출 / 다음 · 스위치를 눌러 <kbd>0</kbd>↔<kbd>1</kbd> 바꾸기
+      </p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      function renderKaTeX(target, tex, displayMode = false) {
+        if (window.katex) {
+          katex.render(tex, target, {
+            displayMode,
+            throwOnError: false,
+            strict: false,
+          });
+        } else {
+          target.textContent = tex;
+        }
+      }
+      const modeSeg = $("modeSeg"),
+        bitsSeg = $("bitsSeg"),
+        answerModeSeg = $("answerModeSeg"),
+        qLabel = $("qLabel"),
+        bigNum = $("bigNum"),
+        bitsPanel = $("bitsPanel"),
+        bitsArea = $("bitsArea"),
+        hintBtn = $("hintBtn"),
+        liveSum = $("liveSum"),
+        textAnswerArea = $("textAnswerArea"),
+        answerInput = $("answerInput"),
+        answerInputLabel = $("answerInputLabel"),
+        answerInputHelp = $("answerInputHelp"),
+        submitBtn = $("submitBtn"),
+        nextBtn = $("nextBtn"),
+        feedback = $("feedback"),
+        quizFooterNote = $("quizFooterNote");
+      const scoreEl = $("score"),
+        streakEl = $("streak"),
+        bestEl = $("best"),
+        solvedEl = $("solved");
+
+      // ── 다섯 가지 학습 화면 ──
+      const appTabs = $("appTabs");
+      const appViews = {
+        birthday: $("birthdayView"),
+        learn: $("learnView"),
+        mission: $("missionView"),
+        convert: $("convertView"),
+        quiz: $("quizView"),
+      };
+      appTabs.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-view]");
+        if (!button) return;
+        const selected = button.dataset.view;
+        [...appTabs.children].forEach((item) => {
+          item.setAttribute("aria-selected", String(item === button));
+        });
+        Object.entries(appViews).forEach(([name, view]) => {
+          view.hidden = name !== selected;
+        });
+        if (selected !== "learn") stopLearnAnimation();
+        if (selected === "quiz") setTimeout(focusQuizAnswer, 0);
+      });
+
+      // ── 생일 이진 코드 아이스브레이킹 ──
+      const birthdayQuiz = $("birthdayQuiz");
+      const birthdayQuizStep = $("birthdayQuizStep");
+      const birthdayQuizSumLabel = $("birthdayQuizSumLabel");
+      const birthdayQuizDots = $("birthdayQuizDots");
+      const birthdayQuestionCard = $("birthdayQuestionCard");
+      const birthdayQuestionWeight = $("birthdayQuestionWeight");
+      const birthdayQuestionTitle = $("birthdayQuestionTitle");
+      const birthdayQuestionHelp = $("birthdayQuestionHelp");
+      const birthdayNumberGrid = $("birthdayNumberGrid");
+      const birthdayQuizCalcLabel = $("birthdayQuizCalcLabel");
+      const birthdayQuizEquation = $("birthdayQuizEquation");
+      const birthdayQuizFeedback = $("birthdayQuizFeedback");
+      const birthdayNoBtn = $("birthdayNoBtn");
+      const birthdayYesBtn = $("birthdayYesBtn");
+      const birthdayQuizResetBtn = $("birthdayQuizResetBtn");
+      const birthdayQuizRestartBtn = $("birthdayQuizRestartBtn");
+      const birthdayGuessResult = $("birthdayGuessResult");
+      const birthdayGuessProof = $("birthdayGuessProof");
+      const birthdayDateText = $("birthdayDateText");
+      const birthdayCalendarSheet = $("birthdayCalendarSheet");
+      const birthdayCalendarMonth = $("birthdayCalendarMonth");
+      const birthdayCalendarDay = $("birthdayCalendarDay");
+      const birthdayReasoning = $("birthdayReasoning");
+      const birthdayReasoningTitle = $("birthdayReasoningTitle");
+      const birthdayMonthReasonMath = $("birthdayMonthReasonMath");
+      const birthdayDayReasonMath = $("birthdayDayReasonMath");
+      const birthdayMonthReasonText = $("birthdayMonthReasonText");
+      const birthdayDayReasonText = $("birthdayDayReasonText");
+      const birthdayMonthLabel = $("birthdayMonthLabel");
+      const birthdayDayLabel = $("birthdayDayLabel");
+      const birthdayMonthBits = $("birthdayMonthBits");
+      const birthdayDayBits = $("birthdayDayBits");
+      const birthdayMonthMath = $("birthdayMonthMath");
+      const birthdayDayMath = $("birthdayDayMath");
+      const birthdayCode = $("birthdayCode");
+      const birthdayCodeBoard = $("birthdayCodeBoard");
+      const birthdayChallenge = $("birthdayChallenge");
+      const birthdayRuleMath = $("birthdayRuleMath");
+      const birthdayNote = $("birthdayNote");
+      const BIRTHDAY_GUESS_QUESTIONS = [
+        { part: "month", power: 3, weight: 8, max: 12 },
+        { part: "month", power: 2, weight: 4, max: 12 },
+        { part: "month", power: 1, weight: 2, max: 12 },
+        { part: "month", power: 0, weight: 1, max: 12 },
+        { part: "day", power: 4, weight: 16, max: 31 },
+        { part: "day", power: 3, weight: 8, max: 31 },
+        { part: "day", power: 2, weight: 4, max: 31 },
+        { part: "day", power: 1, weight: 2, max: 31 },
+        { part: "day", power: 0, weight: 1, max: 31 },
+      ];
+      let birthdayQuizIndex = 0;
+      let birthdayQuizChoices = [];
+      let birthdayMonthSum = 0;
+      let birthdayDaySum = 0;
+
+      function maxBirthdayDay(month) {
+        if (month === 2) return 29;
+        return [4, 6, 9, 11].includes(month) ? 30 : 31;
+      }
+
+      function renderBirthdayBits(container, value, bitCount, partName) {
+        const binary = value.toString(2).padStart(bitCount, "0");
+        container.innerHTML = "";
+        container.style.setProperty("--bit-count", bitCount);
+        binary.split("").forEach((digit, index) => {
+          const power = bitCount - 1 - index;
+          const bit = document.createElement("div");
+          bit.className = `birthday-bit${digit === "1" ? " on" : ""}`;
+          bit.style.setProperty("--bit-index", index);
+          bit.setAttribute("aria-label", `${partName}의 2의 ${power}제곱 자리 ${digit}`);
+          bit.innerHTML = `<strong>${digit}</strong><span class="birthday-bit-power"></span>`;
+          renderKaTeX(bit.querySelector(".birthday-bit-power"), `2^{${power}}`);
+          container.appendChild(bit);
+        });
+        return binary;
+      }
+
+      function renderBirthdayCode(month, day) {
+        const monthBinary = renderBirthdayBits(birthdayMonthBits, month, 4, "월");
+        const dayBinary = renderBirthdayBits(birthdayDayBits, day, 5, "일");
+        birthdayMonthLabel.textContent = `${month}월`;
+        birthdayDayLabel.textContent = `${day}일`;
+        birthdayDateText.textContent = `${month}월 ${day}일`;
+        birthdayCalendarMonth.textContent = `${month}월`;
+        birthdayCalendarDay.textContent = day;
+        birthdayCalendarSheet.setAttribute("aria-label", `웹앱이 찾은 생일 ${month}월 ${day}일`);
+        birthdayCode.textContent = `${monthBinary} | ${dayBinary}`;
+        renderKaTeX(birthdayMonthMath, `(${month})_{10}=(${monthBinary})_2`);
+        renderKaTeX(birthdayDayMath, `(${day})_{10}=(${dayBinary})_2`);
+      }
+
+      function birthdayChosenTerms(part) {
+        return BIRTHDAY_GUESS_QUESTIONS
+          .map((question, index) => ({ question, choice: birthdayQuizChoices[index] }))
+          .filter((item) => item.question.part === part && item.choice === 1)
+          .map((item) => item.question.weight);
+      }
+
+      function birthdayChosenQuestions(part) {
+        return BIRTHDAY_GUESS_QUESTIONS
+          .map((question, index) => ({ question, choice: birthdayQuizChoices[index] }))
+          .filter((item) => item.question.part === part && item.choice === 1)
+          .map((item) => item.question);
+      }
+
+      function renderBirthdayReasoning(month, day) {
+        const monthQuestions = birthdayChosenQuestions("month");
+        const dayQuestions = birthdayChosenQuestions("day");
+        const reasonLatex = (questions, total) => {
+          const powers = questions.map((question) => `2^{${question.power}}`).join("+");
+          const values = questions.map((question) => question.weight).join("+");
+          return `${powers}=${values}=${total}`;
+        };
+        birthdayReasoningTitle.textContent = `왜 ${month}월 ${day}일을 골라낼 수 있었을까요?`;
+        renderKaTeX(birthdayMonthReasonMath, reasonLatex(monthQuestions, month), true);
+        renderKaTeX(birthdayDayReasonMath, reasonLatex(dayQuestions, day), true);
+        birthdayMonthReasonText.textContent = `월에서 1로 표시된 자릿값은 ${monthQuestions.map((question) => question.weight).join(", ")}입니다. 합계 ${month}, 따라서 ${month}월입니다.`;
+        birthdayDayReasonText.textContent = `일에서 1로 표시된 자릿값은 ${dayQuestions.map((question) => question.weight).join(", ")}입니다. 합계 ${day}, 따라서 ${day}일입니다.`;
+      }
+
+      function renderBirthdayQuizDots() {
+        birthdayQuizDots.innerHTML = "";
+        BIRTHDAY_GUESS_QUESTIONS.forEach((question, index) => {
+          const dot = document.createElement("span");
+          const choice = birthdayQuizChoices[index];
+          dot.className = `birthday-quiz-dot${index === birthdayQuizIndex ? " current" : ""}${choice === 1 ? " done on" : choice === 0 ? " done off" : ""}`;
+          dot.textContent = choice === 1 ? "1" : choice === 0 ? "0" : index + 1;
+          dot.setAttribute("aria-label", `${index + 1}번째 질문 ${choice === 1 ? "있어요 1" : choice === 0 ? "없어요 0" : index === birthdayQuizIndex ? "현재" : "대기"}`);
+          birthdayQuizDots.appendChild(dot);
+        });
+      }
+
+      function renderBirthdayQuizQuestion(message = "목록을 천천히 살펴본 뒤 답해보세요.") {
+        const question = BIRTHDAY_GUESS_QUESTIONS[birthdayQuizIndex];
+        const isMonth = question.part === "month";
+        const phaseIndex = isMonth ? birthdayQuizIndex + 1 : birthdayQuizIndex - 3;
+        const phaseTotal = isMonth ? 4 : 5;
+        const currentSum = isMonth ? birthdayMonthSum : birthdayDaySum;
+        const terms = birthdayChosenTerms(question.part);
+
+        birthdayQuizStep.textContent = `${isMonth ? "월" : "일"} 찾기 · ${phaseIndex} / ${phaseTotal}`;
+        birthdayQuizSumLabel.textContent = `현재 ${isMonth ? "월" : "일"} 후보값 ${currentSum}`;
+        birthdayQuestionTitle.textContent = `태어난 ${isMonth ? "월" : "일"}이 이 목록에 있나요?`;
+        birthdayQuestionHelp.textContent = `있다면 ${question.weight}의 자리를 1로, 없다면 0으로 기록합니다.`;
+        birthdayQuizCalcLabel.textContent = `지금까지 선택한 ${isMonth ? "월" : "일"} 자릿값의 합`;
+        renderKaTeX(birthdayQuestionWeight, `2^{${question.power}}=${question.weight}`);
+        renderKaTeX(birthdayQuizEquation, `${terms.length ? terms.join("+") : "0"}=${currentSum}`);
+
+        birthdayNumberGrid.innerHTML = "";
+        Array.from({ length: question.max }, (_, index) => index + 1)
+          .filter((value) => (value & question.weight) !== 0)
+          .forEach((value, index) => {
+            const number = document.createElement("span");
+            number.className = "birthday-number";
+            number.style.setProperty("--number-index", index);
+            number.textContent = value;
+            birthdayNumberGrid.appendChild(number);
+          });
+
+        renderBirthdayQuizDots();
+        birthdayQuizFeedback.className = `birthday-quiz-feedback${message.includes("찾았") ? " transition" : ""}`;
+        birthdayQuizFeedback.textContent = message;
+        birthdayNoBtn.disabled = false;
+        birthdayYesBtn.disabled = false;
+        birthdayQuestionCard.classList.remove("question-in");
+        void birthdayQuestionCard.offsetWidth;
+        birthdayQuestionCard.classList.add("question-in");
+      }
+
+      function showBirthdayQuizError(message) {
+        birthdayNoBtn.disabled = true;
+        birthdayYesBtn.disabled = true;
+        birthdayQuizFeedback.className = "birthday-quiz-feedback wrong";
+        birthdayQuizFeedback.textContent = `${message} 처음 질문으로 돌아갑니다.`;
+        window.setTimeout(resetBirthdayQuiz, 1500);
+      }
+
+      function finishBirthdayQuiz() {
+        const validDay = birthdayDaySum >= 1 && birthdayDaySum <= maxBirthdayDay(birthdayMonthSum);
+        if (!validDay) {
+          showBirthdayQuizError(`${birthdayMonthSum}월에는 ${birthdayDaySum}일이 없어요. 답한 목록을 다시 확인해보세요.`);
+          return;
+        }
+        const monthTerms = birthdayChosenTerms("month");
+        const dayTerms = birthdayChosenTerms("day");
+        birthdayQuiz.hidden = true;
+        birthdayGuessResult.hidden = false;
+        birthdayReasoning.hidden = false;
+        birthdayCodeBoard.hidden = false;
+        birthdayChallenge.hidden = false;
+        birthdayNote.hidden = false;
+        renderBirthdayCode(birthdayMonthSum, birthdayDaySum);
+        renderBirthdayReasoning(birthdayMonthSum, birthdayDaySum);
+        renderKaTeX(
+          birthdayGuessProof,
+          `(${monthTerms.join("+")})=${birthdayMonthSum}\\qquad(${dayTerms.join("+")})=${birthdayDaySum}`
+        );
+      }
+
+      function answerBirthdayQuiz(choice) {
+        const question = BIRTHDAY_GUESS_QUESTIONS[birthdayQuizIndex];
+        birthdayQuizChoices[birthdayQuizIndex] = choice;
+        if (choice === 1) {
+          if (question.part === "month") birthdayMonthSum += question.weight;
+          else birthdayDaySum += question.weight;
+        }
+        birthdayQuizIndex++;
+
+        if (birthdayQuizIndex === 4 && (birthdayMonthSum < 1 || birthdayMonthSum > 12)) {
+          showBirthdayQuizError(`계산된 월이 ${birthdayMonthSum}월이라 실제 범위 1~12를 벗어났어요.`);
+          return;
+        }
+        if (birthdayQuizIndex >= BIRTHDAY_GUESS_QUESTIONS.length) {
+          finishBirthdayQuiz();
+          return;
+        }
+        renderBirthdayQuizQuestion(
+          birthdayQuizIndex === 4
+            ? `월은 ${birthdayMonthSum}월로 찾았어요! 이제 태어난 일을 찾아볼게요.`
+            : `${choice === 1 ? question.weight + "을 더했어요." : question.weight + "은 더하지 않아요."} 다음 목록을 확인하세요.`
+        );
+      }
+
+      function resetBirthdayQuiz() {
+        birthdayQuizIndex = 0;
+        birthdayQuizChoices = [];
+        birthdayMonthSum = 0;
+        birthdayDaySum = 0;
+        birthdayQuiz.hidden = false;
+        birthdayGuessResult.hidden = true;
+        birthdayReasoning.hidden = true;
+        birthdayCodeBoard.hidden = true;
+        birthdayChallenge.hidden = true;
+        birthdayNote.hidden = true;
+        renderBirthdayQuizQuestion();
+      }
+
+      function setupBirthdayIcebreaker() {
+        renderKaTeX(birthdayRuleMath, `4+5=9`);
+        resetBirthdayQuiz();
+      }
+
+      birthdayNoBtn.addEventListener("click", () => answerBirthdayQuiz(0));
+      birthdayYesBtn.addEventListener("click", () => answerBirthdayQuiz(1));
+      birthdayQuizResetBtn.addEventListener("click", resetBirthdayQuiz);
+      birthdayQuizRestartBtn.addEventListener("click", resetBirthdayQuiz);
+
+      // ── 원리 애니메이션 ──
+      const learnBits = $("learnBits");
+      const learnDecimal = $("learnDecimal");
+      const learnEquation = $("learnEquation");
+      const learnRange = $("learnRange");
+      const learnInput = $("learnInput");
+      const learnPlayBtn = $("learnPlayBtn");
+      const LEARN_WEIGHTS = [128, 64, 32, 16, 8, 4, 2, 1];
+      let learnAnimation = null;
+
+      LEARN_WEIGHTS.forEach((weight, index) => {
+        const bit = document.createElement("button");
+        const power = 7 - index;
+        bit.className = "learn-bit";
+        bit.type = "button";
+        bit.setAttribute("role", "switch");
+        bit.dataset.weight = weight;
+        bit.innerHTML =
+          `<span class="bulb">0</span>` +
+          `<div class="weight">${weight}</div>` +
+          `<div class="power">2<sup>${power}</sup></div>` +
+          `<span class="mission-toggle" aria-hidden="true"><span class="mission-toggle-knob"></span></span>` +
+          `<small class="learn-switch-state">OFF</small>`;
+        bit.addEventListener("click", () => {
+          flickSwitch(bit.querySelector(".mission-toggle"));
+          const current = clampByte(learnInput.value);
+          setLearnValue(current ^ weight);
+        });
+        learnBits.appendChild(bit);
+      });
+
+      // 스위치를 누를 때마다 눌림 애니메이션을 다시 재생한다
+      function flickSwitch(element) {
+        if (!element) return;
+        element.classList.remove("pressed");
+        void element.offsetWidth;
+        element.classList.add("pressed");
+      }
+
+      function clampByte(value) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? Math.max(0, Math.min(255, Math.round(parsed))) : 0;
+      }
+
+      function stopLearnAnimation() {
+        if (learnAnimation !== null) cancelAnimationFrame(learnAnimation);
+        learnAnimation = null;
+        learnPlayBtn.disabled = false;
+        learnPlayBtn.textContent = "▶ 0부터 재생";
+      }
+
+      function renderLearn(value) {
+        const safe = clampByte(value);
+        const binary = safe.toString(2).padStart(8, "0");
+        const selected = [];
+        learnDecimal.textContent = safe;
+        learnRange.value = safe;
+        learnInput.value = safe;
+        [...learnBits.children].forEach((bit, index) => {
+          const on = binary[index] === "1";
+          bit.classList.toggle("on", on);
+          bit.setAttribute("aria-checked", String(on));
+          bit.setAttribute("aria-label", `${LEARN_WEIGHTS[index]}의 자리 ${on ? "켜짐, 1" : "꺼짐, 0"}`);
+          bit.querySelector(".bulb").textContent = on ? "1" : "0";
+          bit.querySelector(".learn-switch-state").textContent = on ? "ON" : "OFF";
+          if (on) selected.push(LEARN_WEIGHTS[index]);
+        });
+        const sum = selected.length ? selected.join("+") : "0";
+        renderKaTeX(learnEquation, `(${safe})_{10}=${sum}=(${binary})_2`);
+      }
+
+      function setLearnValue(value) {
+        stopLearnAnimation();
+        renderLearn(value);
+      }
+
+      function playLearnCount() {
+        stopLearnAnimation();
+        const targetValue = clampByte(learnInput.value);
+        const startedAt = performance.now();
+        const duration = Math.min(4200, Math.max(900, 650 + targetValue * 20));
+        let lastValue = -1;
+        learnPlayBtn.disabled = true;
+        learnPlayBtn.textContent = "재생 중…";
+        const tick = (now) => {
+          const progress = Math.min(1, (now - startedAt) / duration);
+          const value = Math.round(targetValue * progress);
+          if (value !== lastValue) {
+            renderLearn(value);
+            lastValue = value;
+          }
+          if (progress < 1) {
+            learnAnimation = requestAnimationFrame(tick);
+          } else {
+            learnAnimation = null;
+            learnPlayBtn.disabled = false;
+            learnPlayBtn.textContent = "▶ 다시 재생";
+          }
+        };
+        learnAnimation = requestAnimationFrame(tick);
+      }
+
+      learnRange.addEventListener("input", () => setLearnValue(learnRange.value));
+      learnInput.addEventListener("input", () => setLearnValue(learnInput.value));
+      $("learnStepBtn").addEventListener("click", () => setLearnValue(clampByte(learnInput.value) + 1));
+      learnPlayBtn.addEventListener("click", playLearnCount);
+      document.querySelector(".preset-row").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-learn-value]");
+        if (button) setLearnValue(button.dataset.learnValue);
+      });
+
+      // ── 큰 자릿값부터 판단하는 목표 숫자 만들기 ──
+      const missionTarget = $("missionTarget");
+      const missionIndex = $("missionIndex");
+      const missionBulbs = $("missionBulbs");
+      const missionStepLabel = $("missionStepLabel");
+      const missionGuide = $("missionGuide");
+      const missionEquation = $("missionEquation");
+      const missionFormula = $("missionFormula");
+      const missionProgressFill = $("missionProgressFill");
+      const missionFeedback = $("missionFeedback");
+      const missionConfirmWrap = $("missionConfirmWrap");
+      const missionConfirmBtn = $("missionConfirmBtn");
+      let missionTargetValue = 37;
+      let missionCurrentStep = 0;
+      let missionBitValues = Array(8).fill(0);
+      let missionLastAdded = null;
+
+      LEARN_WEIGHTS.forEach((weight, index) => {
+        const power = 7 - index;
+        const indexItem = document.createElement("div");
+        indexItem.className = "mission-index-item";
+        indexItem.dataset.stage = index + 1;
+        indexItem.innerHTML = `<small>${index + 1}단계</small><span class="mission-index-math"></span>`;
+        renderKaTeX(indexItem.querySelector(".mission-index-math"), `2^{${power}}=${weight}`);
+        missionIndex.appendChild(indexItem);
+
+        const bulb = document.createElement("button");
+        bulb.type = "button";
+        bulb.className = "mission-bulb";
+        bulb.setAttribute("role", "switch");
+        bulb.dataset.index = index;
+        bulb.innerHTML =
+          `<span class="mission-lamp">0</span>` +
+          `<b>${weight}</b>` +
+          `<span class="mission-toggle" aria-hidden="true"><span class="mission-toggle-knob"></span></span>` +
+          `<small class="mission-switch-state">OFF</small>`;
+        bulb.addEventListener("click", () => {
+          if (missionCurrentStep >= LEARN_WEIGHTS.length) return;
+          if (index !== missionCurrentStep) return;
+          flickSwitch(bulb.querySelector(".mission-toggle"));
+          missionBitValues[index] = missionBitValues[index] ? 0 : 1;
+          missionLastAdded = missionBitValues[index] ? weight : null;
+          renderMission(true);
+          missionFeedback.className = "mission-feedback";
+          missionFeedback.textContent = missionBitValues[index]
+            ? `스위치를 ON으로 바꿨습니다. 자릿값 ${weight}이 현재 합에 더해졌어요.`
+            : `스위치를 OFF로 바꿨습니다. 자릿값 ${weight}이 현재 합에서 빠졌어요.`;
+        });
+        missionBulbs.appendChild(bulb);
+      });
+
+      function missionSum() {
+        return missionBitValues.reduce((sum, bit, index) => sum + bit * LEARN_WEIGHTS[index], 0);
+      }
+
+      function renderMission(animateFormula = false) {
+        const sum = missionSum();
+        const termValues = [];
+        const binary = missionBitValues.join("");
+        const finished = missionCurrentStep >= LEARN_WEIGHTS.length;
+        missionTarget.textContent = missionTargetValue;
+
+        [...missionIndex.children].forEach((item, index) => {
+          const isCurrent = index === missionCurrentStep;
+          item.classList.toggle("current", isCurrent);
+          item.classList.toggle("done", index < missionCurrentStep);
+          if (isCurrent) item.setAttribute("aria-current", "step");
+          else item.removeAttribute("aria-current");
+        });
+        [...missionBulbs.children].forEach((bulb, index) => {
+          const on = missionBitValues[index] === 1;
+          bulb.classList.toggle("on", on);
+          bulb.classList.toggle("current", index === missionCurrentStep);
+          bulb.classList.toggle("done", index < missionCurrentStep);
+          bulb.disabled = finished || index !== missionCurrentStep;
+          bulb.setAttribute("aria-checked", String(on));
+          bulb.setAttribute("aria-label", `${LEARN_WEIGHTS[index]}의 자리 스위치 ${on ? "켜짐" : "꺼짐"}`);
+          bulb.querySelector(".mission-lamp").textContent = on ? "1" : "0";
+          bulb.querySelector(".mission-switch-state").textContent = on ? "ON" : "OFF";
+          if (on) termValues.push(LEARN_WEIGHTS[index]);
+        });
+
+        const termLatex = termValues.length
+          ? termValues.map((weight) => weight === missionLastAdded ? `\\color{#b45309}{\\boxed{${weight}}}` : String(weight)).join("+")
+          : "0";
+        renderKaTeX(missionEquation, `${termLatex}=${sum}\\qquad(${binary})_2`, true);
+        missionProgressFill.style.width = `${Math.min(100, (sum / missionTargetValue) * 100)}%`;
+        missionFormula.classList.remove("pulse");
+        if (animateFormula) requestAnimationFrame(() => missionFormula.classList.add("pulse"));
+
+        missionConfirmBtn.disabled = finished;
+        missionConfirmWrap.hidden = finished;
+        if (finished) {
+          missionStepLabel.textContent = "8 / 8 완료";
+          missionGuide.innerHTML = '<span class="mission-guide-equation"></span><span>켜진 스위치의 자릿값을 모두 더한 결과입니다.</span>';
+          renderKaTeX(missionGuide.querySelector(".mission-guide-equation"), `${missionTargetValue}=${termValues.join("+")}`);
+          return;
+        }
+
+        const weight = LEARN_WEIGHTS[missionCurrentStep];
+        const power = 7 - missionCurrentStep;
+        const fixedSum = missionBitValues.reduce((total, bit, index) => index < missionCurrentStep ? total + bit * LEARN_WEIGHTS[index] : total, 0);
+        const remaining = missionTargetValue - fixedSum;
+        const shouldTurnOn = weight <= remaining;
+        const selectedState = missionBitValues[missionCurrentStep] ? "ON" : "OFF";
+        const nextDestination = missionCurrentStep === LEARN_WEIGHTS.length - 1
+          ? "결과 보기"
+          : `${missionCurrentStep + 2}단계로`;
+        const confirmColumn = Math.min(missionCurrentStep + 1, 7);
+        missionConfirmWrap.style.gridColumn = `${confirmColumn} / span 2`;
+        missionConfirmWrap.style.setProperty("--mission-pointer", missionCurrentStep === 7 ? "75%" : "25%");
+        missionConfirmBtn.innerHTML =
+          `<span class="mission-confirm-choice">${missionCurrentStep + 1}단계 · <b>${selectedState}</b> 선택</span>` +
+          `<strong class="mission-confirm-next">선택 확정하고 ${nextDestination} →</strong>`;
+        missionConfirmBtn.setAttribute(
+          "aria-label",
+          `${missionCurrentStep + 1}단계 ${selectedState} 선택을 확정하고 ${nextDestination} 이동`
+        );
+        missionStepLabel.textContent = `${missionCurrentStep + 1} / 8 단계`;
+        missionGuide.innerHTML = `<span class="mission-guide-equation"></span><span>${shouldTurnOn
+          ? `남은 수 ${remaining}보다 작거나 같습니다. 스위치를 ON으로 바꾼 뒤, 아래 버튼으로 ${missionCurrentStep + 1}단계를 확정하세요.`
+          : `남은 수 ${remaining}보다 큽니다. 스위치를 OFF로 둔 뒤, 아래 버튼으로 ${missionCurrentStep + 1}단계를 확정하세요.`}</span>`;
+        renderKaTeX(missionGuide.querySelector(".mission-guide-equation"), `2^{${power}}=${weight}`);
+      }
+
+      function confirmMissionStep() {
+        if (missionCurrentStep >= LEARN_WEIGHTS.length) return;
+        const weight = LEARN_WEIGHTS[missionCurrentStep];
+        const previousSum = missionBitValues.reduce((total, bit, index) => index < missionCurrentStep ? total + bit * LEARN_WEIGHTS[index] : total, 0);
+        const remaining = missionTargetValue - previousSum;
+        const shouldTurnOn = weight <= remaining;
+        const choice = missionBitValues[missionCurrentStep] === 1;
+
+        if (choice !== shouldTurnOn) {
+          missionFeedback.className = "mission-feedback wrong";
+          missionFeedback.textContent = choice
+            ? `이 스위치를 켜면 합이 ${previousSum + weight}이 되어 목표 ${missionTargetValue}을 넘습니다. OFF로 바꿔보세요.`
+            : `이 자릿값은 남은 수 ${remaining}보다 작거나 같습니다. 스위치를 ON으로 바꿔 합에 더해보세요.`;
+          return;
+        }
+
+        missionLastAdded = choice ? weight : null;
+        missionCurrentStep++;
+        renderMission(true);
+        const newSum = missionSum();
+        if (missionCurrentStep === LEARN_WEIGHTS.length) {
+          missionFeedback.className = "mission-feedback correct";
+          missionFeedback.textContent = `완성! 켜진 전구의 합 ${newSum}이 목표 숫자 ${missionTargetValue}과 정확히 같습니다.`;
+        } else if (choice) {
+          missionFeedback.className = "mission-feedback correct";
+          missionFeedback.textContent = `좋아요! ${previousSum} + ${weight} = ${newSum}. ON으로 만든 자릿값이 합에 더해졌습니다.`;
+        } else {
+          missionFeedback.className = "mission-feedback correct";
+          missionFeedback.textContent = `맞아요. 스위치가 OFF이므로 ${weight}는 더하지 않고 현재 합 ${newSum}을 유지합니다.`;
+        }
+      }
+
+      function resetMission(value) {
+        missionTargetValue = Math.max(1, clampByte(value));
+        missionCurrentStep = 0;
+        missionBitValues = Array(8).fill(0);
+        missionLastAdded = null;
+        missionFeedback.className = "mission-feedback";
+        missionFeedback.textContent = "위에서 강조된 첫 번째 자릿값부터 판단해보세요.";
+        renderMission();
+      }
+
+      missionConfirmBtn.addEventListener("click", confirmMissionStep);
+      document.querySelector(".mission-targets").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-mission-target]");
+        if (button) resetMission(button.dataset.missionTarget);
+      });
+      $("missionRandomBtn").addEventListener("click", () => resetMission(1 + Math.floor(Math.random() * 255)));
+
+      // ── 자유 변환기 + 2로 나누기 ──
+      const convDecimal = $("convDecimal");
+      const convBinary = $("convBinary");
+      const convertResult = $("convertResult");
+      const convertPlaces = $("convertPlaces");
+      const divisionSteps = $("divisionSteps");
+      let divisionIndex = 0;
+      let divisionTimer = null;
+
+      function divisionData(value) {
+        if (value === 0) return [{ value: 0, quotient: 0, remainder: 0 }];
+        const rows = [];
+        let current = value;
+        while (current > 0) {
+          rows.push({ value: current, quotient: Math.floor(current / 2), remainder: current % 2 });
+          current = Math.floor(current / 2);
+        }
+        return rows;
+      }
+
+      function resetDivision() {
+        if (divisionTimer !== null) clearInterval(divisionTimer);
+        divisionTimer = null;
+        divisionIndex = 0;
+        divisionSteps.innerHTML = '<div class="convert-result">버튼을 눌러 나눗셈 과정을 시작하세요.</div>';
+      }
+
+      function renderDivisionStep() {
+        const value = clampByte(convDecimal.value);
+        const rows = divisionData(value);
+        if (divisionIndex >= rows.length) return false;
+        const row = rows[divisionIndex];
+        const element = document.createElement("div");
+        element.className = "division-row";
+        element.innerHTML = `<span>${row.value} ÷ 2 = ${row.quotient}</span><span>나머지 <b>${row.remainder}</b></span>`;
+        divisionSteps.appendChild(element);
+        divisionIndex++;
+        if (divisionIndex === rows.length) {
+          const answer = document.createElement("div");
+          const binary = value.toString(2);
+          answer.className = "division-answer";
+          answer.textContent = `나머지를 아래에서 위로 읽기 → ${binary}(2)`;
+          divisionSteps.appendChild(answer);
+        }
+        return divisionIndex < rows.length;
+      }
+
+      function renderConverter(value) {
+        const safe = clampByte(value);
+        const binary = safe.toString(2).padStart(8, "0");
+        const selected = [];
+        convertPlaces.innerHTML = "";
+        binary.split("").forEach((digit, index) => {
+          const weight = LEARN_WEIGHTS[index];
+          const chip = document.createElement("div");
+          chip.className = `place-chip${digit === "1" ? " on" : ""}`;
+          chip.innerHTML = `<b>${digit}</b><br>${weight}`;
+          convertPlaces.appendChild(chip);
+          if (digit === "1") selected.push(weight);
+        });
+        renderKaTeX(convertResult, `(${binary})_2=${selected.length ? selected.join("+") : "0"}=(${safe})_{10}`);
+        resetDivision();
+      }
+
+      convDecimal.addEventListener("input", () => {
+        const value = clampByte(convDecimal.value);
+        convDecimal.value = value;
+        convBinary.value = value.toString(2).padStart(8, "0");
+        renderConverter(value);
+      });
+      convBinary.addEventListener("input", () => {
+        const cleaned = convBinary.value.replace(/[^01]/g, "").slice(0, 8);
+        convBinary.value = cleaned;
+        if (!cleaned) {
+          convertResult.textContent = "0과 1로 이진수를 입력하세요.";
+          convertPlaces.innerHTML = "";
+          resetDivision();
+          return;
+        }
+        const value = parseInt(cleaned, 2);
+        convDecimal.value = value;
+        renderConverter(value);
+      });
+      $("divisionNextBtn").addEventListener("click", () => {
+        if (divisionIndex === 0) divisionSteps.innerHTML = "";
+        renderDivisionStep();
+      });
+      $("divisionResetBtn").addEventListener("click", resetDivision);
+      $("divisionPlayBtn").addEventListener("click", () => {
+        resetDivision();
+        divisionSteps.innerHTML = "";
+        renderDivisionStep();
+        divisionTimer = setInterval(() => {
+          if (!renderDivisionStep()) {
+            clearInterval(divisionTimer);
+            divisionTimer = null;
+          }
+        }, 520);
+      });
+
+      // 자릿값(왼쪽부터) 색상 팔레트
+      const BIT_COLORS = [
+        "#8b5cf6", "#3b82f6", "#22c55e", "#f59e0b",
+        "#ec4899", "#06b6d4", "#ef4444", "#a855f7",
+      ];
+
+      // ── 상태 ──
+      let mode = "dec2bin";
+      let bits = 4;
+      let answerMode = "switch";
+      let dir = "dec2bin";
+      let target = 0;
+      let bitVals = [];
+      let answered = false;
+      let showHint = false;
+      let score = 0, streak = 0, best = 0, solved = 0;
+
+      const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷" };
+      const superPow = (n) => String(n).split("").map((c) => SUP[c] || c).join("");
+      const spaceBinary = (bin) => bin.replace(/(.{4})(?=.)/g, "$1 ");
+
+      // ── 모드/난이도 선택 ──
+      modeSeg.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        mode = b.dataset.mode;
+        [...modeSeg.children].forEach((c) => c.classList.toggle("on", c === b));
+        newQuestion();
+      });
+      bitsSeg.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        bits = +b.dataset.bits;
+        [...bitsSeg.children].forEach((c) => c.classList.toggle("on", c === b));
+        newQuestion();
+      });
+      answerModeSeg.addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-answer-mode]");
+        if (!b) return;
+        answerMode = b.dataset.answerMode;
+        [...answerModeSeg.children].forEach((c) => {
+          const selected = c === b;
+          c.classList.toggle("on", selected);
+          c.setAttribute("aria-pressed", String(selected));
+        });
+        newQuestion();
+      });
+      hintBtn.addEventListener("click", () => {
+        showHint = !showHint;
+        hintBtn.textContent = showHint ? "🙈 합계 숨기기" : "💡 자릿값 합계 보기";
+        updateLiveSum();
+      });
+
+      // ── 새 문제 ──
+      function newQuestion() {
+        answered = false;
+        feedback.className = "feedback";
+        feedback.innerHTML = "";
+        submitBtn.style.display = "";
+        nextBtn.style.display = "none";
+        showHint = false;
+        hintBtn.textContent = "💡 자릿값 합계 보기";
+
+        dir = mode === "random" ? (Math.random() < 0.5 ? "dec2bin" : "bin2dec") : mode;
+        const maxV = (1 << bits) - 1;
+        target = Math.floor(Math.random() * (maxV + 1));
+
+        if (dir === "dec2bin") {
+          qLabel.textContent = answerMode === "switch"
+            ? `${target}이 되도록 자릿값 스위치를 켜보세요`
+            : `${target}을(를) 이진법으로 바꿔 입력해보세요`;
+          bigNum.textContent = target;
+        } else {
+          const bin = target.toString(2).padStart(bits, "0");
+          qLabel.textContent = answerMode === "switch"
+            ? "1인 자리의 스위치를 켜 십진수 합을 만들어보세요"
+            : "이 이진수를 십진수로 바꿔 입력해보세요";
+          bigNum.textContent = spaceBinary(bin);
+        }
+        renderAnswerMode();
+      }
+
+      function renderAnswerMode() {
+        const useSwitch = answerMode === "switch";
+        bitsPanel.style.display = useSwitch ? "" : "none";
+        textAnswerArea.style.display = useSwitch ? "none" : "";
+        answerInput.value = "";
+
+        if (useSwitch) {
+          buildBits();
+          quizFooterNote.innerHTML = `<kbd>Enter</kbd> 제출 / 다음 · 스위치를 눌러 <kbd>0</kbd>↔<kbd>1</kbd> 바꾸기`;
+        } else if (dir === "dec2bin") {
+          answerInputLabel.textContent = "이진수 정답 입력";
+          answerInput.placeholder = "예: 1001";
+          answerInput.maxLength = bits;
+          answerInputHelp.textContent = `0과 1만 입력하세요. 앞자리 0은 생략해도 됩니다. (최대 ${bits}자리)`;
+          quizFooterNote.innerHTML = `<kbd>Enter</kbd>로 제출 / 다음 · 이진수는 <kbd>0</kbd>과 <kbd>1</kbd>만 입력`;
+        } else {
+          answerInputLabel.textContent = "십진수 정답 입력";
+          answerInput.placeholder = "예: 13";
+          answerInput.maxLength = String((1 << bits) - 1).length;
+          answerInputHelp.textContent = `0부터 ${(1 << bits) - 1} 사이의 십진수를 입력하세요.`;
+          quizFooterNote.innerHTML = `<kbd>Enter</kbd>로 제출 / 다음 · 계산한 십진수를 직접 입력`;
+        }
+        if (!appViews.quiz.hidden) focusQuizAnswer();
+      }
+
+      function focusQuizAnswer() {
+        if (answerMode === "text") answerInput.focus();
+        else submitBtn.focus();
+      }
+
+      // 자릿값 토글 스위치 생성
+      function buildBits() {
+        bitVals = new Array(bits).fill(0);
+        bitsArea.innerHTML = "";
+        for (let i = 0; i < bits; i++) {
+          if (i > 0) {
+            const plus = document.createElement("div");
+            plus.className = "plus";
+            plus.textContent = "+";
+            bitsArea.appendChild(plus);
+          }
+          const power = bits - 1 - i;
+          const place = 1 << power;
+          const el = document.createElement("div");
+          el.className = "bit";
+          el.style.setProperty("--c", BIT_COLORS[i % BIT_COLORS.length]);
+          el.innerHTML =
+            `<div class="place">${place}</div>` +
+            `<button class="switch" data-i="${i}" aria-label="${place}의 자리"><span class="knob"></span></button>` +
+            `<div class="val">0</div>` +
+            `<div class="pow">2${superPow(power)}</div>`;
+          bitsArea.appendChild(el);
+        }
+        updateLiveSum();
+      }
+
+      bitsArea.addEventListener("click", (e) => {
+        const sw = e.target.closest(".switch");
+        if (!sw || answered) return;
+        const i = +sw.dataset.i;
+        flickSwitch(sw);
+        bitVals[i] = bitVals[i] ? 0 : 1;
+        const bit = sw.closest(".bit");
+        bit.classList.toggle("on", !!bitVals[i]);
+        bit.querySelector(".val").textContent = bitVals[i];
+        updateLiveSum();
+        submitBtn.focus(); // Enter=제출 유지 (Enter가 스위치 재토글하지 않게)
+      });
+
+      function currentBitSum() {
+        return bitVals.reduce((s, v, i) => s + (v ? 1 << (bits - 1 - i) : 0), 0);
+      }
+      function updateLiveSum() {
+        liveSum.textContent = showHint ? `현재 합계 = ${currentBitSum()}` : "";
+      }
+
+      function breakdown(value) {
+        const bin = value.toString(2).padStart(bits, "0");
+        const parts = [];
+        for (let i = 0; i < bits; i++) {
+          const power = bits - 1 - i;
+          if (bin[i] === "1") parts.push(1 << power);
+        }
+        return { bin, sum: parts.length ? parts.join(" + ") : "0" };
+      }
+
+      // ── 제출 / 채점 ──
+      function submit() {
+        if (answered) return;
+        let userVal;
+        if (answerMode === "switch") {
+          userVal = currentBitSum();
+        } else {
+          const typed = answerInput.value.trim();
+          if (typed === "") {
+            answerInput.focus();
+            return;
+          }
+          userVal = parseInt(typed, dir === "dec2bin" ? 2 : 10);
+        }
+        answered = true;
+        const correct = userVal === target;
+        solved++;
+        const { bin, sum } = breakdown(target);
+        if (correct) {
+          streak++;
+          best = Math.max(best, streak);
+          const gained = 10 + (streak - 1) * 2;
+          score += gained;
+          feedback.className = "feedback show ok";
+          feedback.innerHTML =
+            `🎉 정답! <b>+${gained}점</b> (연속 ${streak})` +
+            `<span class="calc">${target}(10) = ${sum} = ${spaceBinary(bin)}(2)</span>`;
+        } else {
+          streak = 0;
+          feedback.className = "feedback show no";
+          feedback.innerHTML =
+            `❌ 아쉬워요! 정답은 <b>${dir === "dec2bin" ? spaceBinary(bin) + "(2)" : target + "(10)"}</b>` +
+            `<span class="calc">${target}(10) = ${sum} = ${spaceBinary(bin)}(2)</span>`;
+          if (answerMode === "switch") revealBits();
+        }
+        updateStats();
+        submitBtn.style.display = "none";
+        nextBtn.style.display = "";
+        if (!appViews.quiz.hidden) nextBtn.focus();
+      }
+
+      // 오답 시 정답 스위치 표시
+      function revealBits() {
+        const bin = target.toString(2).padStart(bits, "0");
+        [...bitsArea.querySelectorAll(".bit")].forEach((bit, i) => {
+          const should = bin[i] === "1" ? 1 : 0;
+          bit.classList.add(bitVals[i] === should ? "ok" : "bad");
+        });
+      }
+
+      function updateStats() {
+        scoreEl.textContent = score;
+        streakEl.textContent = streak;
+        bestEl.textContent = best;
+        solvedEl.textContent = solved;
+      }
+
+      submitBtn.addEventListener("click", submit);
+      nextBtn.addEventListener("click", newQuestion);
+      answerInput.addEventListener("input", () => {
+        answerInput.value = dir === "dec2bin"
+          ? answerInput.value.replace(/[^01]/g, "").slice(0, bits)
+          : answerInput.value.replace(/\D/g, "").slice(0, String((1 << bits) - 1).length);
+      });
+      answerInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submit();
+      });
+
+      setupBirthdayIcebreaker();
+      renderLearn(13);
+      resetMission(37);
+      convDecimal.value = 42;
+      convBinary.value = "00101010";
+      renderConverter(42);
+      newQuestion();
+      updateStats();
+    </script>
+  <style>*,*::before,*::after{animation:none!important;transition:none!important}</style><script>window.addEventListener('load',function(){var b=document.querySelector('[data-view="learn"]');if(b)b.click();setTimeout(function(){window.scrollTo(0,0);},600);});</script></body>
+</html>

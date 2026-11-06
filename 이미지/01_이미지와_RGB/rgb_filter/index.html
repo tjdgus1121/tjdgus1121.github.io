@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사진 필터와 RGB | 모션그래픽 보기 · 체험하기</title>
+<meta name="description" content="사진 필터는 숫자 계산입니다. 밝기·대비·채도·색 조정을 R·G·B 숫자로 따라가는 모션그래픽을 보고, 사진을 R·G·B 채널로 나눠 직접 체험해 봅니다.">
+<meta name="author" content="황성현">
+<meta property="og:title" content="사진 필터와 RGB — 모션그래픽 보기 · 체험하기">
+<meta property="og:description" content="밝기·대비·채도는 R·G·B 숫자를 어떻게 바꿀까? 원리를 보고 직접 체험해 봅니다.">
+<meta property="og:image" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/rgb_filter/thumb_motion.jpg">
+<meta property="og:url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/rgb_filter/index.html">
+<meta property="og:type" content="website">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/rgb_filter/index.html">
+<link rel="icon" href="../../../favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+  integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="../../../stylefooter.css">
+<link rel="stylesheet" href="../../../nav.css">
+<script src="../../../nav.js"></script>
+<style>
+  :root{--ink:#1f1e24;--sub:#6a6873;--line:#e4e0d6}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#F6F5F2;color:var(--ink);font-family:'Noto Sans KR','Malgun Gothic',sans-serif}
+  .hub{max-width:1080px;margin:0 auto;padding:64px 24px 72px}
+  .crumb{font-size:14px;color:var(--sub);margin:0}
+  .crumb a{color:var(--sub)}
+  .hub h1{font-size:clamp(36px,5.4vw,56px);letter-spacing:-.03em;line-height:1.12;margin:12px 0 14px}
+  .lead{font-size:clamp(18px,2.2vw,22px);color:#4a4852;margin:0 0 40px}
+  .paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+  /* ── 카드 입체감: 두께 + 깊은 그림자, 마우스를 따라 3D로 기울고 빛이 비침 ── */
+  .paths{perspective:1100px}
+  .path{position:relative;display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid rgba(20,20,30,.07);border-radius:18px;overflow:hidden;
+        transform-style:preserve-3d;will-change:transform;
+        box-shadow:0 1px 2px rgba(20,20,30,.08),0 4px 10px rgba(20,20,30,.06),0 18px 36px -14px rgba(20,20,30,.24);
+        transition:transform .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s cubic-bezier(.2,.8,.2,1)}
+  .path::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .25s;
+        background:radial-gradient(circle at var(--gx,50%) var(--gy,0%),rgba(255,255,255,.55),rgba(255,255,255,0) 55%)}
+  .path.tilt{transition:transform .08s linear,box-shadow .08s linear}
+  .path.tilt::after{opacity:1}
+  .path:active{transform:translateY(2px) !important;box-shadow:0 1px 2px rgba(20,20,30,.1),0 3px 8px rgba(20,20,30,.08) !important}
+  .path:focus-visible{outline:3px solid #2F5FA8;outline-offset:6px}
+  .thumb{aspect-ratio:16/9;overflow:hidden;background:#ece8de;box-shadow:inset 0 -1px 0 rgba(40,30,10,.08)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+  .path.tilt .thumb img,.path:hover .thumb img{transform:scale(1.04)}
+  .cap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 26px 24px}
+  .cap h2{margin:0;font-size:26px;letter-spacing:-.02em}
+  .cap p{margin:6px 0 0;font-size:16px;color:var(--sub)}
+  .go{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700;background:var(--c);
+       box-shadow:inset 0 2px 0 rgba(255,255,255,.28),inset 0 -3px 0 rgba(0,0,0,.18),0 4px 10px -3px rgba(0,0,0,.35);transition:transform .2s ease}
+  .path:hover .go{transform:translateX(3px)}
+  @media (max-width:760px){.paths{grid-template-columns:minmax(0,1fr)}.hub{padding:68px 16px 48px}.lead{margin-bottom:28px}}
+  @media (prefers-reduced-motion:reduce){.path,.path:active,.go,.path:hover .go,.thumb img{transition:none;transform:none !important}}
+</style>
+</head>
+<body>
+  <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0"><i class="fas fa-bars"></i></div>
+  <aside class="sidebar">
+    <nav>
+      <div class="nav-sec">시작</div>
+      <a href="../../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+      <a href="../../01_이미지와_RGB/activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+      <div class="nav-sec">색과 이미지</div>
+      <a href="../../01_이미지와_RGB/activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+      <a href="../../01_이미지와_RGB/activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+      <a href="../../01_이미지와_RGB/activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+      <a href="index.html" class="active"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+      <a href="../../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+      <a href="../../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+      <div class="nav-sec">행렬 연산</div>
+      <a href="../../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+      <a href="../../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+      <div class="nav-sec">데이터와 인식</div>
+      <a href="../../03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+      <a href="../../03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+      <a href="../../03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+      <a href="../../03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+      <div class="nav-sec">AI 이미지 기술</div>
+      <a href="../../04_이미지확대와_복원/interpolation/index.html"><i class="fa fa-expand"></i><span>이미지 보간법</span></a>
+      <a href="../../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+      <a href="../../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+      <a href="../../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+      <a href="../../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+      <a href="../../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+      <div class="nav-sec">CNN과 군집화</div>
+      <a href="../../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+      <a href="../../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+    </nav>
+  </aside>
+
+  <main class="hub">
+    <p class="crumb"><a href="../../indeximage.html">이미지 수업</a> · 색과 이미지</p>
+    <h1>사진 필터는 숫자 계산</h1>
+    <p class="lead">밝기·대비·채도 버튼은 R·G·B 숫자를 어떻게 바꿀까?</p>
+    <section class="paths" aria-label="활동 고르기">
+      <a class="path" href="motion.html" style="--c:#6a4fd8">
+        <div class="thumb"><img src="thumb_motion.jpg" width="960" height="540" alt="" loading="lazy"></div>
+        <div class="cap"><div><h2>▶ 모션그래픽 보기</h2><p>필터 계산을 한 단계씩 · 7분 40초</p></div><span class="go" aria-hidden="true">→</span></div>
+      </a>
+      <a class="path" href="../activity4_rgb_channels.html" style="--c:#0d9488">
+        <div class="thumb" style="background:#fffcf1"><img src="../../../assets/home/homepageimage4.png" width="960" height="540" alt="" style="object-fit:contain" loading="lazy"></div>
+        <div class="cap"><div><h2>체험하기</h2><p>내 사진을 R·G·B 채널로 나눠 보기</p></div><span class="go" aria-hidden="true">→</span></div>
+      </a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+        <div class="creator-info">Designed &amp; Developed by <span>황성현</span><br>Contact : tjdgus1121@naver.com</div>
+      </div>
+      <div class="social-links">
+        <a href="mailto:tjdgus1121@naver.com" aria-label="메일 보내기"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener"><img src="../../../assets/branding/naver.png" alt="네이버 메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';"></a>
+      </div>
+      <div class="copyright">
+        이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+        다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+      </div>
+    </div>
+  </footer>
+  <script>document.getElementById('current-year').textContent=new Date().getFullYear();</script>
+<script>
+/* 카드 3D 기울기: 마우스(정밀 포인터)에서만, '움직임 줄이기'면 끔 */
+(function () {
+  if (!matchMedia('(hover: hover) and (pointer: fine)').matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var MAX = 9;
+  document.querySelectorAll('.path').forEach(function (c) {
+    c.addEventListener('pointermove', function (e) {
+      var r = c.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+      var rx = (0.5 - py) * MAX * 2, ry = (px - 0.5) * MAX * 2, sx = (0.5 - px) * 26, sy = 18 + (0.5 - py) * 10;
+      c.classList.add('tilt');
+      c.style.transform = 'translateY(-8px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
+      c.style.boxShadow = '0 2px 4px rgba(20,20,30,.08),' + (sx * .5).toFixed(1) + 'px 10px 18px rgba(20,20,30,.1),' + (sx * 1.4).toFixed(1) + 'px ' + (sy * 2).toFixed(1) + 'px 52px -14px rgba(20,20,30,.32)';
+      c.style.setProperty('--gx', (px * 100).toFixed(1) + '%'); c.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+    });
+    c.addEventListener('pointerleave', function () { c.classList.remove('tilt'); c.style.transform = ''; c.style.boxShadow = ''; });
+  });
+})();
+</script>
+</body>
+</html>

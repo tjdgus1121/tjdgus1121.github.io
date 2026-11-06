@@ -1,0 +1,280 @@
+/* quiz-theme.css — 이차함수 복습 앱과 같은 결의 화면 테마
+ *
+ * 따뜻한 종이색 바탕 + 아주 흐린 모눈, 굵은 남색 테두리와 아래로 떨어지는
+ * 납작한 그림자(번짐 없음)로 "스티커를 붙여 놓은 학습지" 느낌을 만든다.
+ * 페이지마다 클래스 이름이 달라, 각 페이지의 카드·버튼 선택자를 함께 적어 둔다.
+ */
+
+:root {
+  --paper: #FFFCF2;
+  --card: #FFFDF7;
+  --ink: #33304B;
+  --ink-soft: #5B5675;
+  --rule: #E0CFA8;
+  --edge: #3B3557;
+  --coral: #EE6C2B;
+  --sun: #FFC43D;
+  --teal: #1272A0;
+  --sage: #23874A;
+  --rose: #D8355A;
+  --blob: 20px;
+}
+
+/* ── 바탕 ──────────────────────────────────────────────────
+   기본은 무늬 없는 따뜻한 종이색. 무늬는 페이지 성격에 맞춰 따로 준다.
+   무늬를 넣을 때는 background-attachment:fixed 로 화면에 고정한다.
+   그러지 않으면 스크롤할 때 무늬가 함께 흘러 눈이 어지럽다. */
+html, body {
+  background-color: var(--paper) !important;
+  background-image: none !important;
+  color: var(--ink);
+  /* 배경을 움직이는 애니메이션이 남아 있어도 무늬가 흐르지 않도록 못박는다 */
+  animation: none !important;
+  background-position: 0 0 !important;
+}
+
+/* 손글씨 인식 — 공책에 글씨를 쓰는 활동이라 가로줄만 옅게 */
+body.theme-mnist {
+  --coral: #EE6C2B;
+  background-image: repeating-linear-gradient(
+      to bottom, transparent 0 33px, rgba(59, 53, 87, .045) 33px 34px) !important;
+  background-attachment: fixed !important;
+}
+
+/* 28×28 행렬 변환 — 픽셀을 다루는 활동이라 네모 칸을 크고 아주 흐리게 */
+body.theme-pixel {
+  --coral: #1272A0;            /* 주 색을 청록으로 : 이진·격자의 차분한 느낌 */
+  background-image:
+    linear-gradient(rgba(18, 114, 160, .05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 114, 160, .05) 1px, transparent 1px) !important;
+  background-size: 56px 56px !important;
+  background-attachment: fixed !important;
+}
+
+/* 해밍 거리 — 둘을 견주어 보는 활동이라 점을 성기게 */
+body.theme-compare {
+  --coral: #5B4BC4;            /* 주 색을 남보라로 : 비교·판정의 또렷한 느낌 */
+  background-image: radial-gradient(rgba(91, 75, 196, .10) 1.4px, transparent 1.5px) !important;
+  background-size: 46px 46px !important;
+  background-attachment: fixed !important;
+}
+
+/* 무늬는 장식일 뿐이라, 부담되는 환경에서는 없앤다.
+   화면에 고정된 배경은 작은 기기에서 스크롤을 무겁게 만든다. */
+@media (max-width: 700px), (prefers-reduced-motion: reduce) {
+  body.theme-mnist, body.theme-pixel, body.theme-compare {
+    background-image: none !important;
+    background-attachment: scroll !important;
+  }
+}
+
+h1, h2, h3 { color: var(--ink); }
+h1 { letter-spacing: -.01em; }
+
+/* ── 카드 : 굵은 테두리 + 납작한 그림자 ───────────────────────── */
+.mnist-app,
+.mnist-app__loading-container,
+.mnist-app__results,
+.debug-images-container,
+.container,
+.matrix-container,
+.matrix-display,
+.numeric-matrix,
+.compact-matrix,
+.matrix-card,
+.mini-demo-area,
+.ref-card,
+.concept-example-wrap,
+.concept-panel,
+.canvas-box,
+.preview-box {
+  background: var(--card) !important;
+  border: 2.5px solid var(--edge) !important;
+  border-radius: var(--blob) !important;
+  box-shadow: 0 4px 0 var(--edge) !important;   /* 번짐 없는 납작한 그림자 */
+  /* 테두리 두께가 폭에 더해져 화면 밖으로 밀리지 않도록 */
+  /* box-sizing 만으로 테두리 넘침이 해결된다.
+     max-width 를 여기서 정하면 페이지마다 정해 둔 폭을 덮어써 버린다. */
+  box-sizing: border-box !important;
+}
+
+/* 카드 안에 카드가 들어가면 한 겹만 남겨 층이 깊어지지 않게 한다 */
+.container .matrix-display,
+.matrix-container .numeric-matrix,
+.concept-panel .canvas-box,
+.mini-demo-area .small-grid {
+  box-shadow: none !important;
+  border-width: 2px !important;
+}
+
+/* ── 버튼 : 알약 모양, 누르면 실제로 눌린다 ────────────────────── */
+.mnist-app__button,
+.clear-btn,
+.mode-btn,
+.tab-btn,
+.cta-btn,
+.mini-demo-btn,
+.new-sample-btn,
+.button-column button {
+  border: 2.5px solid var(--edge) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 0 var(--edge) !important;
+  font-weight: 800 !important;
+  min-height: 42px;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+
+.mnist-app__button:hover,
+.clear-btn:hover,
+.mode-btn:hover,
+.tab-btn:hover,
+.cta-btn:hover,
+.mini-demo-btn:hover,
+.new-sample-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 var(--edge) !important;
+}
+
+.mnist-app__button:active,
+.clear-btn:active,
+.mode-btn:active,
+.tab-btn:active,
+.cta-btn:active,
+.mini-demo-btn:active,
+.new-sample-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--edge) !important;
+}
+
+/* 주 동작은 산호색, 되돌리는 동작은 장미색 — 색만이 아니라 위치와 글로도 구분된다 */
+.mnist-app__button--predict,
+.cta-btn,
+.mode-btn.active,
+.tab-btn.active {
+  background: var(--coral) !important;
+  color: #fff !important;
+}
+
+.mnist-app__button--clear,
+.clear-btn {
+  background: var(--card) !important;
+  color: var(--rose) !important;
+}
+
+.mnist-app__button:disabled,
+.mode-btn:disabled,
+.tab-btn:disabled {
+  opacity: .45;
+  box-shadow: 0 2px 0 var(--edge) !important;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* ── 그림판 : 테두리 대신 outline 을 쓴다 ──────────────────────
+   canvas 에 border 를 주면 좌표 계산이 테두리 두께만큼 밀려
+   그림이 커서와 어긋난다. outline 은 배치에 영향을 주지 않는다. */
+canvas {
+  background: #fff;
+  outline: 2.5px solid var(--edge);
+  border-radius: 12px;
+}
+
+/* 기록 목록 안의 작은 미리보기에는 테두리를 주지 않는다 */
+.history-item canvas,
+.debug-images-container canvas {
+  outline: none;
+  border-radius: 6px;
+}
+
+/* ── 입력칸 ───────────────────────────────────────────────── */
+input[type="text"], input[type="number"], select {
+  border: 2.5px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+  min-height: 42px;
+  padding: 7px 10px;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
+  outline: none;
+  border-color: var(--coral);
+  box-shadow: 0 0 0 4px rgba(238, 108, 43, .22);
+}
+
+:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mnist-app__button, .clear-btn, .mode-btn,
+  .tab-btn, .cta-btn, .mini-demo-btn, .new-sample-btn { transition: none; }
+}
+
+/* ── 설명 패널 : 파란 계열이 따뜻한 바탕과 겉돌아 볕색으로 맞춘다 ── */
+.concept-card,
+.instructions,
+.legend,
+.info-box {
+  background: #FFF6E0 !important;
+  border: 2.5px solid var(--rule) !important;
+  border-left: 7px solid var(--sun) !important;
+  border-radius: var(--blob) !important;
+  box-sizing: border-box !important;
+  color: var(--ink);
+}
+.concept-card h2, .instructions h3 { color: var(--coral); }
+
+/* 다른 활동으로 넘어가는 버튼 — 주 동작(산호색)과 구별되게 청록으로 */
+.perc-toggle-btn,
+.cta-btn-perc {
+  background: var(--teal) !important;
+  color: #fff !important;
+  border: 2.5px solid var(--edge) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 0 var(--edge) !important;
+  font-weight: 800 !important;
+  min-height: 42px;
+  padding: 9px 18px;
+  cursor: pointer;
+}
+.perc-toggle-btn:active, .cta-btn-perc:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--edge) !important;
+}
+
+/* ── 인식 기록 : 숫자가 주인공, 칸은 뒤로 물러나게 ────────────────
+   항목이 열몇 개씩 쌓이는 자리라, 하나하나에 테두리와 그림자를 주면
+   글씨보다 상자가 먼저 보인다. 칸은 얇은 선 하나로만 구분한다. */
+.history-item {
+  border: 1px solid #E8E2D2 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  padding: 7px 7px 5px !important;
+  gap: 3px;
+}
+
+.history-item:hover { border-color: var(--coral) !important; }
+
+/* 손글씨를 키워 무엇을 썼는지 한눈에 보이게 */
+.history-item canvas {
+  width: 54px !important;
+  height: 54px !important;
+}
+
+/* "예측: 5" — 숫자가 라벨보다 눈에 띄어야 한다 */
+.history-item div {
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+  color: var(--ink-soft) !important;
+  letter-spacing: -.01em;
+}
+
+/* 바깥 상자는 테두리 한 겹만 남긴다 */
+.debug-images-container {
+  box-shadow: none !important;
+  border-width: 2px !important;
+  padding: 10px !important;
+}

@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🔍 SEO (검색엔진 최적화) -->
+    <meta name="description" content="마우스로 그림 패턴을 직접 만들고, 이를 0과 1로 이루어진 이진 행렬로 변환하여 시각화하는 인공지능 수학 체험 활동입니다. 시각적 정보가 숫자로 어떻게 표현되는지 탐구해 보세요.">
+    <meta name="keywords" content="이진 행렬, 그림 패턴, 행렬 시각화, 인공지능 수학, 수학 체험, 교육 활동, 픽셀 아트, 바이너리 매트릭스">
+    <meta name="author" content="황성현">
+    <meta name="google-site-verification" content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8" />
+    <meta name="naver-site-verification" content="c020330e12eea0ae1a60707941a61b11590df69" />
+
+    <!-- 📱 SNS 공유 (Open Graph) -->
+    <meta property="og:title" content="이진 행렬 그림 패턴 활동 - 인공지능 수학 탐구">
+    <meta property="og:description" content="마우스로 그림을 그리고 이를 이진 행렬로 변환하여 시각화하는 인공지능 수학 체험 활동.">
+    <meta property="og:image" content="https://tjdgus1121.github.io/thumbnail.png">
+    <meta property="og:url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/activity1_intro.html">
+    <meta property="og:type" content="website">
+
+    <!-- 🔍 SEO (추가 메타데이터) -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/activity1_intro.html">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="이진 행렬 그림 패턴 활동">
+    <meta name="twitter:description" content="그림 패턴을 이진 행렬로 변환하며 시각적 정보의 수치화 원리를 탐구하는 교육 활동.">
+    <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
+
+    <meta name="subject" content="AI 수학 교육 체험">
+    <meta name="theme-color" content="#ff9a9e">
+    <meta name="copyright" content="황성현">
+    <meta name="reply-to" content="tjdgus1121@naver.com">
+    <meta name="url" content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/activity1_intro.html">
+
+    <title>패턴을 행렬로 표현하기 | 인공지능 수학 웹앱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="../../stylefooter.css">
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&family=Gamja+Flower&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon">
+    <link rel="prefetch" href="../../인공지능과%20빅데이터/09_기초연습/binary_game.html">
+    <link rel="stylesheet" href="../../nav.css">
+  <script src="../../backguard.js"></script>
+    <script src="../../nav.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #2d2d2d;
+            margin-bottom: 8px;
+            font-family: 'Do Hyeon', sans-serif;
+            font-weight: 400;
+            font-size: 3.2em;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
+        .titleh2{
+            color:#4f4f4f;
+            padding:12px 28px;
+            background:linear-gradient(90deg,#b1cafad0 50%,#83baf2d6 100%);
+            border-radius:8px;
+            font-size:1.15em;
+            margin:0 auto 24px auto;
+            text-align:center;
+            box-shadow:0 2px 8px rgba(80,80,120,0.07);
+            max-width:1000px;
+        }
+        .main-content-wrapper {
+            background: rgba(255,255,255,0.92);
+            border-radius: 28px;
+            padding: 40px 28px 36px 28px;
+            margin: 36px auto 28px auto;
+            box-shadow: 0 8px 32px rgba(80, 80, 120, 0.10), 0 1.5px 0 rgba(80,80,120,0.03);
+            width: 100%;
+            max-width: 1300px;
+            box-sizing: border-box;
+            border: 1.5px solid #e3e8f0;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .patterns-section {
+            margin-top: 0;
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(245,247,250,0.92);
+            border-radius: 18px;
+            padding: 32px 22px 22px 22px;
+            box-shadow: 0 2px 12px rgba(80,80,120,0.07);
+            margin-bottom: 36px;
+            border: 1.2px solid #e3e8f0;
+        }
+        .patterns-section h2 {
+            font-size: 1.3em;
+            color: #3b3b3b;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .patterns-section p{
+            text-align: center;
+            color: #666;
+            margin-bottom: 18px;
+        }
+        .pattern-gallery {
+            display: flex;
+            overflow-x: auto;
+            gap: 18px;
+            padding: 10px 0 4px 0;
+            justify-content: center;
+            scrollbar-width: thin;
+            scrollbar-color: #b3b3e6 #f1f5ff;
+        }
+        .pattern-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 12px 10px 10px 10px;
+            border-radius: 12px;
+            background: #f8fafc;
+            box-shadow: 0 2px 8px rgba(80,80,120,0.07);
+            transition: all 0.25s cubic-bezier(.4,0,.2,1);
+            border: 2px solid transparent;
+        }
+        .pattern-item:hover {
+            background: #e0e7ff;
+            border: 2px solid #667eea;
+            transform: translateY(-4px) scale(1.04);
+            box-shadow: 0 8px 24px rgba(102,126,234,0.13);
+        }
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(15, 10px);
+            grid-template-rows: repeat(15, 10px);
+            gap: 1px;
+            border: 1.5px solid #b3b3e6;
+            background-color: #b3b3e6;
+            width: 167px;
+            height: 167px;
+            border-radius: 8px;
+            margin-bottom: 7px;
+            overflow: hidden;
+        }
+        .pattern-cell {
+            background-color: #fff;
+            width: 10px;
+            height: 10px;
+            transition: background 0.2s;
+        }
+        .pattern-cell.black {
+            background: #222;
+        }
+        .pattern-name {
+            margin-top: 6px;
+            font-size: 15px;
+            color: #444;
+            text-align: center;
+            font-weight: 500;
+        }
+        .container {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            justify-content: center;
+            gap: 24px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .instructions-container {
+            background: rgba(245,247,250,0.92);
+            border-radius: 16px;
+            padding: 20px 14px;
+            box-shadow: 0 2px 10px rgba(80,80,120,0.07);
+            flex: 0 0 140px;
+            width: 140px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1.2px solid #e3e8f0;
+        }
+        .instructions-container h2 {
+            color: #3b3b3b;
+            font-size: 0.88em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .filelink{
+            text-decoration: none;
+            color:white;
+        }
+        .instructions-container p {
+            color: #555;
+            font-size: 0.82em;
+            line-height: 1.5;
+        }
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 500px;
+            background: rgba(255,255,255,0.96);
+            border-radius: 16px;
+            padding: 28px 20px 20px 20px;
+            box-shadow: 0 2px 10px rgba(80,80,120,0.07);
+            border: 1.2px solid #e3e8f0;
+        }
+        .grid-container h2 {
+            color: #3b3b3b;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 2px;
+            border: 2px solid #b3b3e6;
+            background-color: #b3b3e6;
+            width: 100%;
+            max-width: 500px;
+            min-width: 300px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(80,80,120,0.05);
+        }
+        .cell {
+            aspect-ratio: 1/1;
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.18s, box-shadow 0.18s;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(80,80,120,0.03);
+            min-width: 0;
+            min-height: 0;
+        }
+        .cell.black {
+            background: #222;
+            box-shadow: 0 2px 8px rgba(34,34,34,0.13);
+        }
+        .cell:hover {
+            background: #e0e7ff;
+        }
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            padding: 11px 22px;
+            background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.08em;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+            transition: all 0.22s cubic-bezier(.4,0,.2,1);
+        }
+        button:hover {
+            background: linear-gradient(135deg,#764ba2 0%,#667eea 100%);
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 8px 24px rgba(102,126,234,0.13);
+        }
+        .footer-related-title {
+            margin: 14px 0 10px;
+            color: #fff;
+            font-family: 'Jua', sans-serif;
+            font-size: 1.08rem;
+            font-weight: 400;
+            text-align: center;
+        }
+        .sitename {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-left: 0 !important;
+        }
+        .sitename .footer-game-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 44px;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 9px 13px;
+            color: #fff;
+            background: rgba(69, 78, 78, 0.38);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            text-decoration: none;
+            font-family: 'Jua', sans-serif;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.2;
+            transition: transform 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+        }
+        .sitename .footer-game-link:hover,
+        .sitename .footer-game-link:focus-visible {
+            color: #fff;
+            background: rgba(55, 64, 64, 0.68);
+            border-color: rgba(255, 255, 255, 0.22);
+            transform: translateY(-2px);
+        }
+        .sitename .footer-game-link:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 3px;
+        }
+        .sitename .footer-game-link:active {
+            transform: translateY(0) scale(0.97);
+            transition-duration: 0.04s;
+        }
+        .matrix-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 500px;
+            background: rgba(255,255,255,0.96);
+            border-radius: 16px;
+            padding: 28px 28px 28px 28px;
+            box-shadow: 0 2px 10px rgba(80,80,120,0.07);
+            border: 1.2px solid #e3e8f0;
+            overflow: visible;
+        }
+        .matrix-container h2 {
+            color: #3b3b3b;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 0;
+            background: transparent;
+            border: none;
+            width: 100%;
+            max-width: 500px;
+            min-width: 300px;
+        }
+        .matrix-cell {
+            aspect-ratio: 1 / 1;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+            font-size: clamp(0.65rem, 1.8vw, 1.05rem);
+            font-weight: 700;
+            color: #94A3B8;
+            min-width: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .matrix-cell.is-zero {
+            color: #1E293B;
+        }
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+                gap: 24px;
+            }
+            .main-content-wrapper {
+                padding: 18px 4vw 18px 4vw;
+            }
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                flex-wrap: wrap;
+                gap: 18px;
+            }
+            .instructions-container {
+                flex: unset;
+                width: 100%;
+                max-width: 100%;
+            }
+            .grid-container, .matrix-container {
+                flex: unset;
+                width: 100%;
+                max-width: 100%;
+            }
+            .main-content-wrapper {
+                padding: 10px 2vw 10px 2vw;
+            }
+            .grid, .matrix {
+                max-width: 340px;
+                min-width: 240px;
+            }
+            .pattern-grid {
+                width: 60px;
+                height: 60px;
+            }
+        }
+        @media (max-width: 480px) {
+            .main-content-wrapper {
+                padding: 2vw 0 2vw 0;
+            }
+            .patterns-section {
+                padding: 12px 2vw 10px 2vw;
+            }
+            .sitename .footer-game-link {
+                width: auto;
+            }
+        }
+        @media (min-width: 900px) {
+            .grid, .matrix {
+                max-width: 520px;
+            }
+        }
+    </style>
+<style>
+
+/* === bracket-wrap: curved ( ) — 괄호가 matrix 콘텐츠 바깥으로 돌출 === */
+.bracket-wrap{
+  position: relative;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0; /* matrix 너비를 줄이지 않음 */
+  overflow: visible;
+}
+
+.bracket-wrap::before,
+.bracket-wrap::after{
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 1;
+
+  border: 4px solid #2d2d2d;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50% / 40%;
+}
+
+/* Left bracket ( — matrix 왼쪽 바깥으로 돌출 */
+.bracket-wrap::before{
+  left: -26px;
+  border-right-color: transparent;
+}
+
+/* Right bracket ) — matrix 오른쪽 바깥으로 돌출 */
+.bracket-wrap::after{
+  right: -26px;
+  border-left-color: transparent;
+}
+
+</style>
+</head>
+<body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+      </div>
+
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-sec">시작</div>
+            <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html" class="active"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+            <a href="activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
+            <a href="../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="../03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
+            <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
+            <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
+
+    <h1>패턴을 행렬로 표현하기</h1>
+    <h2 class="titleh2">패턴을 마우스로 클릭해보고, 표시된 행렬을 탐구하며, 어떤 규칙이 있는지 알아봅시다.</h2>
+    
+    <!-- 전체 콘텐츠를 감싸는 새로운 래퍼 추가 -->
+    <div class="main-content-wrapper">
+        <div class="patterns-section">
+            <h2>샘플 패턴</h2>
+            <p>아래 패턴을 클릭하면 아래 15X15 행렬에 적용됩니다.</p>
+            <div class="pattern-gallery" id="pattern-gallery">
+                <!-- Patterns will be added here by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="container">
+            <!-- 새로운 설명 div 추가 -->
+            <div class="instructions-container">
+                <h2>마우스를 직접 클릭해서도<br>패턴을 만들 수 있어요➡️</h2>
+                <p>원하는 칸을 클릭하여 검은색으로 채우거나 다시 클릭하여 하얀색으로 되돌릴 수 있습니다. 나만의 패턴을 자유롭게 만들어보세요!➡️</p>
+            </div>
+
+            <div class="grid-container">
+                <h2>15×15 행렬</h2>
+                <div class="grid" id="grid"></div>
+            </div>
+
+            <div class="matrix-container">
+                <h2>이진행렬</h2>
+                <div class="matrix" id="matrix"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button type="button" id="showMatrix">행렬 표시</button>
+            <button type="button" id="clearGrid">초기화</button>
+        </div>
+    </div> <!-- main-content-wrapper 닫기 -->
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트<a class="filelink" href="https://drive.google.com/file/d/1-UK3dqbXkGffI4GumA5IgXmUYIiBzNCx/view?usp=sharing" target="blank">(체험파일)</a>
+                <a href="https://padlet.com/usezizon/11-29-ib4c9oj9qntz4z4l" target="_blank" style="text-decoration:none; color: inherit;">11. 29 패들렛</a></div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link" aria-label="이메일 보내기"><i class="fa-solid fa-envelope" aria-hidden="true"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="../../assets/branding/naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+                <p class="footer-related-title">수업 관련 사이트</p>
+                <div class="sitename">
+                    <a class="footer-game-link" href="../../인공지능과%20빅데이터/09_기초연습/binary_game.html">
+                        이진법 체험하기 <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+        </div>
+    </footer>
+    <script>
+        let model; // 모델 변수는 유지하되, 로드 코드는 비활성화
+        let showMatrixBtn; // 버튼 요소를 저장할 변수 추가
+        
+        // 모델 로드 함수 (현재 비활성화)
+        async function loadModel() {
+            // 모델 로드 기능이 현재 비활성화되었으므로, 버튼을 바로 활성화
+             if (showMatrixBtn) {
+                 showMatrixBtn.disabled = false;
+                 showMatrixBtn.textContent = '행렬 표시';
+             }
+             // 모델이 없음을 콘솔에 기록
+             console.warn('모델 로드 기능이 현재 비활성화되어 있습니다.');
+        }
+
+        // 페이지 로드 시 모델 로드 및 버튼 참조
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('grid');
+            const matrixDisplay = document.getElementById('matrix');
+            showMatrixBtn = document.getElementById('showMatrix');
+            const clearGridBtn = document.getElementById('clearGrid');
+            const patternGallery = document.getElementById('pattern-gallery');
+            
+
+            // 모델 로드 시작 (실제 로드는 비활성화됨)
+            loadModel();
+
+            // 그리드 셀 & 행렬 셀을 동시에 생성 (인덱스 1:1 대응)
+            const matCells = [];
+
+            for (let i = 0; i < 15 * 15; i++) {
+                // 행렬 셀 미리 생성
+                const matCell = document.createElement('div');
+                matCell.className = 'matrix-cell';
+                matCell.textContent = '1';
+                matrixDisplay.appendChild(matCell);
+                matCells.push(matCell);
+
+                // 그리드 셀 생성
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', function() {
+                    this.classList.toggle('black');
+                    const isBlack = this.classList.contains('black');
+                    matCells[i].className = 'matrix-cell' + (isBlack ? ' is-zero' : '');
+                    matCells[i].textContent = isBlack ? '0' : '1';
+                });
+                grid.appendChild(cell);
+            }
+
+            // 행렬 표시 버튼 — 전체 재동기화 (실시간 연동 보조)
+            showMatrixBtn.addEventListener('click', function() {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach((cell, idx) => {
+                    const isBlack = cell.classList.contains('black');
+                    matCells[idx].className = 'matrix-cell' + (isBlack ? ' is-zero' : '');
+                    matCells[idx].textContent = isBlack ? '0' : '1';
+                });
+            });
+
+            // 초기화
+            clearGridBtn.addEventListener('click', function() {
+                document.querySelectorAll('.cell').forEach((cell, idx) => {
+                    cell.classList.remove('black');
+                    matCells[idx].className = 'matrix-cell';
+                    matCells[idx].textContent = '1';
+                });
+            });
+            
+            // Define some preset patterns
+            const patterns = [
+                {
+                    name: "계단",
+                    grid: (function(){
+                        const arr = Array.from({length: 15}, () => Array(15).fill(0));
+                        for(let i=0;i<15;i++) for(let j=0;j<=i;j++) arr[i][j]=1;
+                        return arr;
+                    })()
+                },
+                {
+                    name: "체스판",
+                    grid: (function(){
+                        const arr = Array.from({length: 15}, () => Array(15).fill(0));
+                        for(let i=0;i<15;i++) for(let j=0;j<15;j++) arr[i][j] = (i+j)%2;
+                        return arr;
+                    })()
+                },
+                {
+                    name: "십자가",
+                    grid: (function(){
+                        const arr = Array.from({length: 15}, () => Array(15).fill(0));
+                        for(let i=0;i<15;i++){
+                            for(let j=6;j<=8;j++) arr[i][j]=1; // 세로줄
+                            for(let j=6;j<=8;j++) arr[j][i]=1; // 가로줄
+                        }
+                        return arr;
+                    })()
+                },
+                {
+                    name: "테두리",
+                    grid: (function(){
+                        const arr = Array.from({length: 15}, () => Array(15).fill(0));
+                        for(let i=0;i<15;i++) for(let j=0;j<15;j++) arr[i][j] = (i===0||i===14||j===0||j===14 ? 1 : 0);
+                        return arr;
+                    })()
+                },
+                {
+                    name: "원",
+                    grid: (function(){
+                        const arr = Array.from({length: 15}, () => Array(15).fill(0));
+                        for(let i=0;i<15;i++){
+                            for(let j=0;j<15;j++){
+                                const d = Math.sqrt((i-7)*(i-7)+(j-7)*(j-7));
+                                if(d>=5.5 && d<=7.5) arr[i][j]=1;
+                            }
+                        }
+                        return arr;
+                    })()
+                }
+            ];
+            
+            // Create pattern gallery
+            patterns.forEach((pattern, index) => {
+                const patternItem = document.createElement('div');
+                patternItem.className = 'pattern-item';
+                patternItem.dataset.patternIndex = index;
+                
+                const patternGrid = document.createElement('div');
+                patternGrid.className = 'pattern-grid';
+                
+                // Create small preview grid
+                for (let i = 0; i < 15; i++) {
+                    for (let j = 0; j < 15; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'pattern-cell';
+                        if (pattern.grid[i][j] === 1) {
+                            cell.classList.add('black');
+                        }
+                        patternGrid.appendChild(cell);
+                    }
+                }
+                
+                const patternName = document.createElement('div');
+                patternName.className = 'pattern-name';
+                patternName.textContent = pattern.name;
+                
+                patternItem.appendChild(patternGrid);
+                patternItem.appendChild(patternName);
+                
+                patternItem.addEventListener('click', function() {
+                    applyPattern(pattern.grid);
+                });
+                
+                patternGallery.appendChild(patternItem);
+            });
+            
+            // 패턴 적용 — 그리드 & 행렬 동시 업데이트
+            function applyPattern(patternGrid) {
+                clearGridBtn.click(); // 초기화 (그리드 + 행렬 모두 리셋)
+
+                const cells = document.querySelectorAll('.cell');
+                for (let i = 0; i < 15; i++) {
+                    for (let j = 0; j < 15; j++) {
+                        const index = i * 15 + j;
+                        if (patternGrid[i][j] === 1) {
+                            cells[index].classList.add('black');
+                            matCells[index].className = 'matrix-cell is-zero';
+                            matCells[index].textContent = '0';
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const candidates = ['#matrix', '.binary-matrix', '.matrix.binary'];
+  let target = null;
+  for (const sel of candidates){
+    const el = document.querySelector(sel);
+    if (el){ target = el; break; }
+  }
+  if (target && !target.closest('.bracket-wrap')) {
+    const wrap = document.createElement('div');
+    wrap.className = 'bracket-wrap';
+    target.parentNode.insertBefore(wrap, target);
+    wrap.appendChild(target);
+  }
+});
+</script>
+
+</body>
+</html>

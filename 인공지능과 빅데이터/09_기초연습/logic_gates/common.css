@@ -1,0 +1,136 @@
+/* common.css — 논리 게이트 단원 공통: 회로 기판 + 깔끔한 일러스트 (네온·번짐 없음) */
+:root {
+  --paper: #f6f4ee;
+  --paper-2: #efece3;
+  --surface: #ffffff;
+  --line: #dcd7ca;
+  --line-strong: #c3bcab;
+  --ink: #1f2a44;
+  --text: #2a3350;
+  --muted: #5f6678;
+  --on: #f0a500;          /* 전류가 흐르는 1 */
+  --on-dark: #7a5200;
+  --off: #a3abbb;
+  --ok: #1d7a4c;
+  --err: #b42318;
+  --c-not: #6250d6; --c-and: #2a78d6; --c-or: #14946a; --c-xor: #d9582a; --c-nand: #b8406f; --c-nor: #2c7d2c;
+  --radius: 14px;
+  --sans: 'Pretendard Variable', Pretendard, 'Malgun Gothic', sans-serif;
+  --mono: 'JetBrains Mono', 'Pretendard Variable', Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--sans); color: var(--text); line-height: 1.6; font-size: 16px;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(31, 42, 68, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 42, 68, .045) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--c-and); outline-offset: 2px; }
+a { color: var(--c-and); }
+b, strong { font-weight: 700; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* 머리줄 */
+.topbar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 22px; background: var(--surface); border-bottom: 1.5px solid var(--ink);
+}
+.topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
+.topbar .brand .chip { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; background: var(--ink); color: #fff; padding: 3px 7px; border-radius: 4px; }
+.topbar nav { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.topbar nav a {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 6px 14px; border-radius: 8px;
+  text-decoration: none; color: var(--text); font-weight: 600; font-size: 15px;
+}
+.topbar nav a:hover { background: var(--paper-2); }
+.topbar nav a[aria-current="page"], .topbar nav a[aria-current="page"]:hover { background: var(--ink); color: #fff; }
+
+/* 버튼 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 18px;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); color: var(--ink);
+  font-weight: 650; cursor: pointer; text-decoration: none;
+  transition: background .12s, border-color .12s;
+}
+.btn:hover { background: var(--paper-2); border-color: #a9a291; }
+.btn:active { background: var(--line); }
+.btn-primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+.btn-primary:hover { background: #2d3b5e; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-small { min-height: 36px; padding: 4px 12px; font-size: 14px; }
+
+/* ---------- 그림 부품 (logic.js) ---------- */
+.gate-body { stroke-width: 3.5; stroke-linejoin: round; }
+.gate-arc, .gate-leg { fill: none; stroke: var(--ink); stroke-width: 3.5; stroke-linecap: round; }
+.gate-bubble { stroke: var(--ink); stroke-width: 3.5; }
+.gate-label { font-family: var(--mono); font-weight: 800; font-size: 15px; }
+
+.wire-base { fill: none; stroke: var(--off); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.wire-flow { fill: none; stroke: transparent; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 16; }
+.wire.on .wire-base { stroke: var(--on); stroke-width: 8; }
+.wire.on .wire-flow { stroke: var(--on-dark); }
+
+.sw-pin { fill: #fff; stroke: var(--ink); stroke-width: 3.5; }
+.sw-lever { stroke: var(--ink); stroke-width: 8; stroke-linecap: round; }
+.sw.on .sw-lever { stroke: var(--on-dark); }
+.sw-label { font-weight: 800; font-size: 20px; fill: var(--ink); }
+.sw-value { font-family: var(--mono); font-weight: 700; font-size: 15px; fill: var(--muted); }
+.sw.on .sw-value { fill: var(--on-dark); }
+
+.lamp-bulb { fill: #fff; stroke: var(--ink); stroke-width: 3.5; }
+.lamp-fil { fill: none; stroke: var(--off); stroke-width: 3; }
+.lamp-base { fill: var(--ink); }
+.lamp-rays line { stroke: var(--on); stroke-width: 5; stroke-linecap: round; opacity: 0; }
+.lamp.on .lamp-bulb { fill: #ffd766; }
+.lamp.on .lamp-fil { stroke: var(--on-dark); }
+.lamp.on .lamp-rays line { opacity: 1; }
+.lamp-value { font-family: var(--mono); font-weight: 700; font-size: 15px; fill: var(--muted); }
+.lamp.on .lamp-value { fill: var(--on-dark); }
+
+.bit-chip circle { fill: #fff; stroke: var(--off); stroke-width: 3; }
+.bit-chip text { font-family: var(--mono); font-weight: 800; font-size: 17px; fill: var(--muted); }
+.bit-chip.on circle { fill: #ffe39a; stroke: var(--on-dark); }
+.bit-chip.on text { fill: var(--on-dark); }
+
+.tt-frame { fill: #fff; stroke: var(--ink); stroke-width: 2.5; }
+.tt-head-bg { fill: var(--paper-2); }
+.tt-head { font-family: var(--mono); font-weight: 800; font-size: 17px; fill: var(--ink); }
+.tt-line { stroke: var(--line); stroke-width: 1.5; }
+.tt-divider { stroke: var(--ink); stroke-width: 2; }
+.tt-cell { font-family: var(--mono); font-weight: 700; font-size: 20px; fill: var(--text); }
+.tt-cell.tt-out { font-weight: 800; }
+.tt-hl { fill: transparent; }
+.tt-row.active .tt-hl { fill: #ffe7a6; stroke: var(--on-dark); stroke-width: 2; }
+
+.venn-frame { fill: #fff; stroke: var(--ink); stroke-width: 2.5; }
+.venn-r { transition: none; }
+.venn-line { fill: none; stroke: var(--ink); stroke-width: 3; }
+.venn-name { font-weight: 800; font-size: 22px; fill: var(--ink); }
+.venn-name.small { font-size: 17px; fill: var(--muted); }
+.venn-name.mini { font-size: 15px; }
+.venn-tag { font-family: var(--mono); font-weight: 700; font-size: 15px; fill: var(--muted); }
+.venn-tag.on { fill: var(--ink); }
+.venn-tag.point { font-size: 19px; text-decoration: underline; }
+
+.bat-long { stroke: var(--ink); stroke-width: 6; stroke-linecap: round; }
+.bat-short { stroke: var(--ink); stroke-width: 10; stroke-linecap: round; }
+.bat-sign { font-weight: 800; font-size: 22px; fill: var(--ink); }
+.sw-label.small { font-size: 15px; fill: var(--muted); font-weight: 700; }
+.sw-throw { font-family: var(--mono); font-weight: 800; font-size: 15px; fill: var(--muted); }
+.node-dot { fill: var(--ink); }
+.break-mark circle { fill: #fff; stroke: var(--err); stroke-width: 3; }
+.break-mark path { stroke: var(--err); stroke-width: 3.5; stroke-linecap: round; }
+.break-mark text { font-weight: 800; font-size: 14px; fill: var(--err); }
+.push-cap { fill: #fff; stroke: var(--ink); stroke-width: 3; }
+.push-rod { stroke: var(--ink); stroke-width: 4; }
+.net-label { font-weight: 800; font-size: 20px; fill: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+}

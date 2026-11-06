@@ -1,0 +1,236 @@
+/* 텍스트 탐구 활동 공통 햄버거 내비게이션 */
+.activity-menu {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 9000;
+    color: #0f172a;
+    font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.activity-menu,
+.activity-menu * {
+    box-sizing: border-box;
+}
+
+.activity-menu summary {
+    list-style: none;
+}
+
+.activity-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.activity-menu-toggle {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(14, 116, 144, 0.28);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 28px rgba(8, 47, 73, 0.2);
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.activity-menu-toggle:hover {
+    border-color: rgba(8, 145, 178, 0.58);
+    background: #ecfeff;
+    transform: translateY(-1px);
+}
+
+.activity-menu-toggle:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.96);
+    outline-offset: 3px;
+}
+
+.activity-menu-lines {
+    width: 21px;
+    height: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.activity-menu-lines i {
+    width: 100%;
+    height: 2px;
+    display: block;
+    border-radius: 999px;
+    background: #0e7490;
+    transform-origin: center;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.activity-menu[open] .activity-menu-toggle {
+    border-color: rgba(8, 145, 178, 0.58);
+    background: #ecfeff;
+}
+
+.activity-menu[open] .activity-menu-lines i:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.activity-menu[open] .activity-menu-lines i:nth-child(2) {
+    opacity: 0;
+}
+
+.activity-menu[open] .activity-menu-lines i:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+.activity-menu-panel {
+    position: absolute;
+    top: 58px;
+    left: 0;
+    width: min(320px, calc(100vw - 32px));
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid rgba(14, 116, 144, 0.22);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.985);
+    box-shadow: 0 24px 60px rgba(8, 47, 73, 0.28);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    animation: activity-menu-enter 0.18s ease-out;
+}
+
+@keyframes activity-menu-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.activity-menu-heading {
+    padding: 6px 8px 12px;
+    border-bottom: 1px solid #dbeafe;
+}
+
+.activity-menu-heading strong,
+.activity-menu-heading small {
+    display: block;
+}
+
+.activity-menu-heading strong {
+    color: #164e63;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.activity-menu-heading small {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 0.76rem;
+}
+
+.activity-menu-links {
+    display: grid;
+    gap: 4px;
+    padding-top: 8px;
+}
+
+.activity-menu-links a {
+    min-height: 42px;
+    padding: 7px 9px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: #1e293b;
+    background: transparent;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.35;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.activity-menu-links a:hover {
+    border-color: #bae6fd;
+    background: #f0fdfa;
+    color: #0e7490;
+}
+
+.activity-menu-links a:focus-visible {
+    outline: 2px solid #0891b2;
+    outline-offset: -2px;
+}
+
+.activity-menu-links .is-current {
+    border-color: #67e8f9;
+    background: #cffafe;
+    color: #155e75;
+}
+
+.activity-menu-links .activity-menu-home {
+    color: #64748b;
+    font-size: 0.84rem;
+}
+
+.activity-menu-index {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
+.activity-menu-links .is-current .activity-menu-index {
+    background: #0891b2;
+    color: #fff;
+}
+
+.activity-menu-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .activity-menu-panel,
+    .activity-menu-toggle,
+    .activity-menu-lines i {
+        animation: none;
+        transition: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .activity-menu {
+        top: 12px;
+        left: 12px;
+    }
+
+    .activity-menu-toggle {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+    }
+
+    .activity-menu-panel {
+        top: 54px;
+        width: min(304px, calc(100vw - 24px));
+        max-height: calc(100vh - 78px);
+    }
+}

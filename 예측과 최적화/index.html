@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예측과 최적화 | 인공지능 수학 웹앱</title>
+    <meta name="description" content="데이터로 값을 예측하고 오차를 줄이는 원리를 직접 탐구하세요. 추세선과 오차, 제곱오차, 손실함수와 경사하강법 실습과 모션 해설을 모았습니다.">
+    <meta name="author" content="황성현">
+    <meta name="theme-color" content="#a18cd1">
+    <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 「인공지능과 빅데이터」(../first/index.html)와 같은 카드형 구성 -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 25%, #a18cd1 50%, #fbc2eb 75%, #8fd3f4 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        a { color: inherit; }
+        a:focus-visible { outline: 3px solid #4338ca; outline-offset: 5px; }
+        .home-nav { position: absolute; top: 1rem; left: 1rem; }
+        .home-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            min-height: 44px;
+            padding: .6rem 1rem;
+            background: rgba(255, 255, 255, .9);
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+            text-decoration: none;
+            font-size: .9rem;
+            font-weight: 700;
+            transition: background .2s, transform .2s;
+        }
+        .home-nav a:hover { background: #fff; transform: translateY(-2px); }
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 2rem 2rem 3rem; }
+        .title-container { text-align: center; margin-bottom: 2rem; }
+        .title-row { display: flex; justify-content: center; align-items: center; gap: 12px; }
+        .logo { width: 5rem; height: auto; flex-shrink: 0; }
+        .title {
+            font-family: 'Gamja Flower', cursive;
+            font-size: clamp(2.6rem, 6vw, 4rem);
+            font-weight: 700;
+            line-height: 1.2;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
+            word-break: keep-all;
+        }
+        .subtitle {
+            margin-top: 1rem;
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #fff;
+            text-shadow: 0 1px 4px rgba(48, 33, 76, .55);
+            word-break: keep-all;
+        }
+        .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+        .card {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: rgba(255, 255, 255, .95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, .1);
+            transition: transform .3s ease, box-shadow .3s ease;
+        }
+        .card:hover, .card:focus-within { transform: translateY(-6px); box-shadow: 0 15px 30px rgba(0, 0, 0, .18); }
+        .card-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 3 / 2;
+            background: linear-gradient(135deg, #ece9ff, #d7f3ef);
+            overflow: hidden;
+        }
+        .card-image svg { display: block; width: 100%; height: 100%; transition: transform .4s ease; }
+        .card:hover .card-image svg { transform: scale(1.03); }
+        .card--motion .card-image { background: linear-gradient(135deg, #e1f0ff, #e9e4ff); }
+        .card-image--placeholder { position: relative; isolation: isolate; }
+        .card-image--placeholder::before {
+            content: '';
+            position: absolute;
+            inset: 15%;
+            border: 2px dashed rgba(91, 69, 155, .22);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .55);
+            z-index: -1;
+        }
+        .placeholder-number { color: #7964aa; font-size: 4.5rem; font-weight: 700; line-height: 1; }
+        .card--pending .card-image { background: linear-gradient(135deg, #ffe8e3, #f5e4f5); }
+        .card-body { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-label {
+            align-self: center;
+            margin-bottom: .7rem;
+            padding: .3rem .8rem;
+            border-radius: 50px;
+            background: #eeebfb;
+            color: #5b459b;
+            font-size: .8rem;
+            font-weight: 700;
+        }
+        .card--motion .card-label { background: #e3f0fd; color: #2f5f99; }
+        .card-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 1rem; word-break: keep-all; }
+        .card-text { flex-grow: 1; color: #595959; margin-bottom: 1.5rem; line-height: 1.8; word-break: keep-all; }
+        .btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: .6rem;
+            min-height: 48px;
+            padding: .8rem 1.5rem;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #7352b5, #564393);
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
+            text-align: center;
+            transition: filter .2s, transform .2s;
+        }
+        .btn:hover { filter: brightness(1.12); transform: translateY(-2px); }
+        .btn--pending, .btn--pending:hover {
+            background: #eeebf4;
+            color: #6b617c;
+            filter: none;
+            transform: none;
+        }
+        .footer {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto auto 0;
+            padding: 1.25rem;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, .28);
+            color: #fff;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .footer-title { font-weight: 700; margin-bottom: .25rem; }
+        .creator-info { font-size: .85rem; }
+        .footer a { text-underline-offset: 3px; }
+        @media (max-width: 992px) {
+            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 576px) {
+            body { padding: 1rem; }
+            .home-nav { position: static; margin-bottom: 1.5rem; }
+            .container { padding: 0 0 2rem; }
+            .title-row { flex-direction: column; gap: .5rem; }
+            .logo { width: 3.5rem; }
+            .subtitle { font-size: 1rem; margin-top: .75rem; }
+            .grid { grid-template-columns: minmax(0, 1fr); }
+            .card-body { padding: 1.25rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body { animation: none; }
+            *, *::before, *::after { transition: none !important; }
+            .card:hover, .card:focus-within, .card:hover .card-image svg, .btn:hover, .home-nav a:hover { transform: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="home-nav" aria-label="상위 페이지">
+        <a href="../index.html">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/>
+            </svg>
+            홈으로
+        </a>
+    </nav>
+    <main class="container">
+        <header class="title-container">
+            <div class="title-row">
+                <img src="../assets/home/faviconlogo.png" alt="" class="logo" width="80" height="80">
+                <h1 class="title">예측과 최적화</h1>
+            </div>
+            <p class="subtitle">데이터로 값을 예측하고, 오차를 줄여 가는 인공지능의 학습 원리를 체험해 봅시다.</p>
+        </header>
+        <div class="grid">
+            <article class="card" aria-labelledby="trend-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="47" cy="48" r="63" fill="#c4b5fd" opacity=".25"/>
+                        <circle cx="366" cy="236" r="83" fill="#7dd3c0" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="white" fill-opacity=".8"/>
+                        <path d="M70 58V190H345" stroke="#b9b1cf" stroke-width="2" stroke-linecap="round"/>
+                        <g stroke="#e0607e" stroke-width="3.5" stroke-linecap="round">
+                            <path d="M110 140V166.7"/><path d="M150 150V176"/><path d="M190 108V133.3"/>
+                            <path d="M230 116.7V142"/><path d="M270 74V100"/><path d="M310 83.3V108"/>
+                        </g>
+                        <path d="M90 175L330 75" stroke="#7455b5" stroke-width="5" stroke-linecap="round"/>
+                        <g fill="#2f9e88" stroke="white" stroke-width="3">
+                            <circle cx="110" cy="140" r="7"/><circle cx="150" cy="176" r="7"/><circle cx="190" cy="108" r="7"/>
+                            <circle cx="230" cy="142" r="7"/><circle cx="270" cy="74" r="7"/><circle cx="310" cy="108" r="7"/>
+                        </g>
+                        <rect x="112" y="198" width="176" height="24" rx="12" fill="#e9f5f0"/>
+                        <text x="200" y="215" text-anchor="middle" fill="#327665" font-family="'Noto Sans KR', sans-serif" font-size="14" font-weight="700">오차 = 실제값 − 예측값</text>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">실습 ① 예측과 오차</span>
+                    <h2 class="card-title" id="trend-title">추세선과 오차 실험실</h2>
+                    <p class="card-text">직선을 직접 그려 예측값을 구하고, 오차와 제곱오차를 계산해 AI가 찾은 추세선과 비교해 보세요.</p>
+                    <a href="./경사하강법/gradient_descent_lab.html" class="btn" aria-label="추세선과 오차 실험실 시작하기">실습 시작하기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            <article class="card" aria-labelledby="slope-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="356" cy="44" r="66" fill="#c4b5fd" opacity=".25"/>
+                        <circle cx="40" cy="232" r="78" fill="#7dd3c0" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="white" fill-opacity=".8"/>
+                        <path d="M70 58V195H345" stroke="#b9b1cf" stroke-width="2" stroke-linecap="round"/>
+                        <text x="78" y="56" fill="#8a809c" font-family="Arial, sans-serif" font-size="14" font-weight="700">L(a)</text>
+                        <text x="335" y="214" fill="#8a809c" font-family="Arial, sans-serif" font-size="14" font-weight="700">a</text>
+                        <path d="M90 70Q200 295 310 70" stroke="#7455b5" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M112 110.5L145 154.4L171.3 174.9L189 181.4L200 182.5" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="5 4" stroke-linecap="round"/>
+                        <g fill="#f59e0b" stroke="white" stroke-width="2.5">
+                            <circle cx="112" cy="110.5" r="7"/><circle cx="145" cy="154.4" r="7"/><circle cx="171.3" cy="174.9" r="7"/><circle cx="189" cy="181.4" r="6"/>
+                        </g>
+                        <circle cx="200" cy="182.5" r="10" fill="#2f9e88" stroke="white" stroke-width="3"/>
+                        <rect x="136" y="52" width="128" height="30" rx="15" fill="#f3f0fb"/>
+                        <text x="200" y="73" text-anchor="middle" fill="#564393" font-family="'Times New Roman', serif" font-size="17" font-style="italic" font-weight="700">a ← a − αL′(a)</text>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">실습 ② 경사하강법</span>
+                    <h2 class="card-title" id="slope-title">기울기 하나로 배우는 경사하강법</h2>
+                    <p class="card-text">원점을 지나는 직선 y = ax에 집중합니다. 손실 곡선의 기울기를 읽고 학습률을 바꾸며 오차가 줄거나 커지는 과정을 확인하세요.</p>
+                    <a href="./경사하강법/gradient_descent_slope.html" class="btn" aria-label="기울기 하나로 배우는 경사하강법 시작하기">실습 시작하기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            <article class="card" aria-labelledby="square-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="47" cy="48" r="63" fill="#7dd3c0" opacity=".25"/>
+                        <circle cx="366" cy="236" r="83" fill="#c4b5fd" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="white" fill-opacity=".8"/>
+                        <path d="M70 58V190H345" stroke="#b9b1cf" stroke-width="2" stroke-linecap="round"/>
+                        <g fill="#e0607e" fill-opacity=".18" stroke="#e0607e" stroke-width="2">
+                            <rect x="130" y="122" width="40" height="40"/>
+                            <rect x="220" y="129.6" width="30" height="30"/>
+                            <rect x="300" y="80.8" width="20" height="20"/>
+                        </g>
+                        <path d="M80 180L335 88.2" stroke="#7455b5" stroke-width="5" stroke-linecap="round"/>
+                        <g fill="#2f9e88" stroke="white" stroke-width="3">
+                            <circle cx="130" cy="122" r="8"/><circle cx="220" cy="159.6" r="8"/><circle cx="300" cy="80.8" r="8"/>
+                        </g>
+                        <rect x="112" y="198" width="176" height="24" rx="12" fill="#e9f5f0"/>
+                        <text x="200" y="215" text-anchor="middle" fill="#327665" font-family="'Noto Sans KR', sans-serif" font-size="14" font-weight="700">넓이의 합이 작을수록 잘 맞음</text>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">보충 실습 제곱오차</span>
+                    <h2 class="card-title" id="square-title">오차를 제곱하면 무엇이 달라질까?</h2>
+                    <p class="card-text">직선과 데이터 점을 움직이며 양수·음수 오차가 서로 지워지는 문제와, 제곱오차의 합으로 가장 잘 맞는 직선을 찾는 방법을 비교합니다.</p>
+                    <a href="./경사하강법/squared-error.html" class="btn" aria-label="오차를 제곱하면 무엇이 달라질까 보충 실습 열기">보충 실습 열기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            <article class="card card--motion" aria-labelledby="gd-motion-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="356" cy="44" r="66" fill="#93c5fd" opacity=".25"/>
+                        <circle cx="40" cy="232" r="78" fill="#c4b5fd" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="white" fill-opacity=".8"/>
+                        <path d="M95 70Q200 230 305 70" stroke="#7455b5" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M107 99.1L188 160.9" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+                        <circle cx="147.5" cy="130" r="8" fill="#f59e0b" stroke="white" stroke-width="3"/>
+                        <circle cx="200" cy="150" r="7" fill="#2f9e88" stroke="white" stroke-width="2.5"/>
+                        <circle cx="290" cy="150" r="24" fill="#3b6fb6"/>
+                        <path d="M283 138L301 150L283 162Z" fill="white"/>
+                        <rect x="62" y="202" width="276" height="6" rx="3" fill="#dfe6f3"/>
+                        <rect x="62" y="202" width="166" height="6" rx="3" fill="#3b6fb6"/>
+                        <circle cx="228" cy="205" r="8" fill="white" stroke="#3b6fb6" stroke-width="3"/>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">모션 해설</span>
+                    <h2 class="card-title" id="gd-motion-title">기울기 하나로 따라가는 학습 과정</h2>
+                    <p class="card-text">제곱오차로 손실함수를 만들고, 곡선의 접선 기울기를 읽어 다음 기울기를 계산하는 과정을 영상처럼 따라가 봅니다.</p>
+                    <a href="./경사하강법/gradient-descent-motion/index.html" class="btn" aria-label="기울기 하나로 따라가는 학습 과정 모션 해설 보기">모션 해설 보기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            <article class="card card--motion" aria-labelledby="excel-motion-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="47" cy="48" r="63" fill="#93c5fd" opacity=".25"/>
+                        <circle cx="366" cy="236" r="83" fill="#7dd3c0" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="white" fill-opacity=".8"/>
+                        <g font-family="Arial, sans-serif" font-size="13" text-anchor="middle">
+                            <rect x="55" y="62" width="140" height="26" fill="#e9f5f0"/>
+                            <rect x="55" y="140" width="140" height="26" fill="#fff4d6"/>
+                            <g stroke="#c9d3df" stroke-width="1.2">
+                                <rect x="55" y="62" width="140" height="130" fill="none"/>
+                                <path d="M55 88H195M55 114H195M55 140H195M55 166H195M115 62V192"/>
+                            </g>
+                            <text x="85" y="80" fill="#327665" font-weight="700">a</text><text x="155" y="80" fill="#327665" font-weight="700">L(a)</text>
+                            <g fill="#4a4a5a">
+                                <text x="85" y="106">1.0</text><text x="155" y="106">12.83</text>
+                                <text x="85" y="132">1.5</text><text x="155" y="132">3.67</text>
+                                <text x="85" y="158" font-weight="700">2.0</text><text x="155" y="158" font-weight="700">1.83</text>
+                                <text x="85" y="184">2.5</text><text x="155" y="184">7.33</text>
+                            </g>
+                        </g>
+                        <path d="M200 127H218" stroke="#3b6fb6" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M216 121L224 127L216 133Z" fill="#3b6fb6"/>
+                        <path d="M228 58V195H352" stroke="#b9b1cf" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M237.0 63.5 L240.0 75.8 L243.0 87.4 L246.0 98.3 L249.0 108.5 L252.0 118.0 L255.0 126.9 L258.0 135.0 L261.0 142.5 L264.0 149.3 L267.0 155.5 L270.0 160.9 L273.0 165.7 L276.0 169.8 L279.0 173.2 L282.0 175.9 L285.0 178.0 L288.0 179.3 L291.0 180.0 L294.0 180.0 L297.0 179.3 L300.0 178.0 L303.0 175.9 L306.0 173.2 L309.0 169.8 L312.0 165.7 L315.0 160.9 L318.0 155.5 L321.0 149.3 L324.0 142.5 L327.0 135.0 L330.0 126.9 L333.0 118.0 L336.0 108.5 L339.0 98.2 L342.0 87.3 L345.0 75.8" stroke="#7455b5" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <g fill="#f59e0b" stroke="white" stroke-width="2">
+                            <circle cx="240" cy="75.8" r="5.5"/><circle cx="270" cy="160.9" r="5.5"/><circle cx="300" cy="178" r="5.5"/><circle cx="330" cy="126.9" r="5.5"/>
+                        </g>
+                        <circle cx="292.5" cy="180.1" r="7.5" fill="#2f9e88" stroke="white" stroke-width="2.5"/>
+                        <rect x="112" y="204" width="176" height="20" rx="10" fill="#e3f0fd"/>
+                        <text x="200" y="218" text-anchor="middle" fill="#2f5f99" font-family="'Noto Sans KR', sans-serif" font-size="12" font-weight="700">표의 계산 → 손실함수 → 최솟값</text>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">모션 해설</span>
+                    <h2 class="card-title" id="excel-motion-title">엑셀로 손실함수 최솟값 찾기</h2>
+                    <p class="card-text">표에서 한 계산이 손실함수와 이차함수의 그래프로 이어지는 과정을 따라가며, 최솟값과 경사하강법을 연결해 봅니다.</p>
+                    <a href="./경사하강법/loss-excel-motion/index.html" class="btn" aria-label="엑셀로 손실함수 최솟값 찾기 모션 해설 보기">모션 해설 보기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            <article class="card card--motion" aria-labelledby="gan-quest-title">
+                <div class="card-image" aria-hidden="true">
+                    <svg viewBox="0 0 400 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="356" cy="44" r="66" fill="#c4b5fd" opacity=".25"/>
+                        <circle cx="40" cy="232" r="78" fill="#93c5fd" opacity=".25"/>
+                        <rect x="33" y="39" width="334" height="190" rx="20" fill="#1e1858"/>
+                        <text x="200" y="98" text-anchor="middle" fill="#ffd23f" font-family="Arial Black, Arial, sans-serif" font-size="34" font-weight="900" letter-spacing="1">GAN QUEST</text>
+                        <rect x="78" y="122" width="56" height="56" rx="10" fill="#ff8a5b"/>
+                        <text x="106" y="160" text-anchor="middle" fill="#1a1033" font-family="Arial, sans-serif" font-size="28" font-weight="700">G</text>
+                        <rect x="266" y="122" width="56" height="56" rx="10" fill="#4cc9f0"/>
+                        <text x="294" y="160" text-anchor="middle" fill="#1a1033" font-family="Arial, sans-serif" font-size="28" font-weight="700">D</text>
+                        <path d="M140 150H260" stroke="#b388ff" stroke-width="4" stroke-dasharray="8 6"/>
+                        <text x="200" y="142" text-anchor="middle" fill="#f5f7ff" font-family="Arial, sans-serif" font-size="15" font-weight="700">VS</text>
+                        <rect x="104" y="192" width="192" height="26" rx="13" fill="#2a2266"/>
+                        <text x="200" y="210" text-anchor="middle" fill="#ffd23f" font-family="Times New Roman, serif" font-size="16" font-style="italic">min max V(D, G)</text>
+                    </svg>
+                </div>
+                <div class="card-body">
+                    <span class="card-label">모션 해설 · 종합</span>
+                    <h2 class="card-title" id="gan-quest-title">GAN QUEST</h2>
+                    <p class="card-text">게임 튜토리얼처럼 따라가며 생성형 AI(GAN) 속 수학을 찾아요. 시그모이드·로그 벌점·경사하강법 공식이 왜 그런 모양인지, 실제 논문과 함께 확인합니다.</p>
+                    <a href="GAN_QUEST_인공지능수학.html" class="btn" aria-label="GAN QUEST 모션 해설 보기">모션 해설 보기 <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+        </div>
+    </main>
+    <footer class="footer">
+        <p class="footer-title">예측과 최적화 탐구 활동</p>
+        <p class="creator-info">Designed &amp; Developed by 황성현 · <a href="mailto:tjdgus1121@naver.com">문의하기</a></p>
+    </footer>
+</body>
+</html>

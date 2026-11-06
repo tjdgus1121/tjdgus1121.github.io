@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RGB·RGBA 행렬 추출기</title>
+    <meta
+      name="description"
+      content="이미지를 업로드해 150×150 픽셀로 샘플링하고, R/G/B 채널의 행렬 값을 추출·편집하며 색 변화 원리를 탐구하는 활동입니다."
+    />
+    <meta
+      name="keywords"
+      content="RGB, 행렬, 이미지 처리, 픽셀, 채널 분리, 수학 체험, 교육 활동, 디지털 색, 이미지 샘플링, 고등학교 수학"
+    />
+    <meta name="author" content="황성현" />
+    <meta name="robots" content="index, follow" />
+    <link
+      rel="canonical"
+      href="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/activity4_rgb_channels2.html"
+    />
+
+    <!-- 사이트 소유권/검색엔진 검증(다른 페이지와 동일 값) -->
+    <meta
+      name="google-site-verification"
+      content="s7dTY3TNe-PjxGrl--MTPXDXJcgD2V7_6MDZ4SoEDP8"
+    />
+    <meta
+      name="naver-site-verification"
+      content="c020330e12eea0ae1a607097941a61b11590df69"
+    />
+    <meta name="msvalidate.01" content="08F18BF8F771D108EBF67209A4DE2D17" />
+
+    <!-- Open Graph (미리보기) -->
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="RGB 행렬 추출기 — 인공지능 수학 이미지 탐구"
+    />
+    <meta
+      property="og:description"
+      content="이미지를 올리고, R/G/B 행렬을 바로 편집하며 색의 조합을 실험해 보세요."
+    />
+    <meta
+      property="og:url"
+      content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/activity4_rgb_channels2.html"
+    />
+    <!-- 공유용 이미지(1200×630 권장) — 전역 썸네일 사용 또는 전용 이미지가 있으면 교체 -->
+    <meta
+      property="og:image"
+      content="https://tjdgus1121.github.io/thumbnail.png"
+    />
+    <meta property="og:site_name" content="AI & 탐구수학" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="RGB 행렬 추출기 — 인공지능 수학 이미지 탐구"
+    />
+    <meta
+      name="twitter:description"
+      content="업로드한 사진의 R/G/B 행렬을 즉시 수정·반영하며 색 변화를 관찰하는 활동."
+    />
+    <meta
+      name="twitter:image"
+      content="https://tjdgus1121.github.io/thumbnail.png"
+    />
+
+    <!-- 추가 메타 -->
+    <meta name="theme-color" content="#4dabf7" />
+    <meta name="subject" content="AI 수학 교육 체험" />
+    <meta name="copyright" content="황성현" />
+    <meta name="reply-to" content="tjdgus1121@naver.com" />
+    <meta
+      name="url"
+      content="https://tjdgus1121.github.io/%EC%9D%B4%EB%AF%B8%EC%A7%80/01_%EC%9D%B4%EB%AF%B8%EC%A7%80%EC%99%80_RGB/activity4_rgb_channels2.html"
+    />
+    <link rel="stylesheet" href="../../stylefooter.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="../../nav.css" />
+  <script src="../../backguard.js"></script>
+    <script src="../../nav.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Arial, sans-serif;
+        background: #f5f6f8;
+        min-height: 100vh;
+        padding: 8px;
+      }
+
+      .container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        min-height:1000px;
+      }
+
+      header {
+        background: #8bc1f7;
+        color: #fff;
+        padding: 16px 20px;
+      }
+
+      header h1 {
+        font-size: 55px;
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: center;
+        font-family: "Do Hyeon";
+        font-weight: 200;
+        letter-spacing: 2px;
+      }
+
+      header p {
+        opacity: 0.85;
+        font-size: 25px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .upload {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        text-align: center;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 0;
+        background: #4dabf7;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .btn:hover {
+        filter: brightness(0.96);
+        transform: scale(1.05);
+        transition:0.5s;
+        color:black;
+      }
+
+      .btn.reset {
+        background: #ff6b6b;
+      }
+
+      .btn.spreadsheet {
+        background: #34a853;
+        text-decoration: none;
+      }
+
+      .btn.excel {
+        background: #217346;
+        text-decoration: none;
+      }
+
+      .btn.download {
+        background: #03a94d;
+        text-decoration: none;
+      }
+
+      #fileName {
+        color: #495057;
+      }
+
+      .main {
+        display: grid;
+        grid-template-columns: 620px 1fr;
+        gap: 12px;
+        padding: 8px;
+        align-items: start;
+        min-height: calc(100vh - 180px);
+      }
+
+      @media (max-width: 1100px) {
+        .main {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 1200px) {
+        .main {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .panel h3 {
+        font-size: 13px;
+        color: #495057;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+
+      canvas {
+        display: block;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      #zoom {
+        image-rendering: pixelated;
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+      }
+
+      .preview, .grid { min-width: 0; }
+      .analysis-options {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e9ecef;
+        background: #f1f6fb;
+        color: #343a40;
+      }
+      .mode-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .mode-option input { width: 18px; height: 18px; accent-color: #4dabf7; }
+      .analysis-options p, .alpha-controls { font-size: 13px; }
+      .alpha-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .alpha-controls input { width: 68px; padding: 6px; }
+      .alpha-controls .btn { padding: 6px 10px; }
+      .a { background: #6c5ce7; }
+      .channel-buttons, .export-buttons { flex-wrap: wrap; }
+      [hidden] { display: none !important; }
+      #channelInfo { flex-basis: 100%; font-size: 13px; color: #495057; }
+      #zoom.transparency {
+        background-color: #fff;
+        background-image: linear-gradient(45deg, #dce2e8 25%, transparent 25%),
+          linear-gradient(-45deg, #dce2e8 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #dce2e8 75%),
+          linear-gradient(-45deg, transparent 75%, #dce2e8 75%);
+        background-size: 24px 24px;
+        background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+      }
+
+      .bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .bar .btn {
+        padding: 8px 12px;
+      }
+
+      .r {
+        background: #ff6b6b;
+      }
+
+      .g {
+        background: #51cf66;
+      }
+
+      .b {
+        background: #4dabf7;
+      }
+
+      .grid {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .head {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 12px 10px;
+        border-bottom: 1px solid #e9ecef;
+        flex-wrap: wrap;
+      }
+
+      .head .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+        min-width: 80px;
+      }
+
+      .head .size-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .head .size-control label {
+        font-size: 13px;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .head .size-control input[type="range"] {
+        width: 120px;
+      }
+
+      .head .size-control span {
+        font-size: 13px;
+        color: #495057;
+        min-width: 35px;
+      }
+
+      .channel-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex-grow: 1;
+      }
+
+      .channel-buttons,
+      .export-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .export-buttons .btn {
+        padding: 10px 18px;
+      }
+
+      .head .info-text {
+        flex-basis: 100%;
+        margin: 0;
+        text-align: center;
+      }
+
+      .btn.alt {
+        background: #4dabf7;
+      }
+
+      .badge {
+        font-weight: 800;
+        color: #fff;
+        padding: 3px 8px;
+        border-radius: 999px;
+      }
+
+      .wrap {
+        position: relative;
+        height: calc(100vh - 240px);
+        min-height: 600px;
+      }
+
+      .vgrid {
+        position: absolute;
+        inset: 0;
+        overflow: auto;
+        background: #fff;
+      }
+
+      .spacer {
+        position: relative;
+      }
+
+      .cells {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: grid;
+      }
+
+      .cell {
+        border: 1px solid #eef0f2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .cell input {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: transparent;
+        text-align: center;
+        font-family: "Courier New", monospace;
+      }
+
+      .cell input:focus {
+        outline: 2px solid #ffc107;
+        background: #fff7d1;
+      }
+
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 999;
+        transition: opacity 0.3s;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .alert {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000;
+        padding: 20px 32px;
+        border-radius: 12px;
+        font-weight: 700;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        min-width: 300px;
+        text-align: center;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .ok {
+        background: #fff;
+        color: #343a40;
+        border: 2px solid #4dabf7;
+      }
+
+      .err {
+        background: #ffe3e3;
+        color: #c92a2a;
+        border: 1px solid #ff6b6b;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-sec">시작</div>
+            <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec">색과 이미지</div>
+            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+            <a href="activity4_rgb_channels.html" class="active"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec">행렬 연산</div>
+            <a href="../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec">데이터와 인식</div>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="../03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec">AI 이미지 기술</div>
+            <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec">CNN과 군집화</div>
+            <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+    <div class="container">
+      <header>
+        <h1>RGB·RGBA 행렬 추출 활동</h1>
+        <p>
+          채널별 행렬을 선택해 색을 바꾸고, RGBA 분석으로 투명도도 탐구해 보세요.
+        </p>
+      </header>
+
+      <div class="upload">
+        <label class="btn" for="file">📁 이미지 업로드</label>
+        <input id="file" type="file" accept="image/*" />
+        <a class="btn spreadsheet" href="https://docs.google.com/spreadsheets/d/1BdRwocpiUsk-3AEOWRdBIcausnfpHxISI_hJYvqOypg/copy?gid=0#gid=0" target="_blank" rel="noopener">
+          📊 구글스프레드시트로 체험하기
+        </a>
+        <a class="btn excel" href="../../인공지능과%20빅데이터/09_기초연습/excel_practice.html" target="_blank" rel="noopener">
+          📗 엑셀 함수 알아보기
+        </a>
+        <a class="btn excel" href="rgb_excel.html" target="_blank" rel="noopener">
+          자체 웹 엑셀사이트
+        </a>
+        <a class="btn download" href="https://naver.me/xIF63JFm" target="_blank" rel="noopener noreferrer" title="다운로드 페이지를 새 탭에서 열기">
+          📥 자료 다운로드
+        </a>
+        <button class="btn reset" id="resetBtn">🔄 초기화</button>
+        <span id="fileName"></span>
+      </div>
+
+      <div class="analysis-options">
+        <label class="mode-option" for="rgbaMode">
+          <input id="rgbaMode" type="checkbox" aria-controls="btnA alphaControls" />
+          RGBA 분석 (A 채널 포함)
+        </label>
+        <p id="modeHelp">RGB는 색을 분석합니다. RGBA를 선택하면 투명도도 함께 분석합니다.</p>
+        <div class="alpha-controls" id="alphaControls" hidden>
+          <label for="alphaValue">전체 A 값:</label>
+          <input id="alphaValue" type="number" min="0" max="255" step="1" value="255" />
+          <button class="btn a" id="applyAlpha" disabled>전체 적용</button>
+          <span>0 = 완전 투명 · 255 = 완전 불투명</span>
+        </div>
+      </div>
+
+      <div id="alert" class="alert hidden" role="status" aria-live="polite"></div>
+
+      <div class="main" id="main" style="display: none">
+        <!-- 미리보기 왼쪽 배치 -->
+        <div class="panel preview">
+          <h3 id="previewTitle">⬇️ RGB 이미지 미리보기 ⬇️</h3>
+          <canvas
+            id="orig"
+            width="150"
+            height="150"
+            style="display: none"
+          ></canvas>
+          <canvas id="zoom" width="600" height="600"></canvas>
+        </div>
+
+        <!-- 행렬 데이터 오른쪽 배치 -->
+        <section class="grid">
+          <div class="head">
+            <div class="channel-controls">
+              <div class="channel-buttons">
+                <button id="btnR" class="btn r">R</button>
+                <button id="btnG" class="btn g">G</button>
+                <button id="btnB" class="btn b">B</button>
+                <button id="btnA" class="btn a" hidden>A (불투명도)</button>
+              </div>
+              <div class="export-buttons">
+                <button class="btn alt" id="exportS">⬇️ CSV 내보내기</button>
+                <button class="btn alt" id="copyS">📋 Excel 복사</button>
+                <button class="btn alt" id="exportPNG">⬇️ PNG 저장</button>
+              </div>
+            </div>
+            <div class="size-control">
+              <label for="cellSize">셀 크기:</label>
+              <input
+                type="range"
+                id="cellSize"
+                min="16"
+                max="40"
+                value="22"
+                step="2"
+              />
+              <span id="cellSizeValue">22px</span>
+            </div>
+            <p id="channelInfo" aria-live="polite">R 채널 · 값 범위 0~255</p>
+          </div>
+          <div class="wrap">
+            <div class="vgrid" id="gridS">
+              <div class="spacer" id="spacerS"></div>
+              <div class="cells" id="cellsS"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
+                <div class="creator-info">
+                    Designed & Developed by <span>황성현</span><br>
+                    Contact : tjdgus1121@naver.com
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+                <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
+                    <img src="../../assets/branding/naver.png" alt="메일 보내기"
+                        style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+                        onmouseover="this.style.filter='grayscale(0%)';"
+                        onmouseout="this.style.filter='grayscale(100%)';">
+                </a>
+            </div>
+
+            <div class="copyright">
+                이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
+                다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
+            </div>
+
+    </footer>
+
+    <script>
+      // ===== 설정 =====
+      var SIZE = 150;
+      var CELL = 22;
+      var OVERSCAN = 4;
+      var CHANNELS = ["R", "G", "B", "A"];
+
+      // 추출·합성 워커를 이 HTML 안에 포함해 별도 파일 없이 실행한다.
+      function channelWorkerTask() {
+        self.onmessage = function (event) {
+          var d = event.data, n = d.size * d.size, i;
+          if (d.type === "extract") {
+            var rgba = new Uint8ClampedArray(d.buffer);
+            var R = new Uint8Array(n), G = new Uint8Array(n);
+            var B = new Uint8Array(n), A = new Uint8Array(n);
+            for (i = 0; i < n; i++) {
+              R[i] = rgba[4 * i]; G[i] = rgba[4 * i + 1];
+              B[i] = rgba[4 * i + 2]; A[i] = rgba[4 * i + 3];
+            }
+            self.postMessage({type: "extracted", id: d.id,
+              R: R.buffer, G: G.buffer, B: B.buffer, A: A.buffer},
+              [R.buffer, G.buffer, B.buffer, A.buffer]);
+          } else if (d.type === "rebuild") {
+            var r = new Uint8Array(d.R), g = new Uint8Array(d.G);
+            var b = new Uint8Array(d.B), a = new Uint8Array(d.A);
+            var output = new Uint8ClampedArray(n * 4);
+            for (i = 0; i < n; i++) {
+              output[4 * i] = r[i]; output[4 * i + 1] = g[i];
+              output[4 * i + 2] = b[i]; output[4 * i + 3] = d.useAlpha ? a[i] : 255;
+            }
+            self.postMessage({type: "rebuilt", id: d.id, buffer: output.buffer}, [output.buffer]);
+          }
+        };
+      }
+
+      function createChannelWorker() {
+        var url;
+        try {
+          url = URL.createObjectURL(new Blob(["(" + channelWorkerTask.toString() + ")();"],
+            {type: "text/javascript"}));
+          return new Worker(url);
+        } catch (e) {
+          return null;
+        } finally {
+          if (url) URL.revokeObjectURL(url);
+        }
+      }
+      var extractWorker = createChannelWorker();
+      var rebuildWorker = createChannelWorker();
+
+      // ===== 상태 =====
+      var data = { R: [], G: [], B: [], A: [] };
+      var currentCh = "R";
+      var imageLoaded = false;
+      var rgbaEnabled = false;
+      var loadGeneration = 0, extractionId = 0, renderId = 0;
+
+      // ===== DOM =====
+      var file = document.getElementById("file");
+      var fileName = document.getElementById("fileName");
+      var main = document.getElementById("main");
+      var orig = document.getElementById("orig");
+      var zoom = document.getElementById("zoom");
+      var octx = orig.getContext("2d", { willReadFrequently: true });
+      var zctx = zoom.getContext("2d", { willReadFrequently: true });
+      var alertBox = document.getElementById("alert");
+      var overlay = document.getElementById("overlay");
+      var btnR = document.getElementById("btnR");
+      var btnG = document.getElementById("btnG");
+      var btnB = document.getElementById("btnB");
+      var btnA = document.getElementById("btnA");
+      var rgbaMode = document.getElementById("rgbaMode");
+      var alphaControls = document.getElementById("alphaControls");
+      var alphaValue = document.getElementById("alphaValue");
+      var applyAlpha = document.getElementById("applyAlpha");
+      var modeHelp = document.getElementById("modeHelp");
+      var previewTitle = document.getElementById("previewTitle");
+      var channelInfo = document.getElementById("channelInfo");
+      var resetBtn = document.getElementById("resetBtn");
+      var copyBtn = document.getElementById("copyS");
+      var cellSizeInput = document.getElementById("cellSize");
+      var cellSizeValue = document.getElementById("cellSizeValue");
+      var grid = {
+        wrap: document.getElementById("gridS"),
+        spacer: document.getElementById("spacerS"),
+        cells: document.getElementById("cellsS"),
+      };
+
+      // ===== 유틸 =====
+      function clamp(v) {
+        v = v | 0;
+        if (v < 0) return 0;
+        if (v > 255) return 255;
+        return v;
+      }
+
+      function showAlert(msg, ok, duration) {
+        if (ok === void 0) ok = true;
+        if (duration === void 0) duration = 2000;
+        overlay.classList.add("show");
+        alertBox.textContent = msg;
+        alertBox.className = "alert " + (ok ? "ok" : "err");
+        alertBox.classList.remove("hidden");
+        setTimeout(function () {
+          alertBox.classList.add("hidden");
+          overlay.classList.remove("show");
+        }, duration);
+      }
+
+      function hideAlert() {
+        alertBox.classList.add("hidden");
+        overlay.classList.remove("show");
+      }
+
+      function initArrays() {
+        var c, i, y, x;
+        for (i = 0; i < CHANNELS.length; i++) {
+          c = CHANNELS[i];
+          data[c] = new Array(SIZE);
+          for (y = 0; y < SIZE; y++) {
+            data[c][y] = new Array(SIZE);
+            for (x = 0; x < SIZE; x++) {
+              data[c][y][x] = c === "A" ? 255 : 0;
+            }
+          }
+        }
+      }
+
+      function tintRGB(ch, v) {
+        v = clamp(v);
+        if (ch === "A") return "rgb(" + v + "," + v + "," + v + ")";
+        if (ch === "R") return "rgb(" + v + ",0,0)";
+        if (ch === "G") return "rgb(0," + v + ",0)";
+        return "rgb(0,0," + v + ")";
+      }
+
+      // 보색(Complementary) 계산: 원색 (v,0,0) → 보색 (255-v,255,255) 등
+      function compColor(ch, v) {
+        v = clamp(v);
+        var r = ch === "R" ? v : 0;
+        var g = ch === "G" ? v : 0;
+        var b = ch === "B" ? v : 0;
+        return "rgb(" + 255 + "," + (255 - g) + "," + (255 - b) + ")";
+      }
+
+      // 밝기 기반 텍스트 색상: 0~127 = 흰색, 128~255 = 보색(채널 반대색)
+      function textColorFor(v, ch) {
+        v = clamp(v);
+        if (ch === "A") return v <= 127 ? "#ffffff" : "#111111";
+        if (v <= 127) return "#ffffff";
+        return compColor(ch, v);
+      }
+
+      // 고밝기에서 윤곽선으로 가독성 보강
+      function textShadowFor(v) {
+        return clamp(v) >= 128 ? "0 0 2px rgba(0,0,0,.45)" : "none";
+      }
+
+      // ===== 업로드 처리 =====
+      file.addEventListener("change", function (e) {
+        try {
+          var f = e.target.files && e.target.files[0];
+          if (!f) {
+            showAlert("파일이 선택되지 않았습니다.", false);
+            return;
+          }
+          var type = (f.type || "").toLowerCase();
+          if (type.indexOf("image/") !== 0) {
+            showAlert("이미지 파일만 업로드하세요.", false);
+            return;
+          }
+          if (type.indexOf("heic") !== -1 || type.indexOf("heif") !== -1) {
+            showAlert(
+              "HEIC/HEIF는 지원되지 않습니다. PNG/JPG를 사용하세요.",
+              false
+            );
+            return;
+          }
+          fileName.textContent = f.name;
+          var generation = ++loadGeneration;
+          extractionId++;
+          renderId++;
+          imageLoaded = false;
+          applyAlpha.disabled = true;
+
+          if (window.createImageBitmap) {
+            window
+              .createImageBitmap(f)
+              .then(function (bmp) {
+                if (generation !== loadGeneration) { bmp.close(); return; }
+                var tmp = document.createElement("canvas");
+                tmp.width = SIZE;
+                tmp.height = SIZE;
+                var tctx = tmp.getContext("2d", { willReadFrequently: true });
+                tctx.imageSmoothingEnabled = true;
+                tctx.imageSmoothingQuality = "high";
+                tctx.drawImage(bmp, 0, 0, SIZE, SIZE);
+                bmp.close();
+                var id = tctx.getImageData(0, 0, SIZE, SIZE);
+                octx.putImageData(id, 0, 0);
+                extractFromCurrentCanvas();
+                showAlert("이미지가 로드되었습니다.", true, 1000);
+              })
+              .catch(function () {
+                if (generation === loadGeneration) loadViaImage(f, generation);
+              });
+          } else {
+            loadViaImage(f, generation);
+          }
+        } catch (err) {
+          console.error(err);
+          showAlert("업로드 오류: " + err.message, false);
+        }
+      });
+
+      function loadViaImage(file, generation) {
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            if (generation !== loadGeneration) return;
+            octx.clearRect(0, 0, SIZE, SIZE);
+            octx.imageSmoothingEnabled = true;
+            octx.imageSmoothingQuality = "high";
+            octx.drawImage(img, 0, 0, SIZE, SIZE);
+            extractFromCurrentCanvas();
+            showAlert("이미지가 로드되었습니다.", true, 1000);
+          } finally {
+            URL.revokeObjectURL(url);
+          }
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+          if (generation === loadGeneration) showAlert("이미지를 불러오지 못했습니다.", false);
+        };
+        img.src = url;
+      }
+
+      // 2D 배열 ↔ flat Uint8Array 변환 헬퍼
+      function flatToData(R, G, B, A) {
+        var n = SIZE * SIZE, y, x, i;
+        for (y = 0; y < SIZE; y++) {
+          for (x = 0; x < SIZE; x++) {
+            i = y * SIZE + x;
+            data.R[y][x] = R[i];
+            data.G[y][x] = G[i];
+            data.B[y][x] = B[i];
+            data.A[y][x] = A[i];
+          }
+        }
+      }
+
+      function dataToFlat() {
+        var n = SIZE * SIZE;
+        var R = new Uint8Array(n), G = new Uint8Array(n), B = new Uint8Array(n), A = new Uint8Array(n);
+        var y, x, i;
+        for (y = 0; y < SIZE; y++) {
+          for (x = 0; x < SIZE; x++) {
+            i = y * SIZE + x;
+            R[i] = data.R[y][x];
+            G[i] = data.G[y][x];
+            B[i] = data.B[y][x];
+            A[i] = data.A[y][x];
+          }
+        }
+        return { R: R, G: G, B: B, A: A };
+      }
+
+      function extractFromCurrentCanvas() {
+        initArrays();
+        var id = octx.getImageData(0, 0, SIZE, SIZE);
+        var requestId = ++extractionId;
+        var buf = id.data.buffer.slice(0); // copy for transfer
+
+        if (extractWorker) {
+          extractWorker.onmessage = function (e) {
+            var d = e.data;
+            if (d.type !== "extracted" || d.id !== extractionId) return;
+            flatToData(new Uint8Array(d.R), new Uint8Array(d.G), new Uint8Array(d.B), new Uint8Array(d.A));
+            main.style.display = "grid";
+            setupVirtualGridOnce();
+            redrawFromData();
+            imageLoaded = true;
+            applyAlpha.disabled = false;
+            requestAnimationFrame(function () {
+              viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
+              updateGrid(currentCh);
+            });
+          };
+          extractWorker.postMessage({ type: "extract", id: requestId, buffer: buf, size: SIZE }, [buf]);
+        } else {
+          // fallback: 워커 없을 때 동기 처리
+          var a = id.data;
+          var p = 0, y, x;
+          for (y = 0; y < SIZE; y++) {
+            for (x = 0; x < SIZE; x++) {
+              data.R[y][x] = a[p++];
+              data.G[y][x] = a[p++];
+              data.B[y][x] = a[p++];
+              data.A[y][x] = a[p++];
+            }
+          }
+          main.style.display = "grid";
+          setupVirtualGridOnce();
+          redrawFromData();
+          imageLoaded = true;
+            applyAlpha.disabled = false;
+          requestAnimationFrame(function () {
+            viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
+            updateGrid(currentCh);
+          });
+        }
+      }
+
+      function imageDataFromData() {
+        var id = octx.createImageData(SIZE, SIZE), pixels = id.data, p = 0;
+        for (var y = 0; y < SIZE; y++) {
+          for (var x = 0; x < SIZE; x++) {
+            pixels[p++] = data.R[y][x]; pixels[p++] = data.G[y][x];
+            pixels[p++] = data.B[y][x]; pixels[p++] = rgbaEnabled ? data.A[y][x] : 255;
+          }
+        }
+        return id;
+      }
+
+      function drawPreview(id) {
+        octx.putImageData(id, 0, 0);
+        zctx.imageSmoothingEnabled = false;
+        zctx.clearRect(0, 0, zoom.width, zoom.height);
+        zctx.drawImage(orig, 0, 0, zoom.width, zoom.height);
+      }
+
+      function redrawFromData() {
+        var requestId = ++renderId;
+        if (rebuildWorker) {
+          var flat = dataToFlat();
+          rebuildWorker.onmessage = function (e) {
+            var d = e.data;
+            if (d.type !== "rebuilt" || d.id !== renderId) return;
+            var id = octx.createImageData(SIZE, SIZE);
+            id.data.set(new Uint8ClampedArray(d.buffer));
+            drawPreview(id);
+          };
+          rebuildWorker.postMessage({type: "rebuild", id: requestId, size: SIZE, useAlpha: rgbaEnabled,
+            R: flat.R.buffer, G: flat.G.buffer, B: flat.B.buffer, A: flat.A.buffer},
+            [flat.R.buffer, flat.G.buffer, flat.B.buffer, flat.A.buffer]);
+        } else {
+          drawPreview(imageDataFromData());
+        }
+      }
+
+      if (extractWorker) extractWorker.onerror = function (event) {
+        event.preventDefault();
+        extractWorker.terminate();
+        extractWorker = null;
+        if (file.value && !imageLoaded) extractFromCurrentCanvas();
+      };
+      if (rebuildWorker) rebuildWorker.onerror = function (event) {
+        event.preventDefault();
+        rebuildWorker.terminate();
+        rebuildWorker = null;
+        if (imageLoaded) redrawFromData();
+      };
+
+      // ===== 가상 스크롤 =====
+      var viewState = { firstRow: -1, lastRow: -1, firstCol: -1, lastCol: -1 };
+      var gridReady = false;
+
+      function setupVirtualGridOnce() {
+        if (gridReady) return;
+        setupVirtualGrid();
+        gridReady = true;
+      }
+
+      function setupVirtualGrid() {
+        var total = SIZE * CELL;
+        grid.spacer.style.width = total + "px";
+        grid.spacer.style.height = total + "px";
+        grid.cells.style.gridTemplateColumns = "repeat(1," + CELL + "px)";
+        grid.cells.style.gridAutoRows = CELL + "px";
+
+        var scheduled = false;
+        grid.wrap.addEventListener("scroll", function () {
+          if (scheduled) return;
+          scheduled = true;
+          hideAlert();
+          requestAnimationFrame(function () {
+            updateGrid(currentCh);
+            scheduled = false;
+          });
+        });
+
+        grid.cells.addEventListener("change", function (e) {
+          var t = e.target;
+          if (!t || t.tagName !== "INPUT") return;
+          var r = parseInt(t.getAttribute("data-r"), 10);
+          var c = parseInt(t.getAttribute("data-c"), 10);
+          if (isNaN(r) || isNaN(c)) return;
+          var v = clamp(parseInt(t.value, 10) || 0);
+          t.value = v;
+          data[currentCh][r][c] = v;
+          var parent = t.parentElement;
+          if (parent) {
+            parent.style.backgroundColor = tintRGB(currentCh, v);
+          }
+          t.style.color = textColorFor(v, currentCh);
+          t.style.textShadow = textShadowFor(v);
+          scheduleRedraw();
+        });
+      }
+
+      function updateCellSize() {
+        var total = SIZE * CELL;
+        grid.spacer.style.width = total + "px";
+        grid.spacer.style.height = total + "px";
+        viewState.firstRow =
+          viewState.lastRow =
+          viewState.firstCol =
+          viewState.lastCol =
+            -1;
+        updateGrid(currentCh);
+      }
+
+      function updateGrid(ch) {
+        var scrollTop = grid.wrap.scrollTop,
+          scrollLeft = grid.wrap.scrollLeft;
+        var vw = grid.wrap.clientWidth,
+          vh = grid.wrap.clientHeight;
+
+        var firstRow = Math.floor(scrollTop / CELL) - OVERSCAN;
+        if (firstRow < 0) firstRow = 0;
+        var lastRow = Math.ceil((scrollTop + vh) / CELL) + OVERSCAN;
+        if (lastRow > SIZE) lastRow = SIZE;
+        var firstCol = Math.floor(scrollLeft / CELL) - OVERSCAN;
+        if (firstCol < 0) firstCol = 0;
+        var lastCol = Math.ceil((scrollLeft + vw) / CELL) + OVERSCAN;
+        if (lastCol > SIZE) lastCol = SIZE;
+
+        if (
+          viewState.firstRow === firstRow &&
+          viewState.lastRow === lastRow &&
+          viewState.firstCol === firstCol &&
+          viewState.lastCol === lastCol
+        )
+          return;
+        viewState.firstRow = firstRow;
+        viewState.lastRow = lastRow;
+        viewState.firstCol = firstCol;
+        viewState.lastCol = lastCol;
+
+        var cols = lastCol - firstCol;
+        grid.cells.style.top = firstRow * CELL + "px";
+        grid.cells.style.left = firstCol * CELL + "px";
+        grid.cells.style.gridTemplateColumns =
+          "repeat(" + cols + "," + CELL + "px)";
+        grid.cells.style.gridAutoRows = CELL + "px";
+
+        var frag = document.createDocumentFragment(),
+          r,
+          c,
+          div,
+          inp,
+          v,
+          fontSize = Math.max(9, Math.floor(CELL * 0.5));
+        for (r = firstRow; r < lastRow; r++) {
+          for (c = firstCol; c < lastCol; c++) {
+            div = document.createElement("div");
+            div.className = "cell";
+            div.style.width = CELL + "px";
+            div.style.height = CELL + "px";
+            v = data[ch][r][c];
+            div.style.backgroundColor = tintRGB(ch, v);
+
+            inp = document.createElement("input");
+            inp.type = "text";
+            inp.setAttribute("inputmode", "numeric");
+            inp.value = v;
+            inp.style.color = textColorFor(v, ch);
+            inp.style.textShadow = textShadowFor(v);
+            inp.style.fontSize = fontSize + "px";
+            inp.setAttribute("data-r", r);
+            inp.setAttribute("data-c", c);
+            inp.setAttribute("aria-label", ch + " 채널 " + (r + 1) + "행 " + (c + 1) + "열");
+
+            div.appendChild(inp);
+            frag.appendChild(div);
+          }
+        }
+        grid.cells.innerHTML = "";
+        grid.cells.appendChild(frag);
+      }
+
+      // ===== 배치 =====
+      var redrawScheduled = false;
+      function scheduleRedraw() {
+        if (redrawScheduled) return;
+        redrawScheduled = true;
+        renderId++; // 변경 전의 워커 결과가 미리보기를 덮어쓰지 않게 한다.
+        requestAnimationFrame(function () {
+          if (imageLoaded) redrawFromData();
+          redrawScheduled = false;
+        });
+      }
+
+      // ===== CSV =====
+      function exportCSV(ch) {
+        showAlert(ch + " 채널을 내보내는 중입니다...");
+        setTimeout(function () {
+          var arr = data[ch],
+            y;
+          var parts = new Array(SIZE);
+          for (y = 0; y < SIZE; y++) {
+            parts[y] = arr[y].join(",");
+          }
+          var csv = parts.join("\n");
+          var blob = new Blob([csv], { type: "text/csv" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "channel_" + ch + "_" + SIZE + "x" + SIZE + ".csv";
+          a.click();
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
+
+      function fallbackCopy(tsv, ch) {
+        var textarea = document.createElement("textarea");
+        textarea.value = tsv;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        var ok = false;
+        try {
+          ok = document.execCommand("copy");
+        } catch (e) {
+          ok = false;
+        }
+        document.body.removeChild(textarea);
+        if (ok) {
+          showAlert(
+            ch + " 채널 데이터를 복사했어요. Excel에 붙여넣기 해보세요!",
+            true,
+            1600
+          );
+        } else {
+          showAlert(
+            "복사에 실패했어요. 클립보드 권한을 확인해 주세요.",
+            false,
+            2000
+          );
+        }
+      }
+
+      function copyChannelToClipboard(ch) {
+        var arr = data[ch],
+          y;
+        var rows = new Array(SIZE);
+        for (y = 0; y < SIZE; y++) {
+          rows[y] = arr[y].join("\t");
+        }
+        var tsv = rows.join("\n");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(tsv)
+            .then(function () {
+              showAlert(
+                ch + " 채널 데이터를 복사했어요. Excel에 붙여넣기 해보세요!",
+                true,
+                1600
+              );
+            })
+            .catch(function () {
+              fallbackCopy(tsv, ch);
+            });
+        } else {
+          fallbackCopy(tsv, ch);
+        }
+      }
+
+      document.getElementById("exportS").onclick = function () {
+        if (!imageLoaded) {
+          showAlert("먼저 이미지를 업로드해주세요.", false);
+          return;
+        }
+        exportCSV(currentCh);
+      };
+
+      if (copyBtn) {
+        copyBtn.onclick = function () {
+          if (!imageLoaded) {
+            showAlert("먼저 이미지를 불러와 주세요.", false);
+            return;
+          }
+          copyChannelToClipboard(currentCh);
+        };
+      }
+
+      // ===== 채널 전환 / RGBA 분석 =====
+      function updateChannelControls() {
+        CHANNELS.forEach(function (ch) {
+          var button = document.getElementById("btn" + ch);
+          button.style.opacity = ch === currentCh ? "1" : "0.6";
+          button.setAttribute("aria-pressed", ch === currentCh ? "true" : "false");
+        });
+        btnA.hidden = !rgbaEnabled;
+        alphaControls.hidden = !rgbaEnabled;
+        zoom.classList.toggle("transparency", rgbaEnabled);
+        previewTitle.textContent = "⬇️ " + (rgbaEnabled ? "RGBA" : "RGB") + " 이미지 미리보기 ⬇️";
+        channelInfo.textContent = currentCh + " 채널 · " +
+          (currentCh === "A" ? "0 = 완전 투명, 255 = 완전 불투명" : "값 범위 0~255");
+        modeHelp.textContent = rgbaEnabled
+          ? "원본의 A 값을 보존합니다. A 행렬을 편집하거나 전체 값을 적용해 투명도를 바꿔 보세요."
+          : "RGB는 색을 분석합니다. RGBA를 선택하면 투명도도 함께 분석합니다.";
+      }
+
+      function refreshGrid() {
+        viewState.firstRow = viewState.lastRow = viewState.firstCol = viewState.lastCol = -1;
+        updateGrid(currentCh);
+      }
+
+      function setCurrentChannel(ch) {
+        if (!imageLoaded) { showAlert("먼저 이미지를 업로드해주세요.", false); return; }
+        if (ch === "A" && !rgbaEnabled) return;
+        currentCh = ch;
+        updateChannelControls();
+        refreshGrid();
+      }
+      CHANNELS.forEach(function (ch) {
+        document.getElementById("btn" + ch).onclick = function () { setCurrentChannel(ch); };
+      });
+
+      rgbaMode.addEventListener("change", function () {
+        rgbaEnabled = rgbaMode.checked;
+        if (!rgbaEnabled && currentCh === "A") currentCh = "R";
+        updateChannelControls();
+        if (imageLoaded) { refreshGrid(); scheduleRedraw(); }
+      });
+
+      applyAlpha.onclick = function () {
+        if (!imageLoaded || !rgbaEnabled) return;
+        var value = clamp(parseInt(alphaValue.value, 10) || 0);
+        alphaValue.value = value;
+        for (var y = 0; y < SIZE; y++) data.A[y].fill(value);
+        currentCh = "A";
+        updateChannelControls();
+        refreshGrid();
+        scheduleRedraw();
+      };
+
+      document.getElementById("exportPNG").onclick = function () {
+        if (!imageLoaded) { showAlert("먼저 이미지를 업로드해주세요.", false); return; }
+        // 내보내기는 최신 데이터로 직접 합성하여 대기 중인 워커 결과에 의존하지 않는다.
+        var canvas = document.createElement("canvas");
+        canvas.width = canvas.height = SIZE;
+        canvas.getContext("2d").putImageData(imageDataFromData(), 0, 0);
+        var mode = rgbaEnabled ? "RGBA" : "RGB";
+        canvas.toBlob(function (blob) {
+          if (!blob) { showAlert("PNG 저장에 실패했습니다.", false); return; }
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement("a");
+          link.href = url;
+          link.download = "image_" + mode + "_" + SIZE + "x" + SIZE + ".png";
+          link.click();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        }, "image/png");
+      };
+
+      // ===== 초기화 버튼 =====
+      resetBtn.onclick = function () {
+        if (confirm("모든 데이터가 초기화됩니다. 계속하시겠습니까?")) {
+          imageLoaded = false;
+          loadGeneration++; extractionId++; renderId++;
+          rgbaEnabled = false;
+          rgbaMode.checked = false;
+          alphaValue.value = 255;
+          applyAlpha.disabled = true;
+          octx.clearRect(0, 0, SIZE, SIZE);
+          zctx.clearRect(0, 0, zoom.width, zoom.height);
+          fileName.textContent = "";
+          main.style.display = "none";
+          file.value = "";
+          initArrays();
+          currentCh = "R";
+          updateChannelControls();
+          refreshGrid();
+          showAlert("초기화되었습니다.", true, 800);
+        }
+      };
+
+      // ===== 셀 크기 조절 =====
+      cellSizeInput.addEventListener("input", function () {
+        CELL = parseInt(cellSizeInput.value, 10);
+        cellSizeValue.textContent = CELL + "px";
+        updateCellSize();
+      });
+
+      // 초기 준비
+      initArrays();
+      setupVirtualGridOnce();
+      updateGrid(currentCh);
+      updateChannelControls();
+    </script>
+  </body>
+</html>

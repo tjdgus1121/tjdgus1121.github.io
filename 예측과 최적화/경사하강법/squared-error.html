@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>손실함수 2단계 · 오차제곱 이해하기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f6fa;
+    --panel:#ffffff;
+    --ink:#172033;
+    --muted:#5f6b80;
+    --line:#dfe5ef;
+    --axis:#9aa6ba;
+    --point:#1d273d;
+    --trend:#0f766e;
+    --trend-soft:#dff4ee;
+    --pos:#e0523b;
+    --neg:#2f68d8;
+    --gold:#d89614;
+    --violet:#6d3bbf;
+    --good:#15845c;
+    --bad:#c7352b;
+    --shadow:0 1px 2px rgba(18,26,43,.05),0 10px 26px rgba(18,26,43,.07);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(900px 420px at 88% -12%,#e5efff 0%,transparent 62%),
+      linear-gradient(180deg,#f8fafc 0%,var(--bg) 100%);
+    color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input{font:inherit;}
+  button{cursor:pointer;}
+  .mono{font-family:"JetBrains Mono","Consolas",monospace;font-feature-settings:"tnum";}
+  .wrap{max-width:1240px;margin:0 auto;padding:32px 20px 70px;}
+
+  .head{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:20px;
+    align-items:end;
+    margin-bottom:20px;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    color:var(--trend);
+    background:var(--trend-soft);
+    border:1px solid #bfe5dc;
+    border-radius:999px;
+    padding:5px 11px;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.08em;
+  }
+  h1{font-size:clamp(30px,4vw,48px);line-height:1.12;margin:14px 0 10px;letter-spacing:-.01em;}
+  h1 em{font-style:normal;color:var(--trend);}
+  .lede{max-width:68ch;margin:0;color:var(--muted);font-size:16px;}
+  .rail{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;}
+  .node{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:7px 11px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:999px;
+    color:var(--muted);
+    font-size:13px;
+    box-shadow:0 1px 2px rgba(18,26,43,.04);
+  }
+  .node .num{
+    width:20px;
+    height:20px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:#edf1f7;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:800;
+  }
+  .node.active{border-color:var(--trend);background:#f2fbf8;color:var(--trend);font-weight:800;}
+  .node.active .num{background:var(--trend);color:#fff;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:var(--shadow);
+    padding:22px;
+    margin-top:18px;
+  }
+  .card h2{font-size:20px;line-height:1.25;margin:0 0 5px;}
+  .sub{margin:0;color:var(--muted);font-size:14px;}
+
+  .concept{
+    display:grid;
+    grid-template-columns:minmax(0,.76fr) minmax(600px,1.24fr);
+    gap:20px;
+    align-items:stretch;
+  }
+  .formula{
+    min-height:100%;
+    min-width:0;
+    display:grid;
+    align-content:center;
+    gap:12px;
+    background:#fafbfd;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:18px;
+  }
+  .formula-line{
+    display:block;
+    justify-content:center;
+    text-align:center;
+    font-size:clamp(20px,2.2vw,26px);
+    letter-spacing:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    white-space:nowrap;
+    padding:2px 0;
+  }
+  .formula-line .katex{font-size:1.08em;}
+  .formula-line .katex-display{margin:0;}
+  .eq-chip .katex{font-size:1.04em;}
+  th .katex,td .katex{font-size:1em;}
+  .formula-note{text-align:center;margin:0;color:var(--muted);font-size:14px;}
+  .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .why{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+    background:#fff;
+  }
+  .why b{display:block;margin-bottom:4px;}
+  .why span{display:block;color:var(--muted);font-size:13px;}
+
+  .lab-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;}
+  .seg{
+    display:inline-flex;
+    gap:4px;
+    padding:4px;
+    border-radius:8px;
+    background:#eef2f7;
+  }
+  .seg button{
+    border:none;
+    border-radius:6px;
+    background:transparent;
+    color:var(--muted);
+    padding:8px 12px;
+    font-weight:750;
+    font-size:13px;
+  }
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(18,26,43,.08);}
+  .act{
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#fff;
+    color:var(--ink);
+    padding:9px 12px;
+    font-weight:750;
+    font-size:13px;
+    transition:.15s ease;
+  }
+  .act:hover{border-color:#b8c2d2;transform:translateY(-1px);}
+  .act.primary{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .act.on{background:#fff8e8;border-color:#edc56e;color:#7a4d00;}
+  .act.ref-zero.on{background:#fff8e8;border-color:var(--gold);color:#7a4d00;}
+  .act.ref-best.on{background:#f3effd;border-color:var(--violet);color:#4c248c;}
+  .act:focus-visible,.seg button:focus-visible,input:focus-visible{outline:3px solid #b9d4ff;outline-offset:2px;}
+
+  .lab-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 310px;
+    gap:18px;
+    align-items:start;
+  }
+  .plot-frame{
+    position:relative;
+    overflow:hidden;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+  }
+  svg{display:block;width:100%;height:auto;touch-action:none;}
+  .eq-chip{
+    position:absolute;
+    top:12px;
+    right:12px;
+    z-index:2;
+    padding:7px 11px;
+    border-radius:7px;
+    background:rgba(240,250,248,.94);
+    border:1px solid #bfe5dc;
+    color:var(--trend);
+    font-weight:850;
+    pointer-events:none;
+    box-shadow:0 4px 14px rgba(18,26,43,.08);
+  }
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:9px 16px;
+    color:var(--muted);
+    font-size:13px;
+    margin-top:11px;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;}
+
+  .side{
+    display:grid;
+    gap:12px;
+  }
+  .control-block{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+    background:#fbfcfe;
+  }
+  .control-block h3{
+    margin:0 0 10px;
+    font-size:15px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:58px minmax(0,1fr) 58px;
+    gap:10px;
+    align-items:center;
+    margin-top:9px;
+    color:var(--muted);
+    font-size:13px;
+  }
+  input[type="range"]{width:100%;accent-color:var(--trend);}
+  .num{
+    width:58px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:6px 5px;
+    text-align:center;
+    color:var(--ink);
+    background:#fff;
+  }
+  .preset-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+  .preset-grid .act{text-align:left;}
+  .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .metric{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:11px;
+    background:#fff;
+    min-width:0;
+  }
+  .metric span{display:block;color:var(--muted);font-size:12px;margin-bottom:2px;}
+  .metric b{font-size:20px;line-height:1.1;}
+  .metric.wide{grid-column:1/-1;}
+  .meter{
+    height:11px;
+    border-radius:999px;
+    overflow:hidden;
+    background:#e8edf5;
+    margin-top:8px;
+  }
+  .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--trend));transition:.18s ease;}
+  .status{
+    border-radius:8px;
+    border:1px solid #edd6a4;
+    background:#fff8e8;
+    color:#805100;
+    padding:11px 12px;
+    font-size:13px;
+    font-weight:700;
+  }
+  .status.good{border-color:#bce3cf;background:#ecfbf4;color:#0e6646;}
+
+  .table-wrap{overflow-x:auto;margin-top:14px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{border-bottom:1px solid var(--line);padding:10px;text-align:center;white-space:nowrap;}
+  th{background:#fafbfd;color:var(--muted);font-weight:800;}
+  td.coord,td.val{font-family:"JetBrains Mono","Consolas",monospace;font-weight:650;}
+  tfoot td{background:#fafbfd;font-weight:850;border-bottom:none;}
+  .quiz-cell{display:flex;align-items:center;justify-content:center;gap:7px;}
+  .quiz-cell input{
+    width:82px;
+    border:1.5px solid var(--line);
+    border-radius:7px;
+    padding:7px 6px;
+    text-align:center;
+    background:#fff;
+  }
+  .quiz-cell input.ok{border-color:var(--good);background:#effaf4;}
+  .quiz-cell input.bad{border-color:var(--bad);background:#fff1ef;}
+  .mark{font-weight:850;}
+  .mark.ok{color:var(--good);}
+  .mark.bad{color:var(--bad);}
+
+  .reflect{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+  }
+  .reflect article{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:15px;
+    background:#fff;
+  }
+  .reflect b{display:block;margin-bottom:6px;}
+  .reflect p{margin:0;color:var(--muted);font-size:13px;}
+  .foot{margin-top:26px;text-align:center;color:var(--muted);font-size:13px;}
+  .hidden{display:none!important;}
+
+  .modal{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(18,26,43,.55);
+    backdrop-filter:blur(3px);
+  }
+  .modal.hidden{display:none;}
+  .modal-card{
+    width:100vw;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:#fff;
+  }
+  .modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 18px;
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .modal-head h2{margin:0;font-size:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .modal-head-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .room-badge{font-size:13px;background:var(--trend-soft);color:var(--trend);padding:4px 10px;border-radius:999px;}
+  .mhint{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .modal-plot{flex:1;min-height:0;display:flex;padding:6px 10px;}
+  .modal-plot .plot-frame{width:100%;height:100%;}
+  .modal-plot .plot-frame svg{width:100%;height:100%;}
+  .modal-splitter{
+    height:13px;
+    flex:none;
+    cursor:ns-resize;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fafbfd;
+    border-top:1px solid var(--line);
+    touch-action:none;
+  }
+  .modal-splitter::before{content:"";width:50px;height:4px;border-radius:2px;background:var(--axis);opacity:.58;}
+  .modal-info{height:190px;padding:14px 20px;overflow:auto;background:#fafbfd;font-size:13.5px;}
+  .m-top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;}
+  .m-stat{display:inline-flex;align-items:baseline;gap:6px;color:var(--muted);font-weight:800;}
+  .m-stat b{font-size:1.35em;color:var(--ink);}
+  .m-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:.38em .65em;font-weight:800;}
+  .m-chip .sw{width:1.25em;height:.28em;border-radius:2px;}
+  .parts-title{font-size:.92em;color:var(--muted);margin:.9em 0 .45em;font-weight:800;}
+  .parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(16em,1fr));gap:.45em;}
+  .part{display:flex;align-items:center;gap:.55em;padding:.52em .72em;border:1px solid var(--line);border-radius:8px;background:#fff;min-width:0;}
+  .part.me{border-color:var(--trend);background:#f0faf8;}
+  .part .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .part .sw{width:1.15em;height:.32em;border-radius:2px;flex:none;}
+  .part .pe{margin-left:auto;color:var(--muted);font-family:"JetBrains Mono","Consolas",monospace;flex:none;}
+  .ctxmenu{position:fixed;z-index:60;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;min-width:190px;}
+  .ctxmenu.hidden{display:none;}
+  .ctxmenu button{display:flex;width:100%;align-items:center;gap:8px;background:none;border:none;text-align:left;font-size:14px;padding:9px 11px;border-radius:6px;cursor:pointer;color:var(--ink);}
+  .ctxmenu button:hover{background:#f1f4f9;}
+  .ctxmenu button.danger{color:var(--bad);}
+  .ctxmenu .note{font-size:12.5px;color:var(--muted);padding:9px 11px;}
+  .popup{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(18,26,43,.45);padding:20px;}
+  .popup.hidden{display:none;}
+  .popup-card{width:min(92vw,410px);background:#fff;border-radius:8px;box-shadow:0 16px 50px rgba(0,0,0,.28);padding:22px;}
+  .popup-card h3{margin:0 0 6px;font-size:18px;}
+  .popup-card .psub{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.55;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:750;}
+  .field input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:7px;font-size:15px;}
+  .field input:focus{outline:none;border-color:var(--trend);box-shadow:0 0 0 3px var(--trend-soft);}
+  .popup-actions{display:flex;gap:10px;margin-top:4px;}
+  .popup-actions .act{flex:1;}
+  .room-msg{font-size:13px;color:var(--bad);margin-top:11px;min-height:18px;font-weight:800;}
+  .popup-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
+
+  @media (max-width:1080px){
+    .concept{grid-template-columns:1fr;}
+  }
+  @media (max-width:920px){
+    .head{grid-template-columns:1fr;}
+    .rail{justify-content:flex-start;}
+    .lab-grid,.reflect{grid-template-columns:1fr;}
+    .why-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:560px){
+    .wrap{padding:24px 14px 56px;}
+    .card{padding:16px;}
+    .toolbar{justify-content:flex-start;}
+    .seg{width:100%;display:grid;grid-template-columns:repeat(3,1fr);}
+    .seg button{padding:8px 6px;}
+    .metric-grid{grid-template-columns:1fr;}
+    .row{grid-template-columns:44px minmax(120px,1fr) 54px;}
+    .num{width:54px;}
+    th,td{padding:8px 7px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div>
+      <span class="eyebrow">손실함수 · STEP 2</span>
+      <h1>오차를 <em>제곱</em>하면 무엇이 달라질까?</h1>
+      <p class="lede">오차는 부호 때문에 서로 상쇄될 수 있습니다. 제곱오차는 위아래 방향을 없애고, 멀리 빗나간 예측을 더 크게 계산해 추세선의 좋고 나쁨을 비교하게 해 줍니다.</p>
+    </div>
+    <div class="rail" aria-label="학습 단계">
+      <div class="node"><span class="num">1</span>오차</div>
+      <div class="node active"><span class="num">2</span>오차 제곱</div>
+      <div class="node"><span class="num">3</span>합 구하기</div>
+      <div class="node"><span class="num">4</span>평균 → 손실</div>
+    </div>
+  </header>
+
+  <section class="card concept">
+    <div>
+      <h2>제곱오차의 역할</h2>
+      <p class="sub">각 점에서 실제값과 예측값의 차이를 구한 뒤, 그 값을 제곱해 모두 양수로 바꿉니다.</p>
+      <div class="why-grid" style="margin-top:14px;">
+        <div class="why"><b>부호 제거</b><span>+3과 -3은 방향이 다르지만 제곱하면 둘 다 9입니다.</span></div>
+        <div class="why"><b>큰 오차 강조</b><span>오차 4는 제곱하면 16이라 오차 2의 네 배로 커집니다.</span></div>
+        <div class="why"><b>추세선 비교</b><span>제곱오차의 합이 작을수록 점들을 더 잘 따라가는 직선입니다.</span></div>
+      </div>
+    </div>
+    <div class="formula" aria-label="오차제곱 공식">
+      <div class="formula-line" id="mainFormula"></div>
+      <div class="formula-line" id="sseFormula"></div>
+      <p class="formula-note">SSE는 Sum of Squared Errors, 즉 제곱오차의 합입니다.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="lab-head">
+      <div>
+        <h2>추세선을 움직이며 SSE 줄이기</h2>
+        <p class="sub">그래프의 양 끝 핸들을 드래그하거나 슬라이더로 직선을 조절하세요. 반투명 사각형의 넓이가 각 점의 제곱오차입니다.</p>
+      </div>
+      <div class="toolbar">
+        <div class="seg" id="dataSeg" aria-label="데이터 선택">
+          <button type="button" data-set="basic" class="on">기본</button>
+          <button type="button" data-set="wide">상쇄</button>
+          <button type="button" data-set="outlier">이상치</button>
+        </div>
+        <button type="button" class="act primary" id="openDrawModal">직접 그리기</button>
+        <button type="button" class="act" id="toggleBest">최소선 보기</button>
+        <button type="button" class="act primary" id="bestBtn">최소 SSE 추세선</button>
+      </div>
+    </div>
+
+    <div class="lab-grid">
+      <div>
+        <div class="plot-frame">
+          <div class="eq-chip mono" id="eqChip"></div>
+          <svg id="plot" viewBox="0 0 700 470" role="img" aria-label="데이터 점, 추세선, 오차제곱 그래프"></svg>
+        </div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--point)"></i>데이터 점</span>
+          <span><i class="sw" style="background:var(--trend)"></i>내 추세선</span>
+          <span><i class="sw" style="background:rgba(224,82,59,.35);border:1px solid var(--pos)"></i>양의 오차제곱</span>
+          <span><i class="sw" style="background:rgba(47,104,216,.32);border:1px solid var(--neg)"></i>음의 오차제곱</span>
+          <span><i class="sw" style="background:var(--gold)"></i>오차합 0 선</span>
+          <span><i class="sw" style="background:var(--violet)"></i>최소 SSE 선</span>
+        </div>
+      </div>
+
+      <aside class="side" aria-label="추세선 조절과 계산값">
+        <div class="control-block">
+          <h3>직선 조절</h3>
+          <div class="row">
+            <label for="slope">기울기</label>
+            <input id="slope" type="range" min="-1.5" max="2.8" step="0.1" />
+            <input id="slopeNum" class="num mono" type="number" min="-1.5" max="2.8" step="0.1" />
+          </div>
+          <div class="row">
+            <label for="intercept">절편</label>
+            <input id="intercept" type="range" min="-2" max="12" step="0.1" />
+            <input id="interceptNum" class="num mono" type="number" min="-2" max="12" step="0.1" />
+          </div>
+        </div>
+
+        <div class="control-block">
+          <h3>비교용 직선</h3>
+          <div class="preset-grid">
+            <button type="button" class="act" data-preset="mean">오차합 0 · 수평선</button>
+            <button type="button" class="act" data-preset="steep">오차합 0 · 가파른선</button>
+            <button type="button" class="act" data-preset="flatbad">제곱오차 크게 만들기</button>
+          </div>
+        </div>
+
+        <div class="metric-grid" id="metrics">
+          <div class="metric"><span>오차의 합</span><b class="mono" id="sumE">0</b></div>
+          <div class="metric"><span>SSE</span><b class="mono" id="sse">0</b></div>
+          <div class="metric"><span>MSE</span><b class="mono" id="mse">0</b></div>
+          <div class="metric"><span>최소 SSE</span><b class="mono" id="bestSse">0</b></div>
+          <div class="metric wide">
+            <span>최소선에 가까운 정도</span>
+            <b class="mono" id="fitRate">0%</b>
+            <div class="meter"><i id="fitBar"></i></div>
+          </div>
+        </div>
+        <div class="status" id="statusBox">SSE를 줄여 보세요. 사각형이 작아질수록 추세선이 데이터에 가까워집니다.</div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>점별 계산표</h2>
+    <p class="sub">현재 추세선에서 각 점의 예측값, 오차, 제곱오차를 확인합니다. 빈칸은 직접 계산해 보세요.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>점</th>
+            <th>좌표 (x, y)</th>
+            <th>예측값 <span data-tex="\hat y"></span></th>
+            <th>오차 <span data-tex="e = y - \hat y"></span></th>
+            <th>제곱오차 <span data-tex="e^2"></span></th>
+          </tr>
+        </thead>
+        <tbody id="calcBody"></tbody>
+        <tfoot id="calcFoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>정리</h2>
+    <div class="reflect">
+      <article><b>오차합만 보면 부족합니다</b><p>양수 오차와 음수 오차는 더하면 서로 사라질 수 있습니다.</p></article>
+      <article><b>제곱하면 방향이 사라집니다</b><p>위로 빗나가도, 아래로 빗나가도 손실에는 양수로 더해집니다.</p></article>
+      <article><b>SSE가 작은 직선을 찾습니다</b><p>여러 추세선 중 제곱오차의 합이 가장 작은 직선이 데이터 흐름을 가장 잘 설명합니다.</p></article>
+    </div>
+  </section>
+
+  <footer class="foot">다음 단계: SSE를 데이터 개수로 나누면 평균제곱오차(MSE)가 됩니다.</footer>
+
+  <div id="drawModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>직접 그리기 <span id="roomBadge" class="room-badge hidden"></span><span class="mhint">그래프 우클릭으로 점 추가·삭제</span></h2>
+        <div class="modal-head-actions">
+          <button type="button" id="mZeroLine" class="act ref-zero on">오차합 0 그리기</button>
+          <button type="button" id="mBestLine" class="act ref-best on">SSE 최소 그리기</button>
+          <button type="button" id="mFitZero" class="act">내 직선 → 오차합 0</button>
+          <button type="button" id="mFitBest" class="act">내 직선 → SSE 최소</button>
+          <button type="button" id="mResetLine" class="act">내 직선 초기화</button>
+          <button type="button" id="mNewData" class="act">새 데이터</button>
+          <button type="button" id="collabBtn" class="act">같이 그리기</button>
+          <button type="button" id="closeModal" class="act primary">닫기</button>
+        </div>
+      </div>
+      <div class="modal-plot" id="modalPlotSlot"></div>
+      <div class="modal-splitter" id="modalSplitter" title="드래그하여 그래프와 정보창 높이 조절"></div>
+      <div class="modal-info" id="modalInfo"></div>
+      <div id="ctxMenu" class="ctxmenu hidden"></div>
+    </div>
+
+    <div id="roomPopup" class="popup hidden">
+      <div class="popup-card">
+        <h3>같이 그리기 · 방 참여</h3>
+        <p class="psub">같은 데이터로 친구들과 동시에 직선을 그려 보세요. 오차합 0 함수와 SSE 최소 함수가 기준선으로 함께 표시됩니다.</p>
+        <div class="field"><label for="rName">이름 / 모둠명</label><input id="rName" maxlength="12" placeholder="예: 2모둠" /></div>
+        <div class="field"><label for="rCode">방 코드</label><input id="rCode" maxlength="6" inputmode="numeric" placeholder="참여할 때 입력" /></div>
+        <div class="popup-actions">
+          <button type="button" id="rCreate" class="act primary">방 만들기</button>
+          <button type="button" id="rJoin" class="act">참여하기</button>
+        </div>
+        <div class="room-msg" id="roomMsg"></div>
+        <button type="button" id="rCancel" class="act" style="width:100%;margin-top:8px;">취소</button>
+        <p class="popup-note">Firebase Realtime Database로 참여자 직선과 점 데이터를 동기화합니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getDatabase, ref, set, update, get, onValue, onDisconnect, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCOrVhfODMA2lCQsLb8uP0B4vlQg-DEVgY",
+  authDomain: "gradient-e362a.firebaseapp.com",
+  databaseURL: "https://gradient-e362a-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "gradient-e362a",
+  storageBucket: "gradient-e362a.firebasestorage.app",
+  messagingSenderId: "685476751774",
+  appId: "1:685476751774:web:cdf2be1aeb90b5e738ce8f"
+};
+
+let db = null;
+try{ db = getDatabase(initializeApp(firebaseConfig)); }catch(e){ console.warn('firebase init failed', e); }
+
+const plot = document.getElementById('plot');
+let VBW = 700;
+const H = 470;
+const M = {l:48, r:24, t:24, b:44};
+let IW = VBW - M.l - M.r;
+const IH = H - M.t - M.b;
+const QUIZ_INDEX = 2;
+const ROOM_ROOT = 'sseRooms';
+const UID = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'u' + Math.random().toString(36).slice(2);
+const COLORS = ['#e0523b','#2f68d8','#0f766e','#d89614','#6d3bbf','#c026a6','#0e7490','#ca8a04','#dc2626','#2563eb','#059669','#9333ea'];
+
+const datasets = {
+  basic: {
+    name:'기본',
+    yMax:14,
+    points:[{x:1,y:2.5},{x:2,y:4.2},{x:4,y:5.4},{x:6,y:7.6},{x:8,y:9.3},{x:9,y:10.2}],
+    start:{a:.9,b:1.2}
+  },
+  wide: {
+    name:'상쇄',
+    yMax:16,
+    points:[{x:1,y:3},{x:2,y:10},{x:4,y:4},{x:6,y:12},{x:8,y:6},{x:9,y:13}],
+    start:{a:.25,b:7}
+  },
+  outlier: {
+    name:'이상치',
+    yMax:22,
+    points:[{x:1,y:3.2},{x:2,y:4.1},{x:4,y:6.2},{x:6,y:8},{x:8,y:9.5},{x:9,y:19}],
+    start:{a:.8,b:2.1}
+  }
+};
+
+let currentSet = 'basic';
+let points = [];
+let yMax = 14;
+let a = 0.9;
+let b = 1.2;
+let showBest = false;
+let showZeroRef = true;
+let showBestRef = true;
+let dragging = null;
+let modalOpen = false;
+let plotFrame = null;
+let legendEl = null;
+let plotHomeParent = null;
+let modalInfoEl = null;
+let modalCard = null;
+let modalInfoHeight = 190;
+let splitting = false;
+let ROOM = null;
+let MYCOLOR = COLORS[0];
+let lastPush = 0;
+let pointsEdited = false;
+
+const $ = id => document.getElementById(id);
+const sx = x => M.l + (x / 10) * IW;
+const sy = y => M.t + (1 - y / yMax) * IH;
+const invY = py => (1 - (py - M.t) / IH) * yMax;
+const invX = px => (px - M.l) / IW * 10;
+const pred = (x, aa = a, bb = b) => aa * x + bb;
+const err = p => p.y - pred(p.x);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const round1 = v => Math.round(v * 10) / 10;
+const near = (v,t) => Math.abs(v - t) < 0.04;
+const sum = arr => arr.reduce((s,v)=>s+v,0);
+const escapeHtml = s => (s + '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const fmt = v => {
+  const r = Math.round(v * 100) / 100;
+  if(Math.abs(r) < 0.005) return '0';
+  return Number.isInteger(r) ? String(r) : r.toFixed(2).replace(/0$/,'').replace(/0$/,'');
+};
+const signed = v => (v < -0.005 ? '−' : '+') + fmt(Math.abs(v));
+const texNum = v => {
+  const s = fmt(v);
+  return s.startsWith('-') ? '-' + s.slice(1) : s;
+};
+const K = (tex, display = false) => {
+  if(window.katex){
+    return katex.renderToString(tex,{throwOnError:false,displayMode:display});
+  }
+  return tex;
+};
+
+function renderStaticMath(){
+  $('mainFormula').innerHTML = K('e_i = y_i - \\hat y_i \\quad \\Rightarrow \\quad e_i^2 = (y_i - \\hat y_i)^2', true);
+  $('sseFormula').innerHTML = K('SSE = \\sum_{i=1}^{n} e_i^2 = \\sum_{i=1}^{n}(y_i-\\hat y_i)^2', true);
+  document.querySelectorAll('[data-tex]').forEach(el => {
+    el.innerHTML = K(el.dataset.tex);
+  });
+}
+
+function setPlotViewBox(){
+  let w = 700;
+  if(modalOpen && plotFrame){
+    const r = plotFrame.getBoundingClientRect();
+    if(r.width && r.height) w = Math.max(700, Math.min(1800, Math.round(H * (r.width / r.height))));
+  }
+  VBW = w;
+  IW = VBW - M.l - M.r;
+  plot.setAttribute('viewBox', `0 0 ${VBW} ${H}`);
+}
+
+function loadDataset(key){
+  currentSet = key;
+  const d = datasets[key];
+  points = d.points.map(p => ({...p}));
+  yMax = d.yMax;
+  a = d.start.a;
+  b = d.start.b;
+  showBest = false;
+  document.querySelectorAll('#dataSeg button').forEach(btn => btn.classList.toggle('on', btn.dataset.set === key));
+  $('toggleBest').classList.remove('on');
+  syncControls();
+  renderAll();
+}
+
+function bestLine(){
+  const mx = sum(points.map(p => p.x)) / points.length;
+  const my = sum(points.map(p => p.y)) / points.length;
+  const num = sum(points.map(p => (p.x - mx) * (p.y - my)));
+  const den = sum(points.map(p => (p.x - mx) ** 2));
+  const aa = den === 0 ? 0 : num / den;
+  return {a:aa, b:my - aa * mx};
+}
+
+function zeroSumLine(slope = 0){
+  const mx = sum(points.map(p => p.x)) / points.length;
+  const my = sum(points.map(p => p.y)) / points.length;
+  return {a:slope, b:my - slope * mx};
+}
+
+function currentLine(){ return {a,b}; }
+
+function metricsFor(aa = a, bb = b){
+  const rows = points.map(p => {
+    const yhat = pred(p.x, aa, bb);
+    const e = p.y - yhat;
+    return {...p, yhat, e, e2:e*e};
+  });
+  const sse = sum(rows.map(r => r.e2));
+  return {
+    rows,
+    sumE:sum(rows.map(r => r.e)),
+    sse,
+    mse:sse / rows.length
+  };
+}
+
+function eqTex(aa = a, bb = b){
+  const ar = Math.round(aa * 10) / 10;
+  const br = Math.round(bb * 10) / 10;
+  const aPart = Math.abs(ar - 1) < 0.001 ? 'x' : Math.abs(ar + 1) < 0.001 ? '-x' : `${texNum(ar)}x`;
+  if(Math.abs(br) < 0.001) return `\\hat y = ${aPart}`;
+  return `\\hat y = ${aPart} ${br < 0 ? '-' : '+'} ${texNum(Math.abs(br))}`;
+}
+
+function syncControls(){
+  const maxB = Math.max(12, yMax);
+  $('intercept').max = maxB;
+  $('interceptNum').max = maxB;
+  $('slope').value = a;
+  $('slopeNum').value = fmt(a);
+  $('intercept').value = b;
+  $('interceptNum').value = fmt(b);
+}
+
+function setLine(aa, bb, push = true){
+  a = clamp(round1(aa), -1.5, 2.8);
+  b = clamp(round1(bb), -2, Math.max(12, yMax));
+  syncControls();
+  renderAll();
+  if(modalOpen && push) pushMyLine(true);
+}
+
+function linePreset(type){
+  const mx = sum(points.map(p => p.x)) / points.length;
+  const my = sum(points.map(p => p.y)) / points.length;
+  if(type === 'mean') setLine(0, my);
+  if(type === 'steep') setLine(1.6, my - 1.6 * mx);
+  if(type === 'flatbad') setLine(-.8, my + .8 * mx);
+}
+
+function drawGrid(){
+  let g = `<defs><clipPath id="plotBox"><rect x="${M.l}" y="${M.t}" width="${IW}" height="${IH}"></rect></clipPath></defs>`;
+  for(let x = 0; x <= 10; x++){
+    g += `<line x1="${sx(x)}" y1="${M.t}" x2="${sx(x)}" y2="${M.t+IH}" stroke="var(--line)"/>`;
+    g += `<text x="${sx(x)}" y="${M.t+IH+24}" text-anchor="middle" font-size="12" fill="var(--axis)" class="mono">${x}</text>`;
+  }
+  const yStep = yMax > 16 ? 4 : 2;
+  for(let y = 0; y <= yMax; y += yStep){
+    g += `<line x1="${M.l}" y1="${sy(y)}" x2="${M.l+IW}" y2="${sy(y)}" stroke="var(--line)"/>`;
+    g += `<text x="${M.l-10}" y="${sy(y)+4}" text-anchor="end" font-size="12" fill="var(--axis)" class="mono">${y}</text>`;
+  }
+  g += `<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+IH}" stroke="var(--axis)" stroke-width="1.5"/>`;
+  g += `<line x1="${M.l}" y1="${M.t+IH}" x2="${M.l+IW}" y2="${M.t+IH}" stroke="var(--axis)" stroke-width="1.5"/>`;
+  return g;
+}
+
+function drawLine(aa, bb, color, width, dash = '', opacity = 1){
+  return `<g clip-path="url(#plotBox)"><line x1="${sx(0)}" y1="${sy(pred(0,aa,bb))}" x2="${sx(10)}" y2="${sy(pred(10,aa,bb))}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" opacity="${opacity}" ${dash}/></g>`;
+}
+
+function drawLineLabel(aa, bb, text, color, offset = 0){
+  const x = sx(10) - 8;
+  const y = clamp(sy(pred(10,aa,bb)) + offset, M.t + 16, M.t + IH - 8);
+  return `<text x="${x}" y="${y}" text-anchor="end" font-size="12" fill="${color}" font-weight="900">${escapeHtml(text)}</text>`;
+}
+
+function drawBenchLines(){
+  const z = zeroSumLine(0);
+  const best = bestLine();
+  let g = '';
+  if(showZeroRef){
+    g += drawLine(z.a,z.b,'var(--gold)',3.1,'stroke-dasharray="9 5"',.98) +
+      drawLineLabel(z.a,z.b,'오차합 0','var(--gold)',-10);
+  }
+  if(showBestRef){
+    g += drawLine(best.a,best.b,'var(--violet)',3.1,'stroke-dasharray="7 4"',.98) +
+      drawLineLabel(best.a,best.b,'SSE 최소','var(--violet)',16);
+  }
+  return g;
+}
+
+function drawParticipantLines(){
+  if(!ROOM || !ROOM.parts) return '';
+  return Object.entries(ROOM.parts).map(([uid,pp]) => {
+    if(uid === UID || typeof pp.a !== 'number' || typeof pp.b !== 'number') return '';
+    const color = pp.color || '#7b8497';
+    return drawLine(pp.a,pp.b,color,2.4,'',.68) + drawLineLabel(pp.a,pp.b,(pp.name || '익명').slice(0,10),color,-8);
+  }).join('');
+}
+
+function drawSquaresAndResiduals(){
+  let g = '<g clip-path="url(#plotBox)">';
+  points.forEach((p,i) => {
+    const yhat = pred(p.x);
+    const e = p.y - yhat;
+    const x = sx(p.x);
+    const y1 = sy(p.y);
+    const y2 = sy(yhat);
+    const top = Math.min(y1,y2);
+    const height = Math.abs(y2-y1);
+    const color = e >= 0 ? 'var(--pos)' : 'var(--neg)';
+    const fill = e >= 0 ? 'rgba(224,82,59,.24)' : 'rgba(47,104,216,.22)';
+    const side = Math.min(height, 118);
+    let sqX = x + 10;
+    if(sqX + side > M.l + IW) sqX = x - side - 10;
+    const sqY = clamp(top, M.t, M.t + IH - side);
+    if(side > 1){
+      g += `<rect x="${sqX}" y="${sqY}" width="${side}" height="${side}" fill="${fill}" stroke="${color}" stroke-width="1.4"/>`;
+    }
+    g += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="${color}" stroke-width="2.5" stroke-dasharray="5 4"/>`;
+    const labelY = clamp((y1+y2)/2, M.t+12, M.t+IH-6);
+    g += `<text x="${x-8}" y="${labelY+4}" text-anchor="end" font-size="12" fill="${color}" font-weight="800" class="mono">${signed(e)}</text>`;
+    g += `<circle cx="${x}" cy="${y2}" r="4" fill="#fff" stroke="var(--trend)" stroke-width="2"/>`;
+    if(i === QUIZ_INDEX){
+      g += `<circle cx="${x}" cy="${y1}" r="11" fill="none" stroke="var(--gold)" stroke-width="2.4"/>`;
+    }
+  });
+  return g + '</g>';
+}
+
+function drawPoints(){
+  let g = '';
+  points.forEach((p,i) => {
+    g += `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="6.5" fill="var(--point)"/>`;
+    g += `<text x="${sx(p.x)+10}" y="${sy(p.y)-9}" font-size="12" fill="var(--point)" class="mono">(${p.x}, ${fmt(p.y)})</text>`;
+    g += `<text x="${sx(p.x)}" y="${sy(p.y)+22}" text-anchor="middle" font-size="11" fill="var(--muted)" font-weight="800">${i+1}</text>`;
+  });
+  return g;
+}
+
+function drawHandles(){
+  const y0 = pred(0);
+  const y10 = pred(10);
+  const color = ROOM && modalOpen ? MYCOLOR : 'var(--trend)';
+  const handle = (x,y,id) => {
+    const cx = sx(x), cy = sy(y);
+    return `<circle cx="${cx}" cy="${cy}" r="12" fill="${color}" stroke="#fff" stroke-width="3" data-handle="${id}" style="cursor:ns-resize"/>`+
+      `<text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="14" fill="#fff" font-weight="900" pointer-events="none">↕</text>`;
+  };
+  return `<g clip-path="url(#plotBox)">${handle(0,y0,'left')}${handle(10,y10,'right')}</g>`;
+}
+
+function renderPlot(){
+  setPlotViewBox();
+  let g = drawGrid();
+  g += drawSquaresAndResiduals();
+  if(modalOpen) g += drawBenchLines() + drawParticipantLines();
+  else if(showBest){
+    const best = bestLine();
+    g += drawLine(best.a,best.b,'var(--violet)',2.4,'stroke-dasharray="7 5"',.95);
+  }
+  g += drawLine(a,b,ROOM && modalOpen ? MYCOLOR : 'var(--trend)',3.2);
+  g += drawHandles();
+  g += drawPoints();
+  plot.innerHTML = g;
+  $('eqChip').innerHTML = K(eqTex());
+}
+
+function renderMetrics(){
+  const cur = metricsFor();
+  const best = bestLine();
+  const bestM = metricsFor(best.a,best.b);
+  const ratio = cur.sse <= 0 ? 1 : clamp(bestM.sse / cur.sse, 0, 1);
+  const rate = Math.round(ratio * 100);
+  $('sumE').textContent = signed(cur.sumE);
+  $('sumE').style.color = Math.abs(cur.sumE) < .05 ? 'var(--ink)' : cur.sumE > 0 ? 'var(--pos)' : 'var(--neg)';
+  $('sse').textContent = fmt(cur.sse);
+  $('mse').textContent = fmt(cur.mse);
+  $('bestSse').textContent = fmt(bestM.sse);
+  $('fitRate').textContent = `${rate}%`;
+  $('fitBar').style.width = `${rate}%`;
+
+  const gap = cur.sse - bestM.sse;
+  const status = $('statusBox');
+  status.className = 'status';
+  if(gap <= Math.max(0.35, bestM.sse * .05)){
+    status.classList.add('good');
+    status.textContent = '최소 SSE에 거의 도착했습니다. 점 주변 사각형들의 총넓이가 가장 작은 상태입니다.';
+  }else if(Math.abs(cur.sumE) < .08){
+    status.textContent = '오차의 합은 거의 0입니다. 그래도 SSE가 더 줄어들 수 있는지 사각형 넓이를 비교하세요.';
+  }else{
+    status.textContent = 'SSE를 줄여 보세요. 큰 사각형 하나가 전체 손실을 크게 끌어올립니다.';
+  }
+}
+
+function renderTable(){
+  const cur = metricsFor();
+  const body = $('calcBody');
+  body.innerHTML = '';
+  cur.rows.forEach((r,i) => {
+    const tr = document.createElement('tr');
+    const eColor = r.e >= 0 ? 'var(--pos)' : 'var(--neg)';
+    const e2Cell = i === QUIZ_INDEX
+      ? `<div class="quiz-cell"><input id="quizInput" class="mono" inputmode="decimal" aria-label="${i+1}번 점 제곱오차 입력"><button type="button" class="act" id="quizCheck">확인</button><span class="mark" id="quizMark"></span></div>`
+      : `<span class="mono">${fmt(r.e2)}</span>`;
+    tr.innerHTML =
+      `<td>${i+1}</td>`+
+      `<td class="coord">(${fmt(r.x)}, ${fmt(r.y)})</td>`+
+      `<td class="val">${fmt(r.yhat)}</td>`+
+      `<td class="val" style="color:${eColor};font-weight:850">${signed(r.e)}</td>`+
+      `<td>${e2Cell}</td>`;
+    body.appendChild(tr);
+  });
+  $('calcFoot').innerHTML = `<tr><td colspan="4" style="text-align:right">${K('SSE = \\sum e_i^2')}</td><td class="val">${fmt(cur.sse)}</td></tr>`;
+  const check = $('quizCheck');
+  if(check){
+    check.addEventListener('click',checkQuiz);
+    $('quizInput').addEventListener('keydown',e => { if(e.key === 'Enter') checkQuiz(); });
+  }
+}
+
+function checkQuiz(){
+  const input = $('quizInput');
+  const mark = $('quizMark');
+  const answer = metricsFor().rows[QUIZ_INDEX].e2;
+  const value = parseFloat((input.value || '').replace(',','.'));
+  input.classList.remove('ok','bad');
+  if(Number.isFinite(value) && near(value, answer)){
+    input.classList.add('ok');
+    mark.textContent = '정답';
+    mark.className = 'mark ok';
+  }else{
+    input.classList.add('bad');
+    mark.textContent = `다시`;
+    mark.className = 'mark bad';
+  }
+}
+
+function renderAll(){
+  renderPlot();
+  renderMetrics();
+  renderTable();
+  if(modalOpen) renderModalInfo();
+}
+
+function pointerToY(e){
+  const r = plot.getBoundingClientRect();
+  const vy = (e.clientY - r.top) / r.height * H;
+  return clamp(round1(invY(vy)), -2, yMax + 3);
+}
+
+plot.addEventListener('pointerdown', e => {
+  const handle = e.target.getAttribute && e.target.getAttribute('data-handle');
+  if(!handle) return;
+  dragging = handle;
+  plot.setPointerCapture(e.pointerId);
+});
+
+plot.addEventListener('pointermove', e => {
+  if(!dragging) return;
+  const y = pointerToY(e);
+  const leftY = pred(0);
+  const rightY = pred(10);
+  if(dragging === 'left'){
+    b = y;
+    a = (rightY - y) / 10;
+  }else{
+    a = (y - leftY) / 10;
+  }
+  a = clamp(round1(a), -1.5, 2.8);
+  b = clamp(round1(b), -2, 12);
+  syncControls();
+  renderAll();
+  if(modalOpen) pushMyLine();
+});
+
+plot.addEventListener('pointerup', () => { if(dragging && modalOpen) pushMyLine(true); dragging = null; });
+plot.addEventListener('pointercancel', () => dragging = null);
+
+function calcYMax(pts = points){
+  if(!pts.length) return 14;
+  return Math.max(8, Math.ceil((Math.max(...pts.map(p => p.y)) + 2) / 2) * 2);
+}
+
+function markDatasetButton(key){
+  document.querySelectorAll('#dataSeg button').forEach(btn => btn.classList.toggle('on', btn.dataset.set === key));
+}
+
+function applyRoomPoints(nextPoints, nextYMax, key, resetLine = false){
+  points = nextPoints.filter(p => p && Number.isFinite(+p.x) && Number.isFinite(+p.y))
+    .map(p => ({x:+p.x, y:+p.y}))
+    .sort((p,q) => p.x - q.x);
+  yMax = nextYMax || calcYMax(points);
+  if(key && datasets[key]) currentSet = key;
+  markDatasetButton(currentSet);
+  if(resetLine){
+    const z = zeroSumLine(0);
+    a = z.a;
+    b = z.b;
+  }
+  b = clamp(round1(b), -2, Math.max(12, yMax));
+  syncControls();
+  renderAll();
+}
+
+function nextDatasetKey(){
+  const keys = Object.keys(datasets);
+  const idx = keys.indexOf(currentSet);
+  return keys[(idx + 1 + keys.length) % keys.length] || 'basic';
+}
+
+function setToZeroLine(){
+  const z = zeroSumLine(0);
+  setLine(z.a,z.b);
+}
+
+function setToBestLine(){
+  const best = bestLine();
+  setLine(best.a,best.b);
+}
+
+function updateRefButtons(){
+  $('mZeroLine').classList.toggle('on', showZeroRef);
+  $('mBestLine').classList.toggle('on', showBestRef);
+}
+
+function openDrawModal(){
+  modalOpen = true;
+  showBest = true;
+  showZeroRef = true;
+  showBestRef = true;
+  $('toggleBest').classList.add('on');
+  updateRefButtons();
+  $('modalPlotSlot').appendChild(plotFrame);
+  $('drawModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  modalInfoEl = $('modalInfo');
+  modalInfoEl.style.height = modalInfoHeight + 'px';
+  renderAll();
+}
+
+function closeDrawModal(){
+  if(ROOM) leaveRoom();
+  modalOpen = false;
+  $('drawModal').classList.add('hidden');
+  $('roomPopup').classList.add('hidden');
+  hideCtx();
+  document.body.style.overflow = '';
+  plotHomeParent.insertBefore(plotFrame, legendEl);
+  setPlotViewBox();
+  renderAll();
+}
+
+function modalRefresh(){
+  renderAll();
+}
+
+function renderModalInfo(){
+  if(!modalOpen || !modalInfoEl) return;
+  const cur = metricsFor();
+  const z = zeroSumLine(0);
+  const zm = metricsFor(z.a,z.b);
+  const best = bestLine();
+  const bm = metricsFor(best.a,best.b);
+  let html = `<div class="m-top">`+
+    `<span class="m-stat">내 ${K('\\sum e_i')} <b class="mono" style="color:${Math.abs(cur.sumE)<.05?'var(--ink)':cur.sumE>0?'var(--pos)':'var(--neg)'}">${signed(cur.sumE)}</b></span>`+
+    `<span class="m-stat">내 ${K('SSE')} <b class="mono">${fmt(cur.sse)}</b></span>`+
+    `<span class="m-chip"><span class="sw" style="background:var(--gold)"></span>오차합 0 ${K('\\sum e_i=')} <b class="mono">${fmt(zm.sumE)}</b>, ${K('SSE=')} <b class="mono">${fmt(zm.sse)}</b></span>`+
+    `<span class="m-chip"><span class="sw" style="background:var(--violet)"></span>SSE 최소 ${K('SSE=')} <b class="mono">${fmt(bm.sse)}</b></span>`+
+    `</div>`;
+  if(ROOM && ROOM.parts){
+    const rows = Object.entries(ROOM.parts).map(([uid,pp]) => {
+      if(typeof pp.a !== 'number' || typeof pp.b !== 'number') return '';
+      const mm = metricsFor(pp.a,pp.b);
+      const col = pp.color || (uid === UID ? MYCOLOR : '#7b8497');
+      return `<div class="part${uid===UID?' me':''}"><span class="sw" style="background:${col}"></span>`+
+        `<span class="nm">${escapeHtml(pp.name || '익명')}${uid===UID?' (나)':''}</span>`+
+        `<span class="pe">${K('\\sum e_i')}=${signed(mm.sumE)} · SSE=${fmt(mm.sse)}</span></div>`;
+    }).join('');
+    html += `<div class="parts-title">참여자 ${Object.keys(ROOM.parts).length}명 — 같은 데이터, 서로 다른 추세선</div><div class="parts">${rows}</div>`;
+  }
+  modalInfoEl.innerHTML = html;
+}
+
+function recomputeAfterPointEdit(){
+  yMax = calcYMax(points);
+  b = clamp(b, -2, Math.max(12, yMax));
+  pointsEdited = true;
+  syncControls();
+  syncPointsIfHost();
+  renderAll();
+}
+
+function addPointAt(x,y){
+  if(points.length >= 14) return;
+  points.push({x,y});
+  points.sort((p,q) => p.x - q.x);
+  recomputeAfterPointEdit();
+}
+
+function deletePointIdx(i){
+  if(i < 0 || points.length <= 2) return;
+  points.splice(i,1);
+  recomputeAfterPointEdit();
+}
+
+function hideCtx(){ $('ctxMenu').classList.add('hidden'); }
+
+function showCtxMenu(e){
+  const r = plot.getBoundingClientRect();
+  const vx = (e.clientX - r.left) / r.width * VBW;
+  const vy = (e.clientY - r.top) / r.height * H;
+  const dx = clamp(Math.round(invX(vx)), 0, 10);
+  const dy = clamp(Math.round(invY(vy)), 0, yMax);
+  let nearIdx = -1;
+  let bestDist = 26;
+  points.forEach((p,i) => {
+    const d = Math.hypot(sx(p.x) - vx, sy(p.y) - vy);
+    if(d < bestDist){ bestDist = d; nearIdx = i; }
+  });
+  const menu = $('ctxMenu');
+  const canEdit = !ROOM || ROOM.host;
+  if(!canEdit){
+    menu.innerHTML = `<div class="note">방장만 점을 추가·삭제할 수 있어요.</div>`;
+  }else{
+    let html = `<button type="button" data-act="add">＋ 여기에 점 추가 <span style="color:var(--muted)">(${dx}, ${dy})</span></button>`;
+    if(nearIdx >= 0) html += `<button type="button" data-act="del" class="danger">－ 이 점 삭제 <span style="color:var(--muted)">(${fmt(points[nearIdx].x)}, ${fmt(points[nearIdx].y)})</span></button>`;
+    menu.innerHTML = html;
+  }
+  menu.dataset.dx = dx;
+  menu.dataset.dy = dy;
+  menu.dataset.near = nearIdx;
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 210) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 130) + 'px';
+  menu.classList.remove('hidden');
+}
+
+function roomMsg(t){ $('roomMsg').textContent = t || ''; }
+function openRoomPopup(){ roomMsg(''); $('roomPopup').classList.remove('hidden'); }
+function closeRoomPopup(){ $('roomPopup').classList.add('hidden'); }
+function roomRef(path = ''){ return ref(db, path ? `${ROOM_ROOT}/${path}` : ROOM_ROOT); }
+
+function showRoomBadge(code){
+  $('roomBadge').textContent = '방 ' + code;
+  $('roomBadge').classList.remove('hidden');
+  $('collabBtn').textContent = '방 나가기';
+  $('mNewData').disabled = !(ROOM && ROOM.host);
+}
+
+function hideRoomBadge(){
+  $('roomBadge').classList.add('hidden');
+  $('collabBtn').textContent = '같이 그리기';
+  $('mNewData').disabled = false;
+}
+
+function pushMyLine(force = false){
+  if(!ROOM || !db) return;
+  const now = Date.now();
+  if(!force && now - lastPush < 70) return;
+  lastPush = now;
+  try{ update(roomRef(`${ROOM.code}/participants/${UID}`), {a,b,t:serverTimestamp()}); }catch(e){}
+}
+
+function syncPointsIfHost(){
+  if(!ROOM || !ROOM.host || !db) return;
+  try{
+    update(roomRef(ROOM.code), {
+      datasetKey: currentSet,
+      yMax,
+      points: points.map(p => ({x:p.x,y:p.y}))
+    });
+  }catch(e){}
+}
+
+async function createRoom(name){
+  if(!db){ roomMsg('Firebase 연결에 실패했습니다.'); return; }
+  const code = '' + Math.floor(1000 + Math.random() * 9000);
+  try{
+    await set(roomRef(code), {
+      datasetKey: currentSet,
+      yMax,
+      points: points.map(p => ({x:p.x,y:p.y})),
+      createdAt: serverTimestamp()
+    });
+    await joinRoom(code,name,true);
+  }catch(err){
+    roomMsg('방 생성 오류: ' + err.message);
+  }
+}
+
+async function joinRoom(code, name, isHost = false){
+  if(!db){ roomMsg('Firebase 연결에 실패했습니다.'); return; }
+  code = (code || '').trim();
+  try{
+    const snap = await get(roomRef(code));
+    if(!snap.exists()){ roomMsg('존재하지 않는 방 코드입니다.'); return; }
+    const data = snap.val();
+    if(data.points){
+      const pts = Array.isArray(data.points) ? data.points : Object.values(data.points);
+      applyRoomPoints(pts, data.yMax, data.datasetKey, true);
+    }
+    const partsSnap = await get(roomRef(`${code}/participants`));
+    const used = partsSnap.exists() ? Object.values(partsSnap.val()).map(p => p && p.color).filter(Boolean) : [];
+    const pool = COLORS.filter(c => !used.includes(c));
+    MYCOLOR = (pool.length ? pool : COLORS)[Math.floor(Math.random() * (pool.length ? pool.length : COLORS.length))];
+    const pref = roomRef(`${code}/participants/${UID}`);
+    await set(pref, {name:(name || '익명').slice(0,12), color:MYCOLOR, a, b, t:serverTimestamp()});
+    onDisconnect(pref).remove();
+    ROOM = {code, host:!!isHost, parts:{}, pref, unsubParts:null, unsubPoints:null};
+    ROOM.unsubParts = onValue(roomRef(`${code}/participants`), s => {
+      if(!ROOM) return;
+      ROOM.parts = s.val() || {};
+      modalRefresh();
+    });
+    ROOM.unsubPoints = onValue(roomRef(code), s => {
+      if(!ROOM) return;
+      const v = s.val();
+      if(!v || !v.points) return;
+      const pts = Array.isArray(v.points) ? v.points : Object.values(v.points);
+      applyRoomPoints(pts, v.yMax, v.datasetKey, false);
+    });
+    showRoomBadge(code);
+    closeRoomPopup();
+    modalRefresh();
+  }catch(err){
+    roomMsg('연결 오류: ' + err.message);
+  }
+}
+
+function leaveRoom(){
+  if(!ROOM) return;
+  try{
+    ROOM.unsubParts && ROOM.unsubParts();
+    ROOM.unsubPoints && ROOM.unsubPoints();
+    ROOM.pref && remove(ROOM.pref);
+  }catch(e){}
+  ROOM = null;
+  hideRoomBadge();
+  modalRefresh();
+}
+
+function bindControls(){
+  $('openDrawModal').addEventListener('click', openDrawModal);
+  $('dataSeg').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if(btn) loadDataset(btn.dataset.set);
+  });
+  ['slope','slopeNum'].forEach(id => {
+    $(id).addEventListener('input', e => setLine(parseFloat(e.target.value), b));
+  });
+  ['intercept','interceptNum'].forEach(id => {
+    $(id).addEventListener('input', e => setLine(a, parseFloat(e.target.value)));
+  });
+  document.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', () => linePreset(btn.dataset.preset));
+  });
+  $('bestBtn').addEventListener('click', () => {
+    const best = bestLine();
+    setLine(best.a,best.b);
+    showBest = true;
+    $('toggleBest').classList.add('on');
+    renderAll();
+  });
+  $('toggleBest').addEventListener('click', () => {
+    showBest = !showBest;
+    $('toggleBest').classList.toggle('on', showBest);
+    renderPlot();
+  });
+  $('closeModal').addEventListener('click', closeDrawModal);
+  $('mZeroLine').addEventListener('click', () => {
+    showZeroRef = !showZeroRef;
+    updateRefButtons();
+    renderPlot();
+  });
+  $('mBestLine').addEventListener('click', () => {
+    showBestRef = !showBestRef;
+    updateRefButtons();
+    renderPlot();
+  });
+  $('mFitZero').addEventListener('click', setToZeroLine);
+  $('mFitBest').addEventListener('click', setToBestLine);
+  $('mResetLine').addEventListener('click', () => {
+    const d = datasets[currentSet];
+    if(d) setLine(d.start.a,d.start.b);
+    else setToZeroLine();
+  });
+  $('mNewData').addEventListener('click', () => {
+    if(ROOM && !ROOM.host) return;
+    loadDataset(nextDatasetKey());
+    if(ROOM && ROOM.host) syncPointsIfHost();
+    if(ROOM) pushMyLine(true);
+  });
+  $('collabBtn').addEventListener('click', () => {
+    if(ROOM) leaveRoom();
+    else openRoomPopup();
+  });
+  $('rCreate').addEventListener('click', () => createRoom($('rName').value));
+  $('rJoin').addEventListener('click', () => {
+    const code = $('rCode').value.trim();
+    if(!code){ roomMsg('방 코드를 입력하세요.'); return; }
+    joinRoom(code,$('rName').value);
+  });
+  $('rCancel').addEventListener('click', closeRoomPopup);
+
+  plot.addEventListener('contextmenu', e => {
+    if(!modalOpen) return;
+    e.preventDefault();
+    showCtxMenu(e);
+  });
+  $('ctxMenu').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const menu = $('ctxMenu');
+    if(btn.dataset.act === 'add') addPointAt(+menu.dataset.dx,+menu.dataset.dy);
+    if(btn.dataset.act === 'del') deletePointIdx(+menu.dataset.near);
+    hideCtx();
+  });
+  document.addEventListener('pointerdown', e => {
+    if(!e.target.closest('#ctxMenu')) hideCtx();
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){
+      if(!$('roomPopup').classList.contains('hidden')) closeRoomPopup();
+      else if(modalOpen) closeDrawModal();
+    }
+  });
+
+  modalCard = document.querySelector('.modal-card');
+  modalInfoEl = $('modalInfo');
+  const splitter = $('modalSplitter');
+  splitter.addEventListener('pointerdown', e => {
+    splitting = true;
+    splitter.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  splitter.addEventListener('pointermove', e => {
+    if(!splitting) return;
+    const cr = modalCard.getBoundingClientRect();
+    modalInfoHeight = Math.max(105, Math.min(cr.height * .78, cr.bottom - e.clientY - 7));
+    modalInfoEl.style.height = modalInfoHeight + 'px';
+    renderPlot();
+  });
+  splitter.addEventListener('pointerup', () => splitting = false);
+  splitter.addEventListener('pointercancel', () => splitting = false);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderStaticMath();
+  plotFrame = document.querySelector('.plot-frame');
+  legendEl = document.querySelector('.legend');
+  plotHomeParent = plotFrame.parentElement;
+  bindControls();
+  loadDataset('basic');
+});
+
+window.addEventListener('resize', () => renderAll());
+</script>
+</body>
+</html>

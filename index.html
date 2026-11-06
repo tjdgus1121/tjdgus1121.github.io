@@ -7,7 +7,7 @@
     
     <!-- Primary Meta Tags -->
     <meta name="title" content="인공지능 수학 웹앱 | AI·수학 체험 학습">
-    <meta name="description" content="텍스트 분석, 단어 임베딩, 이미지 처리, 행렬과 머신러닝 원리를 직접 체험하는 무료 인공지능 수학 웹앱입니다. 중·고등학생과 교사를 위한 AI 학습 활동을 제공합니다.">
+    <meta name="description" content="텍스트 분석, 단어 임베딩, 이미지 처리, 행렬, 예측과 경사하강법을 직접 체험하는 무료 인공지능 수학 웹앱입니다. 중·고등학생과 교사를 위한 AI 학습 활동을 제공합니다.">
     <meta name="keywords" content="인공지능 수학 웹앱, 인공지능 텍스트 분석, 텍스트 분석 웹앱, 단어 임베딩, 코사인 유사도, AI 수학, 머신러닝, 행렬, 이미지 분석, 수학 교육">
     <meta name="author" content="황성현">
     <meta name="robots" content="index, follow">
@@ -22,7 +22,7 @@
     <meta property="og:description" content="텍스트 분석, 단어 임베딩, 이미지 처리, 행렬과 머신러닝 원리를 직접 체험하는 무료 인공지능 수학 웹앱입니다.">
     <meta property="og:site_name" content="인공지능 수학 웹앱">
     <meta property="og:locale" content="ko_KR">
-    <meta property="og:image" content="https://tjdgus1121.github.io/indeximagemain.png">
+    <meta property="og:image" content="https://tjdgus1121.github.io/assets/home/indeximagemain.png">
     <meta property="og:image:alt" content="인공지능 수학 웹앱 이미지 분석 체험 화면">
     
     <!-- Twitter -->
@@ -30,12 +30,12 @@
     <meta property="twitter:url" content="https://tjdgus1121.github.io/">
     <meta property="twitter:title" content="인공지능 수학 웹앱 | AI·수학 체험 학습">
     <meta property="twitter:description" content="텍스트 분석, 단어 임베딩, 이미지 처리, 행렬과 머신러닝 원리를 직접 체험하는 무료 인공지능 수학 웹앱입니다.">
-    <meta property="twitter:image" content="https://tjdgus1121.github.io/indeximagemain.png">
+    <meta property="twitter:image" content="https://tjdgus1121.github.io/assets/home/indeximagemain.png">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
 
-    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -52,553 +52,158 @@
         "@type": "WebApplication",
         "name": "인공지능 텍스트 분석 웹앱",
         "alternateName": "AI 단어 유사도 탐색기",
-        "url": "https://tjdgus1121.github.io/word2vec/",
+        "url": "https://tjdgus1121.github.io/텍스트/indextext.html",
         "applicationCategory": "EducationalApplication",
         "isAccessibleForFree": true
       }
     }
     </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        :root { --gallery-bg:#03040b; --gallery-panel:#0d172b; --gallery-ink:#edf4ff; --gallery-muted:#9aaec9; --gallery-mint:#a0e8db; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
+        body { font-family:'Noto Sans KR','Malgun Gothic',sans-serif; color:var(--gallery-ink); background:#03040b; overflow-x:hidden; min-height:100vh; position:relative; }
+        button,a { -webkit-tap-highlight-color:transparent; }
 
-        body {
-            font-family: 'Do Hyeon', sans-serif;
-            overflow-x: hidden;
-            min-height: 100vh;
-            position: relative;
-        }
-
-        /* 우주 배경 */
-        .space-background {
+        /* 별 배경: 멀리 있는 별은 skyLayer(정지), 수학 형상을 그리는 별은 starField(움직임) */
+        .sky-layer,
+        .star-field {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #000000 0%, #0a0a1a 25%, #0d1117 50%, #1a0f2e 75%, #0a0a12 100%);
-            background-size: 400% 400%;
-            animation: spaceFloat 20s ease infinite;
+            pointer-events: none;
+        }
+
+        .sky-layer {
             z-index: -2;
         }
 
-        @keyframes spaceFloat {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        /* 별 애니메이션 */
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .star-field {
             z-index: -1;
-        }
-
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite, warpSpeed 3s linear infinite;
-            animation-fill-mode: backwards, backwards;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-            opacity: 0;
-        }
-
-        .star::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to right, rgba(255, 255, 255, 0.8), transparent);
-            border-radius: 50%;
-            filter: blur(2px);
-        }
-
-        /* 고정된 별 (멀리 있는 별) */
-        .star.fixed {
-            animation: twinkleFixed 4s infinite;
-            box-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
-            opacity: 0.4;
-        }
-
-        .star.fixed::after {
-            display: none;
-        }
-
-        /* 거대하게 빛나는 별 */
-        .star.giant {
-            animation: giantTwinkle 6s infinite ease-in-out;
-            box-shadow: 
-                0 0 40px rgba(255, 255, 255, 1),
-                0 0 80px rgba(200, 220, 255, 0.8),
-                0 0 120px rgba(150, 180, 255, 0.6),
-                0 0 160px rgba(100, 150, 255, 0.4);
-            opacity: 0.9;
-            background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(200, 220, 255, 0.8) 50%, transparent 100%);
-        }
-
-        .star.giant::after {
-            display: none;
-        }
-
-        .star.giant::before {
-            display: none;
-        }
-
-        /* 십자 빛 효과 (1개만) */
-        .star.giant.cross::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 120px;
-            height: 2px;
-            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-            display: block;
-        }
-
-        .star.giant.cross::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(90deg);
-            width: 120px;
-            height: 2px;
-            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-            display: block;
-        }
-
-        /* 타원형 빛 효과 (2개) - radial-gradient 방식 */
-        .star.giant.oval::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(var(--scale, 1));
-            width: 280px;
-            height: 220px;
-            background:
-                radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.95), transparent 5%),
-                radial-gradient(ellipse at 50% 50%, rgba(245, 250, 255, 0.85), transparent 10%),
-                radial-gradient(ellipse at 50% 50%, rgba(235, 245, 255, 0.7), transparent 15%),
-                radial-gradient(ellipse at 50% 50%, rgba(225, 240, 255, 0.55), transparent 20%),
-                radial-gradient(ellipse at 50% 50%, rgba(215, 235, 255, 0.45), transparent 25%),
-                radial-gradient(ellipse at 50% 50%, rgba(205, 230, 250, 0.35), transparent 30%),
-                radial-gradient(ellipse at 50% 50%, rgba(255, 230, 200, 0.23), transparent 40%),
-                radial-gradient(ellipse at 50% 50%, rgba(255, 220, 180, 0.16), transparent 52%),
-                radial-gradient(ellipse at 50% 50%, rgba(255, 210, 160, 0.09), transparent 68%);
-            mix-blend-mode: screen;
-            opacity: 0.9;
-            display: block;
-            filter: blur(1.5px);
-        }
-
-        .star.giant.oval::after {
-            display: none;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        @keyframes twinkleFixed {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.8; }
-        }
-
-        @keyframes giantTwinkle {
-            0%, 100% { 
-                opacity: 0.8;
-                transform: scale(1);
-            }
-            50% { 
-                opacity: 1;
-                transform: scale(1.1);
-            }
-        }
-
-        @keyframes warpSpeed {
-            0% {
-                transform: translate(0, 0) scale(1);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--tx), var(--ty)) scale(2);
-                opacity: 0;
-            }
-        }
-
-        /* 뇌 신경망 효과 */
-        .neural-network {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.15;
         }
 
         /* 메인 컨테이너 */
-        .main-container {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            animation: containerFloat 8s ease-in-out infinite;
+        .main-container { min-height:100vh; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; padding:clamp(24px,3.8vh,48px) 20px 100px; }
+        /* 구버전 안내: 글은 왼쪽, 바로가기 버튼은 오른쪽 */
+        .old-site-notice { display:flex; align-items:center; gap:14px; width:100%; max-width:760px; margin:0 auto 22px; padding:10px 10px 10px 18px; color:#c9d8ec; background:rgba(13,23,43,.72); border:1px solid rgba(160,232,219,.22); border-radius:14px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+        .old-site-notice p { flex:1; min-width:0; font-size:.84rem; line-height:1.6; word-break:keep-all; text-align:left; }
+        .old-site-notice small { display:block; color:var(--gallery-muted); font-size:.76rem; }
+        .old-site-btn { flex:none; display:inline-flex; align-items:center; gap:6px; padding:9px 15px; color:#062a27; font-size:.82rem; font-weight:700; text-decoration:none; white-space:nowrap; background:var(--gallery-mint); border-radius:10px; transition:background .2s ease,transform .2s ease; }
+        .old-site-btn:hover { background:#c4f4ea; transform:translateY(-1px); }
+        .old-site-btn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+        .old-site-notice[hidden] { display:none; }
+        .old-site-actions { flex:none; display:flex; flex-direction:column; align-items:center; gap:4px; }
+        .old-site-hide { padding:2px 4px; color:var(--gallery-muted); font:inherit; font-size:.72rem; background:none; border:0; border-radius:6px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+        .old-site-hide:hover { color:var(--gallery-ink); }
+        .old-site-hide:focus-visible { outline:2px solid var(--gallery-mint); outline-offset:1px; }
+        @media(max-width:600px) {
+            .old-site-notice { gap:10px; padding:9px 9px 9px 13px; margin-bottom:18px; }
+            .old-site-notice p { font-size:.74rem; }
+            .old-site-notice small { font-size:.68rem; }
+            .old-site-btn { padding:8px 11px; font-size:.74rem; }
+            .old-site-hide { font-size:.66rem; }
+        }
+        .title { text-align:center; color:var(--gallery-ink); margin-bottom:12px; }
+        .title h1 { font-size:clamp(1.85rem,3.9vw,3.8rem); line-height:1.25; font-weight:800; letter-spacing:-.055em; word-break:keep-all; margin-bottom:17px; }
+        .title h1 span { color:var(--gallery-mint); }
+        .title .title-lead { color:var(--gallery-muted); font-size:clamp(.85rem,1.35vw,1.05rem); font-weight:400; line-height:1.8; word-break:keep-all; }
+
+        /* 지금 별들이 그리고 있는 모양 */
+        .title .shape-caption {
+            min-height: 1.5em;
+            margin-top: 10px;
+            color: #94a3c4;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.88rem;
+            transition: opacity 0.3s ease;
         }
 
-        @keyframes containerFloat {
-            0%, 100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        /* 타이틀 */
-        .title {
-            text-align: center;
-            color: white;
-            margin-bottom: 60px;
-        }
-
-        .title h1 {
-            font-size: 5rem;
-            font-weight: 500;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #00d4ff, #7b68ee, #ff69b4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: flickerOn 2s ease-out forwards;
+        .shape-caption.is-changing {
             opacity: 0;
-            white-space: nowrap;
         }
 
-        .title p {
-            font-size: 1.4rem;
-            color: #b0c4de;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            opacity: 0;
-            animation: fadeInDown 1s ease-out 2s forwards;
-        }
-
-        /* 형광등 깜빡임 애니메이션 */
-        @keyframes flickerOn {
-            0% {
-                opacity: 0;
-            }
-            10% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            10.1% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
-            }
-            10.2% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            20% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            20.1% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
-                            0 0 60px rgba(123, 104, 238, 0.6);
-            }
-            20.6% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            30% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            30.1% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
-                            0 0 60px rgba(123, 104, 238, 0.6);
-            }
-            30.5% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
-                            0 0 60px rgba(123, 104, 238, 0.6);
-            }
-            30.6% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            45% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            45.1% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
-                            0 0 60px rgba(123, 104, 238, 0.6),
-                            0 0 90px rgba(123, 104, 238, 0.4);
-            }
-            50% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.9),
-                            0 0 60px rgba(123, 104, 238, 0.7),
-                            0 0 90px rgba(123, 104, 238, 0.5);
-            }
-            55% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.9),
-                            0 0 60px rgba(123, 104, 238, 0.7),
-                            0 0 90px rgba(123, 104, 238, 0.5);
-            }
-            55.1% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            57% {
-                opacity: 0;
-                text-shadow: none;
-            }
-            57.1% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.9),
-                            0 0 60px rgba(123, 104, 238, 0.7),
-                            0 0 90px rgba(123, 104, 238, 0.5);
-            }
-            60% {
-                opacity: 1;
-                text-shadow: 0 0 30px rgba(255, 255, 255, 1),
-                            0 0 60px rgba(123, 104, 238, 0.8),
-                            0 0 100px rgba(123, 104, 238, 0.6);
-            }
-            100% {
-                opacity: 1;
-                text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
-                            0 0 40px rgba(123, 104, 238, 0.4);
-            }
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* 카드 컨테이너 */
-        .cards-wrapper {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 1200px;
-        }
-
-        .card-container {
-            width: 400px;
-            height: 500px;
-            perspective: 1000px;
-            opacity: 0;
-            transform: translateY(50px);
-        }
-
-        .card-container.show {
-            animation: fadeInUp 0.8s ease-out forwards;
-        }
-
-        .card-container:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card {
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            animation: cardFloat 6s ease-in-out infinite;
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .card-container:nth-child(1) .card {
-            animation-delay: 0s;
-        }
-
-        .card-container:nth-child(2) .card {
-            animation-delay: 1s;
-        }
-
-        @keyframes cardFloat {
-            0%, 100% {
-                transform: translateY(0px) translateX(0px);
-            }
-            33% {
-                transform: translateY(-8px) translateX(4px);
-            }
-            66% {
-                transform: translateY(4px) translateX(-4px);
-            }
-        }
-
-        .card:hover {
-            transform: translateY(-10px) !important;
-            box-shadow: 0 12px 48px rgba(123, 104, 238, 0.4);
-            border-color: rgba(123, 104, 238, 0.5);
-        }
-
-        /* 카드 공통 스타일 */
-        .card {
-            padding: 20px;
-        }
-
-        .card .image-wrapper {
-            width: 100%;
-            height: 280px;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-        }
-
-        .card .image-wrapper img,
-        .card .image-wrapper .icon {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .card .image-wrapper .icon {
-            font-size: 8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            object-fit: unset;
-        }
-
-        .card:hover .image-wrapper img,
-        .card:hover .image-wrapper .icon {
-            transform: scale(1.1);
-        }
-
-        .card h3 {
-            color: white;
-            font-size: 1.8rem;
-            text-align: center;
-            margin-bottom: 15px;
+        .shape-caption strong {
+            margin-right: 8px;
+            color: #e6ecff;
             font-weight: 500;
         }
 
-        .card p {
-            color: #b0c4de;
-            text-align: center;
-            font-size: 1rem;
-            line-height: 1.6;
-            margin-bottom: 25px;
-            font-weight: 500;
-        }
+        .card-carousel { --carousel-stage-height:440px; position:relative; width:100%; max-width:1080px; margin-top:20px; overflow:hidden; padding:8px 0 18px; }
+        .cards-wrapper { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px; width:100%; }
+        .card-container { width:100%; min-width:0; min-height:450px; }
+        .card { --accent:142,222,208; --tint:17,30,52; display:flex; flex-direction:column; align-items:center; width:100%; height:100%; min-height:450px; padding:20px; color:inherit; text-decoration:none; background:linear-gradient(155deg,rgba(var(--tint),.92),rgba(11,20,38,.88) 70%); border:1px solid rgba(var(--accent),.24); border-radius:18px; box-shadow:0 16px 44px rgba(0,0,0,.22); cursor:pointer; transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease; }
+        /* 카드 순서: 텍스트(민트) · 이미지(하늘) · 빅데이터(보라) · 예측(호박색). 그림의 주된 색에 맞췄다 */
+        .card-container:nth-child(1) .card { --accent:120,226,210; --tint:14,40,52; }
+        .card-container:nth-child(2) .card { --accent:132,196,250; --tint:15,32,64; }
+        .card-container:nth-child(3) .card { --accent:178,166,250; --tint:28,28,64; }
+        .card-container:nth-child(4) .card { --accent:236,206,140; --tint:36,34,46; }
+        .card h3 { order:-1; margin-bottom:18px; color:#eff5ff; font-size:1.5rem; font-weight:700; line-height:1.4; letter-spacing:-.035em; text-align:center; word-break:keep-all; }
+        .card .image-wrapper { width:100%; height:auto; aspect-ratio:3/2; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-bottom:22px; overflow:hidden; border-radius:8px; background:#0b1426; }
+        .card .image-wrapper img { width:100%; height:100%; object-fit:contain; transition:transform .65s ease; }
+        .card:hover .image-wrapper img { transform:scale(1.025); }
+        .card p { margin-bottom:16px; color:var(--gallery-muted); font-size:.82rem; line-height:1.65; text-align:center; word-break:keep-all; }
+        .card .access-button { display:flex; align-items:center; justify-content:center; gap:15px; width:66%; margin-top:auto; padding:11px 14px; color:rgb(var(--accent)); border:1px solid rgba(var(--accent),.7); border-radius:999px; background:rgba(var(--accent),.04); font-size:.82rem; font-weight:500; line-height:1.5; transition:background .25s ease,border-color .25s ease; }
+        .access-button .button-arrow { font:1.1rem/1 Arial,sans-serif; color:rgb(var(--accent)); }
+        .card:hover { border-color:rgba(var(--accent),.66); box-shadow:0 18px 48px rgba(0,0,0,.32); }
+        .card:hover .access-button { background:rgba(var(--accent),.1); border-color:rgb(var(--accent)); }
+        .card:focus-visible { outline:3px solid var(--gallery-mint); outline-offset:4px; }
 
-        .card .access-button {
-            display: block;
-            width: 100%;
-            padding: 14px 30px;
-            text-align: center;
-            color: white;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
+        .cards-wrapper.is-carousel { display:block; position:relative; height:var(--carousel-stage-height); perspective:1600px; touch-action:pan-y; }
+        .cards-wrapper.is-carousel::before { content:''; position:absolute; left:50%; bottom:8px; width:min(76%,900px); height:68px; border-radius:50%; transform:translateX(-50%); background:radial-gradient(ellipse,rgba(102,180,193,.1),transparent 70%); pointer-events:none; }
+        .cards-wrapper.is-carousel .card-container,
+        .cards-wrapper.is-carousel .card-container.show { position:absolute; left:50%; top:50%; width:var(--carousel-card-width,270px); max-width:none; height:396px; min-height:0; margin-left:calc(var(--carousel-card-width,270px) / -2); margin-top:-198px; opacity:0; transform:translate3d(0,14px,-230px) scale(.8); transition:transform .85s cubic-bezier(.22,.7,.2,1),opacity .65s ease; will-change:transform; }
+        .cards-wrapper.is-carousel .card { min-height:0; }
+        .cards-wrapper.is-carousel .card-container[data-slide-position="center"] { transform:translate3d(0,0,0); opacity:1; z-index:3; }
+        .cards-wrapper.is-carousel .card-container[data-slide-position="previous"] { transform:translate3d(calc(-1 * var(--carousel-gap)),12px,-50px) rotateY(22deg) scale(.94); opacity:1; z-index:2; }
+        .cards-wrapper.is-carousel .card-container[data-slide-position="next"] { transform:translate3d(var(--carousel-gap),12px,-50px) rotateY(-22deg) scale(.94); opacity:1; z-index:2; }
+        .cards-wrapper.is-carousel .card-container[data-slide-position="back"] { pointer-events:none; z-index:1; }
+        .cards-wrapper.is-carousel [data-slide-position="center"] .card { border-color:rgba(var(--accent),.7); box-shadow:0 0 0 1px rgba(var(--accent),.05),0 18px 65px rgba(4,12,24,.5),0 0 28px rgba(var(--accent),.07); }
 
-        /* 텍스트 분석 버튼 - 블루 글래스 */
-        .card-container:nth-child(1) .access-button {
-            background: rgba(74, 158, 255, 0.2);
-            border: 1px solid rgba(74, 158, 255, 0.5);
+        .carousel-controls[hidden] { display:none; }
+        .carousel-controls { display:flex; justify-content:center; padding:0 0 2px; }
+        .carousel-dots { display:flex; align-items:center; justify-content:center; }
+        .carousel-controls button { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+        .carousel-controls button:focus-visible { outline:3px solid var(--gallery-mint); outline-offset:3px; }
+        .carousel-arrow { position:absolute; top:calc(var(--carousel-stage-height) / 2 + 8px); transform:translateY(-50%); z-index:5; display:grid; place-items:center; width:44px; height:64px; padding:0; border:0; border-radius:22px; color:#cfe5ed; background:rgba(8,15,31,.4); transition:background .2s ease,color .2s ease; }
+        .carousel-arrow:hover { color:#bff5eb; background:rgba(18,42,57,.88); }
+        .carousel-arrow svg { width:27px; height:27px; pointer-events:none; }
+        .carousel-prev { left: 3px; }
+        .carousel-next { right: 3px; }
+        .carousel-dot { display:grid; place-items:center; width:34px; height:40px; padding:0; border:0; border-radius:20px; background:transparent; }
+        /* 점마다 은은하게 빛나는 테두리를 둘러 어두운 배경에서도 잘 보이게 한다 */
+        .carousel-dot::before { content:''; width:8px; height:8px; border-radius:50%; background:#5d7591; border:1px solid rgba(170,236,224,.7); box-shadow:0 0 7px rgba(160,232,219,.5),0 0 14px rgba(120,200,220,.25); transition:background .2s ease,transform .2s ease,box-shadow .2s ease; }
+        .carousel-dot:hover::before { background:#afcec9; box-shadow:0 0 8px rgba(160,232,219,.5),0 0 14px rgba(120,200,220,.2); }
+        .carousel-dot[aria-pressed="true"]::before { background:var(--gallery-mint); border-color:rgba(220,255,248,.9); transform:scale(1.3); box-shadow:0 0 8px rgba(160,232,219,.7),0 0 18px rgba(157,230,215,.35); }
+        @media(max-width:600px) {
+            .main-container { padding:30px 16px 100px; }
+            .title { margin-bottom:12px; }
+            .title h1 { font-size:clamp(1.55rem,6.6vw,2.2rem); margin-bottom:13px; }
+            .title .title-lead { font-size:.76rem; }
+            .card-carousel { --carousel-stage-height:410px; }
+            .cards-wrapper.is-carousel .card-container,
+            .cards-wrapper.is-carousel .card-container.show { height:360px; margin-top:-180px; }
+            .cards-wrapper.is-carousel .card { min-height:360px; padding:16px; }
+            .card h3 { font-size:1.13rem; margin-bottom:12px; }
+            .card .image-wrapper { height:164px; margin-bottom:12px; }
+            .card p { font-size:.76rem; }
+            .card .access-button { width:82%; font-size:.78rem; }
+            .carousel-arrow { width:32px; height:52px; }
+            .carousel-arrow svg { width:23px; height:23px; }
+            .carousel-prev { left:0; } .carousel-next { right:0; }
+            .carousel-dot { width:40px; height:44px; }
         }
+        @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .card,.card .image-wrapper img,.carousel-controls button,.carousel-dot::before { transition:none; } .card:hover .image-wrapper img { transform:none; } }
 
-        .card-container:nth-child(1) .access-button:hover {
-            background: rgba(74, 158, 255, 0.4);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(74, 158, 255, 0.3);
-        }
-
-        /* 이미지 분석 버튼 - 퍼플 글래스 */
-        .card-container:nth-child(2) .access-button {
-            background: rgba(139, 92, 246, 0.2);
-            border: 1px solid rgba(139, 92, 246, 0.5);
-        }
-
-        .card-container:nth-child(2) .access-button:hover {
-            background: rgba(139, 92, 246, 0.4);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
-        }
-
-        /* 첫 화면은 그대로 두고, 스크롤 아래에서 학습 내용과 전체 활동을 안내한다. */
+        /* 스크롤 아래에서 학습 내용과 전체 활동을 안내한다. */
         .learning-guide {
             width: min(1100px, calc(100% - 40px));
             margin: 30px auto 130px;
             padding: 36px;
             color: #eaf2ff;
-            background: rgba(10, 15, 38, 0.82);
-            border: 1px solid rgba(176, 196, 222, 0.24);
+            background: rgba(11, 22, 40, 0.94);
+            border: 1px solid rgba(146, 196, 200, 0.18);
             border-radius: 24px;
             box-shadow: 0 16px 55px rgba(0, 0, 0, 0.34);
             backdrop-filter: blur(14px);
@@ -621,9 +226,9 @@
 
         .activity-directory {
             margin-top: 26px;
-            border: 1px solid rgba(123, 104, 238, 0.42);
+            border: 1px solid rgba(136, 208, 196, 0.22);
             border-radius: 18px;
-            background: rgba(123, 104, 238, 0.10);
+            background: rgba(91, 171, 158, 0.035);
             overflow: hidden;
         }
 
@@ -666,7 +271,7 @@
 
         .activity-group h3 {
             margin-bottom: 12px;
-            color: #d7cbff;
+            color: #b6dfd9;
             font-size: 1.12rem;
             font-weight: 500;
         }
@@ -695,21 +300,21 @@
         }
 
         /* 반응형 */
+        @media (max-width: 1300px) {
+            .cards-wrapper {
+                grid-template-columns: repeat(2, minmax(0, 400px));
+                justify-content: center;
+            }
+        }
+
         @media (max-width: 768px) {
-            .title h1 {
-                font-size: clamp(2rem, 8vw, 3rem);
-            }
-
-            .title p {
-                font-size: 1.1rem;
-            }
-
             .card-container {
                 width: 100%;
                 max-width: 400px;
             }
 
             .cards-wrapper {
+                grid-template-columns: minmax(0, 400px);
                 gap: 30px;
             }
 
@@ -792,11 +397,11 @@
 
         .sheet-panel h3 {
             margin: 0 0 6px;
-            font-family: 'Do Hyeon', sans-serif;
+            font-family: 'Noto Sans KR', sans-serif;
             font-size: 1.08rem;
             font-weight: 400;
             letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #7b68ee, #00d4ff);
+            background: linear-gradient(135deg, #173a4b, #245e64);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -858,7 +463,7 @@
             left: 0;
             width: 100%;
             padding: 15px 20px;
-            background: rgba(10, 10, 26, 0.8);
+            background: rgba(7, 16, 30, 0.9);
             backdrop-filter: blur(10px);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -1019,7 +624,7 @@
         }
 
         .patch-badge {
-            background: linear-gradient(135deg, #7b68ee, #00d4ff);
+            background: linear-gradient(135deg, #173a4b, #245e64);
             color: white;
             font-size: 1.0rem;
             padding: 5px 14px;
@@ -1203,45 +808,92 @@
         </div>
     </div>
 
-    <!-- 우주 배경 -->
-    <div class="space-background"></div>
-    <div class="stars" id="stars"></div>
-    <canvas class="neural-network" id="neuralCanvas"></canvas>
+    <!-- 별 배경 -->
+    <canvas class="sky-layer" id="skyLayer" aria-hidden="true"></canvas>
+    <canvas class="star-field" id="starField" aria-hidden="true"></canvas>
 
     <!-- 메인 컨테이너 -->
-    <main class="main-container">
+    <main class="main-container" id="activities">
+        <aside class="old-site-notice" aria-label="구버전 사이트 안내">
+            <p>3, 4단원 구현을 위해 홈페이지를 리뉴얼했습니다. 혹시, 구버전으로 가실 분들은 오른쪽 버튼을 클릭해주세요.<small>(1, 2단원 내용은 대부분 동일합니다.)</small></p>
+            <div class="old-site-actions">
+                <a class="old-site-btn" href="https://chobocode.github.io/old_main/">구버전 바로가기<span aria-hidden="true">→</span></a>
+                <button type="button" class="old-site-hide" id="oldSiteHideToday">오늘은 띄우지 않기</button>
+            </div>
+        </aside>
+        <script>
+            // 구버전 안내: "오늘은 띄우지 않기"를 누른 날에는 그날 자정까지 숨긴다
+            (function () {
+                var KEY = 'old_site_notice_hide_date';
+                var notice = document.querySelector('.old-site-notice');
+                var btn = document.getElementById('oldSiteHideToday');
+                function today() {
+                    var d = new Date();
+                    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+                }
+                try { if (localStorage.getItem(KEY) === today()) notice.hidden = true; } catch (e) {}
+                btn.addEventListener('click', function () {
+                    try { localStorage.setItem(KEY, today()); } catch (e) {}
+                    notice.hidden = true;
+                });
+            })();
+        </script>
         <div class="title">
-            <h1>인공지능 수학 웹앱</h1>
-            <p>인공지능 속 수학 원리를 직접 조작하고 실험하며 배워봅시다.</p>
+            <h1>인공지능 <span>수학</span> 웹앱</h1>
+            <p class="title-lead">직접 탐구하고 실험하며 배워요.</p>
+            <p class="shape-caption" id="shapeCaption" aria-hidden="true"><strong id="shapeTitle"></strong><span id="shapeDesc"></span></p>
         </div>
 
-        <div class="cards-wrapper">
-            <!-- 텍스트 분석 카드 -->
+        <section class="card-carousel" id="cardCarousel" aria-label="인공지능 수학 활동 선택">
+        <div class="cards-wrapper" id="carouselStage">
             <div class="card-container">
-                <a class="card" href="https://tjdgus1121.github.io/word2vec/" aria-label="텍스트 분석 인공지능 수학 활동으로 이동">
-                    <div class="image-wrapper">
-                        <img src="https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&h=300&fit=crop" alt="인공지능 텍스트 분석과 수학 체험">
-                    </div>
+                <a class="card" href="./텍스트/indextext.html" aria-label="텍스트 분석 인공지능 수학 활동으로 이동">
+                    <div class="image-wrapper"><img src="./assets/home/gallery-v2/text-analysis-v3.webp" alt="단어를 숫자 벡터로 바꾸고, 벡터 공간에서 사과와 과일 사이의 각도로 뜻이 비슷한 정도를 재는 그림" width="1536" height="1024" decoding="async"></div>
                     <h3>텍스트 분석</h3>
-                    <p>인공지능을 활용한 맞춤형 텍스트 분석으로 개념을 이해하고 문제 해결 능력을 키워보세요.</p>
-                    <span class="access-button">접속하기</span>
+                    <span class="access-button">접속하기<span class="button-arrow" aria-hidden="true">→</span></span>
                 </a>
             </div>
-
-            <!-- 이미지 분석 카드 -->
             <div class="card-container">
-            <a class="card" href="./indeximage.html" aria-label="이미지 분석 인공지능 수학 활동으로 이동">
-                    <div class="image-wrapper">
-                        <img src="./indeximagemain.png" style="opacity:0.7" alt="인공지능 이미지 분석과 행렬 수학 체험">
-                    </div>
+                <a class="card" href="./이미지/indeximage.html" aria-label="이미지 분석 인공지능 수학 활동으로 이동">
+                    <div class="image-wrapper"><img src="./assets/home/gallery-v2/image-analysis-v2.webp" alt="허스키 사진·픽셀·행렬 표현을 연결한 개념도" width="1536" height="1024" decoding="async"></div>
                     <h3>이미지 분석</h3>
-                    <p>수학적 개념을 시각적으로 탐구하고 이미지 분석 기술을 학습합니다.</p>
-                    <span class="access-button">접속하기</span>
+                    <span class="access-button">접속하기<span class="button-arrow" aria-hidden="true">→</span></span>
+                </a>
+            </div>
+            <div class="card-container">
+                <a class="card" href="./인공지능과%20빅데이터/index.html" aria-label="인공지능과 빅데이터 인공지능 수학 활동으로 이동">
+                    <div class="image-wrapper"><img src="./assets/home/gallery-v2/ai-data-v2.webp" alt="데이터 지구본과 인공지능 칩, 그래프를 연결한 테크 일러스트" width="1536" height="1024" decoding="async"></div>
+                    <h3 id="bigdata-card-title">인공지능과 빅데이터</h3>
+                    <span class="access-button">접속하기<span class="button-arrow" aria-hidden="true">→</span></span>
+                </a>
+            </div>
+            <div class="card-container">
+                <a class="card prediction-card" href="./예측과%20최적화/index.html" aria-label="예측과 최적화 인공지능 수학 활동으로 이동">
+                    <div class="image-wrapper"><img src="./assets/home/gallery-v2/optimization-v2.webp" alt="손실 곡면의 높은 곳에서 최솟값으로 내려가는 다섯 단계" width="1536" height="1024" decoding="async"></div>
+                    <h3>예측과 최적화</h3>
+                    <span class="access-button">접속하기<span class="button-arrow" aria-hidden="true">→</span></span>
                 </a>
             </div>
         </div>
+        <div class="carousel-controls" id="carouselControls" hidden>
+            <button type="button" class="carousel-arrow carousel-prev" id="carouselPrev" aria-label="이전 카드" aria-controls="carouselStage">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m14.5 5-7 7 7 7"/></svg>
+            </button>
+            <div class="carousel-dots" role="group" aria-label="카드 주제 선택">
+                <button type="button" class="carousel-dot" data-carousel-index="0" aria-pressed="true" aria-label="1번 카드: 텍스트 분석" aria-controls="carouselStage"></button>
+                <button type="button" class="carousel-dot" data-carousel-index="1" aria-pressed="false" aria-label="2번 카드: 이미지 분석" aria-controls="carouselStage"></button>
+                <button type="button" class="carousel-dot" data-carousel-index="2" aria-pressed="false" aria-label="3번 카드: 인공지능과 빅데이터" aria-controls="carouselStage"></button>
+                <button type="button" class="carousel-dot" data-carousel-index="3" aria-pressed="false" aria-label="4번 카드: 예측과 최적화" aria-controls="carouselStage"></button>
+            </div>
+            <button type="button" class="carousel-arrow carousel-next" id="carouselNext" aria-label="다음 카드" aria-controls="carouselStage">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9.5 5 7 7-7 7"/></svg>
+            </button>
+        </div>
+        </section>
     </main>
 
+    <!-- 화면에는 숨기되 검색 엔진과 브라우저 찾기(Ctrl+F)로는 찾을 수 있게 hidden="until-found"로 감싼다 -->
+    <div class="learning-guide-wrap" hidden="until-found">
     <section class="learning-guide" aria-labelledby="learning-guide-title">
         <h2 id="learning-guide-title">직접 체험하며 이해하는 인공지능 수학</h2>
         <p>
@@ -1259,48 +911,59 @@
                 <section class="activity-group">
                     <h3>입문과 데이터 표현</h3>
                     <ul>
-                        <li><a href="./activity1_intro.html">패턴을 행렬로 표현하기</a></li>
-                        <li><a href="./activity2_matrix_extract.html">이미지 데이터 행렬 추출</a></li>
-                        <li><a href="./activity3_rgb_explore.html">RGB 색상과 행렬 탐구</a></li>
-                        <li><a href="./activity4_rgb_channels.html">RGB 이미지 채널 분리</a></li>
-                        <li><a href="./activity10_hamming_distance.html">손글씨 숫자의 28×28 행렬</a></li>
+                        <li><a href="./이미지/01_이미지와_RGB/activity1_intro.html">패턴을 행렬로 표현하기</a></li>
+                        <li><a href="./이미지/01_이미지와_RGB/activity2_matrix_extract.html">이미지 데이터 행렬 추출</a></li>
+                        <li><a href="./이미지/01_이미지와_RGB/activity3_rgb_explore.html">RGB 색상과 행렬 탐구</a></li>
+                        <li><a href="./이미지/01_이미지와_RGB/activity4_rgb_channels.html">RGB 이미지 채널 분리</a></li>
+                        <li><a href="./이미지/03_숫자인식과_유사도/activity10_hamming_distance.html">손글씨 숫자의 28×28 행렬</a></li>
                     </ul>
                 </section>
                 <section class="activity-group">
                     <h3>행렬과 이미지 연산</h3>
                     <ul>
-                        <li><a href="./activity5_image_merge.html">픽셀 데이터 결합과 이미지 합성</a></li>
-                        <li><a href="./activity6_composite_explore.html">이미지 블렌딩 행렬 시각화</a></li>
-                        <li><a href="./activity7_matrix_product.html">행렬 곱셈 시각화</a></li>
-                        <li><a href="./activity7_matrix_product2.html">이미지로 배우는 행렬 변환</a></li>
-                        <li><a href="./activity8_rotation_matrix.html">좌표와 회전 행렬 탐구</a></li>
-                        <li><a href="./activity12_interpolation.html">이미지 보간법 비교</a></li>
-                        <li><a href="./activity17_kernel.html">컨볼루션 커널 필터 체험</a></li>
+                        <li><a href="./이미지/02_행렬과_이미지변환/activity5_image_merge.html">픽셀 데이터 결합과 이미지 합성</a></li>
+                        <li><a href="./이미지/02_행렬과_이미지변환/activity6_composite_explore.html">이미지 블렌딩 행렬 시각화</a></li>
+                        <li><a href="./이미지/02_행렬과_이미지변환/activity7_matrix_product.html">행렬 곱셈 시각화</a></li>
+                        <li><a href="./이미지/02_행렬과_이미지변환/activity7_matrix_product2.html">이미지로 배우는 행렬 변환</a></li>
+                        <li><a href="./이미지/02_행렬과_이미지변환/activity8_rotation_matrix.html">좌표와 회전 행렬 탐구</a></li>
+                        <li><a href="./이미지/04_이미지확대와_복원/activity12_interpolation.html">이미지 보간법 비교</a></li>
+                        <li><a href="./이미지/07_CNN과_합성곱/activity17_kernel.html">컨볼루션 커널 필터 체험</a></li>
                     </ul>
                 </section>
                 <section class="activity-group">
                     <h3>인공지능 모델 체험</h3>
                     <ul>
-                        <li><a href="./activity11_similarity_check.html">해밍 거리와 데이터 유사도</a></li>
-                        <li><a href="./activity9_mnist_recognizer.html">MNIST 손글씨 숫자 인식</a></li>
-                        <li><a href="./activity17_cnn_visualizer.html">CNN 합성곱 신경망 시각화</a></li>
-                        <li><a href="./activity18_cnn_ex.html">CNN 사물 인식 원리 체험</a></li>
-                        <li><a href="./activity18_home.html">CNN 이미지 인식 체험 모음</a></li>
-                        <li><a href="./activity18_nukki.html">CNN·U-Net 배경 제거 원리</a></li>
-                        <li><a href="./activity14_yolo.html">YOLO 실시간 객체 탐지</a></li>
+                        <li><a href="./이미지/03_숫자인식과_유사도/activity11_similarity_check.html">해밍 거리와 데이터 유사도</a></li>
+                        <li><a href="./이미지/03_숫자인식과_유사도/activity9_mnist_recognizer.html">MNIST 손글씨 숫자 인식</a></li>
+                        <li><a href="./이미지/07_CNN과_합성곱/activity17_cnn_visualizer.html">CNN 합성곱 신경망 시각화</a></li>
+                        <li><a href="./이미지/07_CNN과_합성곱/activity18_cnn_ex.html">CNN 사물 인식 원리 체험</a></li>
+                        <li><a href="./이미지/07_CNN과_합성곱/activity18_home.html">CNN 이미지 인식 체험 모음</a></li>
+                        <li><a href="./이미지/07_CNN과_합성곱/activity18_nukki.html">CNN·U-Net 배경 제거 원리</a></li>
+                        <li><a href="./이미지/05_객체탐지_YOLO/activity14_yolo.html">YOLO 실시간 객체 탐지</a></li>
+                        <li><a href="./이미지/05_객체탐지_YOLO/activity14_yolo_lab.html">YOLO 직접 학습시키기 (라벨링·학습·판별)</a></li>
                     </ul>
                 </section>
                 <section class="activity-group">
                     <h3>생성·복원과 알고리즘</h3>
                     <ul>
-                        <li><a href="./activity13_realesrgan.html">Real-ESRGAN 이미지 고해상도 복원</a></li>
-                        <li><a href="./activity15_styletransper.html">인공지능 스타일 전이</a></li>
-                        <li><a href="./activity16_Arbitrary_transfer.html">임의 화풍 변환 실험</a></li>
+                        <li><a href="./이미지/04_이미지확대와_복원/activity13_realesrgan.html">Real-ESRGAN 이미지 고해상도 복원</a></li>
+                        <li><a href="./이미지/06_스타일전이/activity15_styletransper.html">인공지능 스타일 전이</a></li>
+                        <li><a href="./이미지/06_스타일전이/activity16_Arbitrary_transfer.html">임의 화풍 변환 실험</a></li>
+                    </ul>
+                </section>
+                <section class="activity-group">
+                    <h3>예측과 최적화 · 경사하강법</h3>
+                    <ul>
+                        <li><a href="./예측과%20최적화/경사하강법/gradient_descent_lab.html">추세선과 오차 실험실</a></li>
+                        <li><a href="./예측과%20최적화/경사하강법/gradient_descent_slope.html">기울기 하나로 배우는 경사하강법</a></li>
+                        <li><a href="./예측과%20최적화/경사하강법/squared-error.html">오차제곱 이해하기</a></li>
+                        <li><a href="./예측과%20최적화/GAN_QUEST_인공지능수학.html">GAN QUEST — 생성형 AI 속 인공지능 수학 (모션 해설)</a></li>
                     </ul>
                 </section>
             </nav>
         </details>
     </section>
+    </div>
 
     <!-- Footer -->
     <!-- 활동지 안내 -->
@@ -1431,187 +1094,907 @@
     </script>
 
     <script>
-        // 별 생성
-        function createStars() {
-            const starsContainer = document.getElementById('stars');
-            const movingStars = 150; // 움직이는 별
-            const fixedStars = 200;  // 고정된 별 (멀리 있는 별)
-
-            // 거대하게 빛나는 별 생성 (십자가 1개, 타원형 2개)
-            // 십자가 빛 별 1개
-            const crossStar = document.createElement('div');
-            crossStar.className = 'star giant cross';
-            const crossSize = 5 + Math.random() * 2;
-            crossStar.style.width = crossSize + 'px';
-            crossStar.style.height = crossSize + 'px';
-            crossStar.style.left = (25 + Math.random() * 50) + '%';
-            crossStar.style.top = (25 + Math.random() * 50) + '%';
-            crossStar.style.animationDuration = (5 + Math.random() * 3) + 's';
-            crossStar.style.animationDelay = Math.random() * 2 + 's';
-            starsContainer.appendChild(crossStar);
-
-            // 타원형 빛 별 2개 (크기 다르게, 멀리 배치)
-            for (let i = 0; i < 2; i++) {
-                const ovalStar = document.createElement('div');
-                ovalStar.className = 'star giant oval';
-                const ovalSize = 4 + Math.random() * 3;
-                ovalStar.style.width = ovalSize + 'px';
-                ovalStar.style.height = ovalSize + 'px';
-                
-                // 첫 번째는 왼쪽 영역, 두 번째는 오른쪽 영역에 배치
-                if (i === 0) {
-                    ovalStar.style.left = (10 + Math.random() * 25) + '%'; // 10%~35%
-                    ovalStar.style.top = (20 + Math.random() * 50) + '%';
-                    ovalStar.style.setProperty('--scale', '1');
-                } else {
-                    ovalStar.style.left = (65 + Math.random() * 25) + '%'; // 65%~90%
-                    ovalStar.style.top = (25 + Math.random() * 45) + '%';
-                    ovalStar.style.setProperty('--scale', '0.7');
-                }
-                
-                ovalStar.style.animationDuration = (5 + Math.random() * 3) + 's';
-                ovalStar.style.animationDelay = Math.random() * 3 + 's';
-                
-                starsContainer.appendChild(ovalStar);
-            }
-
-            // 고정된 별 생성 (멀리 있어서 움직이지 않음)
-            for (let i = 0; i < fixedStars; i++) {
-                const star = document.createElement('div');
-                star.className = 'star fixed';
-                
-                const size = Math.random() * 2 + 0.5; // 작은 크기
-                star.style.width = size + 'px';
-                star.style.height = size + 'px';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                
-                const twinkleDuration = 3 + Math.random() * 3; // 3~6초
-                star.style.animationDuration = twinkleDuration + 's';
-                star.style.animationDelay = Math.random() * 5 + 's';
-                
-                starsContainer.appendChild(star);
-            }
-
-            // 움직이는 별 생성 (가까이 있어서 움직임)
-            for (let i = 0; i < movingStars; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                
-                const size = Math.random() * 3 + 1;
-                star.style.width = size + 'px';
-                star.style.height = size + 'px';
-                
-                // 화면 중앙 영역의 여러 곳에서 시작 (30%~70% 범위)
-                const startX = 30 + Math.random() * 40; // 30% ~ 70%
-                const startY = 30 + Math.random() * 40; // 30% ~ 70%
-                star.style.left = startX + '%';
-                star.style.top = startY + '%';
-                
-                // 시작점에서 바깥으로 향하는 방향 계산
-                const centerX = 50;
-                const centerY = 50;
-                const dx = startX - centerX;
-                const dy = startY - centerY;
-                const angle = Math.atan2(dy, dx);
-                
-                // 이동 거리
-                const distance = 150 + Math.random() * 100; // 150~250
-                
-                const tx = Math.cos(angle) * distance + 'vw';
-                const ty = Math.sin(angle) * distance + 'vh';
-                
-                star.style.setProperty('--tx', tx);
-                star.style.setProperty('--ty', ty);
-                
-                // 속도를 더 느리게 조정 (8~15초)
-                const duration = 8 + Math.random() * 7; // 8~15초
-                const delay = Math.random() * 8; // 0~8초
-                
-                star.style.animationDuration = `${3 + Math.random() * 2}s, ${duration}s`;
-                star.style.animationDelay = `${Math.random() * 4}s, ${delay}s`;
-                
-                starsContainer.appendChild(star);
-            }
-        }
-
-        // 신경망 그리기
-        function drawNeuralNetwork() {
-            const canvas = document.getElementById('neuralCanvas');
+        // 별 형상: 별 입자가 사이트의 네 영역(텍스트·이미지·빅데이터·예측)을 차례로 그린다.
+        // 멀리 있는 별은 skyLayer에 한 번만 그리고, 형상을 이루는 별만 매 프레임 갱신한다.
+        function createStarHero() {
+            const canvas = document.getElementById('starField');
+            const sky = document.getElementById('skyLayer');
+            const shapeBox = document.getElementById('shapeCaption');
+            const shapeTitle = document.getElementById('shapeTitle');
+            const shapeDesc = document.getElementById('shapeDesc');
             const ctx = canvas.getContext('2d');
-            
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            const skyCtx = sky.getContext('2d');
+            const noop = { hold() {}, release() {} };
+            if (!ctx || !skyCtx) return noop;
 
-            const nodes = [];
-            const numberOfNodes = 50;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const weakDevice = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 8) <= 4;
+            const COUNT = (weakDevice || window.innerWidth < 820) ? 1500 : 2600;
+            const CYCLE_MS = 9000;
+            const CAMERA = 3.4;
 
-            // 노드 생성
-            for (let i = 0; i < numberOfNodes; i++) {
-                nodes.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    vx: (Math.random() - 0.5) * 0.2,
-                    vy: (Math.random() - 0.5) * 0.2
-                });
+            // 별 색: 흰색, 옅은 하늘, 파랑, 주황, 보라
+            const COLORS = [[255, 255, 255], [207, 230, 255], [142, 190, 255], [255, 184, 138], [190, 172, 255]];
+
+            const gauss = () => {
+                let u = 0;
+                while (!u) u = Math.random();
+                return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+            };
+
+            // ---------- 형상 목표점 ----------
+            function createTargets() {
+                return {
+                    n: 0,
+                    pos: new Float32Array(COUNT * 3),
+                    bright: new Float32Array(COUNT),
+                    size: new Float32Array(COUNT),
+                    color: new Uint8Array(COUNT),
+                    flare: new Uint8Array(COUNT),
+                    pulse: new Float32Array(COUNT).fill(-1)
+                };
             }
 
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // 노드 업데이트 및 그리기
-                nodes.forEach((node, i) => {
-                    node.x += node.vx;
-                    node.y += node.vy;
-
-                    if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
-                    if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
-
-                    // 연결선 그리기
-                    nodes.forEach((otherNode, j) => {
-                        if (i !== j) {
-                            const dx = node.x - otherNode.x;
-                            const dy = node.y - otherNode.y;
-                            const distance = Math.sqrt(dx * dx + dy * dy);
-
-                            if (distance < 150) {
-                                ctx.strokeStyle = `rgba(123, 104, 238, ${1 - distance / 150})`;
-                                ctx.lineWidth = 1;
-                                ctx.beginPath();
-                                ctx.moveTo(node.x, node.y);
-                                ctx.lineTo(otherNode.x, otherNode.y);
-                                ctx.stroke();
-                            }
-                        }
-                    });
-
-                    // 노드 그리기
-                    ctx.fillStyle = 'rgba(123, 104, 238, 0.8)';
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, 3, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-
-                requestAnimationFrame(animate);
+            function push(t, x, y, z, bright, size, color, flare = 0, pulse = -1) {
+                if (t.n >= COUNT) return;
+                const i = t.n++;
+                t.pos[i * 3] = x;
+                t.pos[i * 3 + 1] = y;
+                t.pos[i * 3 + 2] = z;
+                t.bright[i] = bright;
+                t.size[i] = size;
+                t.color[i] = color;
+                t.flare[i] = flare;
+                t.pulse[i] = pulse;
             }
 
-            animate();
+            // 남은 별은 형상 바깥을 감싸는 옅은 먼지가 된다.
+            function fillDust(t, rMin, rMax, bright) {
+                while (t.n < COUNT) {
+                    const y = Math.random() * 2 - 1;
+                    const a = Math.random() * Math.PI * 2;
+                    const r = rMin + Math.random() * (rMax - rMin);
+                    const ring = Math.sqrt(1 - y * y) * r;
+                    push(t, Math.cos(a) * ring, y * r * 0.7, Math.sin(a) * ring, bright * (0.4 + Math.random()), 0.6, Math.random() < 0.15 ? 3 : 1);
+                }
+            }
+
+            // 형상이 바뀔 때 별들이 서로 엇갈려 날아가도록 순서를 섞는다.
+            function shuffle(t) {
+                const swap = (arr, i, j, w) => {
+                    for (let k = 0; k < w; k++) {
+                        const tmp = arr[i * w + k];
+                        arr[i * w + k] = arr[j * w + k];
+                        arr[j * w + k] = tmp;
+                    }
+                };
+                for (let i = COUNT - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    swap(t.pos, i, j, 3);
+                    swap(t.bright, i, j, 1);
+                    swap(t.size, i, j, 1);
+                    swap(t.color, i, j, 1);
+                    swap(t.flare, i, j, 1);
+                    swap(t.pulse, i, j, 1);
+                }
+                return t;
+            }
+
+            // 텍스트 분석: 뜻이 비슷한 단어들이 군집을 이루는 임베딩 공간
+            function makeEmbedding(t) {
+                const K = 7;
+                const tint = [1, 3, 0, 4, 2, 3, 1];
+                const centers = [];
+                for (let k = 0; k < K; k++) {
+                    const y = 1 - (k + 0.5) / K * 2;
+                    const r = Math.sqrt(1 - y * y);
+                    const a = k * 2.39996;
+                    centers.push([Math.cos(a) * r * 0.8, y * 0.64, Math.sin(a) * r * 0.8]);
+                }
+                // 군집마다 대표 단어 하나는 밝게 빛난다.
+                centers.forEach((c, k) => push(t, c[0], c[1], c[2], 1, 1.7, tint[k], k % 3 === 0 ? 1 : 0));
+                const inCluster = Math.floor(COUNT * 0.82);
+                for (let i = 0; t.n < inCluster; i++) {
+                    const k = i % K;
+                    const c = centers[k];
+                    const s = 0.07 + (k % 3) * 0.025;
+                    push(t, c[0] + gauss() * s, c[1] + gauss() * s, c[2] + gauss() * s,
+                        0.35 + Math.random() * 0.6, 0.7 + Math.random() * 0.6, tint[k]);
+                }
+                fillDust(t, 0.6, 1.3, 0.16);
+            }
+
+            // 이미지 분석: 손글씨 숫자 2를 28×28 픽셀 밝기로 바꾼 행렬
+            function digitInk() {
+                const big = document.createElement('canvas');
+                big.width = big.height = 112;
+                const g = big.getContext('2d');
+                g.strokeStyle = '#fff';
+                g.lineWidth = 12;
+                g.lineCap = 'round';
+                g.lineJoin = 'round';
+                g.beginPath();
+                g.moveTo(32, 40);
+                g.bezierCurveTo(34, 14, 80, 12, 80, 38);
+                g.bezierCurveTo(80, 56, 52, 70, 32, 88);
+                g.lineTo(84, 86);
+                g.stroke();
+                const small = document.createElement('canvas');
+                small.width = small.height = 28;
+                const s = small.getContext('2d');
+                s.drawImage(big, 0, 0, 28, 28);
+                const data = s.getImageData(0, 0, 28, 28).data;
+                const ink = new Float32Array(784);
+                for (let i = 0; i < 784; i++) ink[i] = data[i * 4 + 3] / 255;
+                return ink;
+            }
+
+            function makeDigitGrid(t) {
+                const ink = digitInk();
+                const cell = 1.9 / 28;
+                const at = (i) => [((i % 28) - 13.5) * cell, -(Math.floor(i / 28) - 13.5) * cell];
+                for (let i = 0; i < 784; i++) {
+                    const v = ink[i];
+                    const [x, y] = at(i);
+                    push(t, x, y, v * 0.18, 0.3 + v * 0.7, v > 0.15 ? 0.75 + v * 0.65 : 1, v > 0.55 ? 0 : (v > 0.15 ? 2 : 1));
+                }
+                // 진한 픽셀에는 별을 겹쳐 쌓아 숫자가 더 또렷하게 보이게 한다.
+                const inked = [];
+                for (let i = 0; i < 784; i++) if (ink[i] > 0.4) inked.push(i);
+                const extra = Math.floor((COUNT - 784) * 0.3);
+                for (let j = 0; j < extra && inked.length; j++) {
+                    const i = inked[j % inked.length];
+                    const [x, y] = at(i);
+                    push(t, x + gauss() * cell * 0.18, y + gauss() * cell * 0.18, ink[i] * 0.18 - Math.random() * 0.12,
+                        0.25 + ink[i] * 0.5, 0.6 + Math.random() * 0.5, Math.random() < 0.2 ? 3 : 0);
+                }
+                fillDust(t, 1.2, 1.9, 0.1);
+            }
+
+            // 인공지능과 빅데이터: 수많은 데이터 점이 모여 이룬 나선 은하
+            function makeGalaxy(t) {
+                const arms = 3;
+                push(t, 0, 0, 0, 1, 2.2, 0, 1);
+                const core = Math.floor(COUNT * 0.16);
+                while (t.n < core) {
+                    const r = Math.abs(gauss()) * 0.12;
+                    const a = Math.random() * Math.PI * 2;
+                    push(t, Math.cos(a) * r, gauss() * 0.05, Math.sin(a) * r,
+                        0.55 + Math.random() * 0.45, 0.7 + Math.random() * 0.8, Math.random() < 0.55 ? 3 : 0);
+                }
+                const armEnd = Math.floor(COUNT * 0.93);
+                for (let i = 0; t.n < armEnd; i++) {
+                    const r = 0.12 + Math.pow(Math.random(), 0.75) * 0.9;
+                    const a = (i % arms) * (Math.PI * 2 / arms) + r * 4.4 + gauss() * 0.13;
+                    const spread = 0.02 + r * 0.045;
+                    const bright = Math.random() < 0.04;
+                    const color = r < 0.3 || Math.random() < 0.12 ? 3 : (Math.random() < 0.5 ? 1 : 2);
+                    push(t, Math.cos(a) * r + gauss() * spread, gauss() * 0.035 * (1.2 - r), Math.sin(a) * r + gauss() * spread,
+                        bright ? 0.95 : 0.25 + Math.random() * 0.55, bright ? 1.5 : 0.6 + Math.random() * 0.6,
+                        color, bright && Math.random() < 0.08 ? 1 : 0);
+                }
+                fillDust(t, 1.1, 1.8, 0.12);
+            }
+
+            // 예측과 최적화: 손실 L(u, v) = 0.6u² + 5v² 의 등고선과 경사하강법 경로
+            // 한쪽 축만 가파른 골짜기라서 경로가 지그재그로 최솟값에 다가간다.
+            function makeLossBowl(t) {
+                const loss = (u, v) => 0.6 * u * u + 5 * v * v;
+                const toWorld = (u, v) => [u * 0.74, -0.4 + loss(u, v) * 0.8, v * 1.55];
+                const onLevel = (L, a) => toWorld(Math.sqrt(L / 0.6) * Math.cos(a), Math.sqrt(L / 5) * Math.sin(a));
+                for (let k = 1; k <= 10; k++) {
+                    const L = k / 10;
+                    const m = Math.round(28 + 70 * Math.sqrt(L));
+                    for (let j = 0; j < m; j++) {
+                        const [x, y, z] = onLevel(L, j / m * Math.PI * 2);
+                        push(t, x, y, z, 0.4 + 0.4 * (1 - L), 0.85, k === 10 ? 2 : 1);
+                    }
+                }
+                for (let s = 0; s < 16; s++) {
+                    const a = s / 16 * Math.PI * 2;
+                    for (let j = 1; j <= 18; j++) {
+                        const [x, y, z] = onLevel(j / 18, a);
+                        push(t, x, y, z, 0.22, 0.65, 1);
+                    }
+                }
+                // θ ← θ − η∇L 를 16번 반복한 점들을 이어 경로를 만든다.
+                const eta = 0.17;
+                const points = [[-1.2, 0.16]];
+                for (let step = 0; step < 16; step++) {
+                    const [u, v] = points[points.length - 1];
+                    points.push([u - eta * 1.2 * u, v - eta * 10 * v]);
+                }
+                const per = 10;
+                const total = (points.length - 1) * per;
+                for (let s = 0; s < points.length - 1; s++) {
+                    const [u0, v0] = points[s];
+                    const [u1, v1] = points[s + 1];
+                    for (let j = 0; j < per; j++) {
+                        const f = j / per;
+                        const [x, y, z] = toWorld(u0 + (u1 - u0) * f, v0 + (v1 - v0) * f);
+                        const isStep = j === 0;
+                        push(t, x, y + 0.012, z, isStep ? 1 : 0.6, isStep ? 1.6 : 0.85, 3, s === 0 && isStep ? 1 : 0, (s * per + j) / total);
+                    }
+                }
+                const [mx, my, mz] = toWorld(0, 0);
+                push(t, mx, my, mz, 1, 2, 0, 1);
+                fillDust(t, 1.15, 1.85, 0.11);
+            }
+
+            // Math: 글자 모양의 픽셀을 뽑아 그 자리에 별을 놓는다.
+            function makeMathWord(t) {
+                const w = 420, h = 160;
+                const c = document.createElement('canvas');
+                c.width = w;
+                c.height = h;
+                const g = c.getContext('2d');
+                g.fillStyle = '#fff';
+                g.textAlign = 'center';
+                g.textBaseline = 'middle';
+                g.font = 'italic 700 132px Georgia, "Times New Roman", serif';
+                g.fillText('Math', w / 2, h / 2 + 4);
+                const data = g.getImageData(0, 0, w, h).data;
+                const ink = [];
+                for (let y = 0; y < h; y += 2) {
+                    for (let x = 0; x < w; x += 2) {
+                        if (data[(y * w + x) * 4 + 3] > 140) ink.push([x, y]);
+                    }
+                }
+                if (!ink.length) {
+                    fillDust(t, 0.6, 1.3, 0.16);
+                    return;
+                }
+                const scale = 2.1 / w;
+                const inWord = Math.floor(COUNT * 0.5);
+                while (t.n < inWord) {
+                    const [x, y] = ink[Math.floor(Math.random() * ink.length)];
+                    const bright = Math.random() < 0.03;
+                    push(t, (x - w / 2 + Math.random() * 2) * scale, -(y - h / 2 + Math.random() * 2) * scale, gauss() * 0.035,
+                        bright ? 1 : 0.4 + Math.random() * 0.55, bright ? 1.5 : 0.6 + Math.random() * 0.6,
+                        Math.random() < 0.18 ? 3 : (Math.random() < 0.5 ? 0 : 1), bright && Math.random() < 0.15 ? 1 : 0);
+                }
+                fillDust(t, 1.1, 1.8, 0.12);
+            }
+
+            // 0~3은 카드 순서와 같다: 0 텍스트, 1 이미지, 2 빅데이터, 3 예측. 4 Math는 순환에만 나온다.
+            const SHAPES = [
+                { title: '텍스트 분석', desc: '뜻이 비슷한 단어끼리 모이는 임베딩 공간', tilt: 0.32, spin: 0.07, make: makeEmbedding },
+                { title: '이미지 분석', desc: '손글씨 숫자 2를 이루는 28×28 픽셀 행렬', tilt: 0.1, spin: 0, make: makeDigitGrid },
+                { title: '인공지능과 빅데이터', desc: '수많은 데이터 점이 모여 이룬 은하', tilt: 1.08, spin: 0.05, make: makeGalaxy },
+                { title: '예측과 최적화', desc: '손실 곡면의 등고선을 따라 내려가는 경사하강법', tilt: 0.78, spin: 0.035, make: makeLossBowl },
+                { title: 'Math', desc: '모든 활동을 잇는 수학', tilt: 0.05, spin: 0, make: makeMathWord }
+            ];
+            SHAPES.forEach((shape) => {
+                const t = createTargets();
+                shape.make(t);
+                shape.targets = shuffle(t);
+                shape.angle = 0;
+                shape.ct = Math.cos(shape.tilt);
+                shape.scale = 1;
+                shape.starSize = 1;
+                shape.offsetY = 0;
+                shape.st = Math.sin(shape.tilt);
+            });
+            const LOSS_SHAPE = 3;
+            // 은하 → 손실 곡면 → Math → 단어 임베딩 → 숫자 2 → 은하
+            const NEXT_SHAPE = [1, 2, 3, 4, 0];
+            const MATH_SHAPE = 4;
+
+            // ---------- 별 상태 ----------
+            const px = new Float32Array(COUNT);
+            const py = new Float32Array(COUNT);
+            const pz = new Float32Array(COUNT);
+            const pb = new Float32Array(COUNT);
+            const ps = new Float32Array(COUNT);
+            const pc = new Uint8Array(COUNT);
+            const assigned = new Uint8Array(COUNT);
+            const speed = new Float32Array(COUNT);
+            const delay = new Float32Array(COUNT);
+            const phase = new Float32Array(COUNT);
+            const freq = new Float32Array(COUNT);
+
+            let current = 2;
+            let morphAt = performance.now();
+            let held = false;
+            for (let i = 0; i < COUNT; i++) {
+                // 처음에는 화면 바깥까지 흩어져 있다가 은하로 모여든다.
+                const r = 2.2 + Math.random() * 1.6;
+                const a = Math.random() * Math.PI * 2;
+                const y = Math.random() * 2 - 1;
+                px[i] = Math.cos(a) * Math.sqrt(1 - y * y) * r;
+                py[i] = y * r * 0.6;
+                pz[i] = Math.sin(a) * Math.sqrt(1 - y * y) * r;
+                assigned[i] = current;
+                speed[i] = 0.018 + Math.random() * 0.035;
+                delay[i] = Math.random() * 1100;
+                phase[i] = Math.random() * Math.PI * 2;
+                freq[i] = 0.6 + Math.random() * 1.8;
+                ps[i] = SHAPES[current].targets.size[i];
+                pc[i] = SHAPES[current].targets.color[i];
+            }
+
+            // ---------- 그림 재료 ----------
+            function makeSprite([r, g, b]) {
+                const c = document.createElement('canvas');
+                c.width = c.height = 32;
+                const g2 = c.getContext('2d');
+                const grad = g2.createRadialGradient(16, 16, 0, 16, 16, 16);
+                grad.addColorStop(0, 'rgba(255,255,255,1)');
+                grad.addColorStop(0.2, `rgba(${r},${g},${b},0.95)`);
+                grad.addColorStop(0.45, `rgba(${r},${g},${b},0.18)`);
+                grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                g2.fillStyle = grad;
+                g2.fillRect(0, 0, 32, 32);
+                return c;
+            }
+
+            function makeFlare() {
+                const c = document.createElement('canvas');
+                c.width = c.height = 96;
+                const g = c.getContext('2d');
+                const glow = g.createRadialGradient(48, 48, 0, 48, 48, 22);
+                glow.addColorStop(0, 'rgba(255,255,255,0.55)');
+                glow.addColorStop(1, 'rgba(255,255,255,0)');
+                g.fillStyle = glow;
+                g.fillRect(0, 0, 96, 96);
+                const h = g.createLinearGradient(0, 0, 96, 0);
+                h.addColorStop(0, 'rgba(255,255,255,0)');
+                h.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+                h.addColorStop(1, 'rgba(255,255,255,0)');
+                g.fillStyle = h;
+                g.fillRect(0, 47.3, 96, 1.4);
+                const v = g.createLinearGradient(0, 0, 0, 96);
+                v.addColorStop(0, 'rgba(255,255,255,0)');
+                v.addColorStop(0.5, 'rgba(255,255,255,0.65)');
+                v.addColorStop(1, 'rgba(255,255,255,0)');
+                g.fillStyle = v;
+                g.fillRect(47.3, 14, 1.4, 68);
+                return c;
+            }
+
+            const sprites = COLORS.map(makeSprite);
+
+            // ---------- 우주를 여행하듯 다가왔다 지나가는 별 ----------
+            // 별 형상 쪽(소실점)에서 아주 작게 나타나 점점 커지며 화면 바깥으로 지나간다.
+            // 밝기·크기를 제각각으로 두고, 아주 가까운 별만 짧은 잔상을 남겨 인공적인 줄무늬를 피한다.
+            const FLY_COUNT = reduceMotion ? 0 : ((weakDevice || window.innerWidth < 820) ? 160 : 320);
+            const FLY_SPEED = 0.3; // 1초에 다가오는 깊이
+            const FLY_STYLES = COLORS.map(([r, g, b]) => `rgb(${r},${g},${b})`);
+            const fx = new Float32Array(FLY_COUNT);
+            const fy = new Float32Array(FLY_COUNT);
+            const fz = new Float32Array(FLY_COUNT);
+            const fbright = new Float32Array(FLY_COUNT);
+            const fsize = new Float32Array(FLY_COUNT);
+            const fcol = new Uint8Array(FLY_COUNT);
+            let warp = 1; // 처음과 형상이 바뀔 때 조금 더 빨라진다
+
+            function spawnFlyer(i, anyDepth) {
+                let x, y;
+                do {
+                    x = Math.random() * 3 - 1.5;
+                    y = Math.random() * 3 - 1.5;
+                } while (Math.abs(x) < 0.06 && Math.abs(y) < 0.06);
+                fx[i] = x;
+                fy[i] = y;
+                fz[i] = anyDepth ? 0.05 + Math.random() * 0.95 : 1;
+                const r = Math.random();
+                fbright[i] = 0.25 + r * r * 0.75;
+                fsize[i] = 0.6 + Math.random() * 0.8;
+                fcol[i] = Math.random() < 0.1 ? 3 : (Math.random() < 0.55 ? 1 : (Math.random() < 0.5 ? 2 : 0));
+            }
+            for (let i = 0; i < FLY_COUNT; i++) spawnFlyer(i, true);
+
+            function flySpeed() {
+                return FLY_SPEED * (1 + warp * warp * 1.2);
+            }
+
+            function updateFlyers(dt) {
+                warp = Math.max(0, warp - dt * 0.6);
+                const dz = flySpeed() * dt;
+                for (let i = 0; i < FLY_COUNT; i++) {
+                    fz[i] -= dz;
+                    if (fz[i] <= 0.03) spawnFlyer(i, false);
+                }
+            }
+
+            function drawFlyers(vx, vy, fade) {
+                const focal = Math.max(W, H) * 0.5;
+                const tailDepth = flySpeed() * 0.03;
+                // 시야가 아주 천천히 돌아 직선으로만 퍼지는 느낌을 줄인다.
+                const roll = time * 0.012;
+                const cr = Math.cos(roll), sr = Math.sin(roll);
+                ctx.lineCap = 'round';
+                for (let i = 0; i < FLY_COUNT; i++) {
+                    const z = fz[i];
+                    const x = fx[i] * cr - fy[i] * sr;
+                    const y = fx[i] * sr + fy[i] * cr;
+                    const hx = vx + x / z * focal;
+                    const hy = vy + y / z * focal;
+                    if (hx < -40 || hx > W + 40 || hy < -40 || hy > H + 40) {
+                        spawnFlyer(i, false);
+                        continue;
+                    }
+                    const near = 1 - z;
+                    // 멀리서는 서서히 나타나고, 가까울수록 밝고 커진다.
+                    const alpha = Math.min(1, near * near * 1.6) * fbright[i] * fade;
+                    if (alpha < 0.02) continue;
+                    const size = (0.7 + near * near * near * 3) * fsize[i] * sizeScale;
+                    const tz = z + tailDepth;
+                    const tx = vx + x / tz * focal;
+                    const ty = vy + y / tz * focal;
+                    if (Math.abs(hx - tx) + Math.abs(hy - ty) > size * 2) {
+                        ctx.globalAlpha = alpha * 0.3;
+                        ctx.strokeStyle = FLY_STYLES[fcol[i]];
+                        ctx.lineWidth = size * 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(tx, ty);
+                        ctx.lineTo(hx, hy);
+                        ctx.stroke();
+                    }
+                    const d = size * 3.4;
+                    ctx.globalAlpha = Math.min(1, alpha);
+                    ctx.drawImage(sprites[fcol[i]], hx - d / 2, hy - d / 2, d, d);
+                }
+            }
+
+            const flareSprite = makeFlare();
+
+            // ---------- 멀리 있는 별: 아주 느리게 퍼져 나가 속도의 깊이감을 만든다 ----------
+            // 가까운 별(위)은 빠르게, 먼 별(여기)은 느리게, 가장 먼 별(skyLayer)은 거의 멈춰 있다.
+            const FAR_COUNT = reduceMotion ? 0 : ((weakDevice || window.innerWidth < 820) ? 260 : 520);
+            const FAR_SPREAD = 0.035; // 1초에 소실점에서 3.5%씩 멀어진다
+            const farX = new Float32Array(FAR_COUNT); // 소실점 기준 화면 좌표(px)
+            const farY = new Float32Array(FAR_COUNT);
+            const farAge = new Float32Array(FAR_COUNT);
+            const farBright = new Float32Array(FAR_COUNT);
+            const farSize = new Float32Array(FAR_COUNT);
+            const farCol = new Uint8Array(FAR_COUNT);
+            let farReady = false;
+
+            function spawnFar(i, initial) {
+                farX[i] = (Math.random() - 0.5) * W * 1.1;
+                farY[i] = (Math.random() - 0.5) * H * 1.1;
+                farAge[i] = initial ? 99 : 0;
+                const r = Math.random();
+                farBright[i] = 0.18 + r * r * 0.6;
+                farSize[i] = 0.7 + Math.random() * 0.9;
+                farCol[i] = Math.random() < 0.1 ? 3 : (Math.random() < 0.5 ? 1 : 0);
+            }
+
+            function updateFarStars(dt) {
+                if (!farReady) {
+                    for (let i = 0; i < FAR_COUNT; i++) spawnFar(i, true);
+                    farReady = true;
+                }
+                const grow = 1 + FAR_SPREAD * (1 + warp * warp * 1.2) * dt;
+                // 가까운 별과 같은 속도로 시야가 천천히 돈다.
+                const roll = 0.012 * dt;
+                const cr = Math.cos(roll), sr = Math.sin(roll);
+                for (let i = 0; i < FAR_COUNT; i++) {
+                    const x = farX[i] * grow, y = farY[i] * grow;
+                    farX[i] = x * cr - y * sr;
+                    farY[i] = x * sr + y * cr;
+                    farAge[i] += dt;
+                }
+            }
+
+            function drawFarStars(vx, vy, fade) {
+                const maxR = Math.max(W, H) * 0.6;
+                for (let i = 0; i < FAR_COUNT; i++) {
+                    const sx = vx + farX[i];
+                    const sy = vy + farY[i];
+                    if (sx < -4 || sx > W + 4 || sy < -4 || sy > H + 4) {
+                        spawnFar(i, false);
+                        continue;
+                    }
+                    // 새로 생긴 별은 1.5초에 걸쳐 서서히 나타난다.
+                    const alpha = farBright[i] * Math.min(1, farAge[i] / 1.5) * fade;
+                    if (alpha < 0.02) continue;
+                    const r = Math.hypot(farX[i], farY[i]) / maxR;
+                    const s = farSize[i] * (1 + r * 0.5);
+                    ctx.globalAlpha = Math.min(1, alpha);
+                    ctx.fillStyle = FLY_STYLES[farCol[i]];
+                    ctx.fillRect(sx - s / 2, sy - s / 2, s, s);
+                }
+            }
+
+            // ---------- 화면 크기 ----------
+            let W = 0, H = 0, dpr = 1, R = 300, baseCy = 0, sizeScale = 1;
+
+            // 오른쪽 위 모서리 밖에서 흘러 들어오는 옅은 성운 가스. 3차원 가스를 미리 광선 진행으로 구운 그림
+            // (assets/home/nebula-src/nebula_cloud.py)을 skyLayer에 한 번 얹는다. 실행 중 계산이 없다.
+            const nebula = new Image();
+            nebula.decoding = 'async';
+            nebula.onload = () => drawSky();
+            nebula.src = './assets/home/nebula-cloud.webp';
+
+            function drawNebula() {
+                if (!nebula.complete || !nebula.naturalWidth) return;
+                // 그림의 위·오른쪽 끝을 화면 모서리에 맞춰, 가스가 화면 밖에서 이어지는 것처럼 보이게 한다
+                const side = Math.max(260, Math.min(W * (W < 820 ? 0.8 : 0.48), H * 0.85));
+                skyCtx.save();
+                skyCtx.imageSmoothingQuality = 'high';
+                skyCtx.drawImage(nebula, W - side, 0, side, side);
+                skyCtx.restore();
+            }
+
+            function drawSky() {
+                // 크기가 바뀌어도 같은 하늘이 나오도록 고정된 씨앗값을 쓴다.
+                let seed = 20251013;
+                const rand = () => {
+                    seed = (seed * 1664525 + 1013904223) >>> 0;
+                    return seed / 4294967296;
+                };
+                skyCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                skyCtx.clearRect(0, 0, W, H);
+                drawNebula();
+                skyCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                const total = Math.round(W * H / 9000);
+                for (let i = 0; i < total; i++) {
+                    const x = rand() * W;
+                    const y = rand() * H;
+                    const big = rand() < 0.06;
+                    const r = big ? 0.9 + rand() * 0.7 : 0.3 + rand() * 0.6;
+                    const [cr, cg, cb] = COLORS[rand() < 0.12 ? 3 : (rand() < 0.5 ? 1 : 0)];
+                    skyCtx.fillStyle = `rgba(${cr},${cg},${cb},${(0.08 + rand() * 0.3).toFixed(2)})`;
+                    skyCtx.beginPath();
+                    skyCtx.arc(x, y, r, 0, Math.PI * 2);
+                    skyCtx.fill();
+                }
+            }
+
+            function layout() {
+                W = window.innerWidth;
+                H = window.innerHeight;
+                dpr = Math.min(window.devicePixelRatio || 1, weakDevice ? 1 : 1.5);
+                [canvas, sky].forEach((c) => {
+                    c.width = Math.round(W * dpr);
+                    c.height = Math.round(H * dpr);
+                });
+                const narrow = W < 820;
+                // 카드 뒤, 카드 사이 빈틈으로 별 형상이 보이도록 화면 가운데보다 조금 아래에 둔다.
+                R = narrow ? Math.min(W * 0.42, H * 0.28) : Math.min(W * 0.3, H * 0.42);
+                baseCy = narrow ? H * 0.42 : H * 0.56;
+                sizeScale = Math.max(0.65, Math.min(1.3, R / 360));
+                placeMathWord();
+                drawSky();
+            }
+
+            // 글자는 카드 뒤에 가리면 읽을 수 없으므로 카드와 푸터 사이 빈 띠에 맞춰 그린다.
+            // 띠가 너무 좁으면(카드가 화면을 꽉 채우는 작은 화면) 순환에서 건너뛴다.
+            let mathFits = false;
+            function placeMathWord() {
+                const shape = SHAPES[MATH_SHAPE];
+                const cards = document.querySelector('.cards-wrapper');
+                const footer = document.querySelector('.footer');
+                if (!cards) return;
+                const top = cards.getBoundingClientRect().bottom + window.scrollY + 14;
+                const bottom = (footer ? footer.getBoundingClientRect().top : H) - 10;
+                const band = bottom - top;
+                mathFits = band >= 90;
+                if (!mathFits) return;
+                // 글자의 높이는 월드 좌표로 약 0.5, 너비는 약 1.7
+                const wordH = Math.min(band * 0.8, 150, W * 0.85 / 1.7 * 0.5);
+                shape.scale = wordH / (0.5 * R);
+                // 작게 그린 만큼 별도 작게 해야 글자가 뭉개지지 않는다.
+                shape.starSize = Math.min(1, 0.25 + shape.scale);
+                shape.offsetY = -((top + bottom) / 2 - baseCy) / R;
+            }
+
+            // ---------- 형상 전환 ----------
+            function showLabel(index) {
+                shapeBox.classList.add('is-changing');
+                setTimeout(() => {
+                    shapeTitle.textContent = SHAPES[index].title;
+                    shapeDesc.textContent = SHAPES[index].desc;
+                    shapeBox.classList.remove('is-changing');
+                }, reduceMotion ? 0 : 300);
+            }
+
+            function setShape(index) {
+                if (index === current) return;
+                current = index;
+                morphAt = performance.now();
+                warp = 1;
+                showLabel(index);
+                if (reduceMotion) {
+                    snapToTargets();
+                    render(performance.now());
+                }
+            }
+
+            function snapToTargets() {
+                for (let i = 0; i < COUNT; i++) assigned[i] = current;
+                update(0, performance.now() + 5000, true);
+            }
+
+            // ---------- 매 프레임 ----------
+            let time = 0;
+            let last = performance.now();
+            let mouseX = 0, mouseY = 0, viewX = 0, viewY = 0;
+            let pulseMix = 0;
+            let drawCount = COUNT;
+            let frameNo = 0, costSum = 0, costFrames = 0;
+
+            function update(dt, now, instant) {
+                SHAPES.forEach((s) => {
+                    s.angle += s.spin * dt;
+                    s.ca = Math.cos(s.angle);
+                    s.sa = Math.sin(s.angle);
+                });
+                const step = instant ? 1 : dt * 60;
+                for (let i = 0; i < COUNT; i++) {
+                    if (assigned[i] !== current && now - morphAt > delay[i]) assigned[i] = current;
+                    const s = SHAPES[assigned[i]];
+                    const T = s.targets;
+                    const x = T.pos[i * 3], y = T.pos[i * 3 + 1], z = T.pos[i * 3 + 2];
+                    const x1 = x * s.ca + z * s.sa;
+                    const z1 = -x * s.sa + z * s.ca;
+                    const y2 = y * s.ct - z1 * s.st;
+                    const z2 = y * s.st + z1 * s.ct;
+                    const k = instant ? 1 : Math.min(1, speed[i] * step);
+                    px[i] += (x1 * s.scale - px[i]) * k;
+                    py[i] += (y2 * s.scale + s.offsetY - py[i]) * k;
+                    pz[i] += (z2 * s.scale - pz[i]) * k;
+                    pb[i] += (T.bright[i] - pb[i]) * k;
+                    ps[i] += (T.size[i] * s.starSize - ps[i]) * k;
+                    pc[i] = T.color[i];
+                }
+            }
+
+            function render() {
+                const scroll = window.scrollY || 0;
+                const cx = W / 2;
+                const cy = baseCy - scroll * 0.45;
+                const fade = 1 - Math.min(1, scroll / H) * 0.6;
+                const sway = (reduceMotion ? 0 : Math.sin(time * 0.12) * 0.35) + viewX * 0.25;
+                const lift = viewY * 0.12;
+                const cv = Math.cos(sway), sv = Math.sin(sway);
+                const cl = Math.cos(lift), sl = Math.sin(lift);
+                const pulseHead = (time * 0.16) % 1.35;
+
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.clearRect(0, 0, W, H);
+                ctx.globalCompositeOperation = 'lighter';
+                // 가까운 별일수록 마우스에 크게 움직여 시차가 생긴다.
+                if (FAR_COUNT) drawFarStars(cx - viewX * 10, cy - viewY * 6, fade);
+                if (FLY_COUNT) drawFlyers(cx - viewX * 40, cy - viewY * 25, fade);
+                for (let i = 0; i < drawCount; i++) {
+                    const x0 = px[i] * cv + pz[i] * sv;
+                    const z0 = -px[i] * sv + pz[i] * cv;
+                    const y = py[i] * cl - z0 * sl;
+                    const z = py[i] * sl + z0 * cl;
+                    const s = CAMERA / (CAMERA - z);
+                    if (s <= 0) continue;
+                    const sx = cx + x0 * R * s;
+                    const sy = cy - y * R * s;
+                    if (sx < -40 || sx > W + 40 || sy < -40 || sy > H + 40) continue;
+
+                    const T = SHAPES[assigned[i]].targets;
+                    let b = pb[i];
+                    if (pulseMix > 0.01 && T.pulse[i] >= 0) {
+                        // 경로를 따라 밝은 빛이 내려가며 경사하강 과정을 보여 준다.
+                        const d = (pulseHead - T.pulse[i]) * 9;
+                        b += Math.exp(-d * d) * 0.9 * pulseMix;
+                    }
+                    const twinkle = reduceMotion ? 1 : 0.72 + 0.28 * Math.sin(time * freq[i] + phase[i]);
+                    const depth = Math.max(0.35, Math.min(1, 0.72 + z * 0.35));
+                    const alpha = b * twinkle * fade * depth * 1.25;
+                    if (alpha < 0.02) continue;
+                    const d = ps[i] * (1.2 + b * 1.8) * s * sizeScale * 3.6;
+                    ctx.globalAlpha = Math.min(1, alpha);
+                    ctx.drawImage(sprites[pc[i]], sx - d / 2, sy - d / 2, d, d);
+                    if (T.flare[i] && pb[i] > 0.6) {
+                        const f = 44 * s * sizeScale * SHAPES[assigned[i]].starSize;
+                        ctx.drawImage(flareSprite, sx - f / 2, sy - f / 2, f, f);
+                    }
+                }
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            function frame(now) {
+                requestAnimationFrame(frame);
+                // 아래 안내 영역까지 내려가면 형상이 흐려지므로 프레임을 절반만 그린다.
+                if (window.scrollY > H && (frameNo++ & 1)) return;
+                const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+                last = now;
+                time += dt;
+                if (!held && now - morphAt > CYCLE_MS) {
+                    let next = NEXT_SHAPE[current];
+                    if (next === MATH_SHAPE && !mathFits) next = NEXT_SHAPE[next];
+                    setShape(next);
+                }
+                viewX += (mouseX - viewX) * Math.min(1, dt * 2.5);
+                viewY += (mouseY - viewY) * Math.min(1, dt * 2.5);
+                pulseMix += ((current === LOSS_SHAPE ? 1 : 0) - pulseMix) * Math.min(1, dt * 1.5);
+
+                const started = performance.now();
+                update(dt, now, false);
+                updateFlyers(dt);
+                updateFarStars(dt);
+                render();
+                // 느린 기기에서는 그리는 별 수를 줄인다.
+                costSum += performance.now() - started;
+                if (++costFrames === 90) {
+                    if (costSum / costFrames > 12 && drawCount > 700) drawCount = Math.floor(drawCount * 0.75);
+                    costSum = 0;
+                    costFrames = 0;
+                }
+            }
+
+            layout();
+            showLabel(current);
+            const relayout = () => {
+                layout();
+                if (reduceMotion) render();
+            };
+            window.addEventListener('resize', relayout);
+            // 웹 글꼴과 이미지가 다 불러와지면 카드 높이가 바뀔 수 있어 Math 위치를 다시 잡는다.
+            window.addEventListener('load', relayout);
+            if (reduceMotion) {
+                snapToTargets();
+                render();
+                window.addEventListener('scroll', () => requestAnimationFrame(render), { passive: true });
+            } else {
+                window.addEventListener('pointermove', (e) => {
+                    if (e.pointerType !== 'mouse') return;
+                    mouseX = e.clientX / W * 2 - 1;
+                    mouseY = e.clientY / H * 2 - 1;
+                }, { passive: true });
+                requestAnimationFrame(frame);
+            }
+
+            return {
+                // 카드를 가리키는 동안에는 그 카드의 형상을 유지한다.
+                hold(index) {
+                    held = true;
+                    setShape(index);
+                },
+                release() {
+                    held = false;
+                    morphAt = performance.now();
+                }
+            };
         }
 
-        // 카드 나타내기
+        // 카드에 마우스를 올리거나 키보드로 고르면 별이 그 영역의 형상으로 바뀐다.
+        function linkCardsToStars(stars) {
+            document.querySelectorAll('.card-container').forEach((card, index) => {
+                card.addEventListener('pointerenter', () => stars.hold(index));
+                card.addEventListener('pointerleave', () => stars.release());
+                card.addEventListener('focusin', () => stars.hold(index));
+                card.addEventListener('focusout', () => stars.release());
+            });
+        }
+
+        // 한 장씩 이동하는 캐러셀. 자동 넘김은 7초 간격이며 읽는 동안 멈춘다.
+        function initCardCarousel() {
+            const root = document.getElementById('cardCarousel');
+            const stage = document.getElementById('carouselStage');
+            const controls = document.getElementById('carouselControls');
+            const panels = Array.from(stage.querySelectorAll('.card-container'));
+            const topicButtons = Array.from(controls.querySelectorAll('[data-carousel-index]'));
+            const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const popup = document.getElementById('patchOverlay');
+            let active = 0, enabled = false;
+            let hovered = false, focused = false, inView = true;
+            let popupOpen = !popup.classList.contains('hidden');
+            let timer = null, swipe = null, suppressClickUntil = 0;
+
+            function schedule() {
+                if (timer !== null) clearTimeout(timer);
+                timer = null;
+                if (!enabled || hovered || focused || swipe || !inView || document.hidden || popupOpen) return;
+                timer = setTimeout(() => { timer = null; select(active + 1); }, 7000);
+            }
+
+            function paint() {
+                panels.forEach((panel, index) => {
+                    const distance = (index - active + panels.length) % panels.length;
+                    const position = distance === 0 ? 'center' : distance === 1 ? 'next' : distance === panels.length - 1 ? 'previous' : 'back';
+                    panel.setAttribute('data-slide-position', position);
+                    const hidden = enabled && position === 'back';
+                    panel.setAttribute('aria-hidden', String(hidden));
+                    panel.inert = hidden;
+                });
+                topicButtons.forEach((button, index) => button.setAttribute('aria-pressed', String(index === active)));
+            }
+
+            function select(index) {
+                if (!enabled) return;
+                active = (index + panels.length) % panels.length;
+                paint();
+                schedule();
+            }
+
+            function layout() {
+                const width = stage.clientWidth;
+                const compact = width < 600;
+                // 넓은 화면의 카드는 예전 폭(최대 420px)의 75%
+                const cardWidth = compact ? Math.min(270, Math.max(236, width * 0.76)) : Math.min(315, Math.max(246, width * 0.31));
+                stage.style.setProperty('--carousel-card-width', cardWidth + 'px');
+                stage.style.setProperty('--carousel-gap', (compact ? width * 0.62 : Math.min(345, width * 0.34)) + 'px');
+            }
+
+            function configure() {
+                enabled = !motion.matches && CSS.supports('perspective', '1600px');
+                stage.classList.toggle('is-carousel', enabled);
+                controls.hidden = !enabled;
+                if (enabled) {
+                    root.setAttribute('aria-roledescription', '캐러셀');
+                    layout();
+                } else root.removeAttribute('aria-roledescription');
+                paint();
+                schedule();
+            }
+
+            panels.forEach((panel, index) => {
+                panel.setAttribute('role', 'group');
+                panel.setAttribute('aria-roledescription', '슬라이드');
+                panel.setAttribute('aria-label', (index + 1) + ' / ' + panels.length);
+            });
+            stage.addEventListener('pointerenter', event => {
+                if (event.pointerType !== 'touch') { hovered = true; schedule(); }
+            });
+            stage.addEventListener('pointerleave', event => { hovered = false; if (event.pointerType === 'touch') swipe = null; schedule(); });
+            root.addEventListener('focusin', event => {
+                const index = panels.findIndex(panel => panel.contains(event.target));
+                focused = index >= 0;
+                if (index >= 0 && index !== active) select(index);
+                schedule();
+            });
+            root.addEventListener('focusout', event => { focused = stage.contains(event.relatedTarget); schedule(); });
+            topicButtons.forEach((button, index) => button.addEventListener('click', () => select(index)));
+            document.getElementById('carouselPrev').addEventListener('click', () => select(active - 1));
+            document.getElementById('carouselNext').addEventListener('click', () => select(active + 1));
+            root.addEventListener('keydown', event => {
+                if (!enabled || event.altKey || event.ctrlKey || event.metaKey || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const index = event.key === 'Home' ? 0 : event.key === 'End' ? panels.length - 1 : active + (event.key === 'ArrowRight' ? 1 : -1);
+                select(index);
+                topicButtons[active].focus();
+            });
+            stage.addEventListener('pointerdown', event => {
+                if (enabled && event.pointerType === 'touch' && event.isPrimary !== false) {
+                    swipe = { id: event.pointerId, x: event.clientX, y: event.clientY };
+                    if (timer !== null) clearTimeout(timer);
+                    timer = null;
+                }
+            });
+            stage.addEventListener('pointerup', event => {
+                if (!swipe || swipe.id !== event.pointerId) return;
+                const dx = event.clientX - swipe.x, dy = event.clientY - swipe.y;
+                swipe = null;
+                if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+                    focused = false;
+                    suppressClickUntil = performance.now() + 500;
+                    select(active + (dx < 0 ? 1 : -1));
+                } else schedule();
+            });
+            stage.addEventListener('pointercancel', () => { swipe = null; schedule(); });
+            stage.addEventListener('click', event => {
+                if (performance.now() < suppressClickUntil) { event.preventDefault(); event.stopPropagation(); }
+            }, true);
+            document.addEventListener('visibilitychange', schedule);
+            motion.addEventListener('change', configure);
+            if ('ResizeObserver' in window) new ResizeObserver(layout).observe(stage);
+            else window.addEventListener('resize', layout);
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(entries => { inView = entries[0].isIntersecting; schedule(); }).observe(root);
+            }
+            new MutationObserver(() => { popupOpen = !popup.classList.contains('hidden'); schedule(); })
+                .observe(popup, { attributes: true, attributeFilter: ['class'] });
+            configure();
+        }
+
+        // 기본 목록의 카드 나타내기
         function showCards() {
             setTimeout(() => {
                 const cards = document.querySelectorAll('.card-container');
                 cards.forEach(card => card.classList.add('show'));
-            }, 2000);
+            }, 700);
         }
-
-        // 윈도우 리사이즈 처리
-        window.addEventListener('resize', () => {
-            const canvas = document.getElementById('neuralCanvas');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
 
         // 업데이트 팝업
         (function() {
@@ -1686,7 +2069,7 @@
             });
 
             // patch.txt fetch
-            fetch('./patch.txt?v=' + Date.now())
+            fetch('./docs/notes/patch.txt?v=' + Date.now())
                 .then(r => r.text())
                 .then(text => {
                     const sections = parsePatch(text);
@@ -1734,8 +2117,9 @@
         })();
 
         // 초기화
-        createStars();
-        drawNeuralNetwork();
+        initCardCarousel();
+        const starHero = createStarHero();
+        linkCardsToStars(starHero);
         showCards();
     </script>
 </body>

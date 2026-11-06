@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>숫자를 어떻게 알아볼까? — 단계별로 따라가기 | 인공지능 수학</title>
+  <meta name="description" content="손으로 쓴 숫자를 컴퓨터가 알아보기까지, 줄이기·숫자로 바꾸기·특징 찾기·확률 고르기의 일곱 단계를 직접 그려 보며 따라갑니다." />
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <link rel="stylesheet" href="../../nav.css" />
+  <link rel="stylesheet" href="../quiz-theme.css" />
+  <script src="../../backguard.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    /* 모델을 내려받는 동안 보여 주는 알림창 */
+    .boot {
+      position: fixed; inset: 0; z-index: 3000;
+      display: grid; place-items: center;
+      background: rgba(51, 48, 75, .55);
+      padding: 20px;
+    }
+    .boot.done { display: none; }
+    .boot-card {
+      width: min(100%, 420px); text-align: center;
+      background: #FFFDF7; border: 2.5px solid #3B3557;
+      border-radius: 18px; box-shadow: 0 6px 0 #3B3557;
+      padding: 26px 24px 22px;
+    }
+    .tex-line { margin: 7px 0 5px; color: #33304B; overflow-x: auto; }
+    .tex-line .katex { font-size: 1.12rem; }
+    .boot-head { display: flex; align-items: center; justify-content: center; gap: 9px; margin-bottom: 14px; }
+    .boot-spin {
+      width: 20px; height: 20px; flex: none; border-radius: 50%;
+      border: 3px solid #E4DECC; border-top-color: #EE6C2B;
+      animation: boot-spin 900ms linear infinite;
+    }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    .boot.fail .boot-spin { display: none; }
+    .boot-t { font-size: 1rem; font-weight: 900; color: #33304B; }
+    .boot-dots { font-family: Consolas, monospace; }
+    .boot-track {
+      height: 20px; background: #EFEADC; border: 2px solid #3B3557;
+      border-radius: 999px; overflow: hidden;
+    }
+    .boot-fill {
+      display: block; height: 100%; width: 0%;
+      background: #EE6C2B; border-radius: 999px;
+      transition: width .2s ease;
+    }
+    .boot-pct {
+      margin-top: 8px; font-family: Consolas, monospace;
+      font-size: 1.3rem; font-weight: 900; color: #B34A0C;
+    }
+    .boot-m { margin-top: 8px; font-size: .82rem; font-weight: 700; color: #5B5675; line-height: 1.6; }
+    .boot-btns { display: none; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .boot.fail .boot-btns { display: flex; }
+    .boot.fail .boot-fill { background: #D8355A; }
+    @media (prefers-reduced-motion: reduce) {
+      .boot-fill { transition: none; }
+      .boot-spin { animation-duration: 2s; }
+    }
+
+    body {
+      font-family: 'Noto Sans KR', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #33304B;
+    }
+
+    .container {
+      max-width: 1298px;   /* 1180 에서 10% 넓힘 */
+      margin: 20px auto;
+      padding: 30px 28px 34px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+      font-weight: 900;
+      margin: 4px 0 6px;
+    }
+
+    .lead {
+      text-align: center;
+      color: #5B5675;
+      font-size: .96rem;
+      margin: 0 0 22px;
+    }
+
+    /* 실제 모델의 데이터 흐름: ⑤의 개념 연습과 실제 Flatten 위치를 구분한다 */
+    .actual-path {
+      margin: 0 auto 18px;
+      padding: 13px 14px 12px;
+      background: #F7F5FF;
+      border: 2px solid #C9C4DA;
+      border-radius: 14px;
+    }
+
+    .actual-path-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      color: #5B5675;
+      font-size: .8rem;
+      font-weight: 800;
+    }
+
+    .actual-path-title strong {
+      padding: 3px 9px;
+      color: #fff;
+      background: #33304B;
+      border-radius: 999px;
+      font-size: .74rem;
+    }
+
+    .path-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .path-node {
+      min-width: 94px;
+      padding: 7px 9px;
+      background: #fff;
+      border: 2px solid #C9C4DA;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .path-node strong {
+      display: block;
+      color: #33304B;
+      font-size: .73rem;
+      font-weight: 900;
+    }
+
+    .path-node span {
+      display: block;
+      color: #1272A0;
+      font-family: Consolas, monospace;
+      font-size: .72rem;
+      font-weight: 800;
+    }
+
+    .path-node.key {
+      background: #FFF0DF;
+      border-color: #EE6C2B;
+    }
+
+    .path-arrow { color: #A9A294; font-size: 1rem; font-weight: 900; }
+
+    .path-hint {
+      margin: 9px 0 0;
+      text-align: center;
+      color: #5B5675;
+      font-size: .76rem;
+      font-weight: 700;
+    }
+
+    .path-hint b { color: #B34A0C; }
+
+    /* ── 단계 표시 ─────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 20px;
+    }
+
+    .step-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 2px solid #C9C4DA;
+      border-radius: 999px;
+      background: #fff;
+      color: #5B5675;
+      font-size: .78rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .step-dot .num {
+      display: inline-grid;
+      place-items: center;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #E7E3F2;
+      color: #5B5675;
+      font-size: .72rem;
+    }
+
+    .step-dot[aria-current="true"] {
+      background: var(--coral, #EE6C2B);
+      border-color: #3B3557;
+      color: #fff;
+      box-shadow: 0 3px 0 #3B3557;
+    }
+
+    .step-dot[aria-current="true"] .num { background: rgba(255, 255, 255, .3); color: #fff; }
+    .step-dot.done { border-color: #23874A; color: #23874A; }
+
+    /* ── 슬라이드 ─────────────────────────────────────────── */
+    .slide { display: none; }
+    .slide.on { display: block; }
+
+    .slide-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .slide-head h2 {
+      font-size: 1.22rem;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .slide-head .tag {
+      font-size: .76rem;
+      font-weight: 800;
+      color: #B34A0C;
+      background: #FFF0DF;
+      border: 1.5px solid #F0D3AE;
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+
+    .slide > p.desc {
+      color: #5B5675;
+      font-size: .93rem;
+      line-height: 1.65;
+      margin: 6px 0 16px;
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .stage-box {
+      background: #FFFDF7;
+      border: 2px solid #E0CFA8;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stage-box h3 {
+      font-size: .84rem;
+      font-weight: 800;
+      color: #5B5675;
+      margin: 0 0 10px;
+    }
+
+    /* ⑤ 펴기 그림 : 좁은 화면에서는 표시 폭을 제한하므로 가운데로 모은다 */
+    #flatcv { display: block; margin: 0 auto; }
+
+    /* ⑤ 팝업을 여는 안내 칸 */
+    .flat-entry { padding: 20px 16px 22px; }
+
+    .flat-entry-flow {
+      display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: center; gap: 10px; margin-bottom: 12px;
+    }
+
+    .flat-entry-node {
+      padding: 8px 14px; border-radius: 10px;
+      border: 2px solid #C9C2E0; background: #F4F2FB;
+      font-weight: 800; font-size: .9rem; color: #3B3557;
+    }
+
+    .flat-entry-node.key { border-color: #EE6C2B; background: #FFF1E6; color: #B34A0C; }
+    .flat-entry-arrow { font-weight: 900; color: #8C86A8; }
+
+    .flat-entry-desc {
+      margin: 0 0 14px; font-size: .9rem; line-height: 1.7; color: #5B5675;
+    }
+
+    .flat-entry-hint {
+      margin: 12px 0 0; font-size: .8rem; line-height: 1.6; color: #8A8578;
+    }
+
+    /* ⑤ 펴는 과정 팝업 */
+    .flat-modal {
+      position: fixed; inset: 0; z-index: 2500;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(51, 48, 75, .55);
+      padding: 16px;
+    }
+
+    .flat-modal[hidden] { display: none; }
+
+    .flat-modal-card {
+      background: #FFFDF7;
+      border: 2px solid #E0CFA8;
+      border-radius: 16px;
+      padding: 16px;
+      width: 100%;
+      max-width: 1180px;
+      max-height: 94vh;
+      overflow-y: auto;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, .28);
+    }
+
+    .flat-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 6px;
+    }
+
+    .flat-modal-head h3 {
+      margin: 0; font-size: 1rem; font-weight: 900; color: #33304B;
+    }
+
+    .flat-close {
+      flex: none;
+      width: 44px; height: 44px;
+      border: 2px solid #D8D1BE; border-radius: 10px;
+      background: #fff; color: #5B5675;
+      font-size: 1rem; font-weight: 900; line-height: 1;
+      cursor: pointer;
+    }
+
+    .flat-close:hover { background: #F1EFEA; }
+
+    .flat-modal-hint {
+      margin: 0 0 10px; font-size: .84rem; line-height: 1.6; color: #5B5675;
+    }
+
+    @media (max-width: 640px) {
+      .flat-modal { padding: 8px; }
+      .flat-modal-card { padding: 12px; max-height: 96vh; }
+    }
+
+    .note {
+      background: #FFF6E0;
+      border: 2px solid #E0CFA8;
+      border-left: 7px solid #FFC43D;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: .9rem;
+      line-height: 1.7;
+    }
+
+    .note b { color: #B34A0C; }
+
+    .formula {
+      background: #33304B;
+      color: #FFF3DE;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-family: Consolas, 'JetBrains Mono', monospace;
+      font-size: .88rem;
+      font-weight: 700;
+      overflow-x: auto;
+      margin: 10px 0 0;
+    }
+
+    canvas { display: block; margin: 0 auto; }
+
+    #draw {
+      background: #fff;
+      border: 2.5px solid #3B3557;
+      border-radius: 12px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: .85rem;
+      font-weight: 800;
+      padding: 9px 18px;
+      min-height: 42px;
+      border: 2.5px solid #3B3557;
+      border-radius: 999px;
+      background: #FFFDF7;
+      color: #33304B;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #3B3557;
+      transition: transform .12s, box-shadow .12s;
+    }
+
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 #3B3557; }
+    .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #3B3557; }
+    .btn.primary { background: var(--coral, #EE6C2B); color: #fff; }
+    .btn.ghost { color: #D8355A; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: 0 2px 0 #3B3557; }
+
+    .nav-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .nav-row .count { font-size: .82rem; font-weight: 800; color: #5B5675; min-width: 72px; text-align: center; }
+
+    /* 28×28 값 표 */
+    .grid28 {
+      display: grid;
+      grid-template-columns: repeat(28, 1fr);
+      gap: 1px;
+      width: min(100%, 420px);
+      margin: 0 auto;
+      background: #E0CFA8;
+      border: 2px solid #E0CFA8;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .grid28 span {
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      font-size: 5.5px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    /* 한 줄로 편 값 */
+    .flatrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      justify-content: center;
+    }
+
+    .flatrow i {
+      width: 21px;
+      height: 21px;
+      display: grid;
+      place-items: center;
+      border-radius: 4px;
+      font-size: 8.5px;
+      font-style: normal;
+      font-weight: 800;
+      border: 1px solid #E0CFA8;
+    }
+
+    /* 확률 막대 */
+    .bars { display: grid; gap: 6px; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 26px 1fr 56px;
+      align-items: center;
+      gap: 8px;
+      font-size: .82rem;
+      font-weight: 800;
+    }
+
+    /* span 은 기본이 인라인이라 width 가 먹지 않는다. 블록으로 바꿔야 막대가 찬다. */
+    .bar-track {
+      display: block;
+      height: 17px;
+      background: #EFEADC;
+      border: 1.5px solid #D8D1BE;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      display: block;
+      height: 100%;
+      background: #1272A0;
+      border-radius: 999px;
+      transition: width .35s ease;
+    }
+    .bar-row.win .bar-fill { background: var(--coral, #EE6C2B); }
+    .bar-row.win { color: #B34A0C; }
+
+    .sc-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .sc-table th { font-size: .75rem; color: #5B5675; font-weight: 800; padding: 4px 2px; }
+    .sc-table td { text-align: center; padding: 5px 2px; font-weight: 800; }
+    .sc-chip {
+      display: inline-grid; place-items: center; width: 34px; height: 34px;
+      border: 2px solid #3B3557; border-radius: 7px; font-size: .78rem;
+    }
+    .sc-op { color: #A9A294; font-weight: 900; }
+    .sc-in {
+      width: 74px; min-height: 38px; padding: 5px 6px; text-align: center;
+      border: 2.5px solid #E0CFA8; border-radius: 9px; background: #fff;
+      font-family: Consolas, monospace; font-size: .95rem; font-weight: 800; color: #33304B;
+    }
+    .sc-in:focus { outline: none; border-color: var(--coral, #EE6C2B); box-shadow: 0 0 0 4px rgba(238,108,43,.22); }
+    .sc-in.ok { border-color: #23874A; background: #F1FAF4; }
+    .sc-in.no { border-color: #D8355A; background: #FDF1F4; }
+    .sc-sum {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      flex-wrap: wrap; margin-top: 14px; font-weight: 800; font-size: .9rem;
+    }
+    .sc-msg { text-align: center; font-weight: 800; font-size: .88rem; margin: 10px 0 0; min-height: 1.2em; }
+
+    .wm-pick { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 12px; }
+    .wm-pick button {
+      width: 38px; height: 38px; border: 2px solid #3B3557; border-radius: 8px;
+      background: #FFFDF7; color: #33304B; font-family: inherit; font-weight: 900;
+      font-size: .9rem; cursor: pointer;
+    }
+    .wm-pick button[aria-pressed="true"] { background: var(--coral, #EE6C2B); color: #fff; }
+    .wm-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .wm-item { margin: 0; text-align: center; }
+    .wm-item canvas { border: 2px solid #3B3557; border-radius: 10px; background: #fff; }
+    .wm-item figcaption { font-size: .76rem; font-weight: 800; color: #5B5675; margin-top: 6px; }
+    .wm-x { font-size: 1.5rem; font-weight: 900; color: #A9A294; }
+    .ms { display: none; }
+    /* 그림이 주인공이므로 왼쪽을 넓게, 설명은 옆에 붙인다 */
+    .ms.on {
+      display: grid;
+      grid-template-columns: 2.15fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    /* 칸이 안쪽 내용에 밀려 넓어지지 않게 한다 (기본값 min-width:auto 때문) */
+    .ms.on > * { min-width: 0; }
+    @media (max-width: 900px) {
+      .ms.on { grid-template-columns: 1fr; }
+    }
+    .ms-nav { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 16px; }
+    .ms-nav button {
+      padding: 5px 12px; border: 2px solid #C9C4DA; border-radius: 999px;
+      background: #fff; color: #5B5675; font-family: inherit;
+      font-size: .74rem; font-weight: 800; cursor: pointer;
+    }
+    .ms-nav button[aria-current="true"] {
+      background: #33304B; border-color: #33304B; color: #fff;
+    }
+    .m1-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .m1-box {
+      display: grid; place-items: center; gap: 4px; min-width: 96px; padding: 12px 10px;
+      border: 2.5px solid #E0CFA8; border-radius: 12px; background: #fff;
+    }
+    .m1-box.on { border-color: #EE6C2B; background: #FFF6E0; }
+    .m1-big { font-family: Consolas, monospace; font-size: 1.5rem; font-weight: 900; color: #33304B; }
+    .m1-lab { font-size: .72rem; font-weight: 800; color: #5B5675; line-height: 1.35; text-align: center; }
+    .m1-lab small { font-weight: 700; color: #8A8578; }
+    .m1-op { font-size: 1.4rem; font-weight: 900; color: #A9A294; }
+    .m3-table { margin: 0 auto; border-collapse: collapse; font-size: .9rem; font-weight: 800; }
+    .m3-table td { border: 2px solid #E0CFA8; padding: 9px 16px; text-align: center; }
+    .m3-table tr.on td { background: #FFF6E0; border-color: #EE6C2B; color: #B34A0C; }
+    .m4-list { display: grid; gap: 6px; max-width: 340px; margin: 0 auto; }
+    .m4-row { display: flex; align-items: center; gap: 10px; font-size: .9rem; font-weight: 800; }
+    .m4-d {
+      display: grid; place-items: center; width: 30px; height: 30px;
+      border: 2px solid #3B3557; border-radius: 8px; background: #FFFDF7;
+    }
+    .m4-f { font-family: Consolas, monospace; color: #B34A0C; min-width: 62px; }
+    .m4-a { color: #5B5675; font-size: .82rem; }
+    .m4-dots { justify-content: center; color: #A9A294; font-size: 1.1rem; }
+
+    .fk-wrap { display: flex; gap: 18px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+    /* 필터는 한 줄에 8개씩, 4줄로 놓는다 */
+    .fk-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      justify-items: center;
+      align-items: center;
+    }
+    .fk-grid canvas { max-width: 100%; height: auto; }
+    /* 장수가 많으므로 줄을 맞춰 8장씩 놓는다 */
+    .fm-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 7px;
+      justify-items: center;
+      align-items: center;
+    }
+    .fm-grid canvas { max-width: 100%; height: auto; }
+    @media (max-width: 900px) { .fm-grid { grid-template-columns: repeat(4, 1fr); } }
+    .fk-grid { max-width: 632px; }
+    /* 좁은 화면에서는 칸이 너무 작아지므로 4개씩 놓는다 */
+    @media (max-width: 720px) { .fk-grid { grid-template-columns: repeat(4, 1fr); max-width: 320px; } }
+    .fk-grid canvas:hover { border-color: #EE6C2B; }
+    .fk-grid canvas { border: 1.5px solid #C9C4DA; border-radius: 5px; cursor: pointer; }
+    .fk-grid canvas.on { border: 2.5px solid #EE6C2B; box-shadow: 0 0 0 3px rgba(238,108,43,.22); }
+    .fk-detail {
+      min-width: 214px; padding: 14px; background: #FFFDF7;
+      border: 2.5px solid #3B3557; border-radius: 12px;
+    }
+    .fk-dt { font-size: .88rem; font-weight: 900; color: #B34A0C; margin-bottom: 10px; }
+    .fk-nums { border-collapse: collapse; margin: 0 auto; }
+    .fk-nums td {
+      width: 58px; height: 34px; text-align: center; border: 1px solid #E0CFA8;
+      font-family: Consolas, monospace; font-size: .78rem; font-weight: 800;
+    }
+    .fk-bias { margin-top: 10px; font-size: .78rem; font-weight: 800; color: #5B5675; }
+    .fk-hint { margin: 8px 0 0; font-size: .74rem; font-weight: 700; color: #A9A294; }
+    .fm-grid canvas { border: 1.5px solid #C9C4DA; border-radius: 5px; background: #fff; }
+    .fl-flow {
+      display: flex; align-items: center; gap: 4px;
+      overflow-x: auto; padding: 4px 2px 10px;
+    }
+    .fl-stage {
+      flex: 0 0 auto; border: 2px solid #C9C4DA; border-radius: 10px;
+      background: #fff; padding: 7px 7px 5px; cursor: pointer; text-align: center;
+    }
+    .fl-stage[aria-pressed="true"] { border-color: #EE6C2B; box-shadow: 0 0 0 3px rgba(238,108,43,.20); }
+    .fl-stage .nm { font-size: .68rem; font-weight: 900; color: #33304B; margin-top: 5px; }
+    .fl-stage .sh { font-family: Consolas, monospace; font-size: .64rem; color: #1272A0; font-weight: 700; }
+    .fl-arrow { flex: 0 0 auto; color: #A9A294; font-weight: 900; font-size: 1.1rem; }
+    .fl-detail { margin-top: 12px; }
+    .fl-dt { font-size: .82rem; font-weight: 900; color: #B34A0C; text-align: center; margin-bottom: 6px; }
+    .fl-why {
+      font-size: .8rem; font-weight: 700; color: #33304B; line-height: 1.7;
+      background: #FFF6E0; border: 2px solid #E0CFA8; border-left: 6px solid #FFC43D;
+      border-radius: 10px; padding: 10px 14px; margin: 0 auto 12px; max-width: 760px;
+    }
+    .fl-why b { color: #B34A0C; }
+    .fl-why:empty { display: none; }
+    .pool-demo:empty { display: none; }
+    .conv-demo:empty { display: none; }
+    .conv-demo {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      flex-wrap: wrap; margin: 14px auto 0; padding: 14px;
+      background: #FFFDF7; border: 2px solid #E0CFA8; border-radius: 12px;
+    }
+    .conv-demo figure { margin: 0; text-align: center; }
+    .conv-demo figcaption { font-size: .74rem; font-weight: 800; color: #5B5675; margin-top: 6px; }
+    .conv-demo canvas { border: 2px solid #3B3557; border-radius: 8px; background: #fff; }
+    .conv-op { font-size: 1.3rem; font-weight: 900; color: #EE6C2B; }
+    .conv-cap { flex-basis: 100%; text-align: center; font-size: .8rem; font-weight: 700; color: #5B5675; }
+    .fm-grid canvas { cursor: pointer; }
+    .fm-grid canvas.on { border: 2.5px solid #EE6C2B !important; }
+    .pool-demo {
+      display: flex; align-items: center; justify-content: center; gap: 14px;
+      flex-wrap: wrap; margin: 0 auto 14px; padding: 12px;
+      background: #FFFDF7; border: 2px solid #E0CFA8; border-radius: 12px;
+    }
+    .pool-demo figure { margin: 0; text-align: center; }
+    .pool-demo figcaption { font-size: .74rem; font-weight: 800; color: #5B5675; margin-top: 6px; }
+    .pool-demo canvas { border: 2px solid #3B3557; border-radius: 8px; background: #fff; }
+    .pool-op { font-size: .8rem; font-weight: 800; color: #5B5675; max-width: 150px; line-height: 1.6; text-align: center; }
+    .fd-flow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+    .fd-node {
+      border: 2.5px solid #3B3557; border-radius: 10px; padding: 8px 12px;
+      background: #FFFDF7; font-size: .8rem; font-weight: 800; text-align: center;
+    }
+    .fd-node small { display: block; font-family: Consolas, monospace; color: #1272A0; font-weight: 700; }
+    .fd-arrow { color: #A9A294; font-weight: 900; }
+    .dv-step { margin-top: 14px; }
+    .dv-cap { font-size: .84rem; font-weight: 900; color: #B34A0C; margin-bottom: 6px; }
+    .dv-note { font-size: .78rem; font-weight: 700; color: #5B5675; margin-top: 6px; line-height: 1.6; }
+    .dv-arrow { text-align: center; font-size: 1.3rem; font-weight: 900; color: #A9A294; margin: 8px 0 0; }
+    #dv-flat { width: 100%; height: auto; border: 2px solid #3B3557; border-radius: 8px; }
+    #dv-dense { width: min(100%, 300px); height: auto; border: 2px solid #3B3557; border-radius: 8px; }
+
+    .wm-pred {
+      font-size: .86rem; font-weight: 800; color: #33304B;
+      background: #FFF0DF; border: 2px solid #F0D3AE; border-radius: 10px;
+      padding: 8px 12px; margin: 0 auto 12px; display: inline-block;
+    }
+    .wm-pred b { color: #B34A0C; }
+
+    .wm-legend { font-size: .82rem; font-weight: 700; color: #5B5675; margin: 12px 0 0; }
+    .wm-sw { display: inline-block; width: 13px; height: 13px; border-radius: 3px; vertical-align: -2px; }
+
+    .kernels { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .kernel-item figcaption { font-size: .76rem; font-weight: 800; color: #5B5675; margin-top: 6px; }
+
+    .empty-hint {
+      color: #B34A0C;
+      font-weight: 800;
+      font-size: .86rem;
+      background: #FFF0DF;
+      border: 2px dashed #F0C79A;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    @media (max-width: 860px) {
+      .cols { grid-template-columns: 1fr; }
+      body { padding: 12px; }
+      .container { padding: 20px 16px 26px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .btn, .bar-fill { transition: none; }
+    }
+  </style>
+</head>
+
+<body class="theme-mnist">
+  <div class="boot" id="boot" role="dialog" aria-modal="true" aria-labelledby="boot-t" aria-describedby="boot-m">
+    <div class="boot-card">
+      <div class="boot-head">
+        <span class="boot-spin" id="boot-spin" aria-hidden="true"></span>
+        <div class="boot-t" id="boot-t">인공지능 모델을 준비하고 있습니다</div>
+      </div>
+      <div class="boot-track" id="boot-track" role="progressbar"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="boot-fill" id="boot-fill"></div></div>
+      <div class="boot-pct" id="boot-pct">0%</div>
+      <div class="boot-m" id="boot-m"><span id="boot-msg">약 3.5MB 를 내려받는 중입니다. 잠시만 기다려 주세요.</span><span class="boot-dots" id="boot-dots" aria-hidden="true"></span></div>
+      <div class="boot-btns" id="boot-btns">
+        <button type="button" class="btn primary" id="boot-retry">다시 시도</button>
+        <button type="button" class="btn" id="boot-skip">모델 없이 둘러보기</button>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <aside class="sidebar">
+    <nav>
+      <div class="nav-sec">시작</div>
+      <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
+      <a href="../01_이미지와_RGB/activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+      <div class="nav-sec">색과 이미지</div>
+      <a href="../01_이미지와_RGB/activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+      <a href="../01_이미지와_RGB/activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+      <a href="../01_이미지와_RGB/activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
+      <a href="../01_이미지와_RGB/activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+      <a href="../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+      <a href="../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+      <div class="nav-sec">행렬 연산</div>
+      <a href="../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+      <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+      <div class="nav-sec">데이터와 인식</div>
+      <a href="activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+      <a href="activity9_mnist_steps.html" class="active"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+      <a href="activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+      <a href="activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+      <div class="nav-sec">AI 이미지 기술</div>
+      <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+      <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+      <a href="../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+      <a href="../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+      <div class="nav-sec">CNN과 군집화</div>
+      <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+      <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+    </nav>
+  </aside>
+
+  <main class="container">
+    <h1>숫자를 어떻게 알아볼까?</h1>
+    <p class="lead">내가 쓴 숫자가 컴퓨터에게 어떤 모습으로 보이는지, 일곱 단계로 따라가 봅시다.</p>
+
+    <div class="actual-path" role="group" aria-labelledby="actual-path-title">
+      <div class="actual-path-title" id="actual-path-title">
+        <strong>실제 모델 흐름</strong>
+        <span>모델은 격자 모양을 유지한 채 특징을 찾고, 충분히 줄인 뒤 한 줄로 폅니다.</span>
+      </div>
+      <div class="path-flow" aria-label="그리기 280 곱하기 280, 모델 입력 28 곱하기 28 곱하기 1, 합성곱과 풀링, 특징 7 곱하기 7 곱하기 64, 평탄화 3136, 밀집층 256, 소프트맥스 10 순서">
+        <div class="path-node"><strong>① 그리기</strong><span>280×280</span></div>
+        <span class="path-arrow" aria-hidden="true">→</span>
+        <div class="path-node"><strong>②~④ 모델 입력</strong><span>28×28×1</span></div>
+        <span class="path-arrow" aria-hidden="true">→</span>
+        <div class="path-node"><strong>⑥ Conv · Pool</strong><span>이웃 특징 찾기</span></div>
+        <span class="path-arrow" aria-hidden="true">→</span>
+        <div class="path-node"><strong>⑥ 특징</strong><span>7×7×64</span></div>
+        <span class="path-arrow" aria-hidden="true">→</span>
+        <div class="path-node key"><strong>⑥ 실제 Flatten</strong><span>3,136</span></div>
+        <span class="path-arrow" aria-hidden="true">→</span>
+        <div class="path-node"><strong>⑥ Dense</strong><span>256</span></div>
+        <span class="path-arrow" aria-hidden="true">→</span>
+        <div class="path-node key"><strong>⑦ Softmax 출력</strong><span>10</span></div>
+      </div>
+      <p class="path-hint"><b>⑤는 실제 처리 단계가 아니라</b>, Flatten 규칙을 원본 28×28 격자로 먼저 이해하는 연습입니다.</p>
+    </div>
+
+    <div class="steps" id="steps" role="tablist" aria-label="단계 고르기"></div>
+
+    <!-- ① 그리기 -->
+    <section class="slide on" data-step="0">
+      <div class="slide-head"><h2>① 숫자를 하나 써 봅시다</h2><span class="tag">직접 하기</span></div>
+      <p class="desc">칸 안에 <b>0부터 9까지 중 하나</b>를 크게 써 주세요. 이 그림을 <b>MNIST와 같은 형식</b>으로 바꾸는 것이 다음 단계들입니다.</p>
+      <div class="cols">
+        <div class="stage-box">
+          <h3>내가 쓴 숫자 (280 × 280)</h3>
+          <canvas id="draw" width="280" height="280" aria-label="숫자를 쓰는 칸"></canvas>
+          <div class="tools">
+            <label for="pen" style="font-size:.82rem;font-weight:800">붓 굵기</label>
+            <input type="range" id="pen" min="10" max="34" value="20" style="width:130px" />
+            <button type="button" class="btn ghost" id="clear">지우기</button>
+          </div>
+        </div>
+        <div class="note">
+          <b>MNIST는 처음부터 28 × 28입니다.</b><br />
+          MNIST는 사람이 손으로 쓴 숫자 7만 장을 모아 둔 자료입니다.
+          이 자료에서는 <b>사진 한 장이 이미 가로 28칸 · 세로 28칸</b>으로 되어 있습니다.
+          모델은 <b>오직 그 형식만 보고 배웠습니다.</b><br /><br />
+
+          <b>그래서 우리 그림도 형식을 맞춰야 합니다.</b>
+          우리가 쓰는 칸은 마우스로 그리기 편하도록 <b>280 × 280</b>으로 크게 잡았습니다.
+          이대로는 모델에 넣을 수 없으니, 다음 단계에서 <b>MNIST와 같은 28 × 28로 변환</b>합니다.
+          <div class="formula">내 그림 280 × 280  →  MNIST 형식 28 × 28 = 784칸</div>
+          <div style="margin-top:10px">
+            <b>그러니 크게 써 주세요.</b> 100칸이 1칸으로 줄어들기 때문에,
+            작게 쓰면 변환하는 동안 획이 뭉개져 사라집니다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ② 줄이기 -->
+    <section class="slide" data-step="1">
+      <div class="slide-head"><h2>② 28 × 28 로 줄입니다</h2><span class="tag">크기 맞추기</span></div>
+      <p class="desc">MNIST 자료가 처음부터 28 × 28이므로, 모델도 <b>28 × 28만 받을 수 있습니다</b>. 내가 쓴 280 × 280 그림을 <b>그 형식에 맞춰 변환</b>하는 단계입니다.</p>
+      <div class="cols">
+        <div class="stage-box">
+          <h3>줄인 뒤 (28 × 28을 크게 확대)</h3>
+          <canvas id="small" width="280" height="280"></canvas>
+        </div>
+        <div class="note">
+          한 칸이 원래 그림의 <b>10 × 10 = 100칸</b>을 대표합니다.
+          그 100칸의 <b>평균 밝기</b>가 새로운 한 칸의 값이 됩니다.<br /><br />
+          그래서 획이 굵으면 진하게, 가늘면 흐리게 남습니다.
+          <b>흐릿한 가장자리</b>가 생기는 것도 이 때문입니다.<br /><br />
+          이제 내 그림은 <b>MNIST의 사진 한 장과 똑같은 모양</b>이 되었습니다.
+          여기서부터는 모델이 학습할 때 본 것과 <b>구별할 수 없는 형식</b>입니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 숫자로 -->
+    <section class="slide" data-step="2">
+      <div class="slide-head"><h2>③ 칸마다 밝기를 숫자로 적습니다</h2><span class="tag">그림 → 수</span></div>
+      <p class="desc">컴퓨터에게 그림은 없습니다. <b>784개의 숫자</b>가 있을 뿐입니다. 아무것도 없는 칸은 0, 가장 진한 칸은 255입니다.</p>
+      <div class="cols">
+        <div class="stage-box">
+          <h3>0 ~ 255 값</h3>
+          <div class="grid28" id="grid28" aria-label="28 곱하기 28 밝기 값 표"></div>
+        </div>
+        <div class="note">
+          <b>왜 검은 바탕에 흰 글씨일까요?</b><br />
+          MNIST 자료는 <b>배경이 0(검정), 글씨가 255(흰색)</b>입니다.
+          우리가 흰 종이에 검게 썼으니 값을 뒤집어 맞춰 줍니다.
+          <div class="formula">값 = 255 − (내가 쓴 그림의 밝기)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 정규화 -->
+    <section class="slide" data-step="3">
+      <div class="slide-head"><h2>④ 0 ~ 1 사이로 눕힙니다</h2><span class="tag">정규화</span></div>
+      <p class="desc">모든 값을 255로 나눠 <b>0과 1 사이</b>로 만듭니다. 숫자가 커지면 뒤에 이어지는 곱셈과 덧셈에서 값이 불어나 계산이 흔들리기 때문입니다.</p>
+      <div class="cols">
+        <div class="stage-box">
+          <h3>나눈 뒤의 값 (소수 첫째 자리)</h3>
+          <div class="grid28" id="grid28n"></div>
+        </div>
+        <div class="note">
+          <div class="formula">0 → 0.0 &nbsp;&nbsp; 128 → 0.5 &nbsp;&nbsp; 255 → 1.0</div>
+          <div style="margin-top:10px">
+            숫자의 <b>모양은 그대로</b>고 크기만 줄었습니다.
+            사진의 밝기를 낮춰도 무엇이 찍혔는지는 그대로인 것과 같습니다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 펴기 -->
+    <section class="slide" data-step="4">
+      <div class="slide-head"><h2>⑤ Flatten 규칙을 먼저 연습합니다</h2><span class="tag">개념 미리보기</span></div>
+      <p class="desc"><b>이 화면은 실제 모델의 처리 순서를 단순하게 연습하는 장면입니다.</b> 원본 28×28 격자를 예로 들어, 맨 윗줄부터 한 줄씩 이어 붙이는 Flatten 규칙을 살펴봅니다. 그래서 이 연습에서는 <b>28×28×1 = 784개</b>가 한 줄이 됩니다.</p>
+
+      <div class="stage-box flat-entry">
+        <div class="flat-entry-flow" aria-label="28 곱하기 28 격자가 길이 784인 한 줄이 되는 흐름">
+          <span class="flat-entry-node">28 × 28 격자</span>
+          <span class="flat-entry-arrow" aria-hidden="true">→</span>
+          <span class="flat-entry-node key">길이 784인 한 줄</span>
+        </div>
+        <p class="flat-entry-desc">맨 윗줄부터 한 줄씩 떼어 내 오른쪽으로 이어 붙입니다.
+          한 줄씩 옮겨지는 과정을 <b>큰 화면에서 직접 재생</b>해 보세요.</p>
+        <button type="button" class="btn primary" id="fl-open">펴는 과정 자세히 알아보기</button>
+        <p class="flat-entry-hint">팝업에서 재생·속도 조절을 할 수 있고, 긴 줄의 한 자리를 골라 그 줄의 28칸 값도 볼 수 있습니다.</p>
+      </div>
+
+      <div class="note">
+        <b>먼저 Flatten의 규칙만 이해해 봅시다.</b>
+        가로 28칸 · 세로 28칸인 원본 격자를 곧바로 펴면 <b>숫자 784개를 순서대로 늘어놓은 것</b> 하나가 됩니다.
+        수학에서는 이렇게 순서가 정해진 수의 묶음을 <b>벡터</b>라고 부릅니다.
+        이 화면에서는 원리를 보기 쉽게 <b>784개의 수</b>를 사용합니다.<br /><br />
+        <b>왜 한 칸씩은 안 보일까요?</b>
+        긴 줄에서 칸 하나의 너비는 <b>1.5px</b>입니다. 테두리를 1px만 둘러도 테두리가 칸보다 두꺼워지니,
+        784개를 각각 나눠 그리는 것은 <b>화면의 한계로 불가능</b>합니다.
+        그래서 아래 <b>색 띠로 28칸씩 묶어</b> 세어 볼 수 있게 하고,
+        가리킨 자리는 <b>선으로 이어 28배로 키워</b> 보여 줍니다.<br /><br />
+        <b>여기서 무엇을 잃을까요?</b>
+        한 줄로 펴는 순간 <b>어느 칸이 어느 칸 옆에 있었는지</b>가 사라집니다.
+        격자에서는 위아래로 붙어 있던 두 칸이, 한 줄에서는 <b>28칸이나 떨어져</b> 놓입니다.
+        <br /><br /><b>하지만 실제 모델은 여기서 원본 784개를 펴지 않습니다.</b>
+        먼저 Conv2D와 MaxPooling2D로 이웃한 칸의 특징을 찾고 크기를 줄입니다.
+        그 결과인 <b>7×7×64 = 3,136개</b>를 ⑥에서 실제로 Flatten합니다.
+        <div class="formula">개념 연습: 28×28×1 = 784 → 한 줄<br />실제 모델: 7×7×64 = 3,136 → 한 줄</div>
+      </div>
+    </section>
+
+    <!-- ⑦ 실제 모델 들여다보기 -->
+    <section class="slide" data-step="5">
+      <div class="slide-head"><h2>⑥ 실제 모델 안을 들여다봅니다</h2><span class="tag">실제 계산</span></div>
+      <p class="desc">아래 그림은 설명을 위해 지어낸 것이 아니라,
+        이 앱이 실제로 쓰는 <b>models/mnist/model.json</b> 에서 꺼낸 <b>진짜 값</b>입니다.
+        필터·특징 지도·출력 모두 내가 쓴 숫자로 <b>그 자리에서 계산</b>합니다.
+        여기서 원본 격자를 바로 펴는 대신 <b>Conv · Pool → 7×7×64 → Flatten 3,136</b>의 실제 순서를 확인합니다.</p>
+
+      <div class="ms-nav" id="ms-nav" role="tablist" aria-label="모델 살펴보기 단계"></div>
+
+      <!-- ⑥-1 실제 필터 -->
+      <div class="ms on" data-ms="0">
+        <div class="stage-box">
+          <h3 id="fk-title">첫 번째 Conv2D 가 가진 실제 필터</h3>
+          <div class="fk-wrap">
+            <div class="fk-grid" id="fk-grid"></div>
+            <div class="fk-detail">
+              <div class="fk-dt" id="fk-dt">0 번 필터</div>
+              <table class="fk-nums" id="fk-nums"><tbody></tbody></table>
+              <div class="fk-bias" id="fk-bias"></div>
+              <p class="fk-hint">왼쪽 필터를 누르면 그 값이 여기에 나옵니다</p>
+            </div>
+          </div>
+          <p id="fk-msg" class="sc-msg"></p>
+        </div>
+        <div class="note">
+          <b>학습으로 얻어진 진짜 값입니다.</b>
+          위 정사각형 하나하나가 3×3 짜리 <b>필터</b>이고, 칸의 색이 그 자리의 수를 나타냅니다.
+          <span class="wm-sw" style="background:#D8355A"></span> 양수 ·
+          <span class="wm-sw" style="background:#1272A0"></span> 음수 입니다.<br /><br />
+          사람이 정해 준 것이 아니라 <b>수많은 손글씨를 보며 스스로 정한</b> 값입니다.
+          비스듬한 줄, 가장자리, 굵기 변화 같은 것을 찾도록 자리가 잡혔습니다.
+        </div>
+      </div>
+
+      <!-- ⑥-2 실제 특징 지도 -->
+      <div class="ms" data-ms="1">
+        <div class="stage-box">
+          <h3>내가 쓴 숫자가 각 층을 지난 실제 모습</h3>
+          <div class="fl-flow" id="fl-flow"></div>
+          <p id="fm-msg" class="sc-msg"></p>
+          <div class="fl-detail">
+            <div class="fl-dt" id="fl-dt"></div>
+            <div class="fl-why" id="fl-why"></div>
+            <div class="pool-demo" id="pool-demo"></div>
+            <div class="fm-grid" id="fm-grid"></div>
+            <div class="conv-demo" id="conv-demo"></div>
+          </div>
+        </div>
+        <div class="note">
+          ①에서 쓴 그림이 <b>층을 하나씩 지나며</b> 어떻게 달라지는지 왼쪽에서 오른쪽으로 따라가 보세요.
+          모두 실제로 모델에 넣어 얻은 값입니다.<br /><br />
+          <b>Conv2D 는 크기를 그대로 두고 장수를 늘립니다.</b>
+          이 모델의 Conv2D 는 <b>padding = same</b> 이라 가장자리를 채워 계산하므로
+          28×28 이 28×28 그대로 남고, 필터 수만큼 <b>여러 장</b>이 만들어집니다.<br /><br />
+          <b>크기를 줄이는 것은 MaxPooling2D 입니다.</b>
+          2×2 칸에서 가장 큰 값 하나만 남겨 가로세로를 <b>절반</b>으로 줄입니다.
+          28 → 14 → 7 로 두 번 접히고, 마지막 7×7×64 = <b>3,136</b>개가 다음 단계로 넘어갑니다.<br /><br />
+          앞쪽은 <b>획의 윤곽</b>이 보이지만 뒤로 갈수록 <b>사람 눈에는 뜻을 알기 어려운 무늬</b>가 됩니다.
+          기계가 쓰는 정보가 사람이 보는 방식과 다르기 때문입니다.<br /><br />
+          <b>단계를 눌러</b> 그 층의 모든 장을 펼쳐 볼 수 있습니다.
+        </div>
+      </div>
+
+      <!-- ⑥-3 Flatten과 Dense -->
+      <div class="ms" data-ms="2">
+        <div class="stage-box">
+          <h3>마지막: 펴서 이어 붙이고 10개로 줄입니다</h3>
+          <div class="fd-flow" id="fd-flow"></div>
+
+          <div class="dv-step">
+            <div class="dv-cap" id="dv-c1">Flatten</div>
+            <canvas id="dv-flat" width="1000" height="34"></canvas>
+            <div class="dv-note" id="dv-n1"></div>
+          </div>
+
+          <div class="dv-arrow" id="dv-a1">↓</div>
+
+          <div class="dv-step">
+            <div class="dv-cap" id="dv-c2">Dense</div>
+            <canvas id="dv-dense" width="512" height="512"></canvas>
+            <div class="dv-note" id="dv-n2"></div>
+          </div>
+
+          <div class="dv-arrow" id="dv-a2">↓</div>
+
+          <div class="dv-step">
+            <div class="dv-cap" id="dv-c3">마지막 Dense</div>
+            <div id="fd-out"></div>
+            <div class="dv-note" id="dv-n3"></div>
+          </div>
+
+          <div class="tools"><button type="button" class="btn primary" id="fd-run">내 숫자로 다시 계산</button></div>
+          <p id="fd-msg" class="sc-msg"></p>
+        </div>
+        <div class="note">
+          <b id="fd-soft">…</b>
+          <div style="margin-top:12px;padding:12px 14px;background:#FFFDF7;border:2px dashed #E0CFA8;border-radius:12px">
+            <b style="color:#B34A0C">보충 — 내적은 어디에 쓰이나요?</b><br />
+            내적은 신경망의 여러 계산에서 사용되는 중요한 수학적 도구입니다.
+            특히 Dense 층에서는 입력값과 가중치를 곱하고 더하는 계산이 이루어집니다.
+            하지만 CNN 전체가 784차원 내적 하나로 이루어지는 것은 아닙니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑥-4 영향도 지도 -->
+      <div class="ms" data-ms="3">
+        <div class="stage-box">
+          <h3>어느 픽셀이 그 출력에 영향을 주었을까</h3>
+          <p id="wm-pred" class="wm-pred"></p>
+          <div class="wm-pick" id="wm-pick" role="group" aria-label="숫자 고르기"></div>
+          <div class="wm-row">
+            <figure class="wm-item"><canvas id="wm-in" width="224" height="224"></canvas><figcaption>내가 쓴 숫자</figcaption></figure>
+            <span class="wm-x">×</span>
+            <figure class="wm-item"><canvas id="wm-w" width="224" height="224"></canvas><figcaption id="wm-cap">영향도 지도</figcaption></figure>
+            <span class="wm-x">=</span>
+            <figure class="wm-item"><canvas id="wm-p" width="224" height="224"></canvas><figcaption>실제로 기여한 몫</figcaption></figure>
+          </div>
+          <p class="wm-legend">
+            <span class="wm-sw" style="background:#D8355A"></span> 출력을 <b>올리는</b> 픽셀
+            <span class="wm-sw" style="background:#1272A0;margin-left:14px"></span> 출력을 <b>내리는</b> 픽셀
+          </p>
+          <p id="wm-msg" class="sc-msg"></p>
+        </div>
+        <div class="note">
+          <b>이것은 "4의 가중치 지도"가 아닙니다.</b>
+          앞서 본 것처럼 이 모델에는 숫자마다 784개 가중치를 적어 둔 표가 없습니다.<br /><br />
+          이 그림은 <b>지금 이 입력에서</b> 각 픽셀 값이 조금 바뀌면
+          그 숫자의 출력이 얼마나 달라지는지를 나타냅니다.
+          그래서 <b>같은 숫자라도 다른 글씨를 쓰면 지도가 달라집니다.</b><br /><br />
+          출력은 이미 ⑥-3에서 다 계산되었습니다. 이 지도는 그 뒤에 <b>되짚어 보는 그림</b>이지,
+          답을 고르는 과정이 아닙니다.
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ⑦ 확률 -->
+    <section class="slide" data-step="6">
+      <div class="slide-head"><h2>⑦ 모델이 만든 확률에서 답을 고릅니다</h2><span class="tag">최종 출력</span></div>
+      <p class="desc">⑥의 마지막 Dense 층에는 <b>softmax가 이미 포함</b>되어 있습니다. 따라서 모델이 내놓은 열 개의 값은 이미 합이 1인 확률입니다. 여기서는 <b>softmax를 다시 적용하지 않고</b>, 가장 큰 확률의 숫자를 답으로 고릅니다.</p>
+      <div class="cols">
+        <div class="stage-box">
+          <h3>내가 쓴 숫자에 대한 실제 확률</h3>
+          <div class="bars" id="bars"></div>
+          <p id="verdict" style="margin:12px 0 0;font-weight:900;font-size:1rem;color:#B34A0C"></p>
+          <div class="tools"><button type="button" class="btn" id="repredict">다시 계산</button></div>
+        </div>
+        <div class="note">
+          <b>softmax는 모델의 마지막 Dense 안에서 한 번만 계산됩니다.</b>
+          <div class="formula">마지막 Dense 내부: 확률(i) = e^(점수 i) ÷ Σ e^(점수)</div>
+          <div style="margin-top:10px">
+            점수를 <b>e의 지수</b>로 올리기 때문에, 점수의 상대적인 차이가 확률에서는 더 크게 보일 수 있습니다.<br /><br />
+            여기 확률은 <b>①에서 쓴 글씨를 실제로 학습된 모델에 넣어 얻은 값</b>입니다.
+            ②~④에서 만든 <b>28×28×1 격자</b>가 모델에 들어가고,
+            Conv2D와 MaxPooling2D를 지난 <b>7×7×64</b> 특징이 실제로 3,136개짜리 한 줄로 펴집니다.
+            ⑤의 784개 한 줄은 이 규칙을 이해하기 위한 연습이지, 실제 모델 입력을 펴는 단계가 아닙니다.<br /><br />
+            틀리게 나온다면 글씨가 칸 가운데에 <b>크게</b> 있지 않아서일 수 있습니다.
+            ①로 돌아가 다시 써 보세요.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="nav-row">
+      <button type="button" class="btn" id="prev">← 이전</button>
+      <span class="count" id="count">1 / 7</span>
+      <button type="button" class="btn primary" id="next">다음 →</button>
+    </div>
+  </main>
+
+  <!-- ⑤ 펴는 과정 팝업 : 좁은 화면에서도 그림을 크게 볼 수 있게 따로 띄운다 -->
+  <div class="flat-modal" id="fl-modal" role="dialog" aria-modal="true" aria-labelledby="fl-modal-t" hidden>
+    <div class="flat-modal-card">
+      <div class="flat-modal-head">
+        <h3 id="fl-modal-t">28 × 28 격자를 한 줄로 펴 보기</h3>
+        <button type="button" class="flat-close" id="fl-close" aria-label="팝업 닫기">✕</button>
+      </div>
+      <p class="flat-modal-hint">
+        <span style="color:#B34A0C;font-weight:800">긴 줄을 손가락으로 누르거나 마우스를 올리면</span>
+        그 자리의 28칸 값을 아래에서 크게 볼 수 있습니다.
+      </p>
+      <canvas id="flatcv" width="1240" height="636" style="width:100%;height:auto"
+        aria-label="왼쪽 28 곱하기 28 격자의 칸이 하나씩 오른쪽의 긴 줄로 옮겨가는 그림"></canvas>
+      <div class="tools">
+        <button type="button" class="btn primary" id="fl-play">재생 ▶</button>
+        <button type="button" class="btn" id="fl-reset">처음부터</button>
+        <label for="fl-speed" style="font-size:.82rem;font-weight:800">속도</label>
+        <input type="range" id="fl-speed" min="1" max="4" step="1" value="1" style="width:120px" />
+        <button type="button" class="btn" id="fl-done">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var TITLES = ['그리기', '줄이기', '숫자로', '0~1', '펴기 연습', '모델 속', '확률'];
+      var TOTAL = TITLES.length;
+      var cur = 0;
+      var seen = [true, false, false, false, false, false, false];
+
+      var $ = function (id) { return document.getElementById(id); };
+
+      // KaTeX 를 불러오지 못했을 때(오프라인 등)는 원래 글자 그대로 보여 준다
+      function tex(src, plain) {
+        var body = '<span style="font-family:Consolas,monospace;font-size:.95rem">' + plain + '</span>';
+        if (typeof katex !== 'undefined') {
+          try { body = katex.renderToString(src, { throwOnError: false, strict: false }); }
+          catch (e) { /* 아래 fallback 을 그대로 쓴다 */ }
+        }
+        return '<div class="tex-line">' + body + '</div>';
+      }
+      var slides = document.querySelectorAll('.slide');
+
+      /* ── 단계 버튼 ─────────────────────────────────────── */
+      var stepsEl = $('steps');
+      TITLES.forEach(function (t, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'step-dot';
+        b.setAttribute('role', 'tab');
+        b.innerHTML = '<span class="num">' + (i + 1) + '</span>' + t;
+        b.addEventListener('click', function () { go(i); });
+        stepsEl.appendChild(b);
+      });
+
+      function go(i) {
+        if (i < 0 || i >= TOTAL) return;
+        cur = i;
+        seen[i] = true;
+        slides.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+        Array.prototype.forEach.call(stepsEl.children, function (b, k) {
+          b.setAttribute('aria-current', k === i ? 'true' : 'false');
+          b.classList.toggle('done', seen[k] && k !== i);
+        });
+        syncCount();
+        if (i > 0) render();          // 그림에서 나온 값들을 다시 계산
+        // 5단계에 들어오면 저절로 한 번 보여 주고, 벗어나면 멈춰 자원을 아낀다
+        if (i !== 4) flatClose();     // ⑤를 벗어나면 팝업과 애니메이션을 함께 정리한다
+        if (i === 5) msGo(msIdx);
+        else if (i === 6) predictDrawn();
+      }
+
+      /* ⑥ 처럼 안에 여러 화면이 있는 단계는, 아래 버튼 하나로 그 화면들까지
+         차례로 넘긴다. 「다음」 버튼이 두 개 겹쳐 보이던 문제를 없앤다. */
+      var MODEL_STEP = 5;
+      function inMini() { return cur === MODEL_STEP && typeof MS_T !== 'undefined'; }
+
+      function syncCount() {
+        var t = (cur + 1) + ' / ' + TOTAL;
+        if (inMini()) t += '  ·  화면 ' + (msIdx + 1) + ' / ' + MS_T.length;
+        $('count').textContent = t;
+        $('prev').disabled = (cur === 0 && (!inMini() || msIdx === 0));
+        $('next').disabled = (cur === TOTAL - 1 && (!inMini() || msIdx === MS_T.length - 1));
+      }
+
+      $('prev').addEventListener('click', function () {
+        if (inMini() && msIdx > 0) { msGo(msIdx - 1); return; }
+        go(cur - 1);
+      });
+      $('next').addEventListener('click', function () {
+        if (inMini() && msIdx < MS_T.length - 1) { msGo(msIdx + 1); return; }
+        go(cur + 1);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT') return;
+        if (!$('fl-modal').hidden) return;      // 팝업이 열려 있으면 단계를 넘기지 않는다
+        if (e.key === 'ArrowRight') $('next').click();
+        if (e.key === 'ArrowLeft') $('prev').click();
+      });
+
+      /* ── 그리기 ────────────────────────────────────────── */
+      var cv = $('draw'), ctx = cv.getContext('2d');
+      var drawing = false;
+
+      function wipe() {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+      }
+      wipe();
+
+      function pos(e) {
+        var r = cv.getBoundingClientRect();
+        var p = e.touches ? e.touches[0] : e;
+        // 화면에 보이는 크기와 실제 캔버스 크기가 다를 수 있어 비율로 맞춘다
+        return {
+          x: (p.clientX - r.left) * (cv.width / r.width),
+          y: (p.clientY - r.top) * (cv.height / r.height)
+        };
+      }
+
+      function begin(e) {
+        e.preventDefault();
+        if (window.BackGuard) {                 // 뒤로가기로 획 하나를 되돌릴 수 있게
+          var url = cv.toDataURL();
+          BackGuard.push(function () {
+            var img = new Image();
+            img.onload = function () { ctx.clearRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0); };
+            img.src = url;
+          });
+        }
+        drawing = true;
+        var p = pos(e);
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = +$('pen').value;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }
+
+      function move(e) {
+        if (!drawing) return;
+        e.preventDefault();
+        var p = pos(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }
+
+      function end() { drawing = false; }
+
+      cv.addEventListener('mousedown', begin);
+      cv.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+      cv.addEventListener('touchstart', begin, { passive: false });
+      cv.addEventListener('touchmove', move, { passive: false });
+      cv.addEventListener('touchend', end);
+
+      $('clear').addEventListener('click', function () { wipe(); render(); });
+
+      /* ── 28 × 28 로 줄이고 값 뽑기 ───────────────────────── */
+      var tiny = document.createElement('canvas');
+      tiny.width = tiny.height = 28;
+      var tctx = tiny.getContext('2d', { willReadFrequently: true });
+
+      function pixels() {
+        tctx.fillStyle = '#fff';
+        tctx.fillRect(0, 0, 28, 28);
+        tctx.drawImage(cv, 0, 0, 28, 28);
+        var d = tctx.getImageData(0, 0, 28, 28).data;
+        var out = new Array(784);
+        for (var i = 0; i < 784; i++) out[i] = 255 - d[i * 4];   // 검은 글씨를 큰 값으로
+        return out;
+      }
+
+      function shade(v) {                       // 0~255 → 배경색
+        var g = Math.round(255 - v);
+        return 'rgb(' + g + ',' + g + ',' + g + ')';
+      }
+
+      /* ── 각 단계 그리기 ─────────────────────────────────── */
+      var g28 = $('grid28'), g28n = $('grid28n');
+      var built = false;
+
+      function build() {
+        if (built) return;
+        var f = document.createDocumentFragment(), i;
+        for (i = 0; i < 784; i++) f.appendChild(document.createElement('span'));
+        g28.appendChild(f);
+        f = document.createDocumentFragment();
+        for (i = 0; i < 784; i++) f.appendChild(document.createElement('span'));
+        g28n.appendChild(f);
+        built = true;
+      }
+
+      function render() {
+        build();
+        var px = pixels(), i, v;
+
+        // ② 줄인 그림을 크게 보여 준다
+        var s = $('small'), sctx = s.getContext('2d');
+        sctx.imageSmoothingEnabled = false;
+        sctx.fillStyle = '#000';
+        sctx.fillRect(0, 0, 280, 280);
+        for (i = 0; i < 784; i++) {
+          v = px[i];
+          sctx.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')';
+          sctx.fillRect((i % 28) * 10, Math.floor(i / 28) * 10, 10, 10);
+        }
+
+        // ③ 0~255 값
+        for (i = 0; i < 784; i++) {
+          v = px[i];
+          var c = g28.children[i];
+          c.style.background = shade(v);
+          c.style.color = v > 140 ? '#fff' : '#8A8578';
+          c.textContent = v > 18 ? v : '';
+        }
+
+        // ④ 0~1 값
+        for (i = 0; i < 784; i++) {
+          v = px[i];
+          var n = g28n.children[i];
+          n.style.background = shade(v);
+          n.style.color = v > 140 ? '#fff' : '#8A8578';
+          n.textContent = v > 18 ? (v / 255).toFixed(1) : '';
+        }
+
+        flatPx = px;          // ⑤ 애니메이션이 쓸 값
+        flatDraw();
+
+      }
+
+      /* ── ⑤ 격자가 한 줄로 펴지는 모습 ─────────────────────
+         칸을 하나씩 빼내 오른쪽 띠에 붙인다. 784개를 한 화면에 늘어놓을 수는
+         없으므로, 띠는 최근 것들만 보이고 왼쪽으로 흘러가게 한다. */
+      var fcv = $('flatcv'), fctx = fcv.getContext('2d');
+      var flatPx = null, flatPos = 0, flatRAF = null, flatPlaying = false;
+      var SPEEDS = [2, 5, 10, 20];              // 한 프레임에 옮길 칸 수
+
+      /* 그리기는 아래 기준 좌표로 하고, 실제 화면 크기에 맞춰 캔버스 해상도를 올린다.
+         그러지 않으면 넓은 화면에서 늘려 그려져 글씨와 선이 흐려진다.
+
+         넓은 배치 하나만 두면 휴대전화에서는 같은 그림이 3배 넘게 줄어들어
+         캔버스 안 글씨가 3~4px 이 된다. 그래서 폭이 좁으면 세로로 긴 배치로 다시 그린다.
+         좁은 배치에서는 맨 아래 확대 띠도 14칸씩 두 줄로 나눠 숫자를 읽을 수 있게 한다. */
+      var NARROW_AT = 900;                 // 이 CSS 폭보다 좁으면 좁은 배치를 쓴다
+      var NARROW_MAX = 480;                // 좁은 배치가 지나치게 커지지 않도록 표시 폭 제한
+      var FL_W, FL_H, flatNarrow;
+      var CS, GX, GY;                      // 위 : 28 x 28 격자
+      var BX, BW, BY, BH, GLY, GCY, GCX, GCA;   // 가운데 : 게이지와 그 위 두 문구
+      var RX, RY, RCW, RH, RW, RTY, RNY;   // 아래 : 784칸 띠 · 눈금 · 설명 줄
+      var MCOL, MW, MH, MX, MY, MGAP;      // 맨 아래 : 한 줄 28칸 확대 (좁으면 14칸씩 두 줄)
+      var FS;                              // 배치마다 다른 글자 크기
+
+      function flatLayout(cssW) {
+        flatNarrow = cssW > 0 && cssW < NARROW_AT;
+        if (flatNarrow) {
+          /* 좁은 배치는 보이는 폭을 그대로 기준 좌표로 삼는다.
+             그래야 캔버스가 줄어들지 않아 글자가 적힌 크기 그대로 보인다. */
+          FL_W = Math.max(300, Math.min(NARROW_MAX, Math.round(cssW)));
+          var pad = 16;
+          CS = Math.max(8, Math.floor((FL_W - 2 * pad) / 28));
+          GY = 34;
+          var gridBottom = GY + 28 * CS;
+          GLY = gridBottom + 22; GCY = gridBottom + 39;
+          BX = pad; BW = FL_W - 2 * pad; BY = gridBottom + 46; BH = 12;
+          GCX = BX; GCA = 'left';
+          RX = pad; RW = FL_W - 2 * pad; RCW = RW / 784; RY = BY + BH + 40; RH = 22;
+          RTY = RY + RH + 18; RNY = RY + RH + 32;
+          MCOL = 14; MW = Math.floor((FL_W - 24) / MCOL); MH = 22; MGAP = 3;
+          MY = RNY + 34;
+          FL_H = MY + 2 * MH + MGAP + 14;
+          FS = { head: 13, gauge: 12, count: 11, tick: 9, note: 10, cap: 11,
+                 cell: Math.max(8, Math.min(10, Math.floor(MW * 0.5))) };
+        } else {
+          FL_W = 1240; FL_H = 636;
+          CS = 12; GY = 52;
+          BX = 310; BW = 620; BY = 428; BH = 14;
+          GLY = BY - 12; GCY = BY - 12; GCX = BX + BW; GCA = 'right';
+          RX = 32; RCW = 1.5; RW = 784 * RCW; RY = 492; RH = 28;
+          RTY = RY + RH + 20; RNY = RY + RH + 36;
+          MCOL = 28; MW = 30; MH = 26; MGAP = 3; MY = 584;
+          FS = { head: 15, gauge: 15, count: 14, tick: 10, note: 11, cap: 13, cell: 11 };
+        }
+        GX = Math.round((FL_W - 28 * CS) / 2);
+        MX = Math.round((FL_W - MCOL * MW) / 2);
+      }
+      flatLayout(0);                       // 화면에 붙기 전에는 넓은 배치를 기준으로 둔다
+
+      function flatResize() {
+        var raw = fcv.clientWidth || 0;
+        // 좁은 배치는 폭이 넓어질수록 글자만 커지고 세로로 길어지므로 표시 폭을 묶어 둔다
+        fcv.style.maxWidth = (raw > 0 && raw < NARROW_AT) ? NARROW_MAX + 'px' : '';
+        var cssW = fcv.clientWidth || 0;   // 제한을 적용한 뒤의 실제 표시 폭
+        flatLayout(cssW);
+        var sc = Math.min(3, Math.max(1, ((cssW || FL_W) / FL_W) * (window.devicePixelRatio || 1)));
+        fcv.width = Math.round(FL_W * sc);
+        fcv.height = Math.round(FL_H * sc);
+        fctx.setTransform(sc, 0, 0, sc, 0, 0);     // 좌표는 그대로 쓰고 해상도만 올린다
+        flatDraw();
+      }
+      window.addEventListener('resize', flatResize);
+      fcv.addEventListener('mousemove', flatHoverMove);
+      fcv.addEventListener('mouseleave', function () {
+        if (flatHover === null) return;
+        flatHover = null;
+        fcv.style.cursor = 'default';
+        flatDraw();
+      });
+      fcv.addEventListener('touchstart', function (e) {
+        var row = flatAt(e);
+        if (row === null) return;
+        e.preventDefault();
+        flatHover = row;
+        flatDraw();
+      }, { passive: false });
+
+      var flatHover = null;              // 마우스가 가리키는 줄 번호
+
+      function cellColor(v) { var g = Math.round(255 - v); return 'rgb(' + g + ',' + g + ',' + g + ')'; }
+
+      /* 캔버스는 화면 크기에 맞춰 늘려 그리므로, 마우스 좌표도 같은 비율로 되돌려야 한다 */
+      function flatAt(e) {
+        var r = fcv.getBoundingClientRect();
+        var p = e.touches ? e.touches[0] : e;
+        var x = (p.clientX - r.left) * (FL_W / r.width);
+        var y = (p.clientY - r.top) * (FL_H / r.height);
+        if (y < RY - 6 || y > RY + RH + 6 || x < RX || x > RX + RW) return null;
+        return Math.max(0, Math.min(27, Math.floor((x - RX) / (28 * RCW))));
+      }
+
+      function flatHoverMove(e) {
+        var row = flatAt(e);
+        if (row === flatHover) return;
+        flatHover = row;
+        fcv.style.cursor = (row === null) ? 'default' : 'pointer';
+        flatDraw();
+      }
+
+      function flatDraw() {
+        var i, c, x, y, v, r;
+        fctx.fillStyle = '#FFFCF2';
+        fctx.fillRect(0, 0, FL_W, FL_H);
+        if (!flatPx) return;
+
+        var k = Math.min(28, Math.floor(flatPos));   // 이미 풀려 나간 줄 수
+        var t = Math.min(1, flatPos - k);            // 지금 줄이 얼마나 옮겨졌는지
+
+        // 위 : 격자
+        fctx.textAlign = 'center';
+        fctx.fillStyle = '#5B5675';
+        fctx.font = '800 ' + FS.head + 'px "Noto Sans KR", sans-serif';
+        fctx.fillText('28 x 28 격자', FL_W / 2, GY - 18);
+
+        for (i = 0; i < 784; i++) {
+          r = Math.floor(i / 28);
+          if (r === k && k < 28) continue;           // 지금 풀리는 줄은 따로 그린다
+          x = GX + (i % 28) * CS;
+          y = GY + r * CS;
+          fctx.globalAlpha = (r < k) ? .13 : 1;      // 풀려 나간 줄은 자국만 남긴다
+          fctx.fillStyle = cellColor(flatPx[i]);
+          fctx.fillRect(x, y, CS, CS);
+        }
+        fctx.globalAlpha = 1;
+        fctx.strokeStyle = '#3B3557';
+        fctx.lineWidth = 2;
+        fctx.strokeRect(GX - 1, GY - 1, 28 * CS + 2, 28 * CS + 2);
+
+        // 가운데 : 게이지
+        fctx.textAlign = 'left';
+        fctx.fillStyle = '#33304B';
+        fctx.font = '900 ' + FS.gauge + 'px "Noto Sans KR", sans-serif';
+        fctx.fillText(k >= 28 ? '다 풀렸습니다' : (k + 1) + ' 번째 줄이 풀려 나오는 중', BX, GLY);
+        fctx.textAlign = GCA;
+        fctx.fillStyle = '#5B5675';
+        fctx.font = '800 ' + FS.count + 'px Consolas, monospace';
+        fctx.fillText(k + ' / 28 줄  ·  ' + (k * 28) + ' / 784 칸', GCX, GCY);
+
+        fctx.fillStyle = '#EFEADC';
+        fctx.fillRect(BX, BY, BW, BH);
+        fctx.fillStyle = '#EE6C2B';
+        fctx.fillRect(BX, BY, BW * (Math.min(28, flatPos) / 28), BH);
+        fctx.strokeStyle = '#3B3557';
+        fctx.lineWidth = 1.5;
+        fctx.strokeRect(BX - .5, BY - .5, BW + 1, BH + 1);
+
+        // 아래 : 784칸 전체를 담은 한 줄
+        fctx.textAlign = 'center';
+        fctx.fillStyle = '#5B5675';
+        fctx.font = '800 ' + FS.head + 'px "Noto Sans KR", sans-serif';
+        fctx.fillText(flatNarrow ? '길이 784인 한 줄 (28줄을 이어 붙임)'
+                                 : '길이 784인 한 줄  -  28줄을 이어 붙인 것', FL_W / 2, RY - 14);
+
+        fctx.fillStyle = '#FFFDF7';
+        fctx.fillRect(RX, RY, RW, RH);
+        for (i = 0; i < k * 28; i++) {
+          fctx.fillStyle = cellColor(flatPx[i]);
+          fctx.fillRect(RX + i * RCW, RY, RCW + .35, RH);
+        }
+        fctx.strokeStyle = '#E4DECB';                // 28칸마다 줄 경계
+        fctx.lineWidth = 1;
+        for (c = 1; c < 28; c++) {
+          x = RX + c * 28 * RCW;
+          fctx.beginPath();
+          fctx.moveTo(x, RY);
+          fctx.lineTo(x, RY + RH);
+          fctx.stroke();
+        }
+        fctx.strokeStyle = '#3B3557';
+        fctx.lineWidth = 2;
+        fctx.strokeRect(RX - 1, RY - 1, RW + 2, RH + 2);
+
+        if (flatHover !== null) {            // 가리키는 구간을 띠와 격자에 함께 표시
+          fctx.strokeStyle = '#EE6C2B';
+          fctx.lineWidth = 2.5;
+          fctx.strokeRect(RX + flatHover * 28 * RCW - 1, RY - 4, 28 * RCW + 2, RH + 8);
+          fctx.strokeRect(GX - 1, GY + flatHover * CS - 1, 28 * CS + 2, CS + 2);
+        }
+
+        // 칸 하나는 1.5px 라 테두리를 두를 수 없다. 대신 28칸 묶음을 번갈아 칠해
+        // "여기부터 여기까지가 한 줄(28칸)"을 셀 수 있게 한다.
+        for (c = 0; c < 28; c += 2) {
+          fctx.fillStyle = '#DCCFAF';
+          fctx.fillRect(RX + c * 28 * RCW, RY + RH + 3, 28 * RCW, 5);
+        }
+        for (c = 1; c < 28; c += 2) {
+          fctx.fillStyle = '#F0E7D2';
+          fctx.fillRect(RX + c * 28 * RCW, RY + RH + 3, 28 * RCW, 5);
+        }
+
+        // 가리킨 자리와 아래 확대 띠를 잇는다. 작아서 안 보이는 28칸이
+        // 아래에서는 이만큼 커진다는 것을 선으로 알려 준다.
+        var MROWS = Math.ceil(28 / MCOL);                       // 확대 띠가 몇 줄인지
+        var MBH = MROWS * MH + (MROWS - 1) * MGAP;              // 확대 띠 전체 높이
+
+        var hi = (flatHover !== null) ? flatHover : ((k > 0 && k <= 28) ? k - 1 : null);
+        if (hi !== null) {
+          var zx1 = RX + hi * 28 * RCW, zx2 = zx1 + 28 * RCW;
+          var mx1 = MX, mx2 = MX + MCOL * MW;
+          fctx.beginPath();
+          fctx.moveTo(zx1, RY + RH + 9);
+          fctx.lineTo(mx1, MY - 3);
+          fctx.lineTo(mx2, MY - 3);
+          fctx.lineTo(zx2, RY + RH + 9);
+          fctx.closePath();
+          fctx.fillStyle = 'rgba(238,108,43,.10)';
+          fctx.fill();
+          fctx.strokeStyle = 'rgba(238,108,43,.55)';
+          fctx.lineWidth = 1.5;
+          fctx.stroke();
+        }
+
+        fctx.font = '700 ' + FS.tick + 'px Consolas, monospace';
+        fctx.fillStyle = '#A9A294';
+        fctx.textAlign = 'left';
+        fctx.fillText('1', RX, RTY);
+        fctx.textAlign = 'right';
+        fctx.fillText('784', RX + RW, RTY);
+        fctx.textAlign = 'center';
+        for (c = 4; c < 28; c += 4) {
+          fctx.fillText(c + '줄', RX + c * 28 * RCW, RTY);
+        }
+        // 눈금과 겹치지 않도록 설명은 한 줄 아래에 따로 적는다
+        fctx.textAlign = 'left';
+        fctx.fillStyle = '#B34A0C';
+        fctx.font = '800 ' + FS.note + 'px "Noto Sans KR", sans-serif';
+        fctx.fillText(flatNarrow
+          ? '색 띠 한 칸 = 28칸(한 줄)'
+          : '색 띠 한 칸 = 28칸(한 줄).  칸 하나는 1.5px 라 눈으로는 나눌 수 없다.', RX, RNY);
+
+        // 맨 아래 : 지금 고른 줄, 고른 곳이 없으면 방금 풀린 줄
+        var showRow = (flatHover !== null) ? flatHover : ((k < 28) ? k : 27);
+        var picked = (flatHover !== null) ? '  ← 지금 고른 자리' : '';
+        var capText = flatNarrow
+          ? (showRow + 1) + ' 번째 줄의 28칸 (' + (showRow * 28 + 1) + '~' + (showRow * 28 + 28) + ')' + picked
+          : (showRow + 1) + ' 번째 줄의 28칸  (' + (showRow * 28 + 1) + ' ~ ' + (showRow * 28 + 28) + ' 번째 값)' + picked;
+        fctx.textAlign = 'center';
+        fctx.font = '800 ' + FS.cap + 'px "Noto Sans KR", sans-serif';
+        var capW = fctx.measureText(capText).width;
+        fctx.fillStyle = '#FFFCF2';
+        fctx.fillRect(FL_W / 2 - capW / 2 - 8, MY - 21, capW + 16, 18);
+        fctx.fillStyle = '#5B5675';
+        fctx.fillText(capText, FL_W / 2, MY - 8);
+        fctx.strokeStyle = '#EE6C2B';        // 확대한 구간임을 테두리로 묶는다
+        fctx.lineWidth = 2;
+        fctx.strokeRect(MX - 2, MY - 2, MCOL * MW + 4, MBH + 4);
+
+        for (c = 0; c < 28; c++) {
+          v = flatPx[showRow * 28 + c];
+          x = MX + (c % MCOL) * MW;
+          y = MY + Math.floor(c / MCOL) * (MH + MGAP);
+          fctx.fillStyle = cellColor(v);
+          fctx.fillRect(x, y, MW, MH);
+          fctx.strokeStyle = '#D8D1BE';
+          fctx.lineWidth = 1;
+          fctx.strokeRect(x + .5, y + .5, MW - 1, MH - 1);
+          fctx.font = '700 ' + FS.cell + 'px Consolas, monospace';
+          fctx.fillStyle = v > 140 ? '#fff' : '#8A8578';
+          fctx.fillText((v / 255).toFixed(1), x + MW / 2, y + MH / 2 + 4);
+        }
+
+        // 풀려 나오는 줄 : 격자에서 띠의 제자리로
+        if (k < 28) {
+          var sx = GX, sy = GY + k * CS, sw = 28 * CS, sh = CS;
+          var ex = RX + k * 28 * RCW, ey = RY, ew = 28 * RCW, eh = RH;
+          var ease = t * t * (3 - 2 * t);            // 시작과 끝을 부드럽게
+          var cx = sx + (ex - sx) * ease;
+          var cy = sy + (ey - sy) * ease;
+          var cw = sw + (ew - sw) * ease;
+          var ch = sh + (eh - sh) * ease;
+
+          for (c = 0; c < 28; c++) {                 // 줄을 이룬 칸들이 함께 움직인다
+            fctx.fillStyle = cellColor(flatPx[k * 28 + c]);
+            fctx.fillRect(cx + c * (cw / 28), cy, cw / 28 + .35, ch);
+          }
+          fctx.strokeStyle = '#EE6C2B';
+          fctx.lineWidth = 2;
+          fctx.strokeRect(cx - 1, cy - 1, cw + 2, ch + 2);
+        }
+      }
+
+      var ROWS_PER_SEC = [2, 4, 8, 16];
+      var flatLast = 0;
+
+      function flatStep(now) {
+        var dt = flatLast ? Math.min(.1, (now - flatLast) / 1000) : 0;
+        flatLast = now;
+        flatPos += (ROWS_PER_SEC[(+$('fl-speed').value) - 1] || 8) * dt;
+        if (flatPos >= 28) { flatPos = 28; flatStop(); flatDraw(); return; }
+        flatDraw();
+        flatRAF = requestAnimationFrame(flatStep);
+      }
+
+      function flatStop() {
+        flatPlaying = false;
+        if (flatRAF) cancelAnimationFrame(flatRAF);
+        flatRAF = null;
+        flatLast = 0;
+        $('fl-play').textContent = '재생 \u25B6';
+      }
+
+      function flatPlay() {
+        if (flatPlaying) { flatStop(); return; }
+        if (flatPos >= 28) flatPos = 0;
+        flatPlaying = true;
+        flatLast = 0;
+        $('fl-play').textContent = '멈춤 \u2759\u2759';
+        flatRAF = requestAnimationFrame(flatStep);
+      }
+
+      $('fl-reset').addEventListener('click', function () { flatStop(); flatPos = 0; flatDraw(); });
+      $('fl-speed').addEventListener('input', flatDraw);
+      $('fl-play').addEventListener('click', flatPlay);
+
+      /* ── ⑤ 펴는 과정 팝업 ──────────────────────────────
+         좁은 화면에서는 이 그림을 본문 안에 넣으면 글씨가 너무 작아진다.
+         그래서 버튼을 눌렀을 때 화면을 넓게 쓰는 팝업으로 띄운다. */
+      var flModal = $('fl-modal'), flPrevFocus = null;
+
+      function flatOpen() {
+        if (!flModal.hidden) return;
+        flPrevFocus = document.activeElement;
+        flModal.hidden = false;
+        document.body.style.overflow = 'hidden';   // 뒤 화면이 함께 밀리지 않게
+        flatPos = 0;
+        flatResize();                              // 팝업 크기에 맞춰 배치를 다시 잡는다
+        flatPlay();
+        $('fl-close').focus();
+      }
+
+      function flatClose() {
+        if (flModal.hidden) return;
+        flatStop();
+        flModal.hidden = true;
+        document.body.style.overflow = '';
+        if (flPrevFocus && flPrevFocus.focus) flPrevFocus.focus();
+        flPrevFocus = null;
+      }
+
+      $('fl-open').addEventListener('click', flatOpen);
+      $('fl-close').addEventListener('click', flatClose);
+      $('fl-done').addEventListener('click', flatClose);
+
+      flModal.addEventListener('click', function (e) {    // 바깥 어두운 곳을 누르면 닫는다
+        if (e.target === flModal) flatClose();
+      });
+
+      flModal.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); flatClose(); return; }
+        if (e.key !== 'Tab') return;
+        // 팝업이 열려 있는 동안에는 초점이 팝업 안에서만 돌게 한다
+        var f = flModal.querySelectorAll('button, input');
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      });
+
+      /* ── ⑥ 실제 모델 들여다보기 ───────────────────────────
+         여기 나오는 층 이름 · 필터 수 · 출력 크기 · 가중치는 모두
+         model.json 에서 읽은 값이다. 코드에 적어 둔 상수가 아니다. */
+      var MS_T = ['① 실제 필터', '② 특징 지도', '③ Flatten·Dense', '④ 영향도 지도'];
+      var msIdx = 0, msPanes = document.querySelectorAll('.ms');
+      var msDone = {};
+
+      (function () {
+        var nav = $('ms-nav');
+        MS_T.forEach(function (t, i) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = t;
+          b.addEventListener('click', function () { msGo(i); });
+          nav.appendChild(b);
+        });
+      })();
+
+      function msGo(i) {
+        if (i < 0 || i >= MS_T.length) return;
+        msIdx = i;
+        Array.prototype.forEach.call(msPanes, function (p, k) { p.classList.toggle('on', k === i); });
+        Array.prototype.forEach.call($('ms-nav').children, function (b, k) {
+          b.setAttribute('aria-current', k === i ? 'true' : 'false');
+        });
+        syncCount();
+        if (i === 0) showFilters();
+        if (i === 1) showFeatureMaps();
+        if (i === 2) showDense();
+        if (i === 3) wmAuto();
+      }
+
+      function shapeText(sh) {
+        return '(' + sh.slice(1).join(', ') + ')';      // 맨 앞 batch 자리는 뺀다
+      }
+
+      /* ⑥-1 : 첫 Conv2D 의 kernel 을 실제로 꺼내 그린다 */
+      function paintKernel(cv, vals, n, mx) {
+        var g = cv.getContext('2d'), i, v;
+        for (i = 0; i < n * n; i++) {
+          v = vals[i] / mx;
+          g.fillStyle = v >= 0
+            ? 'rgba(216,53,90,' + Math.min(1, Math.abs(v)).toFixed(3) + ')'
+            : 'rgba(18,114,160,' + Math.min(1, Math.abs(v)).toFixed(3) + ')';
+          g.fillRect((i % n) * 24, Math.floor(i / n) * 24, 24, 24);
+        }
+      }
+
+      var fkData = null, fkShape = null, fkBias = null, fkSel = 0;
+
+      function fkShowNums() {
+        if (!fkData) return;
+        var kh = fkShape[0], kw = fkShape[1], inCh = fkShape[2], nf = fkShape[3];
+        $('fk-dt').textContent = fkSel + ' 번 필터의 실제 값';
+        var body = $('fk-nums').querySelector('tbody');
+        body.innerHTML = '';
+        var mx = 0, y, x, v;
+        for (y = 0; y < kh; y++) {
+          for (x = 0; x < kw; x++) {
+            mx = Math.max(mx, Math.abs(fkData[((y * kw + x) * inCh + 0) * nf + fkSel]));
+          }
+        }
+        if (mx === 0) mx = 1;
+        for (y = 0; y < kh; y++) {
+          var tr = document.createElement('tr');
+          for (x = 0; x < kw; x++) {
+            v = fkData[((y * kw + x) * inCh + 0) * nf + fkSel];
+            var td = document.createElement('td');
+            td.textContent = v.toFixed(3);
+            td.style.color = v >= 0 ? '#B0344F' : '#0F5E86';
+            td.style.background = (v >= 0 ? 'rgba(216,53,90,' : 'rgba(18,114,160,')
+              + (Math.min(1, Math.abs(v) / mx) * 0.22).toFixed(3) + ')';
+            tr.appendChild(td);
+          }
+          body.appendChild(tr);
+        }
+        $('fk-bias').textContent = fkBias
+          ? '편향(bias) : ' + fkBias[fkSel].toFixed(3) : '';
+        Array.prototype.forEach.call($('fk-grid').children, function (c, i) {
+          c.classList.toggle('on', i === fkSel);
+        });
+      }
+
+      async function showFilters() {
+        if (msDone.filters) return;
+        $('fk-msg').textContent = '가중치를 읽는 중…';
+        var m = await ensureModel();
+        if (!m) { $('fk-msg').style.color = '#C0392B'; $('fk-msg').textContent = '모델을 불러오지 못했습니다.'; return; }
+
+        var conv = null;
+        for (var i = 0; i < m.layers.length; i++) {
+          if (m.layers[i].getClassName() === 'Conv2D') { conv = m.layers[i]; break; }
+        }
+        if (!conv) { $('fk-msg').textContent = '이 모델에는 Conv2D 층이 없습니다.'; return; }
+
+        var ws = conv.getWeights();
+        var w = ws[0];                                // [kh, kw, inCh, filters]
+        var sh = w.shape, data = w.dataSync();
+        fkData = data; fkShape = sh;
+        fkBias = ws[1] ? ws[1].dataSync() : null;
+        var kh = sh[0], kw = sh[1], inCh = sh[2], nf = sh[3];
+        $('fk-title').textContent =
+          conv.name + ' 가 가진 실제 필터 ' + nf + '개 (' + kh + '×' + kw + '×' + inCh + ')';
+
+        var mx = 0, j;
+        for (j = 0; j < data.length; j++) mx = Math.max(mx, Math.abs(data[j]));
+        if (mx === 0) mx = 1;
+
+        var grid = $('fk-grid');
+        grid.innerHTML = '';
+        for (var fi = 0; fi < nf; fi++) {
+          var cv = document.createElement('canvas');
+          cv.width = kw * 24; cv.height = kh * 24;
+          cv.title = fi + '번 필터';
+          var vals = [];
+          for (var y = 0; y < kh; y++) {
+            for (var x = 0; x < kw; x++) {
+              // 저장 순서 [kh][kw][inCh][filters] 에서 첫 입력 채널만 본다
+              vals.push(data[((y * kw + x) * inCh + 0) * nf + fi]);
+            }
+          }
+          paintKernel(cv, vals, kh, mx);
+          (function (idx) {
+            cv.addEventListener('click', function () { fkSel = idx; fkShowNums(); });
+          })(fi);
+          grid.appendChild(cv);
+        }
+        fkSel = 0;
+        fkShowNums();
+        // w 는 모델이 실제로 쓰는 변수라 dispose 하면 안 된다.
+        $('fk-msg').style.color = '#5B5675';
+        $('fk-msg').textContent =
+          '입력 채널이 ' + inCh + '개이므로 필터 하나는 ' + kh + '×' + kw + '×' + inCh +
+          ' 짜리입니다. 위 그림은 그중 첫 번째 채널을 보여 줍니다.';
+        msDone.filters = true;
+      }
+
+      /* ⑥-2 : 현재 입력을 한 번 통과시키며 층마다의 출력을 모두 받아
+         왼쪽에서 오른쪽으로 흐름을 그린다. 층 이름과 크기는 모델에서 온다. */
+      var fmSel = 0, fmStages = null, fmOuts = null, poolIns = {};
+
+      function paintMap(cv, vals, w, h, scale) {
+        var g = cv.getContext('2d'), i, v, mn = Infinity, mx = -Infinity;
+        for (i = 0; i < w * h; i++) { if (vals[i] < mn) mn = vals[i]; if (vals[i] > mx) mx = vals[i]; }
+        var rng = (mx - mn) || 1;
+        g.imageSmoothingEnabled = false;
+        for (i = 0; i < w * h; i++) {
+          v = Math.round(255 - ((vals[i] - mn) / rng) * 255);
+          g.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')';
+          g.fillRect((i % w) * scale, Math.floor(i / w) * scale, scale, scale);
+        }
+      }
+
+      /* 한 층의 여러 장을 작은 격자로 겹쳐 놓아 미리보기를 만든다 */
+      function paintMontage(cv, data, H, W, CH, cols, cell) {
+        var g = cv.getContext('2d');
+        g.fillStyle = '#F4F1E8';
+        g.fillRect(0, 0, cv.width, cv.height);
+        var rows = Math.ceil(Math.min(CH, cols * cols) / cols);
+        var scale = Math.max(1, Math.floor(cell / Math.max(H, W)));
+        for (var c = 0; c < Math.min(CH, cols * rows); c++) {
+          var ox = (c % cols) * cell, oy = Math.floor(c / cols) * cell;
+          var mn = Infinity, mx = -Infinity, k;
+          for (k = 0; k < H * W; k++) {
+            var v0 = data[k * CH + c];
+            if (v0 < mn) mn = v0; if (v0 > mx) mx = v0;
+          }
+          var rng = (mx - mn) || 1;
+          for (k = 0; k < H * W; k++) {
+            var v = Math.round(255 - ((data[k * CH + c] - mn) / rng) * 255);
+            g.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')';
+            g.fillRect(ox + (k % W) * scale, oy + Math.floor(k / W) * scale, scale, scale);
+          }
+        }
+      }
+
+      function fmDetail() {
+        var st = fmStages[fmSel], o = fmOuts[fmSel];
+        $('fl-dt').textContent = st.name + ' 의 실제 출력 ' + shapeText(o.shape)
+          + ' — 세로 ' + o.shape[1] + ' · 가로 ' + o.shape[2] + ' 짜리 그림이 ' + o.shape[3] + '장'
+          + (o.shape[3] > 32 ? ' (앞 32장만 표시)' : '');
+        var H = o.shape[1], W = o.shape[2], CH = o.shape[3], data = o.data;
+        var scale = Math.max(2, Math.round(72 / Math.max(H, W)));
+        var grid = $('fm-grid');
+        grid.innerHTML = '';
+        for (var c = 0; c < Math.min(CH, 32); c++) {
+          var cv = document.createElement('canvas');
+          cv.width = W * scale; cv.height = H * scale;
+          cv.title = c + '번 장';
+          var vals = new Float32Array(H * W);
+          for (var k = 0; k < H * W; k++) vals[k] = data[k * CH + c];
+          paintMap(cv, vals, W, H, scale);
+          (function (ch) {
+            cv.addEventListener('click', function () { convDemo(ch); });
+          })(c);
+          grid.appendChild(cv);
+        }
+        $('conv-demo').innerHTML = '';
+        Array.prototype.forEach.call($('fl-flow').querySelectorAll('.fl-stage'), function (el, i) {
+          el.setAttribute('aria-pressed', i === fmSel ? 'true' : 'false');
+        });
+
+        // 장수가 달라지는 자리에서는 왜 그런지 실제 커널 모양으로 설명한다
+        var why = $('fl-why');
+        why.innerHTML = '';
+        $('pool-demo').innerHTML = '';
+        if (fmSel > 0 && st.getClassName && st.getClassName() === 'Conv2D') {
+          var ks = st.getWeights()[0].shape;             // [kh, kw, inCh, filters]
+          var prevCH = fmOuts[fmSel - 1].shape[3];
+          if (ks[2] !== ks[3]) {
+            why.innerHTML =
+              '<b>왜 ' + prevCH + '장이 ' + ks[3] + '장으로 바뀔까요?</b><br />' +
+              '들어온 장수와 나가는 장수는 서로 상관이 없습니다. ' +
+              '나가는 장수는 <b>이 층이 가진 필터의 개수</b>가 그대로 정합니다.<br />' +
+              '이 층의 필터 하나는 <b>' + ks[0] + '×' + ks[1] + '×' + ks[2] + '</b> 짜리입니다. ' +
+              '즉 필터 하나가 들어온 <b>' + ks[2] + '장을 한꺼번에 보고</b> 새 그림 <b>한 장</b>을 만듭니다. ' +
+              '그런 필터가 <b>' + ks[3] + '개</b> 있으니 <b>' + ks[3] + '장</b>이 나옵니다.<br />' +
+              '앞서 MaxPooling2D 가 넓이를 <b>4분의 1</b>로 줄였기 때문에, ' +
+              '줄어든 만큼을 <b>장수를 늘려</b> 채우는 설계입니다.';
+          } else {
+            why.innerHTML =
+              '이 층의 필터 하나는 <b>' + ks[0] + '×' + ks[1] + '×' + ks[2] + '</b> 짜리로, ' +
+              '들어온 ' + ks[2] + '장을 한꺼번에 보고 새 그림 한 장을 만듭니다. ' +
+              '필터가 <b>' + ks[3] + '개</b>라 나가는 장수도 ' + ks[3] + '장으로 같습니다.';
+          }
+        } else if (fmSel > 0 && st.getClassName && st.getClassName() === 'MaxPooling2D') {
+          var ps = st.getConfig().poolSize || [2, 2];
+          var inS = fmOuts[fmSel - 1].shape, outS = fmOuts[fmSel].shape;
+          why.innerHTML =
+            '<b>장수는 그대로, 크기만 줄었습니다.</b> ' +
+            'MaxPooling2D 는 각 장을 따로따로 <b>' + ps[0] + '×' + ps[1] + ' 칸씩</b> 묶어 ' +
+            '<b>가장 큰 값 하나만</b> 남깁니다. ' + (ps[0] * ps[1]) + '칸이 1칸이 되니 넓이는 ' +
+            '<b>' + (ps[0] * ps[1]) + '분의 1</b>, 가로세로는 각각 <b>절반</b>입니다 (' +
+            inS[1] + ' → ' + outS[1] + '). 장끼리 섞지 않으므로 <b>' + outS[3] + '장 그대로</b>입니다.<br />' +
+            '가장 큰 값만 남기므로 <b>가장 세게 반응한 자리</b>가 살아남고, ' +
+            '글씨가 한두 칸 밀려도 결과가 잘 바뀌지 않습니다.';
+          var pin = poolIns[fmSel];
+          if (pin && pin.from && pin.from !== fmStages[fmSel - 1].name) {
+            why.innerHTML += '<br />이 모델은 ' + fmStages[fmSel - 1].name + ' 와 이 층 사이에 ' +
+              '값의 크기를 고르게 다듬는 층(<b>' + pin.from + '</b>)이 하나 더 있습니다. ' +
+              '그래서 아래 왼쪽 숫자는 <b>그 층까지 지난 값</b>이고, 음수도 나올 수 있습니다.';
+          }
+          poolDemo(ps[0]);
+        }
+      }
+
+      /* 고른 MaxPooling 층에서 실제 값 한 조각을 떼어 2x2 -> 1 을 보여 준다 */
+      function poolDemo(k) {
+        // 풀링 층에 실제로 들어간 값 (없으면 앞 단계 값)
+        var prev = poolIns[fmSel] || fmOuts[fmSel - 1], cur = fmOuts[fmSel];
+        var W = prev.shape[2], CH = prev.shape[3];
+        var oH = cur.shape[1], oW = cur.shape[2], oCH = cur.shape[3];
+        var N = Math.min(4, oH);
+
+        var bestC = 0, bestV = -Infinity, c, i;      // 값이 가장 활발한 장을 고른다
+        for (c = 0; c < Math.min(CH, 16); c++) {
+          var sum = 0;
+          for (i = 0; i < prev.shape[1] * W; i++) sum += prev.data[i * CH + c];
+          if (sum > bestV) { bestV = sum; bestC = c; }
+        }
+        // 값이 다 똑같은 자리는 배울 것이 없으므로, 값 차이가 가장 큰 자리를 고른다
+        var oy = Math.max(0, Math.min(oH - N, Math.round(oH / 2) - Math.round(N / 2)));
+        var ox = Math.max(0, Math.min(oW - N, Math.round(oW / 2) - Math.round(N / 2)));
+        var bestSpread = -1, wy, wx, y, x;
+        for (wy = 0; wy + N <= oH; wy++) {
+          for (wx = 0; wx + N <= oW; wx++) {
+            var lo = Infinity, hi = -Infinity;
+            for (y = 0; y < N; y++) {
+              for (x = 0; x < N; x++) {
+                var v = cur.data[(((wy + y) * oW) + (wx + x)) * oCH + bestC];
+                if (v < lo) lo = v;
+                if (v > hi) hi = v;
+              }
+            }
+            if (hi - lo > bestSpread) { bestSpread = hi - lo; oy = wy; ox = wx; }
+          }
+        }
+
+        var cell = 40, gap = 3, pad = 5;
+        /* 묶음마다 다른 색을 준다. 같은 색·같은 번호끼리 이어진다는 뜻이다.
+           색을 구분하기 어려운 경우를 위해 번호를 반드시 함께 적는다. */
+        var POOL_COLORS = [
+          '#D8355A', '#E07B00', '#B08A00', '#3F8F2F',
+          '#0F7A5A', '#1272A0', '#3A5BD9', '#1F3F9E',
+          '#7B3FBF', '#C02BB0', '#A0396A', '#8A5A22',
+          '#8C1F1F', '#5A6B22', '#00736B', '#5B5675'
+        ];
+
+        function draw(cv, size, getter, blockK) {
+          var g = cv.getContext('2d'), y, x, vals = [];
+          g.fillStyle = '#FFFDF7';
+          g.fillRect(0, 0, cv.width, cv.height);
+          for (y = 0; y < size; y++) { for (x = 0; x < size; x++) { vals.push(getter(y, x)); } }
+          var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+          var rng = (mx - mn) || 1;
+          for (y = 0; y < size; y++) {
+            for (x = 0; x < size; x++) {
+              var v = getter(y, x);
+              var t = Math.round(255 - ((v - mn) / rng) * 205);
+              g.fillStyle = 'rgb(' + t + ',' + t + ',' + t + ')';
+              g.fillRect(pad + x * (cell + gap), pad + y * (cell + gap), cell, cell);
+              g.fillStyle = t < 130 ? '#fff' : '#5B5675';
+              g.font = '700 11px Consolas, monospace';
+              g.textAlign = 'center';
+              g.fillText(v.toFixed(1),
+                pad + x * (cell + gap) + cell / 2, pad + y * (cell + gap) + cell / 2 + 4);
+            }
+          }
+          var per = Math.ceil(size / blockK);         // 한 줄에 묶음이 몇 개인지
+          for (var by = 0; by < per; by++) {
+            for (var bx = 0; bx < per; bx++) {
+              var bi = by * per + bx;
+              var col = POOL_COLORS[bi % POOL_COLORS.length];
+              var bX = pad + bx * blockK * (cell + gap) - 2.5;
+              var bY = pad + by * blockK * (cell + gap) - 2.5;
+              var bS = blockK * cell + (blockK - 1) * gap + 5;
+              g.strokeStyle = col;
+              g.lineWidth = 3;
+              g.strokeRect(bX, bY, bS, bS);
+              g.fillStyle = '#FFFDF7';                // 번호가 잘 보이도록 바탕을 깔아 준다
+              g.fillRect(bX + 2, bY + 2, 14, 13);
+              g.fillStyle = col;
+              g.font = '900 10px Consolas, monospace';
+              g.textAlign = 'left';
+              g.fillText(String(bi + 1), bX + 4, bY + 12);
+            }
+          }
+        }
+
+        var box = $('pool-demo');
+        box.innerHTML = '';
+
+        var f1 = document.createElement('figure');
+        var c1 = document.createElement('canvas');
+        c1.width = (N * k) * (cell + gap) - gap + pad * 2;
+        c1.height = c1.width;
+        draw(c1, N * k, function (y, x) {
+          return prev.data[(((oy * k + y) * W) + (ox * k + x)) * CH + bestC];
+        }, k);
+        f1.appendChild(c1);
+        var cap1 = document.createElement('figcaption');
+        cap1.textContent = '줄이기 전 ' + (N * k) + '×' + (N * k) + '  (' + bestC + '번 장의 한 조각)';
+        f1.appendChild(cap1);
+        box.appendChild(f1);
+
+        var op = document.createElement('span');
+        op.className = 'pool-op';
+        op.innerHTML = '색과 번호가 같은 자리끼리 이어집니다.<br />' +
+          '묶음 하나에서 <b>가장 큰 값 하나만</b> 오른쪽으로 →';
+        box.appendChild(op);
+
+        var f2 = document.createElement('figure');
+        var c2 = document.createElement('canvas');
+        c2.width = N * (cell + gap) - gap + pad * 2;
+        c2.height = c2.width;
+        draw(c2, N, function (y, x) {
+          return cur.data[(((oy + y) * oW) + (ox + x)) * oCH + bestC];
+        }, 1);
+        f2.appendChild(c2);
+        var cap2 = document.createElement('figcaption');
+        cap2.textContent = '줄인 뒤 ' + N + '×' + N;
+        f2.appendChild(cap2);
+        box.appendChild(f2);
+      }
+
+      /* 고른 장이 어떻게 만들어졌는지 : 이전 그림 x 필터 = 이 그림 */
+      function convDemo(ch) {
+        var st = fmStages[fmSel];
+        var box = $('conv-demo');
+        box.innerHTML = '';
+        if (!st.getClassName || st.getClassName() !== 'Conv2D') return;
+
+        Array.prototype.forEach.call($('fm-grid').children, function (el, i) {
+          el.classList.toggle('on', i === ch);
+        });
+
+        var prev = fmOuts[fmSel - 1], cur = fmOuts[fmSel];
+        var w = st.getWeights()[0], ws = w.shape, wd = w.dataSync();   // [kh,kw,inCh,outCh]
+        var kh = ws[0], kw = ws[1], inCh = ws[2];
+
+        function mk(W, H, scale) {
+          var cv = document.createElement('canvas');
+          cv.width = W * scale; cv.height = H * scale;
+          return cv;
+        }
+
+        // ① 이전 층 그림 (입력 채널이 여럿이면 앞 8장만)
+        var pShow = Math.min(inCh, 8);
+        var f1 = document.createElement('figure');
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'display:grid;grid-template-columns:repeat(' +
+          Math.min(pShow, 4) + ',auto);gap:3px;justify-content:center';
+        for (var p = 0; p < pShow; p++) {
+          var sc = pShow > 1 ? 2 : 4;
+          var c1 = mk(prev.shape[2], prev.shape[1], sc);
+          var v1 = new Float32Array(prev.shape[1] * prev.shape[2]);
+          for (var q = 0; q < v1.length; q++) v1[q] = prev.data[q * prev.shape[3] + p];
+          paintMap(c1, v1, prev.shape[2], prev.shape[1], sc);
+          c1.style.border = '1.5px solid #C9C4DA';
+          wrap.appendChild(c1);
+        }
+        f1.appendChild(wrap);
+        var cap1 = document.createElement('figcaption');
+        cap1.textContent = '이전 층 ' + inCh + '장' + (inCh > pShow ? ' (앞 ' + pShow + '장)' : '');
+        f1.appendChild(cap1);
+        box.appendChild(f1);
+
+        var op1 = document.createElement('span');
+        op1.className = 'conv-op';
+        op1.textContent = '×';
+        box.appendChild(op1);
+
+        // ② 이 장을 만든 필터 (3×3×inCh 중 앞 8장)
+        var f2 = document.createElement('figure');
+        var wrap2 = document.createElement('div');
+        wrap2.style.cssText = 'display:grid;grid-template-columns:repeat(' +
+          Math.min(pShow, 4) + ',auto);gap:3px;justify-content:center';
+        var mx = 0, t, y, x;
+        for (t = 0; t < wd.length; t++) mx = Math.max(mx, Math.abs(wd[t]));
+        if (mx === 0) mx = 1;
+        for (var pc = 0; pc < pShow; pc++) {
+          var ck = document.createElement('canvas');
+          var kcell = pShow > 1 ? 12 : 24;
+          ck.width = kw * kcell; ck.height = kh * kcell;
+          var gk = ck.getContext('2d');
+          for (y = 0; y < kh; y++) {
+            for (x = 0; x < kw; x++) {
+              var vv = wd[((y * kw + x) * inCh + pc) * ws[3] + ch] / mx;
+              gk.fillStyle = vv >= 0
+                ? 'rgba(216,53,90,' + Math.min(1, Math.abs(vv)).toFixed(3) + ')'
+                : 'rgba(18,114,160,' + Math.min(1, Math.abs(vv)).toFixed(3) + ')';
+              gk.fillRect(x * kcell, y * kcell, kcell, kcell);
+            }
+          }
+          ck.style.border = '1.5px solid #C9C4DA';
+          wrap2.appendChild(ck);
+        }
+        f2.appendChild(wrap2);
+        var cap2 = document.createElement('figcaption');
+        cap2.textContent = ch + '번 필터 ' + kh + '×' + kw + '×' + inCh;
+        f2.appendChild(cap2);
+        box.appendChild(f2);
+
+        var op2 = document.createElement('span');
+        op2.className = 'conv-op';
+        op2.textContent = '=';
+        box.appendChild(op2);
+
+        // ③ 결과
+        var f3 = document.createElement('figure');
+        var sc3 = Math.max(3, Math.round(112 / cur.shape[1]));
+        var c3 = mk(cur.shape[2], cur.shape[1], sc3);
+        var v3 = new Float32Array(cur.shape[1] * cur.shape[2]);
+        for (var r3 = 0; r3 < v3.length; r3++) v3[r3] = cur.data[r3 * cur.shape[3] + ch];
+        paintMap(c3, v3, cur.shape[2], cur.shape[1], sc3);
+        f3.appendChild(c3);
+        var cap3 = document.createElement('figcaption');
+        cap3.textContent = ch + '번 장 (지금 고른 것)';
+        f3.appendChild(cap3);
+        box.appendChild(f3);
+
+        var cap = document.createElement('div');
+        cap.className = 'conv-cap';
+        cap.innerHTML = '이전 층 <b>' + inCh + '장</b> 위에 각각의 ' + kh + '×' + kw +
+          ' 를 겹쳐 곱하고 <b>모두 더한 뒤</b> 편향을 보태 ' +
+          '<b>' + ch + '번 장 한 장</b>이 만들어졌습니다. ' +
+          '<span style="color:#B0344F">붉은 칸</span>은 더하는 쪽, ' +
+          '<span style="color:#0F5E86">푸른 칸</span>은 빼는 쪽입니다.';
+        box.appendChild(cap);
+      }
+
+      async function showFeatureMaps() {
+        var m = await ensureModel();
+        if (!m) { $('fm-msg').style.color = '#C0392B'; $('fm-msg').textContent = '모델을 불러오지 못했습니다.'; return; }
+
+        var px = pixels();
+        if (px.reduce(function (a, b) { return a + b; }, 0) < 2000) {
+          $('fm-msg').style.color = '#B34A0C';
+          $('fm-msg').textContent = '①로 돌아가 숫자를 하나 써 주세요.';
+          $('fl-flow').innerHTML = '';
+          $('fm-grid').innerHTML = '';
+          return;
+        }
+        $('fm-msg').style.color = '#5B5675';
+        $('fm-msg').textContent = '층마다의 출력을 계산하는 중…';
+
+        // 크기가 실제로 달라지는 층만 골라 흐름을 만든다 (이름·종류는 모델에서)
+        fmStages = m.layers.filter(function (ly) {
+          var c = ly.getClassName();
+          return ly.outputShape.length === 4 && (c === 'Conv2D' || c === 'MaxPooling2D');
+        });
+
+        var input = new Float32Array(784);
+        for (var i = 0; i < 784; i++) input[i] = px[i] / 255;
+
+        /* Conv 와 Pool 사이에 BatchNormalization 같은 층이 더 있을 수 있다.
+           그래서 풀링 층에 실제로 들어가는 값을 따로 뽑아 둔다. */
+        var extra = [];                       // [흐름에서의 자리, 그 층의 입력]
+        fmStages.forEach(function (ly, i) {
+          if (ly.getClassName() !== 'MaxPooling2D') return;
+          try {
+            var inp = ly.input;
+            if (Array.isArray(inp)) inp = inp[0];
+            if (inp) extra.push([i + 1, inp, inp.sourceLayer ? inp.sourceLayer.name : '']);
+          } catch (e) { /* 못 가져오면 앞 단계 값으로 대신한다 */ }
+        });
+
+        var sub = tf.model({
+          inputs: m.inputs,
+          outputs: fmStages.map(function (l) { return l.output; })
+            .concat(extra.map(function (e) { return e[1]; }))
+        });
+        var outs = tf.tidy(function () { return sub.predict(tf.tensor4d(input, [1, 28, 28, 1])); });
+        var list = Array.isArray(outs) ? outs : [outs];
+        var nSt = fmStages.length;
+        fmOuts = list.slice(0, nSt).map(function (t) { return { shape: t.shape, data: t.dataSync() }; });
+        poolIns = {};
+        extra.forEach(function (e, j) {
+          var t = list[nSt + j];
+          poolIns[e[0]] = { shape: t.shape, data: t.dataSync(), from: e[2] };
+        });
+        list.forEach(function (t) { t.dispose(); });
+
+        // 입력 그림을 흐름의 맨 앞에 둔다
+        fmStages = [{ name: '입력', cls: '' }].concat(fmStages);
+        fmOuts = [{ shape: [1, 28, 28, 1], data: input }].concat(fmOuts);
+
+        var flow = $('fl-flow');
+        flow.innerHTML = '';
+        fmStages.forEach(function (st, idx) {
+          if (idx) {
+            var ar = document.createElement('span');
+            ar.className = 'fl-arrow';
+            ar.textContent = '→';
+            flow.appendChild(ar);
+          }
+          var o = fmOuts[idx];
+          var CH = o.shape[3];
+          var cols = CH === 1 ? 1 : (CH <= 4 ? 2 : (CH <= 16 ? 4 : 6));
+          var cell = CH === 1 ? 84 : Math.round(84 / cols) * 1;
+          var box = document.createElement('button');
+          box.type = 'button';
+          box.className = 'fl-stage';
+          var cv = document.createElement('canvas');
+          cv.width = cols * cell; cv.height = cols * cell;
+          paintMontage(cv, o.data, o.shape[1], o.shape[2], CH, cols, cell);
+          box.appendChild(cv);
+          var nm = document.createElement('div');
+          nm.className = 'nm';
+          nm.textContent = st.name;
+          box.appendChild(nm);
+          var sh = document.createElement('div');
+          sh.className = 'sh';
+          sh.textContent = o.shape[1] + '×' + o.shape[2] + '×' + CH;
+          box.appendChild(sh);
+          (function (k) {
+            box.addEventListener('click', function () { fmSel = k; fmDetail(); });
+          })(idx);
+          flow.appendChild(box);
+        });
+
+        $('fm-msg').textContent =
+          '입력 28×28×1 에서 시작해 ' + (fmStages.length - 1) + '개 층을 지나 ' +
+          fmOuts[fmOuts.length - 1].shape[1] + '×' + fmOuts[fmOuts.length - 1].shape[2] + '×' +
+          fmOuts[fmOuts.length - 1].shape[3] + ' 가 되었습니다. 단계를 누르면 아래에 모든 장이 펼쳐집니다.';
+
+        if (!fmSel) fmSel = Math.min(1, fmStages.length - 1);
+        fmSel = Math.min(fmSel, fmStages.length - 1);
+        fmDetail();
+      }
+
+      /* ⑥-3 : Flatten 과 Dense 를 실제 값으로 그린다.
+         길이·개수·가중치 수는 모두 모델에서 읽는다. */
+      function dvColor(v, mn, rng) {
+        var t = Math.round(255 - ((v - mn) / rng) * 255);
+        return 'rgb(' + t + ',' + t + ',' + t + ')';
+      }
+
+      function dvRange(arr) {
+        var mn = Infinity, mx = -Infinity, i;
+        for (i = 0; i < arr.length; i++) { if (arr[i] < mn) mn = arr[i]; if (arr[i] > mx) mx = arr[i]; }
+        return { mn: mn, rng: (mx - mn) || 1, mx: mx };
+      }
+
+      async function showDense() {
+        var m = await ensureModel();
+        if (!m) { $('fd-msg').style.color = '#C0392B'; $('fd-msg').textContent = '모델을 불러오지 못했습니다.'; return; }
+
+        if (!msDone.dense) {                          // 흐름 도식은 한 번만 만든다
+          var flow = $('fd-flow');
+          flow.innerHTML = '';
+          var started = false;
+          m.layers.forEach(function (ly) {
+            var cls = ly.getClassName();
+            if (cls === 'Flatten') started = true;
+            if (!started || cls === 'Dropout' || cls === 'BatchNormalization') return;
+            if (flow.children.length) {
+              var ar = document.createElement('span');
+              ar.className = 'fd-arrow';
+              ar.textContent = '→';
+              flow.appendChild(ar);
+            }
+            var d = document.createElement('div');
+            d.className = 'fd-node';
+            d.innerHTML = cls + '<small>' + shapeText(ly.outputShape) + '</small>';
+            flow.appendChild(d);
+          });
+
+          var last = m.layers[m.layers.length - 1];
+          var act = last.getConfig().activation;
+          var actName = (act && act.className) ? act.className : String(act);
+          $('fd-soft').innerHTML = /softmax/i.test(actName)
+            ? '이 모델의 마지막 층 <b>' + last.name + '</b> 은 활성화가 <b>softmax</b> 입니다. ' +
+              '따라서 모델이 내놓는 10개 값은 <b>이미 확률</b>이고, 모두 더하면 1이 됩니다. ' +
+              '여기에 softmax 를 <b>다시 적용하면 안 됩니다.</b>'
+            : '이 모델의 마지막 층 <b>' + last.name + '</b> 의 활성화는 <b>' + actName + '</b> 입니다. ' +
+              '따라서 출력은 확률이 아닌 <b>logits</b> 이고, 확률로 바꾸려면 softmax 가 필요합니다.';
+          msDone.dense = true;
+        }
+        dvRun();
+      }
+
+      async function dvRun() {
+        var m = await ensureModel();
+        if (!m) return;
+        var px = pixels();
+        if (px.reduce(function (a, b) { return a + b; }, 0) < 2000) {
+          $('fd-msg').style.color = '#B34A0C';
+          $('fd-msg').textContent = '①로 돌아가 숫자를 하나 써 주세요.';
+          return;
+        }
+        $('fd-msg').style.color = '#5B5675';
+        $('fd-msg').textContent = '계산 중…';
+
+        // Flatten 과 Dense 층을 이름이 아니라 종류로 찾는다
+        var flat = null, dens = [];
+        m.layers.forEach(function (ly) {
+          var c = ly.getClassName();
+          if (c === 'Flatten') flat = ly;
+          if (c === 'Dense') dens.push(ly);
+        });
+        var picks = [];
+        if (flat) picks.push(flat);
+        picks = picks.concat(dens);
+
+        var input = new Float32Array(784);
+        for (var i = 0; i < 784; i++) input[i] = px[i] / 255;
+        var sub = tf.model({ inputs: m.inputs, outputs: picks.map(function (l) { return l.output; }) });
+        var outs = tf.tidy(function () { return sub.predict(tf.tensor4d(input, [1, 28, 28, 1])); });
+        var list = Array.isArray(outs) ? outs : [outs];
+        var vals = list.map(function (t) { var d = Array.from(t.dataSync()); t.dispose(); return d; });
+
+        var k = 0;
+        // ── Flatten : 3,136개를 가로 띠 하나로 ──
+        if (flat) {
+          var fv = vals[k++], N = fv.length;
+          var cv = $('dv-flat'), g = cv.getContext('2d');
+          var W = cv.width, H = cv.height, cw = W / N;
+          var r = dvRange(fv);
+          g.fillStyle = '#FFFDF7'; g.fillRect(0, 0, W, H);
+          for (var j = 0; j < N; j++) {
+            g.fillStyle = dvColor(fv[j], r.mn, r.rng);
+            g.fillRect(j * cw, 0, cw + 0.4, H);
+          }
+          // 펴는 순서는 가장 안쪽 축(장)이 가장 빨리 변한다.
+          // 즉 [자리1의 64장] → [자리2의 64장] … 이므로 경계는 '자리'마다 생긴다.
+          var ish = flat.input.shape;                 // [1, h, w, ch]
+          var chan = ish[3] || 1, spots = ish[1] * ish[2];
+          g.strokeStyle = 'rgba(59,53,87,.28)'; g.lineWidth = 1;
+          for (var c2 = 1; c2 < spots; c2++) {
+            g.beginPath(); g.moveTo(c2 * chan * cw, 0); g.lineTo(c2 * chan * cw, H); g.stroke();
+          }
+          $('dv-c1').textContent = flat.name + ' — 길이 ' + N.toLocaleString();
+          $('dv-n1').innerHTML =
+            '<b>어떤 순서로 펼까요?</b> 가장 안쪽 축인 <b>장</b>이 가장 빨리 변합니다. ' +
+            '즉 <b>한 자리에 있는 ' + chan + '장의 값</b>을 먼저 모두 적고, 다음 자리로 넘어갑니다.' +
+            '<br />' +
+            '<span style="font-family:Consolas,monospace">' +
+            '[자리1의 ' + chan + '개] [자리2의 ' + chan + '개] … [자리' + spots + '의 ' + chan + '개]' +
+            '</span><br />' +
+            '자리가 ' + ish[1] + '×' + ish[2] + ' = <b>' + spots + '곳</b>, 각 자리마다 <b>' + chan + '개</b> 이므로 ' +
+            spots + ' × ' + chan + ' = <b>' + N.toLocaleString() + '개</b>입니다. ' +
+            '위 띠의 세로 선이 <b>자리와 자리의 경계</b>입니다.';
+        }
+
+        // ── Dense 들 ──
+        var notes = ['dv-n2', 'dv-n3'], caps = ['dv-c2', 'dv-c3'];
+        dens.forEach(function (ly, di) {
+          var v = vals[k++];
+          var wshape = ly.getWeights()[0].shape;      // [in, out]
+          var mul = wshape[0] * wshape[1];
+          if (di === 0) {
+            var cv2 = $('dv-dense'), g2 = cv2.getContext('2d');
+            var n = v.length, side = Math.ceil(Math.sqrt(n));
+            var cell = cv2.width / side;
+            var r2 = dvRange(v);
+            g2.fillStyle = '#FFFDF7'; g2.fillRect(0, 0, cv2.width, cv2.height);
+            for (var q = 0; q < n; q++) {
+              g2.fillStyle = dvColor(v[q], r2.mn, r2.rng);
+              g2.fillRect((q % side) * cell, Math.floor(q / side) * cell, cell + .5, cell + .5);
+            }
+            $(caps[0]).textContent = ly.name + ' — ' + n + '개';
+            var actName0 = (function (a) { return (a && a.className) ? a.className : String(a); })(ly.getConfig().activation);
+            $(notes[0]).innerHTML =
+              '<b>여기 있는 값 하나는 이렇게 만들어집니다.</b><br />' +
+              tex('\\text{값} = v_1w_1 + v_2w_2 + \\cdots + v_{' + wshape[0] + '}w_{' + wshape[0] +
+                  '} + \\text{편향}',
+                  '값 = v₁w₁ + v₂w₂ + ⋯ + v' + wshape[0] + 'w' + wshape[0] + ' + 편향') +
+              '앞의 <b>' + wshape[0].toLocaleString() + '개</b>를 <b>자기만의 가중치 ' +
+              wshape[0].toLocaleString() + '개</b>와 하나씩 곱해 모두 더합니다. ' +
+              '이런 값이 <b>' + n + '개</b> 필요하니, 가중치 묶음도 <b>' + n + '벌</b>이 있습니다.<br />' +
+              '그래서 곱셈이 <b>' + wshape[0].toLocaleString() + ' × ' + wshape[1] + ' = ' +
+              mul.toLocaleString() + '번</b> 일어납니다. ' +
+              '더한 뒤 <b>' + actName0 + '</b> 를 거칩니다' +
+              (/relu/i.test(actName0) ? ' — 음수는 0으로 눌러 버립니다. 흰 칸이 많은 까닭입니다.' : '.') +
+              '<br />위 정사각형은 그 ' + n + '개를 ' + side + '×' + side + ' 로 늘어놓은 것입니다. 검을수록 큰 값입니다.';
+          } else {
+            var best = v.indexOf(Math.max.apply(null, v));
+            var sum = v.reduce(function (a, b) { return a + b; }, 0);
+            var html = '<div class="bars">';
+            v.forEach(function (p, ii) {
+              html += '<div class="bar-row' + (ii === best ? ' win' : '') + '"><span>' + ii + '</span>' +
+                      '<span class="bar-track"><span class="bar-fill" style="width:' +
+                      (p > 0.0005 ? Math.max(0.8, p * 100) : 0).toFixed(1) + '%"></span></span>' +
+                      '<span>' + (p * 100).toFixed(1) + '%</span></div>';
+            });
+            html += '</div>';
+            $('fd-out').innerHTML = html;
+            $(caps[1]).textContent = ly.name + ' — ' + v.length + '개';
+            var actName1 = (function (a) { return (a && a.className) ? a.className : String(a); })(ly.getConfig().activation);
+            $(notes[1]).innerHTML =
+              '<b>같은 계산을 한 번 더, 이번엔 ' + v.length + '개만 만듭니다.</b><br />' +
+              '앞의 <b>' + wshape[0] + '개</b>를 가중치 ' + wshape[0] + '개와 곱해 더하면 숫자 하나가 나옵니다. ' +
+              '그 묶음이 <b>' + wshape[1] + '벌</b>이라 0부터 9까지 <b>각각의 값</b>이 하나씩 나옵니다. ' +
+              '곱셈은 <b>' + wshape[0] + ' × ' + wshape[1] + ' = ' + mul.toLocaleString() + '번</b>입니다.<br />' +
+              '마지막에 <b>' + actName1 + '</b> 를 거쳐' +
+              (/softmax/i.test(actName1)
+                ? ' 열 개의 합이 1이 되도록 맞춥니다. 실제로 더해 보면 <b>' + sum.toFixed(3) + '</b> 입니다. '
+                : ' 값이 나옵니다. ') +
+              '가장 큰 <b>' + best + '</b> 를 답으로 고릅니다.';
+            $('fd-msg').textContent = '';
+          }
+        });
+      }
+
+      $('fd-run').addEventListener('click', dvRun);
+
+      /* ── ⑥-4 영향도 지도 ────────────────────────────────────
+         이 모델에는 숫자마다 784개 가중치를 적어 둔 표가 없다(합성곱 신경망).
+         대신 "지금 이 입력에서 각 픽셀이 조금 바뀌면 그 숫자의 출력이
+         얼마나 달라지는가"를 미분으로 구한다. */
+      var wmDigit = 4, wmBusy = false;
+
+      function wmPaint(cv, vals, mode) {
+        var g = cv.getContext('2d'), i, v, x, y;
+        g.imageSmoothingEnabled = false;
+        g.fillStyle = '#fff';
+        g.fillRect(0, 0, 224, 224);
+        var mx = 0;
+        for (i = 0; i < 784; i++) mx = Math.max(mx, Math.abs(vals[i]));
+        if (mx === 0) mx = 1;
+        for (i = 0; i < 784; i++) {
+          v = vals[i] / mx;
+          x = (i % 28) * 8;
+          y = Math.floor(i / 28) * 8;
+          if (mode === 'gray') {
+            var t = Math.round(255 - Math.abs(v) * 255);
+            g.fillStyle = 'rgb(' + t + ',' + t + ',' + t + ')';
+          } else if (v >= 0) {
+            g.fillStyle = 'rgba(216,53,90,' + Math.min(1, Math.abs(v) * 1.15).toFixed(3) + ')';
+          } else {
+            g.fillStyle = 'rgba(18,114,160,' + Math.min(1, Math.abs(v) * 1.15).toFixed(3) + ')';
+          }
+          g.fillRect(x, y, 8, 8);
+        }
+      }
+
+      function wmButtons() {
+        var box = $('wm-pick');
+        if (box.children.length) return;
+        for (var d = 0; d < 10; d++) {
+          (function (d) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = d;
+            b.addEventListener('click', function () { wmDigit = d; wmDraw(); });
+            box.appendChild(b);
+          })(d);
+        }
+      }
+
+      /* 지도는 "고른 숫자"에 대해 계산되므로 정답을 미리 알 필요가 없다.
+         다만 처음에는 모델이 무엇으로 보고 있는지 알려 주는 편이 이해에 좋다. */
+      async function wmAuto() {
+        wmButtons();
+        var probs = await getProbs();
+        if (probs) {
+          var best = probs.indexOf(Math.max.apply(null, probs));
+          wmDigit = best;
+          $('wm-pred').innerHTML =
+            '지금 모델은 이 글씨를 <b>' + best + '</b> 로 보고 있습니다 ('
+            + (probs[best] * 100).toFixed(1) + '%). '
+            + '아래에서 <b>다른 숫자를 골라</b> 지도가 어떻게 달라지는지 견주어 보세요.';
+        } else {
+          $('wm-pred').textContent = '①로 돌아가 숫자를 하나 써 주세요.';
+        }
+        wmDraw();
+      }
+
+      async function wmDraw() {
+        wmButtons();
+        Array.prototype.forEach.call($('wm-pick').children, function (b, d) {
+          b.setAttribute('aria-pressed', d === wmDigit ? 'true' : 'false');
+        });
+        $('wm-cap').textContent = wmDigit + ' 출력에 대한 영향도';
+        if (wmBusy) return;
+
+        var px = pixels();
+        if (px.reduce(function (a, b) { return a + b; }, 0) < 2000) {
+          $('wm-msg').style.color = '#B34A0C';
+          $('wm-msg').textContent = '①로 돌아가 숫자를 하나 써 주세요.';
+          return;
+        }
+        var m = await ensureModel();
+        if (!m) {
+          $('wm-msg').style.color = '#C0392B';
+          $('wm-msg').textContent = '모델을 불러오지 못했습니다.';
+          return;
+        }
+
+        wmBusy = true;
+        $('wm-msg').style.color = '#5B5675';
+        $('wm-msg').textContent = '계산 중…';
+        try {
+          var input = new Float32Array(784);
+          for (var i = 0; i < 784; i++) input[i] = px[i] / 255;
+          var grads = tf.tidy(function () {
+            var x = tf.tensor4d(input, [1, 28, 28, 1]);
+            var pick = tf.oneHot([wmDigit], 10).toFloat();
+            var fn = tf.grad(function (t) {
+              return tf.log(m.predict(t).mul(pick).sum().add(1e-9));
+            });
+            return fn(x);
+          });
+          var w = Array.from(grads.dataSync());
+          grads.dispose();
+
+          wmPaint($('wm-in'), input, 'gray');
+          wmPaint($('wm-w'), w, 'rb');
+          wmPaint($('wm-p'), w.map(function (v, j) { return v * input[j]; }), 'rb');
+          $('wm-msg').textContent =
+            '지금 이 입력에서 각 픽셀이 조금 밝아지면 ' + wmDigit +
+            ' 의 출력이 오르는 자리는 빨강, 내리는 자리는 파랑입니다. '
+            + '맨 오른쪽은 여기에 실제 픽셀 값을 곱한 것으로, 값이 0인 자리는 기여도 0입니다.';
+        } catch (e) {
+          console.error('[steps] 영향도 지도 실패', e);
+          $('wm-msg').style.color = '#C0392B';
+          $('wm-msg').textContent = '지도를 계산하지 못했습니다.';
+        } finally {
+          wmBusy = false;
+        }
+      }
+
+      /* ── ⑦ 실제로 학습된 모델에 넣어 확률을 얻는다 ─────────
+         손글씨 인식 활동이 쓰는 것과 같은 모델을 그대로 불러온다. */
+      var MODEL_URL = '../models/mnist/model.json';
+      var model = null, modelState = 'idle', modelState_p = null;
+
+      function barsMessage(text, tone) {
+        $('bars').innerHTML = '<p style="margin:8px 0;font-weight:800;font-size:.9rem;color:'
+          + (tone === 'bad' ? '#C0392B' : '#5B5675') + '">' + text + '</p>';
+        $('verdict').textContent = '';
+      }
+
+      var bootShown = true;
+      var bootReal = 0;      // 실제로 확인된 진행률
+      var bootTarget = 0;    // 화면이 향해 가는 값 (멈춘 것처럼 보이지 않게 아주 천천히 올라간다)
+      var bootView = 0;      // 지금 그려진 값
+      var bootRaf = 0, bootPct = -1, bootDotAt = 0, bootDotI = 0, bootLast = 0;
+      var BOOT_DOTS = ['', '.', '..', '...'];
+
+      function bootPaint() {
+        var pct = Math.max(0, Math.min(100, Math.round(bootView * 100)));
+        if (pct === bootPct) return;             // 정수 %가 바뀔 때만 화면을 손댄다
+        bootPct = pct;
+        $('boot-fill').style.width = pct + '%';
+        $('boot-pct').textContent = pct + '%';
+        $('boot-track').setAttribute('aria-valuenow', pct);
+      }
+
+      function bootTick(now) {
+        bootRaf = requestAnimationFrame(bootTick);
+        var dt = bootLast ? Math.min(150, now - bootLast) : 16;   // 화면이 느린 기기에서도 같은 속도로
+        bootLast = now;
+        // 다음 소식이 올 때까지, 남은 구간의 일부만 아주 천천히 채운다
+        var cap = bootReal + (1 - bootReal) * 0.2;
+        if (bootReal < 1 && bootTarget < cap) bootTarget = Math.min(cap, bootTarget + 0.00002 * dt);
+        if (bootView < bootTarget) {             // 값은 뒤로 가지 않고 목표까지 부드럽게 따라간다
+          if (bootReal >= 1 || bootTarget - bootView < 0.002) bootView = bootTarget;
+          else bootView += (bootTarget - bootView) * (1 - Math.pow(0.8, dt / 16.7));
+        }
+        bootPaint();
+        if (now - bootDotAt > 420) {
+          bootDotAt = now;
+          bootDotI = (bootDotI + 1) % BOOT_DOTS.length;
+          $('boot-dots').textContent = BOOT_DOTS[bootDotI];
+        }
+      }
+
+      function bootStop() {
+        if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
+        $('boot-dots').textContent = '';
+      }
+
+      function bootSet(p, msg) {
+        if (p > bootReal) bootReal = p;
+        if (bootReal > bootTarget) bootTarget = bootReal;
+        if (msg) $('boot-msg').textContent = msg;
+        if (!bootRaf && bootShown) { bootDotAt = 0; bootLast = 0; bootRaf = requestAnimationFrame(bootTick); }
+      }
+
+      function bootReset() {
+        bootReal = bootTarget = bootView = 0;
+        bootPct = -1;
+        bootPaint();
+      }
+
+      function bootClose() {
+        bootStop();
+        if (!bootShown) return;
+        bootShown = false;
+        $('boot').classList.add('done');
+      }
+
+      function bootFail(e) {
+        bootStop();
+        $('boot').classList.add('fail');
+        $('boot-t').textContent = '모델을 불러오지 못했습니다';
+        $('boot-pct').textContent = '실패';
+        $('boot-msg').innerHTML =
+          '이 페이지는 <b>인터넷 연결</b>이 필요하고, 파일을 직접 여는 방식(file://)에서는 동작하지 않습니다.<br />' +
+          '주소가 <b>http</b> 로 시작하는지 확인해 주세요.' +
+          (e ? '<br /><span style="font-size:.74rem;color:#A9A294">' + String(e).slice(0, 90) + '</span>' : '');
+      }
+
+      // 진행률이 파일 개수(2개)로만 나오면 0 -> 49 -> 100 처럼 뚝뚝 끊긴다.
+      // 큰 가중치 파일은 직접 읽어서 내려받은 바이트만큼 채운다.
+      var bootByteMode = false;
+
+      function bootFetch(path, init) {
+        return fetch(path, init).then(function (res) {
+          var total = Number(res.headers.get('content-length') || 0);
+          var canStream = res.ok && res.body && res.body.getReader && typeof ReadableStream !== 'undefined';
+          if (!canStream || total < 200000) return res;   // model.json 같은 작은 파일은 그대로 둔다
+          bootByteMode = true;
+          var reader = res.body.getReader();
+          var mb = (total / 1048576).toFixed(1);
+          var loaded = 0;
+          var body = new ReadableStream({
+            start: function (ctrl) {
+              (function pump() {
+                reader.read().then(function (r) {
+                  if (r.done) { ctrl.close(); return; }
+                  loaded += r.value.byteLength;
+                  bootSet(0.05 + 0.92 * (loaded / total),
+                    '가중치를 내려받는 중입니다  ' + (loaded / 1048576).toFixed(1) + ' / ' + mb + 'MB');
+                  ctrl.enqueue(r.value);
+                  pump();
+                }).catch(function (err) { ctrl.error(err); });
+              })();
+            },
+            cancel: function () { reader.cancel(); }
+          });
+          return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
+        });
+      }
+
+      async function ensureModel() {
+        if (model) return model;
+        if (modelState === 'loading') {            // 이미 받는 중이면 그 작업을 함께 기다린다
+          try { return await modelState_p; } catch (e) { return null; }
+        }
+        if (typeof tf === 'undefined') { modelState = 'fail'; bootFail('tf 를 불러오지 못했습니다'); return null; }
+        modelState = 'loading';
+        modelState_p = (async function () {
+          try {
+            var m = await tf.loadLayersModel(MODEL_URL, {
+              fetchFunc: bootFetch,
+              onProgress: function (frac) {          // 바이트를 셀 수 없을 때만 쓰는 대략적인 값
+                if (bootByteMode) return;
+                bootSet(frac * 0.97, '가중치를 내려받는 중입니다');
+              }
+            });
+            model = m;
+            modelState = 'ready';
+            bootSet(1, '준비가 끝났습니다');
+            setTimeout(bootClose, 480);
+            return m;
+          } catch (e) {
+            modelState = 'fail';
+            console.error('[steps] 모델 로드 실패', e);
+            bootFail(e && e.message);
+            return null;
+          }
+        })();
+        return await modelState_p;
+      }
+
+      $('boot-retry').addEventListener('click', function () {
+        $('boot').classList.remove('fail');
+        $('boot-t').textContent = '인공지능 모델을 준비하고 있습니다';
+        $('boot-msg').textContent = '';
+        modelState = 'idle';
+        bootByteMode = false;
+        bootReset();
+        bootSet(0.03, '다시 내려받는 중입니다');
+        ensureModel();
+      });
+      $('boot-skip').addEventListener('click', bootClose);
+
+      function drawBars(probs) {
+        var best = probs.indexOf(Math.max.apply(null, probs));
+        var box = $('bars');
+        box.innerHTML = '';
+        probs.forEach(function (p, i) {
+          var row = document.createElement('div');
+          row.className = 'bar-row' + (i === best ? ' win' : '');
+          row.innerHTML =
+            '<span>' + i + '</span>' +
+            '<span class="bar-track"><span class="bar-fill" style="width:' +
+            (p > 0.0005 ? Math.max(0.8, p * 100) : 0).toFixed(1) + '%"></span></span>' +
+            '<span>' + (p * 100).toFixed(1) + '%</span>';
+          box.appendChild(row);
+        });
+        $('verdict').textContent = '가장 높은 ' + best + ' 를 답으로 고릅니다 ('
+          + (probs[best] * 100).toFixed(1) + '%)';
+      }
+
+      async function getProbs() {
+        var px = pixels();
+        var ink = px.reduce(function (a, b) { return a + b; }, 0);
+        if (ink < 2000) return null;
+        var m = await ensureModel();
+        if (!m) return null;
+        var input = new Float32Array(784);
+        for (var i = 0; i < 784; i++) input[i] = px[i] / 255;   // ②~⑤에서 본 그 값들
+        var t = tf.tensor4d(input, [1, 28, 28, 1]), probs;
+        try {
+          var out = m.predict(t);
+          probs = Array.from(out.dataSync());
+          out.dispose();
+        } finally {
+          t.dispose();
+        }
+        return probs;
+      }
+
+      async function predictDrawn() {
+        var px = pixels();
+        if (px.reduce(function (a, b) { return a + b; }, 0) < 2000) {
+          barsMessage('①로 돌아가 숫자를 하나 써 주세요.'); return;
+        }
+        var probs = await getProbs();
+        if (!probs) {
+          barsMessage('모델을 불러오지 못했습니다. 인터넷 연결과 models/mnist/model.json 경로를 확인해 주세요.', 'bad');
+          return;
+        }
+        drawBars(probs);
+      }
+
+      $('repredict').addEventListener('click', predictDrawn);
+
+      /* ── 사이드바 ──────────────────────────────────────── */
+      var tog = document.querySelector('.sidebar-toggle');
+      var bar = document.querySelector('.sidebar');
+      function toggle() { bar.classList.toggle('open'); tog.classList.toggle('open'); }
+      tog.addEventListener('click', toggle);
+      tog.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+
+      // 첫 화면에서 미리 받아 두면, 뒤 단계에서 기다릴 일이 없다
+      bootSet(0.03, '모델 파일을 찾는 중입니다');
+      ensureModel();
+
+      go(0);
+    })();
+  </script>
+</body>
+
+</html>
