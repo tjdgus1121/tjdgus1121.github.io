@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="그레이 박사의 시계탑 연구소를 걸어 다니며 측정 기록을 모으고, 오차를 구하며 경사하강법의 첫걸음을 배우는 방탈출 게임입니다.">
+<title>그레이 박사의 마지막 밤</title>
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="world" aria-label="연구소 지도. 방향키로 걷고 F 키로 살펴봅니다." role="img"></canvas>
+  <canvas id="light" aria-hidden="true" hidden></canvas>
+  <div id="vignette" aria-hidden="true"></div>
+
+  <!-- 머리줄 -->
+  <header id="hud" hidden>
+    <div class="room" aria-live="polite"><span id="roomName">현관</span></div>
+    <div class="goal" aria-live="polite"><b>할 일</b><span id="goalText"></span></div>
+    <div class="hud-btns">
+      <button type="button" id="btnBag" aria-label="가방 열기 (I)"><img src="../gradient-descent-escape-assets/icons/icon-document.png" alt=""><span>가방 (I)</span></button>
+      <button type="button" id="btnNotes" aria-label="노트 열기 (N)"><img src="../gradient-descent-escape-assets/icons/icon-notebook.png" alt=""><span>노트 (N)</span></button>
+      <button type="button" id="btnMap" aria-label="평면도 열기 (M)" hidden><img src="../gradient-descent-escape-assets/icons/icon-plan.png" alt=""><span>지도 (M)</span></button>
+      <button type="button" id="btnSound" aria-label="소리 켜기 (V)" title="소리 켜기/끄기 (V)" aria-pressed="false"><b aria-hidden="true">🔈</b><span>소리 끔</span></button>
+      <button type="button" id="btnMenu" aria-label="설정">☰</button>
+    </div>
+  </header>
+
+  <!-- 상호작용 안내 -->
+  <div id="hoverTip" hidden aria-hidden="true"></div>
+  <div id="roomBanner" aria-hidden="true"><small>헤일번 시계탑 연구소</small><b></b></div>
+  <div id="prompt" hidden><kbd>F</kbd><span></span><em class="more" hidden><kbd>Q</kbd> 다른 물건</em></div>
+
+  <!-- 휴대폰 조작 -->
+  <div id="touch" hidden>
+    <div class="pad">
+      <button type="button" data-dir="up" aria-label="위로">▲</button>
+      <button type="button" data-dir="left" aria-label="왼쪽으로">◀</button>
+      <button type="button" data-dir="right" aria-label="오른쪽으로">▶</button>
+      <button type="button" data-dir="down" aria-label="아래로">▼</button>
+    </div>
+    <button type="button" class="act" id="btnAct" aria-label="살펴보기">F</button>
+    <button type="button" class="next" id="btnNext" aria-label="같은 자리의 다른 물건 고르기" hidden>다른<br>물건</button>
+  </div>
+
+  <!-- 대화창(작은 대화·장면 공용) -->
+  <section id="scene" hidden aria-live="polite">
+    <div class="scene-bg"></div>
+    <img class="scene-char" alt="">
+    <div class="dlg">
+      <img class="dlg-face" alt="">
+      <div class="dlg-name"></div>
+      <p class="dlg-text"></p>
+      <div class="dlg-choices"></div>
+      <p class="kbd-hint scene-hint" id="sceneKbdHint" hidden>방향키: 버튼 이동 · F: 선택</p>
+      <div class="dlg-btns">
+        <button type="button" class="dlg-skip">건너뛰기</button>
+        <button type="button" class="dlg-next">다음 ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 팝업 -->
+  <section id="popup" hidden role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+    <div class="pop-card">
+      <div class="pop-head"><h2 id="popupTitle"></h2><button type="button" class="pop-close" aria-label="닫기 (Esc)">✕</button></div>
+      <div class="pop-body"></div>
+    </div>
+  </section>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- 타이틀 -->
+  <section id="title">
+    <canvas id="rain" aria-hidden="true"></canvas>
+    <div class="title-card">
+      <p class="kick">경사하강법 방탈출 · 1부 + 2부</p>
+      <h1>그레이 박사의<br>마지막 밤</h1>
+      <p class="sub">박사의 노트 여덟 장을 풀고, 멈춘 시계탑을 다시 움직여라</p>
+      <div class="title-btns">
+        <button type="button" id="btnStart" class="primary">처음부터</button>
+        <button type="button" id="btnContinue" hidden>이어서 하기</button>
+      </div>
+      <p class="keys">방향키·WASD 걷기 · F 살펴보기 · Q 겹친 물건 바꾸기 · I 가방 · Esc 닫기 · 화면을 눌러서도 걸을 수 있어요</p>
+      <p class="keys touch-keys">왼쪽 아래 화살표로 걷기 · F 버튼으로 살펴보기 · 물건을 눌러도 다가가요</p>
+      <p class="save-note" id="saveNote"></p>
+    </div>
+  </section>
+
+  <div id="loading">불러오는 중…</div>
+</div>
+
+<script src="js/assets.js"></script>
+<script src="js/art-bounds.js"></script>
+<script src="js/small-sprites.js"></script>
+<script src="js/window-glass.js"></script>
+<script src="js/window-rain.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/foot-dust.js"></script>
+<script src="js/drip.js"></script>
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/character-motion.js"></script>
+<script src="js/lantern-frames.js"></script>
+<script src="js/walk-align.js"></script>
+<script src="js/ambient-motion.js"></script>
+<script src="js/world.js"></script>
+<script src="js/keyboard.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/exploration.js"></script>
+<script src="js/missions2.js"></script>
+<script src="js/missions3.js"></script>
+<script src="js/collectibles.js"></script>
+<script src="js/main.js"></script>
+<script src="js/rain.js"></script>
+</body>
+</html>

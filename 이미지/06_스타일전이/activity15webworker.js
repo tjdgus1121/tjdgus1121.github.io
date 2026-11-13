@@ -1,219 +1,97 @@
-// activity15webworker.js
+// activity15webworker.js — 빠른 스타일 변환(화풍마다 미리 학습된 신경망) 추론 워커
+// 메인 화면이 멈추지 않도록 모델 다운로드·추론을 여기서 한다.
 const ONNX_RUNTIME_VERSION = '1.26.0';
 const ONNX_RUNTIME_BASE = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ONNX_RUNTIME_VERSION}/dist/`;
 importScripts(`${ONNX_RUNTIME_BASE}ort.min.js`);
 
-// ONNX Runtime 설정
 ort.env.wasm.wasmPaths = ONNX_RUNTIME_BASE;
-ort.env.wasm.numThreads = 1;
+ort.env.wasm.numThreads = 1;   // GitHub Pages는 교차 출처 격리가 아니라 다중 스레드를 못 씀
 
-let session = null;
+// 모델 주소 → 세션 Promise. 한 번 받은 화풍은 다시 받지 않고, 받는 중에 변환을 누르면 그 Promise를 기다린다.
+const sessions = new Map();
 
-// 모델 로드 함수
-async function loadModel(modelPath) {
+async function fetchWithProgress(url, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`모델 파일을 받지 못했습니다 (HTTP ${res.status})`);
+  const total = Number(res.headers.get('Content-Length')) || 0;
+  if (!res.body || !total) return new Uint8Array(await res.arrayBuffer());
+  const reader = res.body.getReader();
+  const chunks = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    onProgress(Math.min(99, Math.round(got / total * 100)));
+  }
+  const bytes = new Uint8Array(got);
+  let at = 0;
+  for (const c of chunks) { bytes.set(c, at); at += c.length; }
+  return bytes;
+}
+
+function getSession(url) {
+  if (!sessions.has(url)) {
+    const p = (async () => {
+      self.postMessage({ type: 'model_progress', url, percent: 0 });
+      const bytes = await fetchWithProgress(url, percent => self.postMessage({ type: 'model_progress', url, percent }));
+      const session = await ort.InferenceSession.create(bytes, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+      self.postMessage({ type: 'model_ready', url });
+      return session;
+    })();
+    // 실패한 화풍은 기록에서 지워 다음에 다시 시도할 수 있게 한다
+    p.catch(() => sessions.delete(url));
+    sessions.set(url, p);
+  }
+  return sessions.get(url);
+}
+
+// RGBA 바이트 → [1, 3, 높이, 너비] float32 (0~255 그대로. 이 모델들은 0~255 값을 받는다)
+function toTensorData(rgba, width, height) {
+  const n = width * height;
+  const out = new Float32Array(3 * n);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    out[i] = rgba[p];
+    out[i + n] = rgba[p + 1];
+    out[i + 2 * n] = rgba[p + 2];
+  }
+  return out;
+}
+
+// [1, 3, 높이, 너비] 출력 → RGBA 바이트. 출력은 0~255 범위의 실수라 반올림하고 0~255로 자른다.
+function toRGBA(data, width, height) {
+  const n = width * height;
+  const out = new Uint8ClampedArray(n * 4);   // Uint8ClampedArray가 0~255 자르기와 반올림을 해 준다
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    out[p] = data[i];
+    out[p + 1] = data[i + n];
+    out[p + 2] = data[i + 2 * n];
+    out[p + 3] = 255;
+  }
+  return out;
+}
+
+async function run({ id, url, width, height, pixels }) {
+  const session = await getSession(url);
+  self.postMessage({ type: 'running', id });
+  const t0 = performance.now();
+  const input = new ort.Tensor('float32', toTensorData(new Uint8ClampedArray(pixels), width, height), [1, 3, height, width]);
+  const results = await session.run({ [session.inputNames[0]]: input });
+  const output = results[session.outputNames[0]];
+  const [, c, h, w] = output.dims;
+  if (c !== 3) throw new Error(`예상과 다른 출력 형태입니다: ${output.dims.join('×')}`);
+  const rgba = toRGBA(output.data, w, h);
+  const ms = performance.now() - t0;
+  self.postMessage({ type: 'done', id, width: w, height: h, pixels: rgba.buffer, ms }, [rgba.buffer]);
+}
+
+self.onmessage = async (e) => {
+  const msg = e.data;
   try {
-    self.postMessage({ type: 'status', message: `모델 로딩 중: ${modelPath}`, color: 'blue' });
-    
-    const sessionOptions = {
-      executionProviders: ['wasm'],
-      graphOptimizationLevel: 'basic'
-    };
-    
-    session = await ort.InferenceSession.create(modelPath, sessionOptions);
-    self.postMessage({ type: 'status', message: '모델 로딩 완료!', color: 'green' });
-    self.postMessage({ type: 'model_loaded' });
+    if (msg.type === 'preload') await getSession(msg.url);
+    else if (msg.type === 'run') await run(msg);
   } catch (error) {
-    console.error('Model loading error:', error);
-    self.postMessage({ type: 'status', message: '모델 로딩 실패: ' + error.message, color: 'red' });
-    self.postMessage({ type: 'error', error: error.message });
-  }
-}
-
-// 이미지 데이터 정규화 함수 (수정된 버전)
-async function normalizeImageData(imageData, width, height) {
-  const inputData = new Float32Array(1 * 3 * height * width);
-  const totalPixels = height * width;
-  
-  // 메모리 효율성을 위해 청크 크기 조정
-  const chunkSize = Math.min(10000, Math.max(1000, Math.floor(totalPixels / 50)));
-  
-  for (let i = 0; i < totalPixels; i += chunkSize) {
-    const endIndex = Math.min(i + chunkSize, totalPixels);
-    
-    for (let j = i; j < endIndex; j++) {
-      const pixelIndex = j * 4;
-      
-      // RGB 값을 정확히 추출하고 정규화 (0-1 범위)
-      const r = imageData[pixelIndex] / 255.0;
-      const g = imageData[pixelIndex + 1] / 255.0;
-      const b = imageData[pixelIndex + 2] / 255.0;
-      
-      // 채널별로 올바른 인덱스에 저장 (CHW 형식)
-      inputData[j] = r;                               // R 채널
-      inputData[j + totalPixels] = g;                 // G 채널  
-      inputData[j + 2 * totalPixels] = b;             // B 채널
-    }
-    
-    // 진행도 업데이트 (전처리: 0-20%)
-    const progress = Math.floor((endIndex / totalPixels) * 20);
-    self.postMessage({ type: 'progress', progress });
-    
-    // 주기적으로 메인 스레드에 제어권 양보
-    if (i % (chunkSize * 3) === 0) {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    }
-  }
-  
-  return inputData;
-}
-
-// 출력 데이터 후처리 함수 (수정된 버전)
-async function denormalizeOutputData(outputData, width, height) {
-  const totalPixels = height * width;
-  const outputImageData = new Uint8ClampedArray(totalPixels * 4);
-  
-  const chunkSize = Math.min(10000, Math.max(1000, Math.floor(totalPixels / 50)));
-  
-  for (let i = 0; i < totalPixels; i += chunkSize) {
-    const endIndex = Math.min(i + chunkSize, totalPixels);
-    
-    for (let j = i; j < endIndex; j++) {
-      const pixelIndex = j * 4;
-      
-      // CHW 형식에서 RGB 값 추출
-      const r = outputData[j];                        // R 채널
-      const g = outputData[j + totalPixels];          // G 채널
-      const b = outputData[j + 2 * totalPixels];      // B 채널
-      
-      // 값 범위 검증 및 정규화
-      // 일부 모델은 0-1 범위, 일부는 0-255 범위를 출력할 수 있음
-      const normalizeValue = (val) => {
-        if (val > 1.0) {
-          // 이미 0-255 범위인 경우
-          return Math.min(255, Math.max(0, Math.round(val)));
-        } else {
-          // 0-1 범위인 경우
-          return Math.min(255, Math.max(0, Math.round(val * 255)));
-        }
-      };
-      
-      outputImageData[pixelIndex] = normalizeValue(r);     // R
-      outputImageData[pixelIndex + 1] = normalizeValue(g); // G
-      outputImageData[pixelIndex + 2] = normalizeValue(b); // B
-      outputImageData[pixelIndex + 3] = 255;               // A (불투명)
-    }
-    
-    // 진행도 업데이트 (후처리: 70-100%)
-    const progress = 70 + Math.floor((endIndex / totalPixels) * 30);
-    self.postMessage({ type: 'progress', progress: Math.min(100, progress) });
-    
-    // 주기적으로 메인 스레드에 제어권 양보
-    if (i % (chunkSize * 3) === 0) {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    }
-  }
-  
-  return outputImageData;
-}
-
-// 스타일 전송 처리 함수 (수정된 버전)
-async function processStyleTransfer(imageData, width, height) {
-  try {
-    if (!session) {
-      throw new Error('모델이 로드되지 않았습니다');
-    }
-
-    // 입력 데이터 검증
-    if (!imageData || imageData.length !== width * height * 4) {
-      throw new Error('이미지 데이터가 올바르지 않습니다');
-    }
-
-    self.postMessage({ type: 'status', message: '이미지 데이터 전처리 중...', color: 'blue' });
-    self.postMessage({ type: 'progress', progress: 0 });
-    
-    // 전처리: ImageData를 ONNX 입력 텐서로 변환
-    const inputData = await normalizeImageData(imageData, width, height);
-    
-    self.postMessage({ type: 'status', message: '텐서 생성 중...', color: 'blue' });
-    self.postMessage({ type: 'progress', progress: 25 });
-    
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // ONNX 텐서 생성 (NCHW 형식: [batch, channels, height, width])
-    const inputTensor = new ort.Tensor('float32', inputData, [1, 3, height, width]);
-    
-    self.postMessage({ type: 'status', message: 'AI 모델 추론 중... (시간이 걸릴 수 있습니다)', color: 'blue' });
-    self.postMessage({ type: 'progress', progress: 30 });
-
-    // 모델 실행
-    const feeds = {};
-    const inputNames = session.inputNames;
-    feeds[inputNames[0]] = inputTensor;
-    
-    const results = await session.run(feeds);
-    
-    // 출력 텐서 가져오기
-    const outputNames = session.outputNames;
-    const outputTensor = results[outputNames[0]];
-    
-    if (!outputTensor) {
-      throw new Error('모델 출력을 찾을 수 없습니다');
-    }
-    
-    // 출력 텐서 형태 검증
-    const outputShape = outputTensor.dims;
-    console.log('Output shape:', outputShape);
-    
-    // 출력이 NCHW 형식인지 확인
-    if (outputShape.length !== 4 || outputShape[0] !== 1 || outputShape[1] !== 3) {
-      throw new Error(`예상치 못한 출력 형태: ${outputShape}`);
-    }
-    
-    const outputHeight = outputShape[2];
-    const outputWidth = outputShape[3];
-    
-    self.postMessage({ type: 'progress', progress: 70 });
-    self.postMessage({ type: 'status', message: '결과 이미지 후처리 중...', color: 'blue' });
-
-    // 후처리: 출력 텐서를 ImageData로 변환
-    const outputImageData = await denormalizeOutputData(outputTensor.data, outputWidth, outputHeight);
-
-    // 결과 전송
-    self.postMessage({ 
-      type: 'style_transfer_complete', 
-      imageData: outputImageData, 
-      width: outputWidth, 
-      height: outputHeight 
-    });
-    
-    self.postMessage({ type: 'status', message: '스타일 전송 완료!', color: 'green' });
-    self.postMessage({ type: 'progress', progress: 100 });
-
-  } catch (error) {
-    console.error('Style transfer error:', error);
-    self.postMessage({ type: 'status', message: '스타일 전송 실패: ' + error.message, color: 'red' });
-    self.postMessage({ type: 'error', error: error.message });
-  }
-}
-
-// 메시지 리스너
-self.onmessage = async function(e) {
-  const { type, data } = e.data;
-  
-  switch (type) {
-    case 'load_model':
-      await loadModel(data.modelPath);
-      break;
-      
-    case 'process_style_transfer':
-      await processStyleTransfer(data.imageData, data.width, data.height);
-      break;
-      
-    case 'ping':
-      self.postMessage({ type: 'pong' });
-      break;
-      
-    default:
-      console.warn('Unknown message type:', type);
+    self.postMessage({ type: 'error', id: msg.id ?? null, url: msg.url, message: error && error.message ? error.message : String(error) });
   }
 };

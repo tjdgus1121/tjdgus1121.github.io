@@ -14,12 +14,19 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebar.classList.toggle('open', isOpen);
     toggle.setAttribute('aria-expanded', String(isOpen));
     toggle.setAttribute('aria-label', isOpen ? '메뉴 닫기' : '메뉴 열기');
+    sidebar.inert = !isOpen;
+    sidebar.setAttribute('aria-hidden', String(!isOpen));
   }
 
   function isSamePage(link) {
     try {
       const linkUrl = new URL(link.href, window.location.href);
       const currentUrl = new URL(window.location.href);
+      // activity3 부속 활동(탐구·색 섞기·색감 게임·색 맞추기·퍼스널컬러)에서는 입구인 RGB 데이터 탐구 메뉴를 강조한다.
+      currentUrl.pathname = currentUrl.pathname.replace(
+        /activity3_(?:rgb_explore|color_mix_relay|color_sense|color_sprint|rgb_sensitivity|rgb_guess|Rgb_personal)\.html$/,
+        'activity3_rgb_hub.html'
+      );
 
       return (
         decodeURIComponent(linkUrl.pathname).replace(/\/+$/, '') ===
@@ -52,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   toggle.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
+    // 실제 button은 브라우저가 click을 발생시키므로 중복으로 토글하지 않는다.
+    if (toggle.tagName !== 'BUTTON' && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault();
       setSidebarOpen(!sidebar.classList.contains('open'));
     }

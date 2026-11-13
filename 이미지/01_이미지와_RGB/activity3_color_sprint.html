@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>60초 색감 테스트 | 이미지와 RGB</title>
+<link rel="icon" href="../../favicon.ico">
+<style>
+  :root {
+    --ink: #2f3240;
+    --muted: #666b7a;
+    --bg: #f3f3f1;
+    --surface: #ffffff;
+    --line: #dddcd8;
+    --accent: #3f5a8a;
+    --ok: #2f7a4f;
+    --bad: #b3372f;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 40px; }
+  main { max-width: 600px; margin: 0 auto; }
+
+  .top-nav { display: flex; gap: 8px 16px; flex-wrap: wrap; font-size: 15px; }
+  .top-nav a { color: var(--accent); display: inline-flex; align-items: center; min-height: 44px; }
+  h1 { font-size: clamp(24px, 6vw, 34px); margin: 18px 0 6px; }
+  .lead { margin: 0 0 16px; line-height: 1.6; color: var(--muted); }
+
+  /* 상태 표시줄 */
+  .status {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; margin-bottom: 8px; position: relative;
+  }
+  .stat { text-align: center; }
+  .stat-label { display: block; font-size: 13px; color: var(--muted); }
+  .stat-value { display: block; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-value.is-low { color: var(--bad); }
+  .penalty {
+    position: absolute; right: 14px; top: -6px; font-weight: 700; color: var(--bad);
+    opacity: 0; transition: opacity .2s, transform .5s; pointer-events: none;
+  }
+  .penalty.show { opacity: 1; transform: translateY(-10px); }
+  .timebar { height: 6px; background: #e4e3df; border-radius: 3px; overflow: hidden; margin-bottom: 12px; }
+  .timebar-fill { height: 100%; width: 100%; background: var(--accent); transform-origin: left; }
+
+  /* 판 */
+  .board-wrap { position: relative; width: min(100%, 520px); margin: 0 auto; aspect-ratio: 1; }
+  .board {
+    width: 100%; height: 100%; display: grid; gap: 6px;
+    padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  }
+  .board.is-dense { gap: 4px; }
+  .tile {
+    border: 0; border-radius: 8px; padding: 0; margin: 0; cursor: pointer;
+    font: inherit; font-weight: 700; font-size: clamp(14px, 4vw, 22px);
+    display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0;
+  }
+  .tile:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .tile.is-wrong { animation: shake .3s; }
+  .tile.is-answer { outline: 4px solid var(--ink); outline-offset: -4px; }
+  .board.is-over .tile { cursor: default; }
+  @keyframes shake {
+    25% { transform: translateX(-4px); } 75% { transform: translateX(4px); }
+  }
+
+  /* 시작 안내 (판 위) */
+  .cover {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 24px; text-align: center; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 14px;
+  }
+  .cover[hidden] { display: none; }
+  .cover p { margin: 0; line-height: 1.7; }
+  .rules { text-align: left; margin: 0; padding-left: 20px; line-height: 1.8; }
+
+  .btn {
+    min-height: 48px; padding: 0 26px; border-radius: 10px; border: 1px solid var(--accent);
+    background: var(--accent); color: #fff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer;
+  }
+  .btn.secondary { background: var(--surface); color: var(--accent); }
+  .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  /* 결과 */
+  .result {
+    margin-top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px;
+  }
+  .result[hidden] { display: none; }
+  .result h2 { margin: 0 0 6px; font-size: 22px; }
+  .result-score { font-size: 40px; font-weight: 800; margin: 0; }
+  .result-note { margin: 4px 0 14px; color: var(--muted); }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .swatch { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .swatch-color { height: 64px; }
+  .swatch-text { padding: 8px 10px; font-size: 14px; line-height: 1.5; }
+  .swatch-text code { font-size: 15px; font-weight: 700; }
+  .diff-line { margin: 0 0 16px; line-height: 1.6; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .actions a { color: var(--accent); font-weight: 700; padding: 12px 4px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile.is-wrong { animation: none; }
+    .penalty { transition: none; }
+  }
+</style>
+<link rel="stylesheet" href="color-games.css">
+<link rel="stylesheet" href="../../nav.css">
+<script src="../../nav.js" defer></script>
+</head>
+<body class="color-lab-page sprint-game">
+<button type="button" class="sidebar-toggle" aria-label="메뉴 열기" aria-controls="imageSidebar" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<aside class="sidebar" id="imageSidebar" aria-hidden="true">
+    <nav aria-label="이미지 수업 활동">
+      <div class="nav-sec" data-nav-group="start">시작</div>
+      <a href="../indeximage.html" data-nav-group="start"><span>홈</span></a>
+      <a href="activity1_intro.html"  data-nav-group="start"><span>행렬 시각화</span></a>
+      <div class="nav-sec" data-nav-group="color">색과 이미지</div>
+      <a href="activity2_matrix_extract.html" data-nav-group="color"><span>RGB 행렬 알아보기</span></a>
+      <a href="activity3_rgb_hub.html" data-nav-group="color"><span>RGB 데이터 탐구</span></a>
+      <a href="activity4_rgb_channels2.html" data-nav-group="color"><span>RGB·RGBA 행렬 추출기</span></a>
+      <a href="rgb_filter/index.html" data-nav-group="color"><span>사진 필터와 RGB</span></a>
+      <a href="activity4_rgb_excel.html" data-nav-group="color"><span>RGB 웹 엑셀</span></a>
+      <a href="activity4_rgb_channels.html" data-nav-group="color"><span>RGB 채널 탐구</span></a>
+      <a href="../02_행렬과_이미지변환/activity5_image_merge.html" data-nav-group="color"><span>이미지 합성</span></a>
+      <a href="../02_행렬과_이미지변환/activity6_composite_explore.html" data-nav-group="color"><span>합성 원리</span></a>
+      <div class="nav-sec" data-nav-group="matrix">행렬 연산</div>
+      <a href="../02_행렬과_이미지변환/activity7_matrix_product.html" data-nav-group="matrix"><span>행렬 곱셈</span></a>
+      <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html" data-nav-group="matrix"><span>회전 행렬</span></a>
+      <div class="nav-sec" data-nav-group="data">데이터와 인식</div>
+      <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><span>손글씨 인식</span></a>
+      <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><span>숫자 판별 단계</span></a>
+      <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><span>MNIST 데이터 탐구</span></a>
+      <a href="../03_숫자인식과_유사도/activity11_similarity_check.html" data-nav-group="data"><span>해밍 거리</span></a>
+      <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
+      <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><span>이미지 업스케일러</span></a>
+      <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><span>AI 업스케일러</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo.html" data-nav-group="ai"><span>YOLO 객체 탐지</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html" data-nav-group="ai"><span>YOLO 직접 학습시키기</span></a>
+      <a href="../06_스타일전이/activity15_styletransper.html" data-nav-group="ai"><span>신경망 스타일 변환</span></a>
+      <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><span>임의(Arbitrary)신경망 변환</span></a>
+      <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
+      <a href="../07_CNN과_합성곱/activity17_kernel.html" data-nav-group="cnn"><span>이미지 커널 필터 체험</span></a>
+      <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><span>색 군집화</span></a>
+    </nav>
+  </aside>
+<main>
+  <nav class="top-nav" aria-label="이동">
+    <a href="activity3_color_sense.html">← 게임 선택</a>
+    <a href="../indeximage.html">이미지 수업</a>
+  </nav>
+
+  <div class="game-heading">
+    <div><p class="game-eyebrow">01 / 60초 도전</p><h1>60초 색감 테스트</h1></div>
+    <span class="game-emblem" aria-hidden="true"><svg viewBox="0 0 72 72" fill="none"><rect x="9" y="13" width="54" height="54" rx="19" fill="#ebc6b0"/><rect x="9" y="9" width="54" height="54" rx="19" fill="#ffddc7"/><path d="M26 31v5m20-5v5m-16 9q6 6 12 0" stroke="#a65b40" stroke-width="3" stroke-linecap="round"/><circle cx="57" cy="15" r="12" fill="#fffaf4" stroke="#e9b99c" stroke-width="1.5"/><path d="M57 8v7l4 2" stroke="#ad6648" stroke-width="2" stroke-linecap="round"/></svg></span>
+  </div>
+  <p class="lead">칸들 중 색이 <strong>딱 하나</strong> 다릅니다. 60초 동안 몇 개나 찾을 수 있을까요?</p>
+
+  <section aria-label="게임 상태">
+    <div class="status">
+      <div class="stat"><span class="stat-label">단계</span><span class="stat-value" id="stageValue">1</span></div>
+      <div class="stat stat-score"><span class="stat-label">점수</span><span class="stat-value" id="scoreValue">0</span></div>
+      <div class="stat stat-time"><span class="stat-label">남은 시간</span><span class="stat-value" id="timeValue">60.0</span></div>
+      <span class="penalty" id="penalty" aria-hidden="true">−3초</span>
+    </div>
+    <div class="timebar" aria-hidden="true"><div class="timebar-fill" id="timebarFill"></div></div>
+  </section>
+
+  <div class="board-wrap">
+    <div class="board" id="board" role="group" aria-label="색 칸 판 (방향키로 이동)"></div>
+    <div class="cover" id="cover">
+      <div class="cover-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <h2 class="cover-title">다른 색 한 칸 찾기</h2>
+      <ul class="rules">
+        <li>다른 색 칸을 누르면 다음 단계로 넘어가요.</li>
+        <li>단계가 오를수록 칸은 많아지고, 색 차이는 작아져요.</li>
+        <li>틀리면 남은 시간이 <strong>3초</strong> 줄어요.</li>
+      </ul>
+      <button type="button" class="btn" id="startBtn">60초 도전 시작 <span aria-hidden="true">→</span></button>
+    </div>
+  </div>
+
+  <p class="sr-only" id="liveMsg" aria-live="polite"></p>
+
+  <section class="result" id="result" hidden aria-labelledby="resultTitle">
+    <div class="result-summary">
+      <div><p class="result-eyebrow">이번 도전 기록</p><h2 id="resultTitle">시간 끝!</h2></div>
+      <p class="result-score"><span id="finalScore">0</span><small> 점</small></p>
+    </div>
+    <p class="result-note" id="resultNote"></p>
+
+    <p style="margin:0 0 8px;font-weight:700">마지막 문제의 두 색</p>
+    <div class="compare">
+      <div class="swatch">
+        <div class="swatch-color" id="baseSwatch"></div>
+        <div class="swatch-text">나머지 칸<br><code id="baseRgb"></code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" id="oddSwatch"></div>
+        <div class="swatch-text">다른 칸 (판에 테두리 표시)<br><code id="oddRgb"></code></div>
+      </div>
+    </div>
+    <p class="diff-line" id="diffLine"></p>
+
+    <div class="actions">
+      <button type="button" class="btn" id="retryBtn">다시 도전 <span aria-hidden="true">→</span></button>
+      <a href="activity3_color_sense.html">다른 게임 고르기</a>
+      <a href="activity3_rgb_sensitivity.html">다음: R·G·B 중 어디에 예민할까?</a>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const GAME_MS = 60000;
+  const PENALTY_MS = 3000;
+
+  // ---------- 상태 (한곳에서 관리) ----------
+  const state = {
+    phase: 'ready',       // 'ready' | 'playing' | 'over'
+    stage: 1,
+    score: 0,
+    wrongCount: 0,
+    endAt: 0,             // performance.now() 기준 종료 시각
+    size: 2,
+    answerIndex: 0,
+    baseRgb: [0, 0, 0],
+    oddRgb: [0, 0, 0],
+    focusIndex: 0,
+    rafId: 0,
+    bestScore: 0          // 이번 접속 동안의 최고 점수
+  };
+
+  const el = {
+    board: document.getElementById('board'),
+    cover: document.getElementById('cover'),
+    startBtn: document.getElementById('startBtn'),
+    stage: document.getElementById('stageValue'),
+    score: document.getElementById('scoreValue'),
+    time: document.getElementById('timeValue'),
+    timebar: document.getElementById('timebarFill'),
+    penalty: document.getElementById('penalty'),
+    live: document.getElementById('liveMsg'),
+    result: document.getElementById('result'),
+    finalScore: document.getElementById('finalScore'),
+    resultNote: document.getElementById('resultNote'),
+    baseSwatch: document.getElementById('baseSwatch'),
+    oddSwatch: document.getElementById('oddSwatch'),
+    baseRgb: document.getElementById('baseRgb'),
+    oddRgb: document.getElementById('oddRgb'),
+    diffLine: document.getElementById('diffLine'),
+    retryBtn: document.getElementById('retryBtn')
+  };
+
+  // ---------- 난이도 규칙 ----------
+  function gridSizeFor(stage) {
+    if (stage <= 1) return 2;
+    if (stage <= 3) return 3;
+    if (stage <= 6) return 4;
+    if (stage <= 10) return 5;
+    if (stage <= 15) return 6;
+    if (stage <= 21) return 7;
+    return 8;
+  }
+
+  // 밝기(HSL의 L, %) 차이. 단계마다 줄어들고 1.2%에서 멈춘다.
+  function lightnessGapFor(stage) {
+    return Math.max(1.2, 24 * Math.pow(0.85, stage - 1));
+  }
+
+  // ---------- 색 계산 ----------
+  const rand = (min, max) => min + Math.random() * (max - min);
+
+  function hslToRgb(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [f(0), f(8), f(4)].map(v => Math.round(v * 255));
+  }
+
+  const rgbText = c => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+
+  function makeColorPair(stage) {
+    const gap = lightnessGapFor(stage);
+    for (let tries = 0; tries < 20; tries++) {
+      const h = rand(0, 360), s = rand(35, 75), l = rand(38, 66);
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      const base = hslToRgb(h, s, l);
+      const odd = hslToRgb(h, s, l + dir * gap);
+      // 반올림 때문에 두 색이 같아지는 경우를 피한다.
+      if (base.some((v, i) => v !== odd[i])) return { base, odd };
+    }
+    return { base: [120, 120, 120], odd: [126, 126, 126] };
+  }
+
+  // ---------- 판 그리기 ----------
+  function buildBoard() {
+    const n = gridSizeFor(state.stage);
+    const { base, odd } = makeColorPair(state.stage);
+    state.size = n;
+    state.baseRgb = base;
+    state.oddRgb = odd;
+    state.answerIndex = Math.floor(Math.random() * n * n);
+    state.focusIndex = Math.min(state.focusIndex, n * n - 1);
+
+    el.board.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+    el.board.style.gridTemplateRows = `repeat(${n}, minmax(0, 1fr))`;
+    el.board.classList.toggle('is-dense', n >= 6);
+
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < n * n; i++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tile';
+      b.dataset.index = String(i);
+      b.tabIndex = i === state.focusIndex ? 0 : -1;
+      b.setAttribute('aria-label', `${Math.floor(i / n) + 1}행 ${i % n + 1}열`);
+      b.style.background = rgbText(i === state.answerIndex ? odd : base);
+      frag.appendChild(b);
+    }
+    el.board.replaceChildren(frag);
+  }
+
+  function tileAt(i) { return el.board.children[i]; }
+
+  // ---------- 화면 갱신 ----------
+  function renderStats() {
+    el.stage.textContent = String(state.stage);
+    el.score.textContent = String(state.score);
+  }
+
+  function renderTime(now) {
+    const left = Math.max(0, state.endAt - now);
+    el.time.textContent = (left / 1000).toFixed(1);
+    el.time.classList.toggle('is-low', left <= 10000);
+    el.timebar.style.transform = `scaleX(${left / GAME_MS})`;
+    return left;
+  }
+
+  function flashPenalty() {
+    el.penalty.classList.remove('show');
+    void el.penalty.offsetWidth;
+    el.penalty.classList.add('show');
+    setTimeout(() => el.penalty.classList.remove('show'), 600);
+  }
+
+  // ---------- 게임 흐름 ----------
+  function tick(now) {
+    if (state.phase !== 'playing') return;
+    if (renderTime(now) <= 0) { finishGame(); return; }
+    state.rafId = requestAnimationFrame(tick);
+  }
+
+  function startGame() {
+    Object.assign(state, { phase: 'playing', stage: 1, score: 0, wrongCount: 0, focusIndex: 0 });
+    state.endAt = performance.now() + GAME_MS;
+    el.cover.hidden = true;
+    el.result.hidden = true;
+    el.board.classList.remove('is-over');
+    renderStats();
+    buildBoard();
+    tileAt(0).focus();
+    cancelAnimationFrame(state.rafId);
+    state.rafId = requestAnimationFrame(tick);
+  }
+
+  function handlePick(index) {
+    if (state.phase !== 'playing') return;
+    if (index === state.answerIndex) {
+      state.score += 1;
+      state.stage += 1;
+      state.focusIndex = 0;
+      renderStats();
+      buildBoard();
+      tileAt(0).focus();
+      el.live.textContent = `정답! ${state.stage}단계`;
+    } else {
+      state.wrongCount += 1;
+      state.endAt -= PENALTY_MS;
+      const t = tileAt(index);
+      t.textContent = '✕';
+      t.style.color = textColorFor(state.baseRgb);
+      t.classList.remove('is-wrong');
+      void t.offsetWidth;
+      t.classList.add('is-wrong');
+      flashPenalty();
+      el.live.textContent = '아니에요. 3초 감점';
+      renderTime(performance.now());
+    }
+  }
+
+  function textColorFor(rgb) {
+    const y = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
+    return y > 140 ? '#1d1f27' : '#ffffff';
+  }
+
+  function finishGame() {
+    state.phase = 'over';
+    cancelAnimationFrame(state.rafId);
+    renderTime(state.endAt);
+    el.board.classList.add('is-over');
+
+    const answer = tileAt(state.answerIndex);
+    answer.classList.add('is-answer');
+    answer.textContent = '여기';
+    answer.style.color = textColorFor(state.oddRgb);
+    answer.style.fontSize = state.size >= 6 ? '12px' : '';
+
+    const result = {
+      score: state.score,
+      reachedStage: state.stage,
+      wrongCount: state.wrongCount,
+      playedAt: Date.now()
+    };
+    showResult(result);
+    // 랭킹 연동 자리: 이후 Firebase 작업에서 여기서 result를 보낸다.
+  }
+
+  function showResult(result) {
+    const isBest = result.score > state.bestScore;
+    state.bestScore = Math.max(state.bestScore, result.score);
+
+    el.finalScore.textContent = String(result.score);
+    el.resultNote.textContent =
+      `${result.reachedStage}단계에서 시간이 끝났어요. 틀린 횟수 ${result.wrongCount}번 · ` +
+      (isBest ? '이번 접속 최고 기록!' : `이번 접속 최고 ${state.bestScore}점`);
+
+    const b = state.baseRgb, o = state.oddRgb;
+    el.baseSwatch.style.background = rgbText(b);
+    el.oddSwatch.style.background = rgbText(o);
+    el.baseRgb.textContent = rgbText(b);
+    el.oddRgb.textContent = rgbText(o);
+    const d = o.map((v, i) => v - b[i]);
+    const sign = v => (v > 0 ? `+${v}` : String(v));
+    el.diffLine.textContent =
+      `차이: R ${sign(d[0])}, G ${sign(d[1])}, B ${sign(d[2])} — 0~255 중 이만큼만 달라도 구별이 어려워져요.`;
+
+    el.result.hidden = false;
+    el.live.textContent = `시간 끝. ${result.score}점`;
+    el.retryBtn.focus({ preventScroll: true });
+    el.result.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  // ---------- 입력 ----------
+  el.board.addEventListener('click', e => {
+    const t = e.target.closest('.tile');
+    if (t) handlePick(Number(t.dataset.index));
+  });
+
+  // 방향키로 칸 이동 (하나의 칸만 Tab 순서에 둔다)
+  el.board.addEventListener('keydown', e => {
+    const t = e.target.closest('.tile');
+    if (!t || state.phase !== 'playing') return;
+    const n = state.size;
+    let i = Number(t.dataset.index);
+    const moves = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -n, ArrowDown: n };
+    if (!(e.key in moves)) return;
+    e.preventDefault();
+    const next = i + moves[e.key];
+    if (next < 0 || next >= n * n) return;
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && Math.floor(next / n) !== Math.floor(i / n)) return;
+    t.tabIndex = -1;
+    const nt = tileAt(next);
+    nt.tabIndex = 0;
+    nt.focus();
+    state.focusIndex = next;
+  });
+
+  el.startBtn.addEventListener('click', startGame);
+  el.retryBtn.addEventListener('click', startGame);
+
+})();
+</script>
+</body>
+</html>

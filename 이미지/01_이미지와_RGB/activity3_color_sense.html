@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="다른 색 한 칸을 찾는 두 가지 게임. 60초 색감 도전과 R·G·B 비교 실험을 골라 즐겨 보세요.">
+<meta name="theme-color" content="#f2faf7">
+<title>색감 실험실 | 이미지와 RGB</title>
+<link rel="icon" href="../../favicon.ico">
+<style>
+  :root { color-scheme: light; font-family: "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif; color: #29464a; background: #f2faf7; font-synthesis: none; line-height: 1.6; letter-spacing: -.012em; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-width: 280px; }
+  a { color: inherit; }
+  .skip-link { position: absolute; top: -80px; left: 20px; z-index: 2; padding: 12px 18px; background: #223932; color: white; border-radius: 12px; }
+  .skip-link:focus { top: 12px; }
+  .site-header { max-width: 1120px; margin: auto; padding: 24px 32px 24px 80px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .brand { display: inline-flex; gap: 12px; align-items: center; font-size: 14px; font-weight: 700; letter-spacing: -.02em; text-decoration: none; min-height: 44px; }
+  .brand-mark { width: 27px; height: 27px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; transform: rotate(-8deg); }
+  .brand-mark i { border-radius: 4px; background: #d97a62; }
+  .brand-mark i:nth-child(2) { background: #8ca98f; }
+  .brand-mark i:nth-child(3) { background: #8aabe0; }
+  .brand-mark i:nth-child(4) { background: #d8c99a; }
+  .class-link { font-size: 13px; color: #567477; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 24px; background: #fff; border: 1px solid #dbeae4; }
+  .class-link:hover { color: #223932; }
+  main { max-width: 1120px; margin: auto; padding: 24px 32px 32px; }
+  .intro { position: relative; margin-bottom: 32px; padding: 12px 210px 8px 0; }
+  .intro-friends { position: absolute; width: 180px; height: 132px; right: 10px; top: 16px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 16px; padding: 5px 11px; border-radius: 20px; background: #e1f2eb; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: #32776c; }
+  .eyebrow::before { content: "✦"; }
+  h1 { font-size: clamp(30px, 4.8vw, 50px); line-height: 1.3; letter-spacing: -.04em; margin: 0 0 16px; font-weight: 750; word-break: keep-all; }
+  h1 span { color: #25877e; }
+  .lead { margin: 0; color: #69786e; font-size: 15px; line-height: 1.8; letter-spacing: -.015em; word-break: keep-all; }
+  .games { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .game-card { --card-accent: #a94e39; --card-soft: #fff0e7; --card-line: #edd9ca; display: flex; flex-direction: column; min-width: 0; padding: 12px; background: #fff; border: 1px solid #dbeae4; border-radius: 28px; text-decoration: none; box-shadow: 0 5px 0 #dfede6, 0 12px 24px #243d2d04; animation: arrive .85s cubic-bezier(.2,.7,.2,1) backwards; transition: transform .28s, box-shadow .28s, border-color .28s; }
+  .rgb-card { --card-accent: #4d6caa; --card-soft: #edf3ff; --card-line: #d7e2f5; }
+  .game-card:nth-child(1) { animation-delay: .08s; }
+  .game-card:nth-child(2) { animation-delay: .23s; }
+  .game-card:hover { transform: translateY(-5px); box-shadow: 0 7px 0 var(--card-line), 0 20px 36px #243d2d0a; border-color: var(--card-line); }
+  a:focus-visible { outline: 3px solid #305f49; outline-offset: 5px; border-radius: 8px; }
+  .game-card:focus-visible { border-radius: 28px; }
+  .preview { height: 224px; position: relative; overflow: hidden; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
+  .sprint-preview { background: #fff0e4; }
+  .rgb-preview { background: #ebf2ff; }
+  .preview-label { position: absolute; top: 17px; left: 17px; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; letter-spacing: .08em; font-weight: 600; color: #8a6053; }
+  .rgb-preview .preview-label { color: #62728e; }
+  .preview-label::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .preview-grid { display: grid; grid-template-columns: repeat(4, 1fr); width: 152px; gap: 5px; padding: 9px; border-radius: 16px; background: #fff; box-shadow: 0 12px 24px #9a63451c; transform: rotate(-7deg); }
+  .preview-grid i { display: block; aspect-ratio: 1; border-radius: 5px; background: #d88369; }
+  .preview-grid i:nth-child(7) { position: relative; background: #ffcfac; box-shadow: 0 0 0 2px white; }
+  .preview-grid i:nth-child(7)::before { content: ""; position: absolute; left: 9px; top: 10px; width: 3px; height: 4px; border-radius: 50%; background: #784635; box-shadow: 10px 0 #784635; }
+  .preview-grid i:nth-child(7)::after { content: ""; position: absolute; left: 12px; top: 16px; width: 7px; height: 4px; border-bottom: 2px solid #784635; border-radius: 0 0 8px 8px; }
+  .time-badge { position: absolute; top: 76px; left: calc(50% + 56px); width: 60px; height: 60px; display: flex; align-items: baseline; justify-content: center; padding-top: 16px; border: 4px solid #faeee7; border-radius: 50%; background: #fff; box-shadow: 0 5px 12px #9a634510; color: #a85b42; font-size: 23px; font-weight: 800; transform: rotate(6deg); }
+  .time-badge { font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
+  .time-badge small { font-size: 10px; margin-left: 2px; letter-spacing: 0; }
+  .sample-caption { position: absolute; right: 17px; bottom: 15px; font-size: 10px; color: #947b70; letter-spacing: .02em; }
+  .rgb-samples { display: flex; gap: 13px; transform: rotate(-5deg); padding-top: 17px; }
+  .rgb-sample { width: 70px; padding: 8px 8px 7px; background: #fff; border-radius: 12px; box-shadow: 0 12px 22px #5477a315; }
+  .rgb-sample:nth-child(2) { transform: translateY(-12px); }
+  .rgb-sample:nth-child(3) { transform: translateY(6px); }
+  .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+  .mini-grid i { aspect-ratio: 1; display: block; background: var(--base); border-radius: 3px; }
+  .mini-grid i:nth-child(5) { background: var(--tile); }
+  .rgb-sample b { display: block; text-align: center; font-size: 13px; margin-top: 8px; color: var(--label); }
+  .rgb-sample.red { --base: #b04040; --tile: #e04040; --label: #a94946; }
+  .rgb-sample.green { --base: #40b040; --tile: #40e040; --label: #477553; }
+  .rgb-sample.blue { --base: #4040b0; --tile: #4040e0; --label: #496eaa; }
+  .rgb-preview .sample-caption { color: #72839b; }
+  .card-copy { padding: 24px 20px 16px; flex: 1; display: flex; flex-direction: column; }
+  .card-overline { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .01em; color: var(--card-accent); margin: 0 0 12px; }
+  .card-overline span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px; background: var(--card-soft); }
+  h2 { margin: 0 0 12px; font-size: clamp(22px, 2.3vw, 26px); font-weight: 700; letter-spacing: -.025em; line-height: 1.45; }
+  .description { color: #62726a; font-size: 14px; font-weight: 400; line-height: 1.8; letter-spacing: -.015em; margin: 0; word-break: keep-all; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 24px; }
+  .tags span { padding: 6px 10px; border-radius: 20px; background: #f3f8f5; font-size: 11px; line-height: 1.4; letter-spacing: 0; color: #627b72; }
+  .card-bottom { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 14px; margin-top: auto; border-radius: 16px; background: var(--card-soft); color: var(--card-accent); font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+  .arrow { width: 31px; height: 31px; display: grid; place-items: center; background: #fff; border-radius: 50%; transition: transform .2s; }
+  .arrow svg { width: 16px; height: 16px; }
+  .game-card:hover .arrow { transform: translateX(3px); }
+  .footer-note { display: flex; gap: 7px; justify-content: center; align-items: center; margin: 24px 0 0; font-size: 11px; line-height: 1.8; text-align: center; color: #78847b; word-break: keep-all; }
+  .footer-note svg { width: 14px; height: 14px; flex-shrink: 0; }
+  @keyframes arrive { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 680px) {
+    .site-header { padding: 16px 24px 16px 64px; }
+    main { padding: 24px; }
+    .intro { margin-bottom: 26px; padding: 10px 0 0; }
+    .intro-friends { width: 90px; height: 66px; top: 0; right: -4px; }
+    .games { grid-template-columns: 1fr; gap: 20px; }
+    .preview { height: 200px; }
+    .card-copy { padding: 20px 16px 12px; }
+    .lead { font-size: 14px; }
+    .footer-note { margin-top: 22px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .game-card:hover, .game-card:hover .arrow { transform: none; }
+  }
+</style>
+<link rel="stylesheet" href="../../nav.css">
+<script src="../../nav.js" defer></script>
+</head>
+<body class="color-lab-page color-lab-home">
+<button type="button" class="sidebar-toggle" aria-label="메뉴 열기" aria-controls="imageSidebar" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<aside class="sidebar" id="imageSidebar" aria-hidden="true">
+    <nav aria-label="이미지 수업 활동">
+      <div class="nav-sec" data-nav-group="start">시작</div>
+      <a href="../indeximage.html" data-nav-group="start"><span>홈</span></a>
+      <a href="activity1_intro.html"  data-nav-group="start"><span>행렬 시각화</span></a>
+      <div class="nav-sec" data-nav-group="color">색과 이미지</div>
+      <a href="activity2_matrix_extract.html" data-nav-group="color"><span>RGB 행렬 알아보기</span></a>
+      <a href="activity3_rgb_hub.html" data-nav-group="color"><span>RGB 데이터 탐구</span></a>
+      <a href="activity4_rgb_channels2.html" data-nav-group="color"><span>RGB·RGBA 행렬 추출기</span></a>
+      <a href="rgb_filter/index.html" data-nav-group="color"><span>사진 필터와 RGB</span></a>
+      <a href="activity4_rgb_excel.html" data-nav-group="color"><span>RGB 웹 엑셀</span></a>
+      <a href="activity4_rgb_channels.html" data-nav-group="color"><span>RGB 채널 탐구</span></a>
+      <a href="../02_행렬과_이미지변환/activity5_image_merge.html" data-nav-group="color"><span>이미지 합성</span></a>
+      <a href="../02_행렬과_이미지변환/activity6_composite_explore.html" data-nav-group="color"><span>합성 원리</span></a>
+      <div class="nav-sec" data-nav-group="matrix">행렬 연산</div>
+      <a href="../02_행렬과_이미지변환/activity7_matrix_product.html" data-nav-group="matrix"><span>행렬 곱셈</span></a>
+      <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html" data-nav-group="matrix"><span>회전 행렬</span></a>
+      <div class="nav-sec" data-nav-group="data">데이터와 인식</div>
+      <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><span>손글씨 인식</span></a>
+      <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><span>숫자 판별 단계</span></a>
+      <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><span>MNIST 데이터 탐구</span></a>
+      <a href="../03_숫자인식과_유사도/activity11_similarity_check.html" data-nav-group="data"><span>해밍 거리</span></a>
+      <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
+      <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><span>이미지 업스케일러</span></a>
+      <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><span>AI 업스케일러</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo.html" data-nav-group="ai"><span>YOLO 객체 탐지</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html" data-nav-group="ai"><span>YOLO 직접 학습시키기</span></a>
+      <a href="../06_스타일전이/activity15_styletransper.html" data-nav-group="ai"><span>신경망 스타일 변환</span></a>
+      <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><span>임의(Arbitrary)신경망 변환</span></a>
+      <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
+      <a href="../07_CNN과_합성곱/activity17_kernel.html" data-nav-group="cnn"><span>이미지 커널 필터 체험</span></a>
+      <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><span>색 군집화</span></a>
+    </nav>
+  </aside>
+<a class="skip-link" href="#games">게임 선택으로 건너뛰기</a>
+<header class="site-header">
+  <a class="brand" href="activity3_color_sense.html" aria-label="색감 실험실 홈">
+    <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    색감 실험실
+  </a>
+  <a class="class-link" href="../indeximage.html">이미지 수업 <span aria-hidden="true">↗</span></a>
+</header>
+<main>
+  <div class="intro">
+    <p class="eyebrow">COLOR PLAY</p>
+    <svg class="intro-friends" viewBox="0 0 180 132" fill="none" aria-hidden="true">
+      <ellipse cx="91" cy="118" rx="73" ry="7" fill="#dceee5"/>
+      <g transform="translate(12 39) rotate(-10 30 34)"><rect y="4" width="58" height="66" rx="20" fill="#eabda8"/><rect width="58" height="66" rx="20" fill="#ffddc9"/><path d="M20 28v5m18-5v5m-15 8q6 6 12 0" stroke="#a65c43" stroke-width="3" stroke-linecap="round"/></g>
+      <g transform="translate(65 12) rotate(5 30 40)"><rect y="4" width="60" height="80" rx="22" fill="#acd4bd"/><rect width="60" height="80" rx="22" fill="#ccebd9"/><path d="M21 34v5m18-5v5m-15 9q6 6 12 0" stroke="#427e61" stroke-width="3" stroke-linecap="round"/><path d="M26 0q0-10 10-10" stroke="#79b69b" stroke-width="3" stroke-linecap="round"/></g>
+      <g transform="translate(117 43) rotate(11 26 32)"><rect y="4" width="52" height="64" rx="19" fill="#bccded"/><rect width="52" height="64" rx="19" fill="#dce8ff"/><path d="M17 26v5m17-5v5m-14 8q5 5 10 0" stroke="#5775ad" stroke-width="3" stroke-linecap="round"/></g>
+      <path d="M151 18v12m-6-6h12M26 15v8m-4-4h8" stroke="#8abdb0" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <h1>색 구별 능력 <span>테스트</span></h1>
+    <p class="lead">색이 다른 한 칸을 찾아보세요.<br>60초 도전과 R·G·B 테스트 중 하나를 선택하세요.</p>
+  </div>
+  <section class="games" id="games" aria-label="색감 게임 선택" tabindex="-1">
+    <a class="game-card sprint-card" href="activity3_color_sprint.html" aria-labelledby="sprintTitle" aria-describedby="sprintDescription">
+      <div class="preview sprint-preview" aria-hidden="true">
+        <span class="preview-label">FIND THE DIFFERENCE</span>
+        <div class="preview-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <span class="time-badge">60<small>초</small></span>
+        <span class="sample-caption">딱 한 칸, 다른 색 찾기</span>
+      </div>
+      <div class="card-copy">
+        <p class="card-overline"><span>01</span>60초 도전</p>
+        <h2 id="sprintTitle">60초 색감 테스트</h2>
+        <p class="description" id="sprintDescription">60초 동안 다른 색 한 칸을 찾습니다.<br>단계가 높아질수록 색의 차이가 작아집니다.</p>
+        <div class="tags"><span>60초 도전</span><span>틀리면 −3초</span><span>기록에 도전</span></div>
+        <div class="card-bottom"><span>60초 도전 시작</span><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+      </div>
+    </a>
+    <a class="game-card rgb-card" href="activity3_rgb_sensitivity.html" aria-labelledby="rgbTitle" aria-describedby="rgbDescription">
+      <div class="preview rgb-preview" aria-hidden="true">
+        <span class="preview-label">EXPLORE YOUR COLOR SENSE</span>
+        <div class="rgb-samples">
+          <div class="rgb-sample red"><div class="mini-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>R</b></div>
+          <div class="rgb-sample green"><div class="mini-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>G</b></div>
+          <div class="rgb-sample blue"><div class="mini-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><b>B</b></div>
+        </div>
+        <span class="sample-caption">R · G · B 점수 비교</span>
+      </div>
+      <div class="card-copy">
+        <p class="card-overline"><span>02</span>RGB 비교</p>
+        <h2 id="rgbTitle">R·G·B 색감 테스트</h2>
+        <p class="description" id="rgbDescription">빨강·초록·파랑 계열에서 다른 색 칸을 찾습니다.<br>같은 RGB 증가량으로 세 계열의 기록을 비교합니다.</p>
+        <div class="tags"><span>문제마다 10초</span><span>색마다 20문제</span><span>R → G → B</span></div>
+        <div class="card-bottom"><span>RGB 테스트 시작</span><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+      </div>
+    </a>
+  </section>
+  <p class="footer-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>같은 화면과 밝기에서 플레이하면 기록을 비교하기 좋아요.</p>
+</main>
+</body>
+</html>

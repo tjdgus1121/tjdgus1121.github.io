@@ -40,13 +40,13 @@
   <meta name="twitter:image" content="https://tjdgus1121.github.io/thumbnail.png">
 
   <!-- 📎 스타일 및 폰트 -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@100..900&family=Orbitron:wght@400..900&display=swap"
-    rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- 본문: Pretendard (사이트 최근 활동들과 같은 글꼴, 쓰는 글자만 받는 dynamic subset) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <!-- 공용 푸터(stylefooter.css)가 쓰는 글꼴만 -->
+  <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
   <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
@@ -57,753 +57,402 @@
   <script src="../../nav.js"></script>
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    :root {
+      --ink: #232227; --sub: #5f5d68; --line: #e2ded5; --bg: #F6F5F2; --card: #fff;
+      --main: #2F5FA8; --main-soft: #e8eff9; --ok: #1f7a4d; --ok-soft: #e6f4ec; --bad: #b42318; --bad-soft: #fdecea; --wait: #8a5a00; --wait-soft: #fff4dc;
     }
-
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #1a1a2e;
-      min-height: 100vh;
-      color: #333;
-      padding: 2rem;
-      zoom: 120%;
-      position: relative;
-      overflow-x: hidden;
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+      letter-spacing: -.01em; line-height: 1.6;
+      word-break: keep-all; overflow-wrap: break-word;   /* 한글을 낱말 단위로 줄바꿈 */
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
     }
+    h1, h2, h3, .style-name, .btn, .step-title { letter-spacing: -.02em; }
+    .tnum, .meta, .count, .formula, .blend-row output, #originalTitle, #resultTitle { font-variant-numeric: tabular-nums; }
+    ::selection { background: #D8E3F3; }
+    :focus-visible { outline: 3px solid var(--main); outline-offset: 2px; }
+    [hidden] { display: none !important; }
 
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background:
-        rgba(255, 107, 107, 0.1),
-        rgba(132, 94, 247, 0.1),
-        rgba(45, 212, 191, 0.1);
-      animation: float 20s ease-in-out infinite;
-      z-index: -1;
+    .page { max-width: 1040px; margin: 0 auto; padding: 56px 20px 64px; }
+    .page-head h1 { margin: 0 0 8px; font-size: clamp(28px, 4.4vw, 40px); font-weight: 800; letter-spacing: -.03em; line-height: 1.25; }
+    .page-head p { margin: 0; font-size: 17px; line-height: 1.6; color: var(--sub); }
+
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; margin-top: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    fieldset.controls { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 22px; }
+    fieldset.controls:disabled { opacity: .7; }
+    .step-title { margin: 0 0 10px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .step-title b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--main); color: #fff; font-size: 13px; }
+
+    .photo-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
+    .drop { flex: 1 1 320px; position: relative; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; border: 2px dashed #c9c4b8; border-radius: 12px; background: #faf9f6; cursor: pointer; }
+    .drop:hover, .drop.is-over { border-color: var(--main); background: var(--main-soft); }
+    .drop:focus-within { outline: 3px solid var(--main); outline-offset: 2px; }
+    .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .drop i { font-size: 22px; color: var(--main); }
+    .drop strong { display: block; font-size: 15px; }
+    .drop span { font-size: 13.5px; color: var(--sub); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn:hover:not(:disabled) { border-color: var(--main); color: var(--main); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-main { background: var(--main); border-color: var(--main); color: #fff; min-width: 140px; font-size: 16px; }
+    .btn-main:hover:not(:disabled) { background: #264f8d; color: #fff; }
+
+    .style-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+    .style-card { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 8px 8px 10px; border: 2px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; }
+    .style-card:hover { border-color: #9fb4d6; }
+    .style-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .style-card img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; display: block; background: #eee; }
+    .style-name { font-size: 15px; font-weight: 700; margin-top: 4px; }
+    .style-name small { font-weight: 400; color: var(--sub); font-size: 12.5px; }
+    .style-desc { font-size: 13px; color: var(--sub); line-height: 1.4; }
+    .style-card:has(input:checked) { border-color: var(--main); background: var(--main-soft); }
+    .style-card:has(input:checked)::after { content: '✓ 선택'; position: absolute; top: 14px; left: 14px; padding: 2px 8px; border-radius: 999px; background: var(--main); color: #fff; font-size: 12px; font-weight: 700; }
+    .style-card:has(input:focus-visible) { outline: 3px solid var(--main); outline-offset: 2px; }
+    .hint { margin: 8px 0 0; font-size: 13.5px; color: var(--sub); }
+
+    .run-row { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; }
+    .size-field { display: flex; flex-direction: column; gap: 6px; }
+    .size-field label { font-size: 14px; font-weight: 600; }
+    select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 15px; background: #fff; }
+
+    .status { margin-top: 18px; padding: 12px 14px; border-radius: 10px; font-size: 15px; line-height: 1.5; background: var(--main-soft); color: #1d3f73; }
+    .status[data-kind="success"] { background: var(--ok-soft); color: var(--ok); }
+    .status[data-kind="error"] { background: var(--bad-soft); color: var(--bad); }
+    .status[data-kind="loading"] { background: var(--wait-soft); color: var(--wait); }
+    .status[data-kind="success"]::before { content: '✓ '; font-weight: 700; }
+    .status[data-kind="error"]::before { content: '⚠ '; }
+    .progress { margin-top: 8px; height: 8px; border-radius: 999px; background: #e7e3da; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0; background: var(--main); transition: width .2s; }
+    .progress[data-mode="busy"] .progress-fill { width: 30%; animation: busy 1.2s ease-in-out infinite; }
+    @keyframes busy { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+
+    .compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .compare figure { margin: 0; min-width: 0; }
+    .compare figcaption { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--sub); }
+    .canvas-box { position: relative; display: grid; place-items: center; min-height: 200px; border-radius: 10px; background: #f1eee7; overflow: hidden; }
+    .canvas-box canvas { display: block; width: 100%; height: auto; }
+    .placeholder { padding: 24px; text-align: center; font-size: 14px; color: var(--sub); }
+    .stale { margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--wait-soft); color: var(--wait); font-size: 14px; }
+    .blend { margin-top: 18px; display: grid; gap: 8px; }
+    .blend-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .blend-row label { font-weight: 700; font-size: 15px; }
+    .blend-row input[type=range] { flex: 1 1 220px; accent-color: var(--main); min-height: 32px; }
+    .blend-row output { min-width: 3.5em; font-weight: 700; color: var(--main); font-variant-numeric: tabular-nums; }
+    .formula { margin: 0; font-size: 13.5px; color: var(--sub); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .result-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
+    .meta { font-size: 13px; color: var(--sub); }
+
+    .head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .head-row h1 { margin-bottom: 0; }
+    .page-head p { margin-top: 8px; }
+    .explain-btn { flex: none; }
+    .explain-dlg { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 16px; box-shadow: 0 24px 60px -12px rgba(20, 20, 30, .45); color: var(--ink); overflow: hidden; }
+    .explain-dlg::backdrop { background: rgba(20, 20, 30, .55); }
+    .explain-dlg[open] { display: flex; flex-direction: column; }
+    .dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 10px 22px; border-bottom: 1px solid var(--line); }
+    .dlg-head h2 { margin: 0; font-size: 18px; }
+    .dlg-close { width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; font-size: 20px; cursor: pointer; color: var(--sub); }
+    .dlg-close:hover { background: #f1eee7; color: var(--ink); }
+    .viewport { overflow: hidden; flex: 1 1 auto; min-height: 0; touch-action: pan-y; }
+    .track { display: flex; height: 100%; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+    .slide { flex: 0 0 100%; min-width: 0; padding: 20px 26px 12px; overflow-y: auto; max-height: calc(100dvh - 170px); }
+    .slide h3 { margin: 16px 0 8px; font-size: 21px; font-weight: 750; line-height: 1.35; }
+    .slide p { margin: 0; font-size: 16px; line-height: 1.7; color: #3f3d46; }
+    .slide a { color: var(--main); }
+    .slide .eq { display: inline-block; margin-top: 10px; padding: 8px 12px; border-radius: 8px; background: var(--main-soft); font-weight: 700; color: #1d3f73; }
+    .visual { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 180px; padding: 14px; border-radius: 12px; background: #f6f4ef; flex-wrap: wrap; }
+    .visual img { display: block; width: 100%; height: auto; border-radius: 8px; }
+    .visual .pic { flex: 0 1 220px; min-width: 0; text-align: center; font-size: 13px; color: var(--sub); }
+    .visual .pic span { display: block; margin-top: 6px; }
+    .visual .arrow { font-size: 26px; color: var(--main); font-weight: 700; }
+    .visual .five { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; width: 100%; }
+    .score { flex: 1 1 200px; padding: 14px 16px; border-radius: 10px; background: #fff; border: 1px solid var(--line); font-size: 15px; line-height: 1.5; }
+    .score b { display: block; color: var(--main); margin-bottom: 2px; }
+    .nums { font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace; font-size: 13px; line-height: 1.5; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: #3f3d46; }
+    .layer { padding: 14px 12px; border-radius: 10px; background: var(--main); color: #fff; font-weight: 700; font-size: 14px; text-align: center; line-height: 1.4; }
+    .blend3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; }
+    .blend3 .pic { flex: none; }
+    .stack { position: relative; }
+    .stack img + img { position: absolute; inset: 0; }
+    .mini-table { width: 100%; border-collapse: collapse; font-size: 14.5px; background: #fff; border-radius: 10px; overflow: hidden; }
+    .mini-table th, .mini-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.45; }
+    .mini-table th small { font-weight: 400; color: var(--sub); }
+    .mini-table thead th { font-size: 12.5px; color: var(--sub); }
+    .mini-table tr.here { background: var(--main-soft); }
+    .dlg-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px 12px; border-top: 1px solid var(--line); }
+    .dots { display: flex; gap: 2px; }
+    .dot { width: 28px; height: 44px; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; padding: 0; }
+    .dot::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #d4cfc4; transition: background .2s, transform .2s; }
+    .dot[aria-current="true"]::before { background: var(--main); transform: scale(1.25); }
+    .count { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: center; }
+    .credit { margin: 16px 0 0; font-size: 13px; color: var(--sub); line-height: 1.6; }
+
+    @media (max-width: 860px) {
+      .style-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-
-    @keyframes float {
-
-      0%,
-      100% {
-        transform: translate(0px, 0px) rotate(0deg);
-      }
-
-      33% {
-        transform: translate(30px, -30px) rotate(120deg);
-      }
-
-      66% {
-        transform: translate(-20px, 20px) rotate(240deg);
-      }
+    @media (max-width: 640px) {
+      .page { padding: 64px 16px 48px; }
+      .panel { padding: 16px; }
+      .style-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .compare { grid-template-columns: minmax(0, 1fr); }
+      .slide { padding: 16px 18px 8px; }
+      .slide h3 { font-size: 19px; }
+      .visual .five { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .dots { display: none; }
+      .visual.flow { flex-wrap: nowrap; gap: 6px; padding: 12px 8px; }
+      .visual.flow .nums { font-size: 11px; padding: 6px 7px; }
+      .visual.flow .arrow { font-size: 18px; }
+      .visual.flow .layer { padding: 10px 8px; font-size: 12.5px; }
+      .run-row .btn-main { flex: 1 1 100%; }
     }
-
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      background: rgba(255, 255, 255, 0.95);
-      
-      border-radius:10px;
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-      padding: 2rem;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+    @media (prefers-reduced-motion: reduce) {
+      .progress[data-mode="busy"] .progress-fill { animation: none; width: 100%; opacity: .5; }
+      .progress-fill { transition: none; }
+      .track, .dot::before { transition: none; }
     }
-
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
-      color: #333;
-    }
-
-    .header h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    .header h1 i {;
-      
-      color:#2F5FA8;
-      
-      font-size: 2.2rem;
-    }
-
-    .header h1 .title-text {;
-      
-      color:#232227;
-      
-    }
-
-    .header p {
-      font-size: 1.1rem;
-      color: #666;
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 1.5rem;
-      align-items: end;
-      margin-bottom: 2rem;
-      padding: 1.5rem;
-      background: rgba(248, 249, 255, 0.8);
-      
-      border-radius:10px;
-      border: 2px solid rgba(225, 229, 233, 0.3);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    .control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .control-group label {
-      font-weight: 600;
-      color: #555;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .control-group label i {
-      color: #2F5FA8;
-    }
-
-    .file-input-wrapper {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-      cursor: pointer;
-      background: #ffffff;
-      border: 2px solid rgba(102, 126, 234, 0.2);
-      border-radius:16px;
-      padding: 0.75rem 1rem;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow:
-        0 4px 16px rgba(102, 126, 234, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .file-input-wrapper:hover {
-      border-color: #2F5FA8;
-      background: #f8f9ff;
-      transform: translateY(-3px);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    .file-input-wrapper input[type="file"] {
-      position: absolute;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-
-    .file-input-text {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .select-wrapper {
-      position: relative;
-    }
-
-    .select-wrapper::after {
-      content: '\f107';
-      font-family: 'Font Awesome 6 Free';
-      font-weight: 900;
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #2F5FA8;
-      pointer-events: none;
-    }
-
-    select {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 2px solid rgba(102, 126, 234, 0.2);
-      border-radius:16px;
-      font-size: 1rem;
-      background: #ffffff;
-      appearance: none;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      box-shadow:
-        0 4px 16px rgba(102, 126, 234, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    select:focus {
-      outline: none;
-      border-color: #2F5FA8;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-    }
-
-    button {
-      padding: 0.75rem 2rem;
-      border: none;
-      border-radius:16px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: transparent;
-      transition: left 0.6s;
-    }
-
-    button:hover::before {
-      left: 100%;
-    }
-
-    /* 스타일 적용 버튼 - 메인 그라디언트 */
-    #runBtn {
-      background: #2F5FA8;
-      color: white;
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    #runBtn:hover:not(:disabled) {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    /* 다운로드 버튼 - 그린 그라디언트 */
-    #downloadBtn {
-      background: #11998e;
-      color: white;
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-      display: block;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-    }
-
-    #downloadBtn:hover:not(:disabled) {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    button:disabled {
-      background: #cbd5e0;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-      color: #718096;
-    }
-
-    #status {
-      padding: 1rem;
-      border-radius:16px;
-      margin-bottom: 1rem;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: rgba(227, 242, 253, 0.8);
-      color: #1976d2;
-      border: 1px solid rgba(187, 222, 251, 0.5);
-      justify-content: center;
-      
-      box-shadow: 0 4px 16px rgba(25, 118, 210, 0.1);
-    }
-
-    #status.success {
-      background: rgba(232, 245, 232, 0.8);
-      color: #2e7d32;
-      border: 1px solid rgba(200, 230, 201, 0.5);
-      margin: auto;
-      text-align: center;
-      box-shadow: 0 4px 16px rgba(46, 125, 50, 0.1);
-    }
-
-    #status.error {
-      background: rgba(255, 235, 238, 0.8);
-      color: #c62828;
-      border: 1px solid rgba(255, 205, 210, 0.5);
-      box-shadow: 0 4px 16px rgba(198, 40, 40, 0.1);
-    }
-
-    #status.loading {
-      background: rgba(255, 243, 224, 0.8);
-      color: #f57c00;
-      border: 1px solid rgba(255, 204, 2, 0.3);
-      box-shadow: 0 4px 16px rgba(245, 124, 0, 0.1);
-    }
-
-    #status.loading::before {
-      content: '';
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(245, 124, 0, 0.3);
-      border-top: 2px solid #f57c00;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    #progressContainer {
-      display: none;
-      margin: 1rem 0;
-      background: rgba(245, 245, 245, 0.8);
-      
-      border-radius:16px;
-      padding: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 20px;
-      background: #e0e0e0;
-      border-radius:12px;
-      overflow: hidden;
-      margin-bottom: 0.5rem;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    #progressBar {
-      height: 100%;
-      background: #2F5FA8;
-      width: 0%;
-      transition: width 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #progressBar::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
-      background: transparent;
-      animation: shimmer 2s infinite;
-    }
-
-    @keyframes shimmer {
-      0% {
-        transform: translateX(-100%);
-      }
-
-      100% {
-        transform: translateX(100%);
-      }
-    }
-
-    #progressText {
-      text-align: center;
-      font-weight: 600;
-      color: #555;
-    }
-
-    canvas {
-      max-width: 100%;
-      height: auto;
-      border-radius:10px;
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 3px solid rgba(225, 229, 233, 0.3);
-      margin: 15px auto;
-      display: block;
-      
-    }
-
-    canvas:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    #downloadBtn {
-      display: none;
-      margin-top: 1rem;
-    }
-
-    .style-preview {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .style-option {
-      padding: 1rem;
-      border: 2px solid rgba(225, 229, 233, 0.3);
-      border-radius:16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      background: rgba(255, 255, 255, 0.8);
-      
-      box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .style-option:hover {
-      border-color: #2F5FA8;
-      background: rgba(248, 249, 255, 0.9);
-      transform: translateY(-4px) scale(1.02);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    .style-option.selected {
-      border-color: #2F5FA8;
-      background: rgba(240, 244, 255, 0.9);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    .style-option img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-      border-radius:12px;
-      margin-bottom: 0.5rem;
-      transition: transform 0.3s ease;
-    }
-
-    .style-option:hover img {
-      transform: scale(1.05);
-    }
-
-    .style-option h4 {
-      color: #555;
-      font-size: 0.9rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .style-option p {
-      color: #999;
-      font-size: 0.8rem;
-    }
-
-    /* 설명 섹션 스타일 */
-    .explanation-section {
-      margin-top: 3rem;
-      padding: 2rem;
-      background: rgba(248, 249, 255, 0.8);
-      
-      border-radius:10px;
-      border: 2px solid rgba(225, 229, 233, 0.3);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-    }
-
-    .explanation-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-      justify-content: center;
-    }
-
-    .explanation-header i {
-      color: #f59e0b;
-      font-size: 1.5rem;
-    }
-
-    .explanation-header h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #333;
-      margin: 0;
-    }
-
-    .explanation-intro {
-      font-size: 1.1rem;
-      color: #555;
-      text-align: center;
-      margin-bottom: 2rem;
-      font-weight: 500;
-    }
-
-    .explanation-steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1rem;
-    }
-
-    .step {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      padding: 1rem;
-      background: rgba(255, 255, 255, 0.7);
-      border-radius:12px;
-      border: 1px solid rgba(225, 229, 233, 0.4);
-      transition: all 0.3s ease;
-    }
-
-    .step:hover {
-      transform: translateY(-2px);
-      box-shadow:0 1px 3px rgba(0,0,0,.07);
-      background: rgba(255, 255, 255, 0.9);
-    }
-
-    .step-number {
-      flex-shrink: 0;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #2F5FA8;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      font-weight: 700;
-      margin-top: 2px;
-    }
-
-    .step p {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #555;
-      line-height: 1.5;
-    }
-
-    @media (max-width: 768px) {
-      body {
-        padding: 1rem;
-      }
-
-      .controls {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-
-      .header h1 {
-        font-size: 2rem;
-      }
-
-      .style-preview {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      }
-    }
-  
-/* 수업용 차분한 테마 — 장식보다 학습 내용이 먼저 보이게 */
-html,body{background:#F6F5F2 !important;background-image:none !important;color:#232227}
-::selection{background:#D8E3F3}
-:focus-visible{outline:3px solid #2F5FA8;outline-offset:2px}
-</style>
+  </style>
 </head>
+<body>
 <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0">
   <i class="fas fa-bars"></i>
 </div>
 
 <aside class="sidebar">
   <nav>
-    <div class="nav-sec">시작</div>
-    <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
-    <a href="../01_이미지와_RGB/activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
-    <div class="nav-sec">색과 이미지</div>
-    <a href="../01_이미지와_RGB/activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
-    <a href="../01_이미지와_RGB/activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
-    <a href="../01_이미지와_RGB/activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
-    <a href="../01_이미지와_RGB/activity4_rgb_channels.html"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
-    <a href="../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
-    <a href="../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
-    <div class="nav-sec">행렬 연산</div>
-    <a href="../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
-    <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
-    <div class="nav-sec">데이터와 인식</div>
-    <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
-    <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
-    <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
-    <a href="../03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
-    <div class="nav-sec">AI 이미지 기술</div>
-    <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
-    <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
-    <a href="../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
-    <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
-    <a href="activity15_styletransper.html" class="active"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
-    <a href="activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
-    <div class="nav-sec">CNN과 군집화</div>
-    <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
-    <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
-      <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
-      <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+    <div class="nav-sec" data-nav-group="start">시작</div>
+    <a href="../indeximage.html" data-nav-group="start"><i class="fa fa-home"></i><span>홈</span></a>
+    <a href="../01_이미지와_RGB/activity1_intro.html" data-nav-group="start"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+    <div class="nav-sec" data-nav-group="color">색과 이미지</div>
+    <a href="../01_이미지와_RGB/activity2_matrix_extract.html" data-nav-group="color"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+    <a href="../01_이미지와_RGB/activity3_rgb_hub.html" data-nav-group="color"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+      <a href="../01_이미지와_RGB/activity4_rgb_channels2.html" data-nav-group="color"><i class="fa fa-table" aria-hidden="true"></i><span>RGB·RGBA 행렬 추출기</span></a>
+      <a href="../01_이미지와_RGB/rgb_filter/index.html" data-nav-group="color"><i class="fa fa-image" aria-hidden="true"></i><span>사진 필터와 RGB</span></a>
+      <a href="../01_이미지와_RGB/activity4_rgb_excel.html" data-nav-group="color"><i class="fa fa-th" aria-hidden="true"></i><span>RGB 웹 엑셀</span></a>
+    <a href="../01_이미지와_RGB/activity4_rgb_channels.html" data-nav-group="color"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+    <a href="../02_행렬과_이미지변환/activity5_image_merge.html" data-nav-group="color"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+    <a href="../02_행렬과_이미지변환/activity6_composite_explore.html" data-nav-group="color"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+    <div class="nav-sec" data-nav-group="matrix">행렬 연산</div>
+    <a href="../02_행렬과_이미지변환/activity7_matrix_product.html" data-nav-group="matrix"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+    <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html" data-nav-group="matrix"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+    <div class="nav-sec" data-nav-group="data">데이터와 인식</div>
+    <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+    <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+    <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+    <a href="../03_숫자인식과_유사도/activity11_similarity_check.html" data-nav-group="data"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+    <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
+    <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+    <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+    <a href="../05_객체탐지_YOLO/activity14_yolo.html" data-nav-group="ai"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+    <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html" data-nav-group="ai"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+    <a href="activity15_styletransper.html" class="active" data-nav-group="ai"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+    <a href="activity16_Arbitrary_transfer.html" data-nav-group="ai"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+    <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
+    <a href="../07_CNN과_합성곱/activity17_kernel.html" data-nav-group="cnn"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+    <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><i class="fa fa-palette"></i><span>색 군집화</span></a>
   </nav>
 </aside>
 
-<body>
-  <div class="container">
-    <div class="header">
-      <h1><i class="fas fa-palette"></i>
-        <span class="title-text">AI 스타일 트랜스퍼</span></h1>
-      <p>고품질 AI 모델로 이미지에 예술적 스타일을 적용해보세요</p>
-    </div>
+  <main class="page">
+    <header class="page-head">
+      <div class="head-row">
+        <h1>신경망 스타일 변환</h1>
+        <button type="button" class="btn explain-btn" id="explainBtn" aria-haspopup="dialog"><i class="fas fa-lightbulb" aria-hidden="true"></i>작동 원리 보기</button>
+      </div>
+      <p>화풍 하나를 미리 배운 신경망에 사진을 한 번 통과시키면, 몇 초 만에 그 화풍의 그림이 돼요.</p>
+    </header>
 
-    <div class="controls">
-      <div class="control-group">
-        <label for="contentInput">
-          <i class="fas fa-image"></i>
-          콘텐츠 이미지
-        </label>
-        <div class="file-input-wrapper">
-          <input type="file" id="contentInput" accept="image/*">
-          <div class="file-input-text">
-            <i class="fas fa-upload"></i>
-            이미지 선택하기
+    <section class="panel" aria-label="변환 설정">
+      <fieldset class="controls" id="controls">
+        <div>
+          <h2 class="step-title"><b>1</b>사진 고르기</h2>
+          <div class="photo-row">
+            <label class="drop" id="dropZone">
+              <input type="file" id="photoInput" accept="image/*">
+              <i class="fas fa-image" aria-hidden="true"></i>
+              <div><strong>사진 고르기</strong><span>또는 이곳에 사진을 끌어다 놓기 · 15MB 이하</span></div>
+            </label>
+            <button type="button" class="btn" id="sampleBtn"><i class="fas fa-mountain" aria-hidden="true"></i>예시 사진 쓰기</button>
           </div>
         </div>
+
+        <div>
+          <h2 class="step-title" id="styleTitle"><b>2</b>화풍 고르기</h2>
+          <div class="style-list" id="styleList" role="radiogroup" aria-labelledby="styleTitle"></div>
+          <p class="hint">작은 그림은 같은 예시 사진을 각 신경망에 통과시킨 결과예요. 화풍마다 학습된 신경망이 따로 있어요.</p>
+        </div>
+
+        <div>
+          <h2 class="step-title"><b>3</b>변환하기</h2>
+          <div class="run-row">
+            <div class="size-field">
+              <label for="sizeSelect">크기 (긴 변)</label>
+              <select id="sizeSelect">
+                <option value="256">256픽셀 · 빠르게</option>
+                <option value="512" selected>512픽셀 · 보통</option>
+                <option value="768">768픽셀 · 선명하게 (느림)</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-main" id="runBtn" disabled>변환하기</button>
+          </div>
+        </div>
+      </fieldset>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <div class="progress" id="progress" role="progressbar" aria-label="진행 상황" aria-valuemin="0" aria-valuemax="100" hidden><div class="progress-fill" id="progressFill"></div></div>
+    </section>
+
+    <section class="panel" id="compare" aria-label="원본과 결과 비교" hidden>
+      <div class="compare">
+        <figure>
+          <figcaption id="originalTitle">원본</figcaption>
+          <div class="canvas-box"><canvas id="originalCanvas" width="4" height="4" aria-label="원본 사진"></canvas></div>
+        </figure>
+        <figure>
+          <figcaption id="resultTitle">결과</figcaption>
+          <div class="canvas-box">
+            <canvas id="resultCanvas" width="4" height="4" aria-label="변환 결과" hidden></canvas>
+            <p class="placeholder" id="resultPlaceholder"></p>
+          </div>
+        </figure>
       </div>
-
-      <div class="control-group">
-        <label for="styleSelect">
-          <i class="fas fa-paint-brush"></i>
-          스타일 선택
-        </label>
-        <div class="select-wrapper">
-          <select id="styleSelect">
-            <option value="../onnx_models/style_mosaic.onnx">Mosaic (모자이크)</option>
-            <option value="../onnx_models/style_candy.onnx">Candy (캔디)</option>
-            <option value="../onnx_models/style_rain_princess.onnx">Rain Princess (비의 공주)</option>
-            <option value="../onnx_models/style_udnie.onnx">Udnie (우드니)</option>
-          </select>
+      <p class="stale" id="staleNote" hidden>화풍이나 크기를 바꿨어요. 「변환하기」를 다시 누르면 새 결과가 나와요.</p>
+      <div class="blend">
+        <div class="blend-row">
+          <label for="strength">화풍 강도</label>
+          <input type="range" id="strength" min="0" max="100" step="5" value="100" disabled>
+          <output id="strengthValue" for="strength">100%</output>
         </div>
-      </div>
-
-      <button id="runBtn" disabled>
-        <i class="fas fa-magic"></i>
-        스타일 적용
-      </button>
-    </div>
-
-    <div id="status">
-      <i class="fas fa-info-circle"></i>
-      이미지와 스타일을 선택하세요.
-    </div>
-
-    <div id="progressContainer">
-      <div class="progress-bar">
-        <div id="progressBar"></div>
-      </div>
-      <div id="progressText">0%</div>
-    </div>
-
-    <canvas id="outputCanvas"></canvas>
-    <button id="downloadBtn">
-      <i class="fas fa-download"></i>
-      결과 이미지 다운로드
-    </button>
-
-    <div class="explanation-section">
-      <div class="explanation-header">
-        <i class="fas fa-lightbulb"></i>
-        <h3>신경망 스타일 전이란?</h3>
-      </div>
-      <p class="explanation-intro">신경망 스타일 전이는 사진에 그림의 화풍을 입히는 기술입니다.</p>
-      <div class="explanation-steps">
-        <div class="step">
-          <div class="step-number">1</div>
-          <p>먼저 사진(컨텐츠)과 그림(스타일) 두 장을 준비합니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">2</div>
-          <p>컴퓨터는 두 이미지를 작은 조각(특징)으로 나눠 분석합니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">3</div>
-          <p>사진 특징은 형태와 윤곽을, 그림 특징은 색과 질감을 담고 있습니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">4</div>
-          <p>합성 이미지는 사진을 바탕으로 시작해 점점 그림 느낌을 더해 갑니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">5</div>
-          <p>컴퓨터는 "얼마나 사진 모양을 유지하고 그림처럼 보일까"를 평가합니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">6</div>
-          <p>평가 결과를 줄이기 위해 이미지 픽셀을 조금씩 바꿉니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">7</div>
-          <p>이 과정을 여러 번 반복하면 사진이 그림처럼 변합니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">8</div>
-          <p>중간 과정을 보며 스타일 강도를 조절할 수 있습니다.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">9</div>
-          <p>최종 결과는 사진의 내용에 그림의 화풍을 입힌 새로운 이미지입니다.</p>
+        <p class="formula" id="formula"></p>
+        <div class="result-foot">
+          <span class="meta" id="resultMeta"></span>
+          <button type="button" class="btn" id="downloadBtn" disabled><i class="fas fa-download" aria-hidden="true"></i>결과 그림 저장</button>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+    <p class="credit">모델: Johnson 외(2016) 빠른 스타일 변환 — PyTorch fast-neural-style 예제와 ONNX Model Zoo(점묘화)의 학습된 모델. 화풍 원작 그림은 싣지 않고 예시 사진을 변환한 결과로 보여 줍니다. 사진은 내 기기 안에서만 처리되고 서버로 보내지 않아요.</p>
+
+    <dialog class="explain-dlg" id="explainDlg" aria-labelledby="explainTitle">
+      <div class="dlg-head">
+        <h2 id="explainTitle">작동 원리</h2>
+        <button type="button" class="dlg-close" id="explainClose" aria-label="설명 닫기">✕</button>
+      </div>
+      <div class="viewport" id="explainViewport" aria-roledescription="carousel" aria-label="스타일 변환 작동 원리">
+        <div class="track" id="explainTrack">
+          <section class="slide" aria-roledescription="slide">
+            <div class="visual">
+              <div class="pic"><img src="style_examples/thumb_original.jpg" width="320" height="240" alt="원본 사진: 산과 호수"><span>사진</span></div>
+              <span class="arrow" aria-hidden="true">→</span>
+              <div class="pic"><img src="style_examples/thumb_candy.jpg" width="320" height="240" alt="캔디 화풍으로 바뀐 사진"><span>캔디 화풍</span></div>
+            </div>
+            <h3>한 번 통과시키면 끝</h3>
+            <p>이 신경망은 화풍 그리는 법을 <strong>미리 배워</strong> 뒀어요. 그래서 사진을 넣으면 몇 초 만에 그림이 나와요.</p>
+          </section>
+          <section class="slide" aria-roledescription="slide">
+            <div class="visual">
+              <div class="score"><b>내용 점수</b>모양·윤곽이 원래 사진과 비슷한가?</div>
+              <div class="score"><b>화풍 점수</b>색·붓질 느낌이 화풍 그림과 비슷한가?</div>
+            </div>
+            <h3>미리 해 둔 일: 학습</h3>
+            <p>화풍 그림 1장과 사진 수만 장으로 연습했어요. 두 점수가 좋아지도록 신경망 속 숫자(가중치) <strong>약 168만 개</strong>를 조금씩 고치기를 수만 번 반복했어요.</p>
+          </section>
+          <section class="slide" aria-roledescription="slide">
+            <div class="visual flow">
+              <div class="nums" aria-hidden="true">156 182 201 …<br>149 177 198 …<br>⋮</div>
+              <span class="arrow" aria-hidden="true">→</span>
+              <div class="layer">합성곱 층<br>여러 개</div>
+              <span class="arrow" aria-hidden="true">→</span>
+              <div class="nums" aria-hidden="true">183 160 169 …<br>201 142 155 …<br>⋮</div>
+            </div>
+            <h3>지금 하는 일: 숫자 통과</h3>
+            <p>사진은 <strong>가로 × 세로 × 3(R·G·B)</strong>개의 숫자예요. 512×384 사진이면 약 59만 개! 이 숫자들이 신경망을 <strong>한 번</strong> 통과하면 같은 크기의 새 숫자가 나와요.</p>
+          </section>
+          <section class="slide" aria-roledescription="slide">
+            <div class="visual">
+              <div class="five">
+                <img src="style_examples/thumb_mosaic.jpg" width="320" height="240" alt="모자이크">
+                <img src="style_examples/thumb_candy.jpg" width="320" height="240" alt="캔디">
+                <img src="style_examples/thumb_rain_princess.jpg" width="320" height="240" alt="비의 공주">
+                <img src="style_examples/thumb_udnie.jpg" width="320" height="240" alt="우드니">
+                <img src="style_examples/thumb_pointilism.jpg" width="320" height="240" alt="점묘화">
+              </div>
+            </div>
+            <h3>화풍마다 신경망이 하나씩</h3>
+            <p>모자이크 신경망은 모자이크만 그려요. 그래서 화풍을 바꾸면 다른 모델 파일(약 6.7MB)을 새로 받아요.</p>
+          </section>
+          <section class="slide" aria-roledescription="slide">
+            <div class="visual">
+              <div class="blend3">
+                <div class="pic"><img src="style_examples/thumb_original.jpg" width="320" height="240" alt="강도 0: 원본 그대로"><span>t = 0</span></div>
+                <div class="pic"><div class="stack"><img src="style_examples/thumb_original.jpg" width="320" height="240" alt="강도 0.5: 원본과 변환을 반씩 섞음"><img src="style_examples/thumb_candy.jpg" width="320" height="240" alt="" style="opacity:.5"></div><span>t = 0.5</span></div>
+                <div class="pic"><img src="style_examples/thumb_candy.jpg" width="320" height="240" alt="강도 1: 변환 결과 그대로"><span>t = 1</span></div>
+              </div>
+            </div>
+            <h3>화풍 강도는 간단한 계산</h3>
+            <p>신경망이 아니라 픽셀마다 하는 곱셈과 덧셈이에요.</p>
+            <p class="eq">결과 = (1 − t) × 원본 + t × 변환</p>
+          </section>
+          <section class="slide" aria-roledescription="slide">
+            <div class="visual">
+              <div class="pic"><img src="style_examples/size_256.jpg" width="320" height="240" alt="256픽셀로 변환한 점묘화: 점이 큼"><span>256픽셀로 변환</span></div>
+              <div class="pic"><img src="style_examples/size_768.jpg" width="320" height="240" alt="768픽셀로 변환한 점묘화: 점이 촘촘함"><span>768픽셀로 변환</span></div>
+            </div>
+            <h3>크기를 바꾸면 붓 터치가 달라져요</h3>
+            <p>신경망이 배운 붓 터치는 <strong>픽셀 크기가 정해져</strong> 있어요. 그래서 큰 사진일수록 붓 터치가 상대적으로 작고 촘촘해 보여요.</p>
+          </section>
+          <section class="slide" aria-roledescription="slide">
+            <div class="visual">
+              <table class="mini-table">
+                <thead><tr><th scope="col">방법</th><th scope="col">쓸 수 있는 화풍</th><th scope="col">속도</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">처음 나온 방법 (2015)<br><small>픽셀을 수백 번 고침</small></th><td>아무 그림이나</td><td>느림</td></tr>
+                  <tr class="here"><th scope="row">빠른 방법 (2016) · 이 페이지<br><small>미리 학습한 신경망에 한 번 통과</small></th><td>학습한 화풍만</td><td>빠름</td></tr>
+                  <tr><th scope="row">임의 화풍 변환<br><small>그림의 특징을 함께 넣음</small></th><td>아무 그림이나</td><td>빠름</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h3>다른 방법과 비교</h3>
+            <p>아무 그림이나 화풍으로 쓰고 싶다면 <a href="activity16_Arbitrary_transfer.html">임의 화풍 변환</a>을 해 보세요.</p>
+          </section>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn" id="explainPrev"><span aria-hidden="true">←</span> 이전</button>
+        <div class="dots" id="explainDots" role="group" aria-label="슬라이드 고르기"></div>
+        <span class="count" id="explainCount" aria-live="polite"></span>
+        <button type="button" class="btn btn-main" id="explainNext">다음 <span aria-hidden="true">→</span></button>
+      </div>
+    </dialog>
+  </main>
 
   <footer class="footer">
     <div class="footer-content">
       <div>
         <div class="footer-logo">인공지능 수학 이미지 탐구 활동 사이트</div>
         <div class="creator-info">
-          Designed & Developed by <span>황성현</span><br>
+          Designed &amp; Developed by <span>황성현</span><br>
           Contact : tjdgus1121@naver.com
         </div>
       </div>
-
       <div class="social-links">
-        <a href="mailto:tjdgus1121@naver.com" id="email-link"><i class="fa-solid fa-envelope"></i></a>
+        <a href="mailto:tjdgus1121@naver.com" id="email-link" aria-label="메일 보내기"><i class="fa-solid fa-envelope"></i></a>
         <a href="https://mail.naver.com/write/popup?to=tjdgus1121@naver.com" target="_blank" rel="noopener">
-          <img src="../../assets/branding/naver.png" alt="메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
+          <img src="../../assets/branding/naver.png" alt="네이버 메일 보내기" style="height:25px; filter: grayscale(100%); transition: filter 0.3s;"
             onmouseover="this.style.filter='grayscale(0%)';" onmouseout="this.style.filter='grayscale(100%)';">
         </a>
       </div>
-
       <div class="copyright">
         이 사이트의 모든 콘텐츠는 정성껏 만든 저작물입니다. ⓒ <span id="current-year"></span><br>
         다만, 인공지능 수학 교육을 함께 고민하는 모든 선생님들께 도움이 되기를 바랍니다.
       </div>
+    </div>
   </footer>
-
-  <!-- ONNX Runtime은 추론 워커(activity15webworker.js)에서 한 번만 로드합니다. -->
+  <script>document.getElementById('current-year').textContent = new Date().getFullYear();</script>
+  <!-- 신경망 실행(ONNX Runtime)은 워커(activity15webworker.js)에서만 불러옵니다. -->
   <script src="./activity15_styletransfer.js"></script>
 </body>
-
 </html>

@@ -36,10 +36,10 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 250px;
+    width: 280px;
     height: 100vh;
     height: 100dvh;   /* 모바일 주소창 높이 변화 대응 */
-    background: rgba(242, 241, 238, 0.78);
+    background: rgba(250, 252, 248, 0.98);
     border-right: 1px solid rgba(190, 186, 176, 0.40);
     box-shadow: 2px 0 10px rgba(0,0,0,.07);
 
@@ -67,14 +67,14 @@
 
 /* 3) 메뉴 아이템 */
 .sidebar nav {
-    margin-top: 3.6rem;
+    margin-top: 4.75rem;
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;          /* flex 항목이 줄어들 수 있어야 스크롤이 생긴다 */
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0 .45rem .8rem;
+    padding: 0 .75rem 1rem;
     scrollbar-width: thin;
     scrollbar-color: #B9B5AA transparent;
 }
@@ -147,6 +147,54 @@
 
 .sidebar nav a.active:hover { background-color: #27508E; }
 
+/* Section colors remain consistent across all image-activity menus. */
+.sidebar [data-nav-group="start"] { --nav-accent: #3f7664; --nav-soft: #eaf3ed; }
+.sidebar [data-nav-group="color"] { --nav-accent: #a85b36; --nav-soft: #faeee2; }
+.sidebar [data-nav-group="matrix"] { --nav-accent: #496ba8; --nav-soft: #eaf0fa; }
+.sidebar [data-nav-group="data"] { --nav-accent: #7b579e; --nav-soft: #f1eafa; }
+.sidebar [data-nav-group="ai"] { --nav-accent: #277682; --nav-soft: #e7f3f4; }
+.sidebar [data-nav-group="cnn"] { --nav-accent: #667631; --nav-soft: #eff3df; }
+.sidebar nav .nav-sec[data-nav-group] {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 6px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--nav-accent);
+    border-radius: 9px;
+    background: var(--nav-soft);
+    color: var(--nav-accent);
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: .02em;
+}
+.sidebar nav .nav-sec[data-nav-group]:first-child { margin-top: 0; }
+.sidebar nav .nav-sec[data-nav-group]::before {
+    content: none;
+}
+.sidebar nav a[data-nav-group] {
+    min-height: 44px;
+    padding: 10px 12px;
+    margin: 2px 0;
+    border-radius: 9px;
+    font-size: 14px;
+    line-height: 1.45;
+}
+.sidebar nav a[data-nav-group] i { color: var(--nav-accent); }
+.sidebar nav a[data-nav-group]:hover {
+    background: var(--nav-soft);
+    border-left-color: var(--nav-accent);
+    color: var(--nav-accent);
+}
+.sidebar nav a[data-nav-group].active {
+    background: var(--nav-accent);
+    border-left-color: var(--nav-accent);
+    color: #fff;
+}
+.sidebar nav a[data-nav-group].active:hover { filter: brightness(.94); }
+.sidebar nav a[data-nav-group].active i { color: #fff; }
+.sidebar nav a[data-nav-group]:focus-visible { outline-color: var(--nav-accent); }
+
 /* 키보드 사용자를 위한 표시 */
 .sidebar nav a:focus-visible { outline: 3px solid #2F5FA8; outline-offset: -3px; }
 
@@ -155,7 +203,26 @@
 }
 
 /* 4) 반응형 고려 (너비 자동) */
+.color-lab-page .sidebar-toggle {
+    top: 24px;
+    width: 40px;
+    height: 44px;
+    padding: 6px;
+    color: #263d33;
+    border-radius: 10px;
+    background: #f6f7f2;
+}
+.color-lab-page .sidebar-toggle svg { width: 26px; height: 26px; display: block; }
+.color-lab-page .sidebar-toggle:focus-visible { outline: 3px solid #416b55; outline-offset: 3px; }
+.color-lab-page .top-nav { margin-left: 44px; }
+.color-lab-page .sidebar nav { text-align: left; }
+
+@media (max-width: 680px) {
+    .color-lab-home .sidebar-toggle { top: 16px; }
+}
+
 @media (max-width: 480px) {
+    .color-lab-page .sidebar-toggle { top: 16px; }
     .sidebar.open {
         width: 80vw;
     }

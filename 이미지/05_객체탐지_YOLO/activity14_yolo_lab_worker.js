@@ -93,12 +93,20 @@ async function train(msg) {
   run = myRun;
 
   let best = { epoch: 0, valLoss: Infinity, params: Hd.cloneParams(params) };
+  let previousParams = Hd.cloneParams(params);
   const report = (epoch, ms) => {
     const tr = evaluate(params, trainSet);
     const va = evaluate(params, valSet);
     if (va.loss.total < best.valLoss) best = { epoch, valLoss: va.loss.total, params: Hd.cloneParams(params) };
+    let totalChange = 0, count = 0;
+    for (const key of ['W1', 'b1', 'W2', 'b2']) {
+      for (let i = 0; i < params[key].length; i++) totalChange += Math.abs(params[key][i] - previousParams[key][i]);
+      count += params[key].length;
+    }
+    previousParams = Hd.cloneParams(params);
     post({
       type: 'epoch', runId: settings.runId, epoch, ms,
+      headChange: { count, meanAbs: totalChange / count },
       train: { loss: tr.loss, acc: tr.acc, clsAcc: tr.clsAcc, objPos: tr.objPos, objNeg: tr.objNeg },
       val: { loss: va.loss, acc: va.acc, clsAcc: va.clsAcc },
       clsMode: { trainAcc: clsAcc(trainSet), valAcc: clsAcc(valSet) },

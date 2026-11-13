@@ -266,6 +266,20 @@
       }
 
       .preview, .grid { min-width: 0; }
+
+      /* 미리보기 아래 픽셀 수 조절 */
+      .px-control { width: 100%; max-width: 600px; margin-top: 14px; }
+      .px-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+      .px-head label { font-size: 14px; font-weight: 700; color: #343a40; }
+      .px-type { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: #1c7ed6; font-variant-numeric: tabular-nums; }
+      #pxInput { width: 72px; height: 34px; padding: 0 6px; border: 1px solid #adb5bd; border-radius: 6px; font: inherit; color: #1c7ed6; text-align: right; }
+      #pxInput:focus-visible { outline: 2px solid #1c7ed6; outline-offset: 1px; border-color: #1c7ed6; }
+      #pxSizeEcho { min-width: 2.2em; }
+      #pxSize { width: 100%; height: 28px; margin: 6px 0 0; accent-color: #1c7ed6; cursor: pointer; }
+      #pxSize:focus-visible { outline: 2px solid #1c7ed6; outline-offset: 2px; }
+      .px-scale { display: flex; justify-content: space-between; font-size: 11.5px; color: #868e96; }
+      .px-note { margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: #495057; min-height: 1.5em; }
+      .px-note.warn { color: #c92a2a; }
       .analysis-options {
         display: flex;
         align-items: center;
@@ -514,36 +528,38 @@
 
     <aside class="sidebar">
         <nav>
-            <div class="nav-sec">시작</div>
-            <a href="../indeximage.html"><i class="fa fa-home"></i><span>홈</span></a>
-            <a href="activity1_intro.html"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
-            <div class="nav-sec">색과 이미지</div>
-            <a href="activity2_matrix_extract.html"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
-            <a href="activity3_rgb_explore.html"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
-            <a href="activity3_color_mix_relay.html"><i class="fa fa-fill-drip"></i><span>색 섞기 대전</span></a>
-            <a href="activity4_rgb_channels.html" class="active"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
-            <a href="../02_행렬과_이미지변환/activity5_image_merge.html"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
-            <a href="../02_행렬과_이미지변환/activity6_composite_explore.html"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
-            <div class="nav-sec">행렬 연산</div>
-            <a href="../02_행렬과_이미지변환/activity7_matrix_product.html"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
-            <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
-            <div class="nav-sec">데이터와 인식</div>
-            <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
-            <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
-            <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
-            <a href="../03_숫자인식과_유사도/activity11_similarity_check.html"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
-            <div class="nav-sec">AI 이미지 기술</div>
-            <a href="../04_이미지확대와_복원/activity12_interpolation.html"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
-            <a href="../04_이미지확대와_복원/activity13_realesrgan.html"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
-            <a href="../05_객체탐지_YOLO/activity14_yolo.html"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
-            <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
-            <a href="../06_스타일전이/activity15_styletransper.html"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
-            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
-            <div class="nav-sec">CNN과 군집화</div>
-            <a href="../07_CNN과_합성곱/activity17_kernel.html"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
-            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
-      <a href="../07_CNN과_합성곱/activity18_home.html"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
-      <a href="../08_색군집화/activity19_kmeans_svd.html"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+            <div class="nav-sec" data-nav-group="start">시작</div>
+            <a href="../indeximage.html" data-nav-group="start"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html" data-nav-group="start"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec" data-nav-group="color">색과 이미지</div>
+            <a href="activity2_matrix_extract.html" data-nav-group="color"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_hub.html" data-nav-group="color"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+      <a href="activity4_rgb_channels2.html" data-nav-group="color"><i class="fa fa-table" aria-hidden="true"></i><span>RGB·RGBA 행렬 추출기</span></a>
+      <a href="rgb_filter/index.html" data-nav-group="color"><i class="fa fa-image" aria-hidden="true"></i><span>사진 필터와 RGB</span></a>
+      <a href="activity4_rgb_excel.html" data-nav-group="color"><i class="fa fa-th" aria-hidden="true"></i><span>RGB 웹 엑셀</span></a>
+            <a href="activity4_rgb_channels.html" class="active" data-nav-group="color"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="../02_행렬과_이미지변환/activity5_image_merge.html" data-nav-group="color"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="../02_행렬과_이미지변환/activity6_composite_explore.html" data-nav-group="color"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec" data-nav-group="matrix">행렬 연산</div>
+            <a href="../02_행렬과_이미지변환/activity7_matrix_product.html" data-nav-group="matrix"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html" data-nav-group="matrix"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec" data-nav-group="data">데이터와 인식</div>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="../03_숫자인식과_유사도/activity11_similarity_check.html" data-nav-group="data"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
+            <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo.html" data-nav-group="ai"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html" data-nav-group="ai"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../06_스타일전이/activity15_styletransper.html" data-nav-group="ai"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
+            <a href="../07_CNN과_합성곱/activity17_kernel.html" data-nav-group="cnn"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><i class="fa fa-palette"></i><span>색 군집화</span></a>
         </nav>
     </aside>
 
@@ -565,7 +581,7 @@
         <a class="btn excel" href="../../인공지능과%20빅데이터/09_기초연습/excel_practice.html" target="_blank" rel="noopener">
           📗 엑셀 함수 알아보기
         </a>
-        <a class="btn excel" href="rgb_excel.html" target="_blank" rel="noopener">
+        <a class="btn excel" href="activity4_rgb_excel.html" target="_blank" rel="noopener">
           자체 웹 엑셀사이트
         </a>
         <a class="btn download" href="https://naver.me/xIF63JFm" target="_blank" rel="noopener noreferrer" title="다운로드 페이지를 새 탭에서 열기">
@@ -597,11 +613,24 @@
           <h3 id="previewTitle">⬇️ RGB 이미지 미리보기 ⬇️</h3>
           <canvas
             id="orig"
-            width="150"
-            height="150"
+            width="200"
+            height="200"
             style="display: none"
           ></canvas>
           <canvas id="zoom" width="600" height="600"></canvas>
+          <div class="px-control">
+            <div class="px-head">
+              <label for="pxInput">픽셀 수 (가로 × 세로)</label>
+              <span class="px-type">
+                <input type="number" id="pxInput" min="2" max="300" step="1" value="200" inputmode="numeric" aria-describedby="pxNote" />
+                <span aria-hidden="true">×</span>
+                <span id="pxSizeEcho" aria-hidden="true">200</span>
+              </span>
+            </div>
+            <input type="range" id="pxSize" min="0" max="17" step="1" value="15" aria-label="픽셀 수 빠르게 고르기" aria-describedby="pxNote" />
+            <div class="px-scale" aria-hidden="true"><span>4 (적게)</span><span>300 (많이)</span></div>
+            <p id="pxNote" class="px-note"></p>
+          </div>
         </div>
 
         <!-- 행렬 데이터 오른쪽 배치 -->
@@ -673,7 +702,10 @@
 
     <script>
       // ===== 설정 =====
-      var SIZE = 150;
+      var SIZE = 200;   // 행렬 크기 = 사진을 줄인 픽셀 수 (가로 = 세로). 미리보기 아래 칸에 직접 쓰거나 슬라이더로 바꿈
+      var PX_MIN = 2, PX_MAX = 300;
+      var PX_STEPS = [4, 8, 10, 12, 16, 20, 24, 32, 40, 50, 64, 80, 100, 120, 150, 200, 250, 300];   // 슬라이더 눈금
+      var SRC_MAX = 1600;   // 다시 줄일 때 쓰려고 보관하는 원본 사진의 긴 변 최대 픽셀
       var CELL = 22;
       var OVERSCAN = 4;
       var CHANNELS = ["R", "G", "B", "A"];
@@ -727,6 +759,8 @@
       var imageLoaded = false;
       var rgbaEnabled = false;
       var loadGeneration = 0, extractionId = 0, renderId = 0;
+      var srcCanvas = null;   // 올린 사진 원본 (픽셀 수를 바꿀 때 여기서 다시 줄임)
+      var edited = false;     // 행렬 값을 직접 고쳤는지 (픽셀 수를 바꾸면 사라지므로 물어봄)
 
       // ===== DOM =====
       var file = document.getElementById("file");
@@ -753,6 +787,10 @@
       var copyBtn = document.getElementById("copyS");
       var cellSizeInput = document.getElementById("cellSize");
       var cellSizeValue = document.getElementById("cellSizeValue");
+      var pxSize = document.getElementById("pxSize");
+      var pxInput = document.getElementById("pxInput");
+      var pxSizeEcho = document.getElementById("pxSizeEcho");
+      var pxNote = document.getElementById("pxNote");
       var grid = {
         wrap: document.getElementById("gridS"),
         spacer: document.getElementById("spacerS"),
@@ -861,17 +899,9 @@
               .createImageBitmap(f)
               .then(function (bmp) {
                 if (generation !== loadGeneration) { bmp.close(); return; }
-                var tmp = document.createElement("canvas");
-                tmp.width = SIZE;
-                tmp.height = SIZE;
-                var tctx = tmp.getContext("2d", { willReadFrequently: true });
-                tctx.imageSmoothingEnabled = true;
-                tctx.imageSmoothingQuality = "high";
-                tctx.drawImage(bmp, 0, 0, SIZE, SIZE);
+                keepSource(bmp, bmp.width, bmp.height);
                 bmp.close();
-                var id = tctx.getImageData(0, 0, SIZE, SIZE);
-                octx.putImageData(id, 0, 0);
-                extractFromCurrentCanvas();
+                resampleFromSource();
                 showAlert("이미지가 로드되었습니다.", true, 1000);
               })
               .catch(function () {
@@ -892,11 +922,8 @@
         img.onload = function () {
           try {
             if (generation !== loadGeneration) return;
-            octx.clearRect(0, 0, SIZE, SIZE);
-            octx.imageSmoothingEnabled = true;
-            octx.imageSmoothingQuality = "high";
-            octx.drawImage(img, 0, 0, SIZE, SIZE);
-            extractFromCurrentCanvas();
+            keepSource(img, img.naturalWidth, img.naturalHeight);
+            resampleFromSource();
             showAlert("이미지가 로드되었습니다.", true, 1000);
           } finally {
             URL.revokeObjectURL(url);
@@ -907,6 +934,97 @@
           if (generation === loadGeneration) showAlert("이미지를 불러오지 못했습니다.", false);
         };
         img.src = url;
+      }
+
+      // ===== 픽셀 수 =====
+      // 원본을 보관해 두면 픽셀 수를 바꿀 때마다 원본에서 다시 줄여 흐려지지 않는다.
+      function keepSource(img, w, h) {
+        var k = Math.min(1, SRC_MAX / Math.max(w, h));
+        srcCanvas = document.createElement("canvas");
+        srcCanvas.width = Math.max(1, Math.round(w * k));
+        srcCanvas.height = Math.max(1, Math.round(h * k));
+        var c = srcCanvas.getContext("2d");
+        c.imageSmoothingEnabled = true;
+        c.imageSmoothingQuality = "high";
+        c.drawImage(img, 0, 0, srcCanvas.width, srcCanvas.height);
+      }
+
+      // 원본 → SIZE×SIZE. 아주 작게 줄일 때 색이 튀지 않도록 반씩 나눠 줄인다.
+      function resampleFromSource() {
+        var cur = srcCanvas;
+        while (cur.width >= SIZE * 4 && cur.height >= SIZE * 4) {
+          var half = document.createElement("canvas");
+          half.width = Math.ceil(cur.width / 2);
+          half.height = Math.ceil(cur.height / 2);
+          var hc = half.getContext("2d");
+          hc.imageSmoothingEnabled = true;
+          hc.imageSmoothingQuality = "high";
+          hc.drawImage(cur, 0, 0, half.width, half.height);
+          cur = half;
+        }
+        octx.clearRect(0, 0, SIZE, SIZE);
+        octx.imageSmoothingEnabled = true;
+        octx.imageSmoothingQuality = "high";
+        octx.drawImage(cur, 0, 0, SIZE, SIZE);
+        edited = false;
+        extractFromCurrentCanvas();
+      }
+
+      function pxNoteText(n) {
+        var cells = (n * n).toLocaleString("ko-KR") + "칸(채널마다)";
+        if (n <= 32) return cells + " · 칸이 적어 값을 하나하나 읽기 좋아요. 사진은 모자이크처럼 보여요.";
+        if (n <= 150) return cells + " · 작을수록 행렬 읽기가 쉽고, 클수록 사진이 선명해요. 숫자를 직접 써도 돼요.";
+        return cells + " · 사진이 선명해요. 행렬이 커서 오른쪽 표는 스크롤해서 보세요.";
+      }
+
+      // 슬라이더는 가장 가까운 눈금에, 입력칸·옆 글자는 실제 크기로
+      function nearestStep(n) {
+        var best = 0;
+        for (var i = 1; i < PX_STEPS.length; i++) if (Math.abs(PX_STEPS[i] - n) < Math.abs(PX_STEPS[best] - n)) best = i;
+        return best;
+      }
+      function showPx(n, msg) {
+        pxSizeEcho.textContent = n;
+        pxNote.textContent = msg || pxNoteText(n);
+        pxNote.classList.toggle("warn", Boolean(msg));
+      }
+      function syncPxControl(msg) {
+        pxSize.value = nearestStep(SIZE);
+        pxInput.value = SIZE;
+        showPx(SIZE, msg);
+      }
+
+      // 입력칸에 쓴 값 적용: 정수로 반올림, 2~300 밖이면 끝값으로 맞추고 알려 줌
+      function applyTypedSize() {
+        var raw = String(pxInput.value).trim(), n = Math.round(Number(raw));
+        if (raw === String(SIZE)) return;   // 이미 그 크기 (Enter 뒤 칸을 벗어날 때 두 번 처리하지 않게)
+        if (raw === "" || !isFinite(n)) { syncPxControl("숫자를 입력하세요. (" + PX_MIN + "~" + PX_MAX + ")"); return; }
+        var msg = "";
+        if (n > PX_MAX) { msg = PX_MAX + "×" + PX_MAX + "까지 할 수 있어서 " + PX_MAX + "으로 맞췄어요."; n = PX_MAX; }
+        else if (n < PX_MIN) { msg = PX_MIN + "×" + PX_MIN + "보다 작게는 할 수 없어서 " + PX_MIN + "로 맞췄어요."; n = PX_MIN; }
+        setPixelSize(n);
+        if (msg && SIZE === n) syncPxControl(msg);
+      }
+
+      function setPixelSize(n) {
+        n = Math.max(PX_MIN, Math.min(PX_MAX, Math.round(n)));
+        if (n === SIZE) { syncPxControl(); return; }
+        if (imageLoaded && edited &&
+            !confirm("픽셀 수를 바꾸면 행렬에서 고친 값이 사라지고, 원본 사진에서 " + n + "×" + n + "으로 다시 만듭니다. 계속할까요?")) {
+          syncPxControl();
+          return;
+        }
+        SIZE = n;
+        orig.width = orig.height = SIZE;
+        initArrays();
+        grid.wrap.scrollTop = 0;
+        grid.wrap.scrollLeft = 0;
+        updateCellSize();
+        syncPxControl();
+        if (srcCanvas) {
+          renderId++;
+          resampleFromSource();
+        }
       }
 
       // 2D 배열 ↔ flat Uint8Array 변환 헬퍼
@@ -1072,6 +1190,7 @@
           var v = clamp(parseInt(t.value, 10) || 0);
           t.value = v;
           data[currentCh][r][c] = v;
+          edited = true;
           var parent = t.parentElement;
           if (parent) {
             parent.style.backgroundColor = tintRGB(currentCh, v);
@@ -1318,6 +1437,7 @@
         var value = clamp(parseInt(alphaValue.value, 10) || 0);
         alphaValue.value = value;
         for (var y = 0; y < SIZE; y++) data.A[y].fill(value);
+        edited = true;
         currentCh = "A";
         updateChannelControls();
         refreshGrid();
@@ -1356,6 +1476,8 @@
           fileName.textContent = "";
           main.style.display = "none";
           file.value = "";
+          srcCanvas = null;
+          edited = false;
           initArrays();
           currentCh = "R";
           updateChannelControls();
@@ -1371,7 +1493,28 @@
         updateCellSize();
       });
 
+      // ===== 픽셀 수: 입력칸(직접 쓰기) · 슬라이더(빠르게 고르기) =====
+      pxSize.max = PX_STEPS.length - 1;
+      pxSize.addEventListener("input", function () {   // 끄는 동안엔 숫자만, 놓으면 다시 만듦
+        var n = PX_STEPS[parseInt(pxSize.value, 10)];
+        pxInput.value = n;
+        showPx(n);
+      });
+      pxSize.addEventListener("change", function () {
+        setPixelSize(PX_STEPS[parseInt(pxSize.value, 10)]);
+      });
+      pxInput.addEventListener("input", function () {   // 쓰는 동안 옆의 '× 숫자'만 따라 바뀜
+        var n = Math.round(Number(pxInput.value));
+        if (pxInput.value !== "" && isFinite(n)) pxSizeEcho.textContent = Math.max(PX_MIN, Math.min(PX_MAX, n));
+      });
+      pxInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); applyTypedSize(); }
+        else if (e.key === "Escape") { e.preventDefault(); syncPxControl(); pxInput.blur(); }
+      });
+      pxInput.addEventListener("change", applyTypedSize);   // 칸을 벗어날 때(또는 ▲▼ 버튼)
+
       // 초기 준비
+      syncPxControl();
       initArrays();
       setupVirtualGridOnce();
       updateGrid(currentCh);

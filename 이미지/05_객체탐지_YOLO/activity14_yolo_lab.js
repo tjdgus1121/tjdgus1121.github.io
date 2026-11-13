@@ -25,7 +25,7 @@
 
   const state = {
     step: 1,
-    entries: [], answerKey: new Map(),  // 샘플 폴더 정답지 (임시 버튼·시험 사진·출처에만 씀)
+    entries: [], answerKey: new Map(),  // 연습·시험 사진 목록과 출처, 교사용 정답 (연습 불러오기는 상자를 복사하지 않는다)
     photos: [], byId: new Map(),        // 학생이 올린 사진
     classes: [],                        // [{ name, color }]
     active: 0,                          // 상자에 붙일 이름
@@ -35,7 +35,7 @@
     uploading: false, skipped: [],
     model: 'loading',
     featsDone: 0, featsTotal: 0,
-    channel: 0, featCell: -1,
+    channel: 0, featCell: -1, featureMix: 0.6, traceEpoch: -1, practiceLoading: false,
     rawFeats: new Map(),
     runs: [], run: null,
     training: false, paused: false,
@@ -46,6 +46,14 @@
   };
 
   const $ = (id) => document.getElementById(id);
+  const flow = Object.fromEntries([
+    'missionStep', 'missionTitle', 'missionTasks', 'missionStatus', 'labelChecks', 'nextTodo',
+    'flowPrev', 'flowNext', 'flowHint', 'loadPractice', 'practiceStatus', 'featPhoto', 'featMix', 'featMixOut',
+    'traceEmpty', 'traceContent', 'tracePhoto', 'traceEpoch', 'traceEpochOut', 'traceEpochHint',
+    'traceInput', 'traceFeature', 'traceTarget', 'tracePrediction', 'traceInputNote', 'traceFeatureNote',
+    'traceTargetNote', 'tracePredictionNote', 'traceWeightNote'
+  ].map((id) => [id, $(id)]));
+
   const el = {
     prepPhotos: $('prepPhotos'), prepModel: $('prepModel'), prepFeats: $('prepFeats'), prepMsg: $('prepMsg'),
     retryWrap: $('retryWrap'), retryBtn: $('retryBtn'),
@@ -101,6 +109,7 @@
   // ---------- 워커 ----------
   let worker = null;
   const waiters = new Map();
+  const featureRequests = new Map();
   let reqSeq = 0;
 
   function waitFor(key) { return new Promise((resolve, reject) => waiters.set(key, { resolve, reject })); }
@@ -115,6 +124,7 @@
     if (worker) worker.terminate();
     waiters.forEach((w) => w.reject(new Error('다시 시작')));
     waiters.clear();
+    featureRequests.clear();
     state.model = 'loading';
     setPrep(el.prepModel, 'loading', '내려받는 중… 0%', 0);
     try {
@@ -136,7 +146,7 @@
         break;
       case 'ready':
         state.model = 'ready';
-        setPrep(el.prepModel, 'done', '✓ 준비 완료 (MobileNetV2, 약 7MB)', 1);
+        setPrep(el.prepModel, 'done', '✓ 준비 완료', 1);
         extractAll();
         break;
       case 'extracted': settle('extracted:' + m.id, m); break;
@@ -159,6 +169,7 @@
     setPrep(el.prepModel, 'failed', '⚠ 받지 못함', 0);
     showPrepMsg('AI의 눈(MobileNetV2)을 불러오지 못했습니다. 인터넷 연결을 확인하고, 학교망이라면 cdn.jsdelivr.net 접속이 막혀 있지 않은지 확인해 주세요.' + (detail ? ` (${detail})` : ''));
     el.retryWrap.hidden = false;
+    renderFlow();
   }
 
   function setPrep(item, kind, text, ratio) {
@@ -172,7 +183,7 @@
     el.prepMsg.hidden = !text;
   }
 
-  // ---------- 샘플 정답지 (시험 사진·출처·임시 버튼용) ----------
+  // ---------- 샘플 목록·정답지 (연습·시험 사진·출처·교사용 버튼) ----------
   async function loadAnswerKey() {
     try {
       const res = await fetch(DATA_DIR + 'labels.json');
@@ -245,6 +256,7 @@
       el.classList.append(p);
     }
     el.addClass.disabled = state.classes.length >= MAX_CLASSES || state.training;
+    renderFlow();
   }
 
   // 상자를 눌러 고른 상태에서 이름을 누르면 그 상자의 이름을 바꾼다
@@ -339,7 +351,7 @@
   }
 
   function clearFiles() {
-    if (state.training) return;
+    if (state.training || state.practiceLoading) return;
     for (const p of state.photos) if (p.url) URL.revokeObjectURL(p.url);
     state.photos = [];
     state.byId.clear();
@@ -354,8 +366,9 @@
   }
 
   function updateUploadUi() {
-    const busy = state.uploading || state.training;
+    const busy = state.uploading || state.training || state.practiceLoading;
     el.pickFiles.disabled = el.pickFolder.disabled = busy;
+    flow.loadPractice.disabled = busy;
     el.clearFiles.hidden = !state.photos.length;
     el.clearFiles.disabled = busy;
     el.dataArea.hidden = !state.photos.length;
@@ -415,10 +428,11 @@
     const per = state.classes.map((c) => `${c.name} ${state.photos.filter((p) => labeled(p) && mainClass(p) === c.name).length}`).join(' · ');
     el.labelSummary.textContent = `표시 완료 ${done} / ${total}장${skip ? ` (뺀 사진 ${skip}장)` : ''}${per ? ' — ' + per : ''}`;
     let prep;
-    if (!total) prep = ['loading', '1단계에서 사진을 올려 주세요', 0];
-    else if (sp.ok) prep = ['done', `✓ 이름 ${sp.usable.length}개 · 학습 ${sp.train.length}장 · 검증 ${sp.val.length}장`, 1];
-    else prep = ['loading', `표시 ${done}장 — 이름 2개 이상, 이름마다 ${MIN_PER_CLASS}장 이상 필요`, Math.min(0.9, done / Math.max(1, MIN_PER_CLASS * 2))];
+    if (!total) prep = ['loading', '사진을 기다려요', 0];
+    else if (sp.ok) prep = ['done', `✓ 학습 ${sp.train.length} · 검증 ${sp.val.length}`, 1];
+    else prep = ['loading', `정답 표시 ${done}장`, Math.min(0.9, done / Math.max(1, MIN_PER_CLASS * 2))];
     if (!state.uploading) setPrep(el.prepPhotos, ...prep);
+    renderFlow();
   }
 
   // ---------- 라벨링 화면 ----------
@@ -537,12 +551,13 @@
     const t = Hd.makeTarget([{ ...b, cls: 0 }]).list[0];
     const px = (v) => Math.round(v * S);
     const cx = (b.x1 + b.x2) / 2 * S, cy = (b.y1 + b.y2) / 2 * S, w = (b.x2 - b.x1) * S, h = (b.y2 - b.y1) * S;
+    const responsible = Hd.makeTarget(p.boxes.map((box) => ({ ...toInputBox(p, box), cls: 0 }))).list.length;
     el.dataCalc.innerHTML =
       row('상자', `${esc(p.boxes[focus].cls)} · (${px(b.x1)}, ${px(b.y1)}) ~ (${px(b.x2)}, ${px(b.y2)}) <span class="mini">· 224×224 기준</span>`) +
       row('상자 중심', `(${cx.toFixed(1)}, ${cy.toFixed(1)})`) +
       row('책임 칸', `${cx.toFixed(1)} ÷ 32 = ${(cx / CELL).toFixed(2)} → <b>${t.gx + 1}열</b>, ${cy.toFixed(1)} ÷ 32 = ${(cy / CELL).toFixed(2)} → <b>${t.gy + 1}행</b> <span class="mini">· 흰 칸</span>`) +
       row('상자 크기', `너비 ${w.toFixed(0)}px → √(${w.toFixed(0)} ÷ 224) = <b>${f2(t.sw)}</b>, 높이 ${h.toFixed(0)}px → √(${h.toFixed(0)} ÷ 224) = <b>${f2(t.sh)}</b>`) +
-      row('칸 나누기', `‘있다’를 배우는 칸 <b>${p.boxes.length}개</b>, ‘없다’를 배우는 칸 <b>${Hd.CELLS - p.boxes.length}개</b>`);
+      row('칸 나누기', `‘있다’를 배우는 칸 <b>${responsible}개</b>, ‘없다’를 배우는 칸 <b>${Hd.CELLS - responsible}개</b>${responsible < p.boxes.length ? ' <span class="mini">· 한 칸에 중심이 겹치면 더 큰 상자 하나를 맡깁니다.</span>' : ''}`);
   }
 
   function goPhoto(i) {
@@ -589,6 +604,7 @@
     updateLabelSummary();
     updateNSel();
     if (state.step === 1) el.tabs.forEach((t, i) => { t.disabled = !stepEnabled(i + 1); });
+    renderFlow();
   }
 
   // ---------- 갤러리 ----------
@@ -686,6 +702,7 @@
         setPrep(el.prepFeats, 'loading', `${state.featsDone} / ${state.featsTotal}장 · ${((performance.now() - t0) / 1000).toFixed(0)}초`, state.featsDone / state.featsTotal);
         if (state.step === 2) updateFeatProgress();
         if (state.step === 3) updateTrainUi();
+        renderFlow();
       }
       updateFeatCounts();
       if (state.featsTotal && state.featsDone === state.featsTotal) setPrep(el.prepFeats, 'done', `✓ ${state.featsTotal}장 완료 (${((performance.now() - t0) / 1000).toFixed(1)}초)`, 1);
@@ -713,13 +730,17 @@
 
   async function getFeats(id) {
     if (state.rawFeats.has(id)) return state.rawFeats.get(id);
+    if (featureRequests.has(id)) return featureRequests.get(id);
     const p = state.byId.get(id);
     if (!p || !p.extracted) return null;
     const w = waitFor('features:' + id);
     worker.postMessage({ type: 'get-features', id });
-    const f = await w;
-    if (f) state.rawFeats.set(id, f);
-    return f;
+    const request = w.then((f) => {
+      if (f && state.byId.get(id) === p) state.rawFeats.set(id, f);
+      return f;
+    }).finally(() => { if (featureRequests.get(id) === request) featureRequests.delete(id); });
+    featureRequests.set(id, request);
+    return request;
   }
 
   // 사진의 대표 상자(가장 큰 상자)가 책임지는 칸
@@ -733,10 +754,12 @@
     updateFeatProgress();
     const p = curPhoto();
     if (!p) return;
+    syncPhotoSelect(flow.featPhoto, state.photos.map((ph) => [ph.id, ph.id]), p.id);
     const t = mainTarget(p);
     if (state.featCell < 0) state.featCell = t ? t.cell : 24;
     el.featTitle.textContent = `${p.id} · 특징 #${state.channel}을 7×7칸에 칠하기`;
-    const f = await getFeats(p.id);
+    let f;
+    try { f = await getFeats(p.id); } catch (err) { return; } // 재시도 중에는 다음 렌더에서 다시 요청
     if (state.step !== 2 || curPhoto() !== p) return;
     const ctx = el.featCanvas.getContext('2d');
     const size = el.featCanvas.width;
@@ -752,9 +775,7 @@
     for (let k = 0; k < Hd.CELLS; k++) { vals[k] = f[k * Hd.C + ch]; mn = Math.min(mn, vals[k]); mx = Math.max(mx, vals[k]); }
     // 제곱해서 칠하면 크게 반응한 칸만 진하게 남는다
     const norm = vals.map((v) => ((v - mn) / Math.max(1e-6, mx - mn)) ** 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fillRect(0, 0, size, size);
-    drawHeat(ctx, norm, size);
+    drawFeatureBlend(ctx, p, norm, size);
     drawGrid(ctx, size);
     for (const b of p.boxes) strokeBox(ctx, toInputBox(p, b), size, '#fff', 2, [6, 4]);
     const c = size / Hd.G, k = state.featCell;
@@ -890,6 +911,7 @@
     };
     state.runs.push(run);
     state.run = run;
+    state.traceEpoch = -1;
     state.training = true;
     state.paused = false;
     state.insights = null;
@@ -977,7 +999,7 @@
     run.history.push(m);
     run.bestEpoch = m.bestEpoch;
     if (m.epoch > 0) run.ms += m.ms;
-    if (state.step === 3) { paintLiveGrid(run, m); updateCharts(run); }
+    if (state.step === 3) { paintLiveGrid(run, m); updateCharts(run); renderTrace(); }
     updateTrainUi();
   }
 
@@ -1001,6 +1023,7 @@
   }
 
   function updateTrainUi() {
+    renderFlow();
     const run = state.run;
     const busy = state.training;
     const sp = splitData();
@@ -1307,6 +1330,7 @@
     el.judgeArea.hidden = false;
     el.judgeArea2.hidden = false;
     renderJudge();
+    renderFlow();
   }
 
   // 49칸 각각을 후보 상자로 보고, 점수(있다 점수 × 이름 확률)가 기준 이상인 것만 남긴 뒤
@@ -1440,6 +1464,155 @@
     charts.map.update(mapPoints(), { x: r.point.x, y: r.point.y, label: '새 사진' }, C);
   }
 
+  // ---------- 학생용 활동 흐름 ----------
+  const STEP_TASKS = [
+    ['사진에 정답 상자와 이름을 붙여요', '연습 사진을 불러오거나 내 사진을 올리세요.', '찾고 싶은 이름을 2개 이상 만들고, 이름을 고른 뒤 물체를 감싸는 상자를 그리세요.', '이름마다 최소 3장에 표시하세요. 처음에는 사진 한 장에 물체 하나로 시작하면 쉬워요.'],
+    ['사진의 어느 부분에 특징이 반응할까요?', '사진을 고르고 원본·특징 겹침 비율을 움직여 비교하세요.', '특징 번호를 바꾸거나 “가장 크게 반응하는 특징 찾기”를 눌러 보세요.', 'MobileNet의 특징은 그대로 두고, 다음 단계에서 위치·이름을 찾는 부분을 학습합니다.'],
+    ['정답과 비교하면서 예측이 바뀌는지 봐요', '첫 실험은 기본 설정 그대로 “학습 시작”을 누르세요.', '“내 사진이 탐지 결과가 되기까지”에서 정답 격자와 예측 상자를 비교하세요.', '학습이 끝나면 에폭을 0부터 되감으세요. 상자가 항상 정답에 가까워지는 것은 아니에요.'],
+    ['잘 배운 사진과 헷갈린 사진을 비교해요', '에폭을 학습 전과 학습 후로 움직여 보세요.', '“틀린 사진만”을 골라 이름을 틀렸는지, 위치가 어긋났는지 살펴보세요.', '학습 사진에는 좋고 검증 사진에는 나쁘다면, 배경이 다른 사진을 더 준비해 보세요.'],
+    ['학습에 쓰지 않은 사진으로 시험해요', '시험 사진이나 새 사진을 올려 무엇을 어디서 찾는지 확인하세요.', '배경이나 물체의 크기가 달라져도 찾는지 비교하세요.', '잘못 찾았다면 1단계로 돌아가 사진·정답을 보완하고 다시 학습하세요.']
+  ];
+
+  function putText(node, value) { if (node.textContent !== value) node.textContent = value; }
+
+  function renderFlow() {
+    const n = state.step, sp = splitData();
+    const total = state.photos.length;
+    document.body.dataset.step = String(n);
+    document.body.dataset.hasPhotos = String(total > 0);
+    const todo = state.photos.filter((p) => !p.skip && !p.boxes.length).length;
+    const ready = sp.ok && state.model === 'ready' && featsReadyFor(sp.train.concat(sp.val));
+    const finished = !!(state.run && state.run.done && state.run.history.length > 1 && !state.training);
+    const instructions = STEP_TASKS[n - 1];
+    putText(flow.missionStep, `${n} / 5 · 지금 할 일`);
+    putText(flow.missionTitle, instructions[0]);
+    if (flow.missionTasks.dataset.step !== String(n)) {
+      flow.missionTasks.replaceChildren(...instructions.slice(1).map((s) => { const li = document.createElement('li'); li.textContent = s; return li; }));
+      flow.missionTasks.dataset.step = String(n);
+    }
+    flow.labelChecks.hidden = n !== 1 || !total || !state.classes.length;
+    if (n === 1) {
+      flow.labelChecks.replaceChildren(...state.classes.map((c) => {
+        const count = state.photos.filter((p) => labeled(p) && mainClass(p) === c.name).length;
+        const badge = document.createElement('span');
+        badge.className = count >= MIN_PER_CLASS ? 'ready' : '';
+        badge.textContent = `${c.name}: ${count}장 · ${count >= MIN_PER_CLASS ? '✓ 준비됨' : `${MIN_PER_CLASS - count}장 더 필요`}`;
+        return badge;
+      }));
+    }
+    flow.nextTodo.hidden = n !== 1 || !todo;
+    flow.nextTodo.disabled = state.training || state.uploading || state.practiceLoading;
+    let hint;
+    if (n <= 2 && !total) hint = '먼저 사진을 올려 주세요. 연습 사진으로도 시작할 수 있어요.';
+    else if (n <= 2 && !sp.ok) hint = `사진 수 조건을 채운 이름 ${sp.usable.length} / 2개. 이름마다 최소 ${MIN_PER_CLASS}장에 정답 상자를 표시해 주세요. (사진 수는 가장 큰 상자의 이름으로 셉니다.)`;
+    else if (n === 1) hint = `첫 학습 준비 완료: 학습 ${sp.train.length}장 · 검증 ${sp.val.length}장.${todo ? ` 아직 표시하지 않은 ${todo}장은 이번 학습에서 빠져요.` : ''}${sp.dropped.length ? ` 사진 수가 부족한 이름 ${sp.dropped.map((c) => c.name).join(', ')}도 빠져요.` : ''} 다음은 특징 살펴보기입니다.`;
+    else if (n === 2 && (state.model === 'failed' || el.prepFeats.dataset.state === 'failed')) hint = '특징 추출이 중단되었습니다. 위의 “다시 시도”를 눌러 주세요.';
+    else if (n === 2 && !ready) hint = `사진에서 특징을 뽑고 있어요. (${state.featsDone} / ${state.featsTotal}장) 끝나면 학습 단계로 넘어갈 수 있어요.`;
+    else if (n === 2) hint = `학습 ${sp.train.length}장 · 검증 ${sp.val.length}장의 특징 준비 완료. 다음 단계에서 탐지 부분을 학습하세요.`;
+    else if (n === 3 && state.training) hint = state.paused ? '일시정지 중입니다. “계속”을 눌러 학습을 이어가거나 “멈춤”으로 마치세요.' : '학습 중입니다. 예측 상자가 바뀌는 모습을 보고, 학습이 끝나면 결과를 돌아보세요.';
+    else if (n === 3 && !finished) hint = ready ? '“학습 시작”을 누르세요. 한 번 이상의 학습 기록이 생기면 결과를 돌아볼 수 있어요.' : '사진의 정답 표시와 특징 추출을 먼저 끝내 주세요.';
+    else if (n === 3) hint = `${state.run.stopped ? '중간에 멈춘 학습' : '학습'}의 기록이 준비됐어요. 에폭을 되감아 본 뒤 다음 단계에서 틀린 사진을 살펴보세요.`;
+    else if (n === 4) hint = '틀린 사진 한 장을 골라 원인을 생각했다면, 새 사진으로 시험해 보세요.';
+    else hint = state.analysis ? '새 사진의 결과를 확인했어요. 잘못 찾은 모습과 비슷한 사진을 더 모아 다시 학습해 보세요.' : '새 사진은 학습 정답에 포함되지 않아요. 시험 사진 하나를 골라 먼저 판별해 보세요.';
+    putText(flow.missionStatus, hint);
+    putText(flow.flowHint, hint);
+    flow.flowPrev.hidden = n === 1;
+    flow.flowPrev.disabled = state.training;
+    const nextText = ['다음: 특징 살펴보기 →', '다음: 학습하기 →', '다음: 학습 돌아보기 →', '다음: 새 사진 시험하기 →', '사진을 보완해 다시 학습하기 ↺'];
+    putText(flow.flowNext, nextText[n - 1]);
+    flow.flowNext.disabled = state.training || state.uploading || state.practiceLoading || (n === 1 ? !sp.ok : n === 2 ? !ready : n === 3 ? !finished : false);
+    el.tabs.forEach((tab, i) => { tab.title = stepEnabled(i + 1) ? `${i + 1}단계로 이동` : i < 2 ? '먼저 사진을 올려 주세요' : i === 2 ? '이름 2개 이상에 각각 사진 3장 이상 정답 표시가 필요해요' : '3단계에서 학습을 마치면 열려요'; });
+  }
+
+  function syncPhotoSelect(select, items, value) {
+    // 에폭마다 option을 다시 만들면 키보드 선택이 끊기므로 목록이 바뀔 때만 갱신한다.
+    const key = JSON.stringify(items);
+    if (select.dataset.items !== key) {
+      select.replaceChildren(...items.map(([id, text]) => { const option = document.createElement('option'); option.value = id; option.textContent = text; return option; }));
+      select.dataset.items = key;
+    }
+    if (items.some(([id]) => id === value)) select.value = value;
+  }
+
+  function drawFeatureBlend(ctx, p, norm, size) {
+    const a = state.featureMix;
+    ctx.save();
+    drawPhoto(ctx, p, size);
+    ctx.fillStyle = `rgba(12,18,32,${a})`;
+    ctx.fillRect(0, 0, size, size);
+    ctx.globalAlpha = a;
+    drawHeat(ctx, norm, size);
+    ctx.restore();
+  }
+
+  let traceRequest = 0;
+  async function renderTrace() {
+    const request = ++traceRequest, run = state.run;
+    const hasHistory = !!(run && run.history.length);
+    flow.traceEmpty.hidden = hasHistory;
+    flow.traceContent.hidden = !hasHistory;
+    if (!hasHistory || state.step !== 3) return;
+    const items = [...run.trainIds.map((id) => [id, `학습 · ${id}`]), ...run.valIds.map((id) => [id, `검증 · ${id}`])];
+    syncPhotoSelect(flow.tracePhoto, items, flow.tracePhoto.value);
+    const id = flow.tracePhoto.value, p = state.byId.get(id);
+    if (!p) return;
+    const at = state.training || state.traceEpoch < 0 ? run.history.length - 1 : Math.min(state.traceEpoch, run.history.length - 1);
+    const h = run.history[at];
+    flow.traceEpoch.max = String(run.history.length - 1);
+    flow.traceEpoch.value = String(at);
+    flow.traceEpoch.disabled = state.training;
+    putText(flow.traceEpochOut, h.epoch ? `${h.epoch}에폭` : '0에폭 · 학습 전');
+    putText(flow.traceEpochHint, state.training ? '학습 중에는 최신 에폭을 따라갑니다.' : '왼쪽 끝은 학습 전입니다. 오른쪽으로 움직여 실제 기록을 비교하세요.');
+    const isVal = run.valIds.includes(id);
+    const index = (isVal ? run.valIds : run.trainIds).indexOf(id);
+    const pred = snapOf(isVal ? h.valSnaps : h.trainSnaps, index);
+    const boxes = run.boxes.get(id) || [];
+    const target = Hd.makeTarget(boxes);
+    const size = flow.traceInput.width;
+    const inputCtx = flow.traceInput.getContext('2d');
+    drawPhoto(inputCtx, p, size);
+    for (const b of boxes) strokeBox(inputCtx, b, size, run.classes[b.cls].color, 3);
+    putText(flow.traceInputNote, `${id} · ${isVal ? '검증용: 이 사진의 정답으로 가중치를 고치지 않습니다.' : '학습용: 이 사진의 정답과 비교해 가중치를 고칩니다.'}`);
+    const tc = flow.traceTarget.getContext('2d'), cell = size / Hd.G;
+    tc.fillStyle = '#edf0f5'; tc.fillRect(0, 0, size, size);
+    tc.font = '700 16px "Malgun Gothic", sans-serif'; tc.textAlign = 'center'; tc.textBaseline = 'middle';
+    for (let k = 0; k < Hd.CELLS; k++) {
+      const b = target.resp[k] >= 0 ? target.list[target.resp[k]] : null;
+      const x = (k % Hd.G) * cell, y = Math.floor(k / Hd.G) * cell;
+      if (b) { tc.fillStyle = run.classes[b.cls].color; tc.fillRect(x, y, cell, cell); }
+      tc.fillStyle = b ? ink(run.classes[b.cls].color) : '#626e80'; tc.fillText(b ? '1' : '0', x + cell / 2, y + cell / 2);
+    }
+    drawGrid(tc, size, 0.9);
+    const targets = target.list.map((t) => `${run.classes[t.cls].name}: ${t.gx + 1}열 ${t.gy + 1}행`).join(' · ');
+    putText(flow.traceTargetNote, `1 = 물체 중심을 맡는 칸 ${target.list.length}개, 0 = 배경 ${Hd.CELLS - target.list.length}개. ${targets}${run.noisy.has(id) ? ' · 실험 설정으로 일부러 이름을 바꾼 정답입니다.' : ''}`);
+    const pc = flow.tracePrediction.getContext('2d');
+    drawPhoto(pc, p, size); drawHeat(pc, pred.obj, size); drawGrid(pc, size);
+    for (const b of boxes) strokeBox(pc, b, size, '#fff', 2, [5, 4]);
+    const cls = run.classes[pred.cls];
+    strokeBox(pc, pred.box, size, cls.color, 3);
+    label(pc, pred.box.x1 * size, pred.box.y1 * size, cls.name, cls.color, size, ink(cls.color));
+    putText(flow.tracePredictionNote, `${h.epoch}에폭 · 예측 ${cls.name} · IoU ${f2(pred.iou)} · ${pred.correct ? '✓ 위치와 이름 맞음' : '위치 또는 이름이 아직 다름'}. 점선 = 정답, 색 상자 = 예측, 노란 칸 = 물체가 있다는 점수.`);
+    putText(flow.traceWeightNote, `MobileNet은 고정 · ${h.headChange ? `탐지 가중치·편향 ${h.headChange.count.toLocaleString()}개 ${h.epoch ? `수정: 이전 에폭 대비 평균 변화 ${h.headChange.meanAbs.toExponential(2)}` : '학습 전 초기값'}` : '탐지 가중치만 학습'} · 특징을 섞어 보이는 비율은 학습 비율이 아닙니다.`);
+    const fc = flow.traceFeature.getContext('2d');
+    drawPhoto(fc, p, size);
+    putText(flow.traceFeatureNote, '이 사진의 실제 특징을 불러오는 중…');
+    let f;
+    try { f = await getFeats(id); } catch (err) { return; } // 재시도 중에는 다음 렌더에서 다시 요청
+    if (request !== traceRequest || state.run !== run || state.step !== 3) return;
+    if (!f) { putText(flow.traceFeatureNote, '특징을 불러오지 못했습니다. 2단계에서 준비 상태를 확인하세요.'); return; }
+    const vals = Float32Array.from({ length: Hd.CELLS }, (_, k) => f[k * Hd.C + state.channel]);
+    const mn = Math.min(...vals), mx = Math.max(...vals);
+    drawFeatureBlend(fc, p, vals.map((v) => ((v - mn) / Math.max(1e-6, mx - mn)) ** 2), size);
+    drawGrid(fc, size);
+    putText(flow.traceFeatureNote, `7×7칸 × 특징 320개 중 #${state.channel}. 2단계에서 번호와 겹침 비율을 바꿀 수 있어요. 학습 전후에 이 값은 같습니다.`);
+  }
+
+  function moveInFlow(n) {
+    setStep(n);
+    flow.missionTitle.focus({ preventScroll: true });
+    flow.missionTitle.scrollIntoView({ block: 'start', behavior: reduceMotion ? 'instant' : 'smooth' });
+  }
+
   // ---------- 단계 이동 ----------
   function stepEnabled(n) {
     if (n === 1) return true;
@@ -1474,6 +1647,8 @@
       if (run && run.history.length) { updateCharts(run); paintLiveGrid(run, run.history[run.history.length - 1]); }
     } else if (state.step === 4) renderStep4();
     else if (state.step === 5) { if (state.analysis) renderJudge(); else if (state.insights) charts.map.update(mapPoints(), null, state.run.classes); }
+    renderFlow();
+    if (state.step === 3) renderTrace();
   }
 
   function buildCredits() {
@@ -1493,6 +1668,55 @@
   }
 
   // ---------- 이벤트 ----------
+  flow.flowPrev.addEventListener('click', () => { if (!state.training) moveInFlow(Math.max(1, state.step - 1)); });
+  flow.flowNext.addEventListener('click', () => { if (!flow.flowNext.disabled) moveInFlow(state.step === 5 ? 1 : state.step + 1); });
+  flow.nextTodo.addEventListener('click', () => {
+    const next = state.photos.findIndex((p, i) => i > state.cur && !p.skip && !p.boxes.length);
+    goPhoto(next >= 0 ? next : state.photos.findIndex((p) => !p.skip && !p.boxes.length));
+    el.dataCanvas.focus();
+  });
+  flow.featPhoto.addEventListener('change', () => {
+    state.cur = state.photos.findIndex((p) => p.id === flow.featPhoto.value);
+    state.featCell = -1; state.selBox = -1;
+    renderStep2();
+  });
+  flow.featMix.addEventListener('input', () => {
+    state.featureMix = Number(flow.featMix.value) / 100;
+    putText(flow.featMixOut, `원본 ${100 - Number(flow.featMix.value)}% · 특징 ${flow.featMix.value}%`);
+    renderStep2();
+  });
+  flow.tracePhoto.addEventListener('change', renderTrace);
+  flow.traceEpoch.addEventListener('input', () => { state.traceEpoch = Number(flow.traceEpoch.value); renderTrace(); });
+  flow.loadPractice.addEventListener('click', async () => {
+    if (state.practiceLoading || state.uploading || state.training) return;
+    state.practiceLoading = true;
+    updateUploadUi();
+    putText(flow.practiceStatus, '연습 사진을 불러오는 중…');
+    try {
+      if (!state.entries.length) await loadAnswerKey();
+      const names = [...new Set(state.entries.filter((x) => x.split !== 'example').map((x) => x.cls))].slice(0, 2);
+      const list = names.flatMap((name) => state.entries.filter((x) => x.cls === name && x.split !== 'example').slice(0, 6)).filter((x) => !state.byId.has(x.file.normalize('NFC')));
+      if (!names.length) throw new Error('연습 사진 목록을 받지 못했어요.');
+      const results = [];
+      // 학교망에서도 요청이 한꺼번에 몰리지 않도록 네 장씩 받는다.
+      for (let i = 0; i < list.length; i += 4) {
+        results.push(...await Promise.allSettled(list.slice(i, i + 4).map(async (it) => {
+          const res = await fetch(sampleUrl(it.file));
+          if (!res.ok) throw new Error(`사진 응답 ${res.status}`);
+          return new File([await res.blob()], it.file, { type: 'image/jpeg' });
+        })));
+      }
+      const files = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+      const failed = results.length - files.length;
+      await addFiles(files);
+      putText(flow.practiceStatus, `${files.length ? `${files.length}장을 불러왔어요.` : failed ? '사진을 불러오지 못했어요.' : '연습 사진이 이미 올라와 있어요.'} 이름은 ${names.join('·')}로 시작해 보세요. 이름마다 3장 이상 직접 정답 상자를 그려 주세요.${failed ? ` ${failed}장은 받지 못했어요. 버튼을 다시 눌러 재시도하세요.` : ''}`);
+    } catch (err) {
+      putText(flow.practiceStatus, `${err.message} 인터넷 연결을 확인하고 다시 눌러 주세요. 내 사진을 올려도 됩니다.`);
+    } finally {
+      state.practiceLoading = false;
+      updateUploadUi();
+    }
+  });
   el.tabs.forEach((t) => t.addEventListener('click', () => setStep(Number(t.dataset.step))));
   document.querySelector('.steps').addEventListener('keydown', (e) => {
     const enabled = el.tabs.filter((t) => !t.disabled).map((t) => Number(t.dataset.step));

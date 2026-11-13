@@ -54,7 +54,8 @@
    *   update(xs, ys[][], marks)  marks: [{ x, label }] 세로 표시선
    */
   function LineChart(host, opts) {
-    const W = 360, H = 190, M = { l: 40, r: 64, t: 12, b: 26 };
+    // 긴 한글 계열명과 백분율도 SVG 안에 들어오도록 오른쪽 라벨 자리를 확보한다.
+    const W = 420, H = 210, M = { l: 40, r: 120, t: 14, b: 28 };
     host.classList.add('chart');
     const legend = document.createElement('div');
     legend.className = 'chart-legend';
