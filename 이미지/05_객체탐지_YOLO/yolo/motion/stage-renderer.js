@@ -21,15 +21,43 @@
   }
 
   // A new element fades in to the opacity it is drawn with, instead of popping up.
-  function fadeIn(node){
+  function fadeIn(node,delay=0){
     if(node.nodeType!==1||typeof node.animate!=='function'||node.closest&&node.closest('defs'))return;
     const target=Number(node.getAttribute('opacity')??1);
-    node.animate([{opacity:0},{opacity:Number.isFinite(target)?target:1}],{duration:420,easing:'cubic-bezier(.2,.7,.3,1)'});
+    node.animate([{opacity:0},{opacity:Number.isFinite(target)?target:1}],{duration:420,delay,fill:'backwards',easing:'cubic-bezier(.2,.7,.3,1)'});
+  }
+  // 새로 생긴 그림 요소의 등장 연출: 테두리만 있는 상자·선은 펜으로 그리듯, 글자는 살짝 떠오르며, 나머지는 서서히.
+  // 한 번에 생긴 요소들은 순서대로 조금씩 늦게 나타난다(최대 0.7초).
+  const STROKE_TAGS=new Set(['rect','path','line','polyline','polygon','circle','ellipse']);
+  const hasDash=el=>el.hasAttribute('stroke-dasharray')||/stroke-dasharray/.test(el.getAttribute('style')||'');
+  const outlineOnly=el=>{const st=el.getAttribute('stroke');if(!st||st==='none')return false;const f=el.getAttribute('fill');return f==='none'||f==='transparent'||Number(el.getAttribute('fill-opacity')??1)<.2;};
+  function drawIn(el,delay){
+    if(typeof el.animate!=='function')return false;
+    el.setAttribute('pathLength','1');
+    const a=el.animate([{strokeDasharray:'1 1',strokeDashoffset:1},{strokeDasharray:'1 1',strokeDashoffset:0}],{duration:650,delay,fill:'backwards',easing:'cubic-bezier(.45,.1,.25,1)'});
+    const done=()=>el.removeAttribute('pathLength');a.onfinish=done;a.oncancel=done;return true;
+  }
+  function riseIn(el,delay){
+    if(typeof el.animate!=='function'||el.hasAttribute('transform'))return false;
+    const target=Number(el.getAttribute('opacity')??1);
+    el.animate([{opacity:0,transform:'translateY(10px)'},{opacity:Number.isFinite(target)?target:1,transform:'translateY(0)'}],{duration:480,delay,fill:'backwards',easing:'cubic-bezier(.2,.8,.3,1)'});return true;
+  }
+  function enterAnim(node,delay){
+    if(node.nodeType!==1||node.closest&&node.closest('defs'))return;
+    const tag=node.nodeName.toLowerCase();
+    if(STROKE_TAGS.has(tag)&&outlineOnly(node)&&!hasDash(node)){if(drawIn(node,delay))return;}
+    if(tag==='text'){if(riseIn(node,delay))return;}
+    if(tag==='g'){
+      // 묶음 안의 테두리 상자는 그려지고, 묶음 전체는 서서히
+      let i=0;node.querySelectorAll('rect,path,line,polyline,polygon').forEach(el=>{if(i<12&&outlineOnly(el)&&!hasDash(el)&&drawIn(el,delay+60*i))i++;});
+    }
+    fadeIn(node,delay);
   }
   function patchSvg(stage,markup,{enter=false}={}){
     const blueprint=stage.ownerDocument.createElementNS('http://www.w3.org/2000/svg','svg');
     blueprint.innerHTML=markup;
-    syncChildren(stage,blueprint,enter?fadeIn:null);
+    let n=0;
+    syncChildren(stage,blueprint,enter?node=>enterAnim(node,Math.min(700,(n++)*55)):null);
   }
 
   // Reads the file in chunks and reports the received fraction (null when the size is unknown).

@@ -24,9 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentUrl = new URL(window.location.href);
       // activity3 부속 활동(탐구·색 섞기·색감 게임·색 맞추기·퍼스널컬러)에서는 입구인 RGB 데이터 탐구 메뉴를 강조한다.
       currentUrl.pathname = currentUrl.pathname.replace(
-        /activity3_(?:rgb_explore|color_mix_relay|color_sense|color_sprint|rgb_sensitivity|rgb_guess|Rgb_personal)\.html$/,
+        /activity3_(?:rgb_explore|color_mix_relay|color_sense|color_sprint|rgb_sensitivity[23]?|rgb_guess|Rgb_personal)\.html$/,
         'activity3_rgb_hub.html'
       );
+      // 커널 필터 체험 원래 활동에서는 입구인 kernel_filter 카드 메뉴를 강조한다.
+      currentUrl.pathname = currentUrl.pathname.replace(/activity17_kernel\.html$/, 'kernel_filter/index.html');
+      currentUrl.pathname = currentUrl.pathname.replace(/activity11_similarity_check\.html$/, 'hamming_motion/index.html');
 
       return (
         decodeURIComponent(linkUrl.pathname).replace(/\/+$/, '') ===

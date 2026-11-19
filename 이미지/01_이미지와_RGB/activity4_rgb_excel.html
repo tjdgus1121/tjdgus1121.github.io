@@ -291,13 +291,19 @@
       position: absolute;
       pointer-events: none;
       background:
-        linear-gradient(90deg, var(--xl) 50%, #fff 50%) 0 0 / 8px 2px repeat-x,
-        linear-gradient(90deg, var(--xl) 50%, #fff 50%) 0 100% / 8px 2px repeat-x,
-        linear-gradient(0deg, var(--xl) 50%, #fff 50%) 0 0 / 2px 8px repeat-y,
-        linear-gradient(0deg, var(--xl) 50%, #fff 50%) 100% 0 / 2px 8px repeat-y;
+        linear-gradient(90deg, var(--ants, var(--xl)) 50%, #fff 50%) 0 0 / 8px 2px repeat-x,
+        linear-gradient(90deg, var(--ants, var(--xl)) 50%, #fff 50%) 0 100% / 8px 2px repeat-x,
+        linear-gradient(0deg, var(--ants, var(--xl)) 50%, #fff 50%) 0 0 / 2px 8px repeat-y,
+        linear-gradient(0deg, var(--ants, var(--xl)) 50%, #fff 50%) 100% 0 / 2px 8px repeat-y;
       animation: marquee-ants .5s linear infinite;
     }
     .copy-marquee[hidden] { display: none }
+    /* 수식 입력 중: 수식 속 주소를 같은 색 글자로 (입력 칸 위에 겹쳐 그림, 입력 칸 글자는 투명) */
+    .ref-ink { position: absolute; z-index: 3; overflow: hidden; white-space: pre; pointer-events: none; color: var(--text) }
+    .ref-ink[hidden] { display: none }
+    .ref-ink > span { display: inline-block; white-space: pre }
+    input.has-ink { color: transparent !important; caret-color: var(--text) }
+    input.has-ink::selection { color: transparent; background: rgba(15, 108, 189, .25) }
     @keyframes marquee-ants { to { background-position: 8px 0, -8px 100%, 0 -8px, 100% 8px } }
 
     /* 이름 관리자 */
@@ -1336,11 +1342,57 @@
     .ps-hint { margin: 0; font-size: 12.5px; color: #6b6b6b }
     .ps-set[hidden] { display: none }
   </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="../../nav.css">
+  <script src="../../nav.js"></script>
+  <style>
+    /* 공통 사이드바 메뉴 버튼을 엑셀 제목 줄 왼쪽에 둔다 */
+    .titlebar .sidebar-toggle { position: static; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 6px; flex-shrink: 0; }
+    .titlebar .sidebar-toggle:hover, .titlebar .sidebar-toggle:focus-visible { background: rgba(255,255,255,.18); }
+    .titlebar .sidebar-toggle i { font-size: 17px; color: #fff; }
+  </style>
 </head>
 
 <body>
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-sec" data-nav-group="start">시작</div>
+            <a href="../indeximage.html" data-nav-group="start"><i class="fa fa-home"></i><span>홈</span></a>
+            <a href="activity1_intro.html" data-nav-group="start"><i class="fa fa-th"></i><span>행렬 시각화</span></a>
+            <div class="nav-sec" data-nav-group="color">색과 이미지</div>
+            <a href="activity2_matrix_extract.html" data-nav-group="color"><i class="fa fa-table"></i><span>RGB 행렬 알아보기</span></a>
+            <a href="activity3_rgb_hub.html" data-nav-group="color"><i class="fa fa-palette"></i><span>RGB 데이터 탐구</span></a>
+      <a href="activity4_rgb_channels2.html" data-nav-group="color"><i class="fa fa-table" aria-hidden="true"></i><span>RGB·RGBA 행렬 추출기</span></a>
+      <a href="rgb_filter/index.html" data-nav-group="color"><i class="fa fa-image" aria-hidden="true"></i><span>사진 필터와 RGB</span></a>
+      <a href="activity4_rgb_excel.html" data-nav-group="color"><i class="fa fa-th" aria-hidden="true"></i><span>RGB 웹 엑셀</span></a>
+            <a href="activity4_rgb_channels.html" class="active" data-nav-group="color"><i class="fa fa-adjust"></i><span>RGB 채널 탐구</span></a>
+            <a href="../02_행렬과_이미지변환/activity5_image_merge.html" data-nav-group="color"><i class="fa fa-object-group"></i><span>이미지 합성</span></a>
+            <a href="../02_행렬과_이미지변환/activity6_composite_explore.html" data-nav-group="color"><i class="fa fa-layer-group"></i><span>합성 원리</span></a>
+            <div class="nav-sec" data-nav-group="matrix">행렬 연산</div>
+            <a href="../02_행렬과_이미지변환/activity7_matrix_product.html" data-nav-group="matrix"><i class="fa fa-project-diagram"></i><span>행렬 곱셈</span></a>
+            <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html" data-nav-group="matrix"><i class="fa fa-sync-alt"></i><span>회전 행렬</span></a>
+            <div class="nav-sec" data-nav-group="data">데이터와 인식</div>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
+            <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
+            <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
+            <a href="../03_숫자인식과_유사도/hamming_motion/index.html" data-nav-group="data"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
+            <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
+            <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo.html" data-nav-group="ai"><i class="fa fa-video"></i><span>YOLO 객체 탐지</span></a>
+            <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html" data-nav-group="ai"><i class="fa fa-border-all"></i><span>YOLO 직접 학습시키기</span></a>
+            <a href="../06_스타일전이/activity15_styletransper.html" data-nav-group="ai"><i class="fa fa-paint-brush"></i><span>신경망 스타일 변환</span></a>
+            <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망 변환</span></a>
+            <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
+            <a href="../07_CNN과_합성곱/kernel_filter/index.html" data-nav-group="cnn"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><i class="fa fa-palette"></i><span>색 군집화</span></a>
+        </nav>
+    </aside>
   <div class="app">
     <header class="titlebar">
+      <div class="sidebar-toggle" role="button" aria-label="메뉴 열기" tabindex="0"><i class="fas fa-bars"></i></div>
       <svg class="app-icon" viewBox="0 0 32 32" aria-hidden="true">
         <rect width="32" height="32" rx="5" fill="#fff" />
         <rect x="6" y="7" width="8" height="7" rx="1" fill="#d13438" />
@@ -1574,7 +1626,7 @@
         <div id="scroller" tabindex="0" role="region" aria-roledescription="스프레드시트" aria-label="셀 영역. 방향키로 이동하고 숫자를 입력하세요." aria-describedby="srLive">
           <div id="spacer"></div>
         </div>
-        <div class="marquee-clip" id="marqueeClip" aria-hidden="true"><div class="copy-marquee" id="copyMarquee" hidden></div></div>
+        <div class="marquee-clip" id="marqueeClip" aria-hidden="true"><div class="copy-marquee" id="copyMarquee" hidden></div><div class="copy-marquee" id="ptAnts" hidden></div></div>
         <input id="cellEditor" class="cell-editor" hidden autocomplete="off" spellcheck="false" aria-label="셀 값 입력">
       </section>
 
@@ -1596,7 +1648,7 @@
           <ol class="g-flow">
             <li><span class="g-n">1</span><b>숫자 입력</b><p>R·G·B 시트 칸에 <strong>0~255</strong>를 쓰고 <kbd>Enter</kbd></p><small>엑셀 표를 그대로 붙여넣어도 돼요 · <code>1/9</code> 같은 분수도 돼요</small></li>
             <li><span class="g-n">2</span><b>영역 선택</b><p>드래그 또는 <kbd>Shift</kbd>+방향키</p><small>이름 상자에 B2:F10처럼 써도 돼요</small></li>
-            <li><span class="g-n">3</span><b>계산</b><p>더하기·빼기·곱하기·나누기 버튼</p><small>셀은 계산값 그대로(−50, 300도 OK) · 이미지는 0~255로 맞춤 · 빈칸은 0</small></li>
+            <li><span class="g-n">3</span><b>계산</b><p>더하기·빼기·곱하기·나누기 버튼</p><small>셀은 계산값 그대로(−50, 300도 OK) · 수식 칸은 =(수식)+값으로 · 이미지는 0~255로 맞춤 · 빈칸은 0</small></li>
             <li><span class="g-n">4</span><b>이미지 만들기</b><p>Canvas 시트에 그림이 나와요</p><small>다시 만들면 전·후로 나란히 비교</small></li>
           </ol>
 
@@ -1618,11 +1670,13 @@
           <ul class="g-keys">
             <li><span><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>되돌리기</li>
             <li><span><kbd>Ctrl</kbd>+<kbd>Y</kbd></span>다시 실행</li>
-            <li><span><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd></span>복사 / 붙여넣기 (<kbd>Esc</kbd>: 복사 점선 끄기)</li>
+            <li><span><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd></span>복사 / 붙여넣기 (점선이 도는 동안 <kbd>Enter</kbd>로도 붙여넣기, <kbd>Esc</kbd>: 점선 끄기)</li>
             <li><span><kbd>Alt</kbd>+<kbd>=</kbd></span>자동 합계 (위·왼쪽 숫자를 =SUM으로)</li>
             <li><span><kbd>Ctrl</kbd>+<kbd>A</kbd></span>이어진 영역 (두 번: 시트 전체)</li>
             <li><span><kbd>Ctrl</kbd>+드래그</span>여러 영역 함께 고르기</li>
             <li><span><kbd>Delete</kbd></span>고른 칸 비우기</li>
+            <li><span><kbd>=</kbd> 뒤에 칸 누르기</span>그 칸 주소 넣기 (끌면 범위, 방향키·<kbd>Shift</kbd>+방향키로도)</li>
+            <li><span>색 상자</span>수식 속 주소마다 같은 색 상자 · 테두리 끌면 옮기기, 모서리 끌면 범위 바꾸기</li>
             <li><span><kbd>F4</kbd></span>수식 속 주소를 $A$1 → A$1 → $A1로</li>
             <li><span><kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>R</kbd></span>위 칸 / 왼쪽 칸으로 채우기</li>
             <li><span><kbd>Ctrl</kbd>+<kbd>`</kbd></span>수식 보이기</li>
@@ -5024,8 +5078,30 @@
           ctx.restore();
         };
         if (drag && drag.mode === 'fill' && drag.target) dashed(drag.target, '#555');
-        // 수식 입력 중 클릭으로 넣은 참조 범위
-        if (state.edit && state.edit.ptRect && state.edit.ptSheet === sheet) dashed(state.edit.ptRect, '#0f6cbd');
+        // 수식 입력 중: 수식 속 주소마다 색 상자 (엑셀과 같음). 방금 고른 주소는 같은 색 점선이 돎(ptAnts)
+        if (state.edit) {
+          const pt = pointRef();
+          for (const ref of editRefs()) {
+            if (ref.sheet !== sheet || ref.rect.r1 >= dims.rows || ref.rect.c1 >= dims.cols) continue;
+            const a = { ...ref.rect, r2: Math.min(ref.rect.r2, dims.rows - 1), c2: Math.min(ref.rect.c2, dims.cols - 1) };
+            const x = Math.round(xOf(a.c1)), y = Math.round(yOf(a.r1)), w = rectW(a), h = rectH(a);
+            ctx.save();
+            ctx.globalAlpha = 0.13;
+            ctx.fillStyle = ref.color;
+            ctx.fillRect(x, y, w, h);
+            ctx.globalAlpha = 1;
+            if (ref !== pt) {
+              ctx.strokeStyle = ref.color;
+              ctx.lineWidth = 2;
+              ctx.strokeRect(x, y, w - 1, h - 1);
+              if (!ref.name && !ref.spill) {   // 네 모서리 손잡이: 끌면 범위 크기 바꾸기
+                ctx.fillStyle = ref.color;
+                for (const [cx, cy] of [[x, y], [x + w - 1, y], [x, y + h - 1], [x + w - 1, y + h - 1]]) ctx.fillRect(cx - 3, cy - 3, 6, 6);
+              }
+            }
+            ctx.restore();
+          }
+        }
         ctx.restore();
 
         // 열 머리글
@@ -5096,6 +5172,7 @@
 
         positionEditor();
         positionMarquee();
+        syncInk();
       }
 
       // ===== 셀 편집 =====
@@ -5131,9 +5208,11 @@
       function endEditUI() {
         const wasCell = state.edit && state.edit.via === 'cell';
         state.edit = null;
+        refCache.text = null;
         hideFxPop();
         els.editor.hidden = true;
-        setMode('준비');
+        syncInk();
+        setReady();
         updateFormulaBar();
         scheduleDraw();
         return wasCell;
@@ -5197,11 +5276,232 @@
         ed.pt = { s, e: s + text.length };
         ed.ptRect = rect;
         ed.ptSheet = state.current;
+        ed.kp = { anchor: { r: a.r, c: a.c }, cur: { r: b.r, c: b.c } };   // 방향키로 이어서 움직일 자리
         inp.setSelectionRange(ed.pt.e, ed.pt.e);
         if (inp === els.editor) els.fx.value = inp.value;
         else if (ed.via === 'cell') els.editor.value = inp.value;
         setMode('참조');
         positionEditor();
+        syncInk();
+        scheduleDraw();
+      }
+
+      // ===== 수식 참조 색 표시 (엑셀처럼: 수식 속 주소마다 색 상자 + 같은 색 글자) =====
+      const REF_COLORS = ['#2f6fde', '#d6303b', '#8b45c4', '#1f8f4e', '#c06400', '#0e8a99', '#c2338a', '#6f7c12'];
+      const REF_SCAN = /^(?:'([^']+)'!|([A-Za-z_가-힣][A-Za-z0-9_가-힣]*)!)?(\$?)([A-Za-z]{1,3})(\$?)(\d{1,5})(#?)(?![A-Za-z0-9_(가-힣])/;
+      let refCache = { text: null, sheet: null, refs: [] };
+
+      // 입력 중인(덜 끝난) 수식도 읽을 수 있게 너그럽게 훑는다.
+      // 결과: [{ s, e, sheet, rect, color, parts, name, spill }] — s·e는 수식 글자 속 위치('=' 포함)
+      function formulaRefs(text, host) {
+        if (refCache.text === text && refCache.sheet === host) return refCache.refs;
+        const toks = [];
+        if (text && text[0] === '=') {
+          let i = 1;
+          while (i < text.length) {
+            const ch = text[i], rest = text.slice(i);
+            let m;
+            if (ch === '"') {   // 글자열 속 "A1"은 주소가 아님 (닫히지 않았으면 끝까지)
+              let j = i + 1;
+              while (j < text.length) { if (text[j] === '"') { if (text[j + 1] === '"') { j += 2; continue; } break; } j++; }
+              i = j + 1;
+              continue;
+            }
+            if ((m = REF_SCAN.exec(rest))) {
+              toks.push({ t: 'ref', s: i, e: i + m[0].length, sheet: m[1] || m[2] || null, ca: Boolean(m[3]), col: m[4].toUpperCase(), ra: Boolean(m[5]), row: Number(m[6]), spill: Boolean(m[7]) });
+              i += m[0].length;
+              continue;
+            }
+            if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/.exec(rest))) { toks.push({ t: 'num', s: i, e: i + m[0].length }); i += m[0].length; continue; }
+            if ((m = /^[A-Za-z_가-힣][A-Za-z0-9_.가-힣]*/.exec(rest))) { toks.push({ t: 'name', s: i, e: i + m[0].length, v: m[0].toUpperCase() }); i += m[0].length; continue; }
+            if (!/\s/.test(ch)) toks.push({ t: ch === ':' ? 'colon' : 'op', s: i, e: i + 1 });
+            i++;
+          }
+        }
+        const refs = [];
+        const sheetOf = (name) => (name ? sheetIdByName(name) : host);
+        const inBounds = (p) => p.r >= 0 && p.r < MAX_DIM && p.c >= 0 && p.c < MAX_DIM;
+        for (let k = 0; k < toks.length; k++) {
+          const tk = toks[k];
+          if (tk.t === 'ref') {
+            const sheet = sheetOf(tk.sheet);
+            const p1 = { r: tk.row - 1, c: colIndex(tk.col) };
+            let p2 = p1, e = tk.e, parts = [tk];
+            const nx = toks[k + 1], nr = toks[k + 2];
+            if (!tk.spill && nx && nx.t === 'colon' && nx.s === tk.e && nr && nr.t === 'ref' && nr.s === nx.e && !nr.spill && (!nr.sheet || sheetOf(nr.sheet) === sheet)) {
+              p2 = { r: nr.row - 1, c: colIndex(nr.col) };
+              e = nr.e;
+              parts = [tk, nr];
+              k += 2;
+            }
+            if (!sheet || !state.data[sheet] || !inBounds(p1) || !inBounds(p2)) continue;
+            let rect = rectOf(p1, p2);
+            if (tk.spill) {   // F1# = 펼쳐진 결과 전체
+              const sa = state.spillArea[sheet] && state.spillArea[sheet].get(p1.r * STRIDE + p1.c);
+              if (sa) rect = { ...sa };
+            }
+            refs.push({ s: tk.s, e, sheet, rect, parts, spill: tk.spill });
+          } else if (tk.t === 'name') {
+            const nm = state.names.get(tk.v);
+            if (nm && state.data[nm.sheet] && text.slice(tk.e).trimStart()[0] !== '(') refs.push({ s: tk.s, e: tk.e, sheet: nm.sheet, rect: { ...nm.rect }, parts: null, name: true });
+          }
+        }
+        // 같은 범위는 같은 색 (나온 순서대로 색을 돌려 씀)
+        const colorOf = new Map();
+        for (const ref of refs) {
+          const key = `${ref.sheet}:${ref.rect.r1},${ref.rect.c1},${ref.rect.r2},${ref.rect.c2}`;
+          if (!colorOf.has(key)) colorOf.set(key, REF_COLORS[colorOf.size % REF_COLORS.length]);
+          ref.color = colorOf.get(key);
+        }
+        refCache = { text, sheet: host, refs };
+        return refs;
+      }
+
+      // 편집 중인 수식의 참조 (수식이 아니면 빈 목록)
+      function editRefs() {
+        const inp = editInput();
+        if (!inp || !inp.value.startsWith('=')) return [];
+        return formulaRefs(inp.value, state.edit.sheet);
+      }
+      // 방금 누르거나 방향키로 고른 참조 (점선이 도는 것)
+      function pointRef() {
+        const ed = state.edit;
+        if (!ed || !ed.pt) return null;
+        return editRefs().find((x) => x.s === ed.pt.s && x.e === ed.pt.e) || null;
+      }
+
+      // 입력 칸 위에 같은 글자를 색칠해 겹쳐 그림 (입력 칸 글자는 투명, 커서·선택 표시는 그대로)
+      function makeInk(inp) {
+        const ink = document.createElement('div');
+        ink.className = 'ref-ink';
+        ink.setAttribute('aria-hidden', 'true');
+        ink.hidden = true;
+        const inner = document.createElement('span');
+        ink.appendChild(inner);
+        inp.insertAdjacentElement('afterend', ink);
+        return { inp, ink, inner, key: '' };
+      }
+      const inks = [makeInk(els.editor), makeInk(els.fx)];
+      function inkHtml(text, refs) {
+        let out = '', at = 0;
+        for (const r of refs) {
+          out += esc(text.slice(at, r.s)) + `<span style="color:${r.color}">${esc(text.slice(r.s, r.e))}</span>`;
+          at = r.e;
+        }
+        return out + esc(text.slice(at));
+      }
+      function syncInk() {
+        for (const k of inks) {
+          const { inp, ink, inner } = k;
+          const ed = state.edit;
+          const on = !!ed && !inp.hidden && inp.value.startsWith('=') && (inp === els.fx || ed.via === 'cell');
+          if (!on) {
+            if (!ink.hidden) { ink.hidden = true; inp.classList.remove('has-ink'); k.key = ''; }
+            continue;
+          }
+          const refs = formulaRefs(inp.value, ed.sheet);
+          const key = inp.value + '|' + refs.map((r) => r.color).join(',');
+          if (key !== k.key) { k.key = key; inner.innerHTML = inkHtml(inp.value, refs); }
+          const cs = getComputedStyle(inp);
+          const bl = parseFloat(cs.borderLeftWidth) || 0, bt = parseFloat(cs.borderTopWidth) || 0;
+          const pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0;
+          const s = ink.style;
+          s.left = (inp.offsetLeft + bl + pl) + 'px';
+          s.top = (inp.offsetTop + bt) + 'px';
+          s.width = Math.max(0, inp.clientWidth - pl - pr) + 'px';
+          s.height = inp.clientHeight + 'px';
+          s.lineHeight = inp.clientHeight + 'px';
+          s.font = cs.font;
+          s.letterSpacing = cs.letterSpacing;
+          inner.style.transform = `translateX(${-inp.scrollLeft}px)`;
+          if (ink.hidden) { ink.hidden = false; inp.classList.add('has-ink'); }
+        }
+      }
+      for (const inp of [els.editor, els.fx]) {
+        inp.addEventListener('input', () => { syncInk(); scheduleDraw(); });
+        inp.addEventListener('scroll', syncInk);
+        inp.addEventListener('keydown', () => { if (state.edit) scheduleDraw(); });   // 커서가 움직여 칸 안 글자가 밀리면 따라감
+      }
+      document.addEventListener('selectionchange', () => { if (state.edit) scheduleDraw(); });
+
+      // 방향키로 참조 고르기 (엑셀의 '참조' 모드: =, 연산자, 쉼표 뒤에서 ←↑→↓, Shift를 누르면 범위)
+      function keyPoint(key, extend) {
+        const ed = state.edit, [dr, dc] = ARROWS[key];
+        if (!ed.pt || !ed.kp) {
+          const base = state.current === ed.sheet ? { r: ed.r, c: ed.c } : { ...view().active };
+          ed.kp = { anchor: base, cur: base };
+        }
+        const cur = ed.kp.cur;
+        const next = { r: clamp(cur.r + dr, 0, dims.rows - 1), c: clamp(cur.c + dc, 0, dims.cols - 1) };
+        insertRef(extend ? ed.kp.anchor : next, next);
+        ensureVisible(next.r, next.c);
+        showRefSize(state.edit.ptRect);
+      }
+
+      // 이름 상자에 고르는 중인 범위 크기 (엑셀처럼 5R x 2C)
+      function showRefSize(a) {
+        if (!a) return;
+        const rows = a.r2 - a.r1 + 1, cols = a.c2 - a.c1 + 1;
+        if (rows > 1 || cols > 1) els.nameBox.value = `${rows}R x ${cols}C`;
+      }
+
+      // 색 상자 테두리를 끌면 주소 옮기기, 모서리를 끌면 범위 크기 바꾸기 (엑셀과 같음)
+      function refBoxHit(h) {
+        if (!state.edit || h.zone !== 'cell') return null;
+        const v = view(), sc = els.scroller;
+        const gx = h.x - HEAD_W + sc.scrollLeft, gy = h.y - HEAD_H + sc.scrollTop;
+        const refs = editRefs();
+        for (let i = refs.length - 1; i >= 0; i--) {
+          const ref = refs[i], a = ref.rect;
+          if (ref.sheet !== state.current || ref.name || ref.spill || a.r1 >= dims.rows || a.c1 >= dims.cols) continue;
+          const L = v.colX[a.c1], R = v.colX[Math.min(a.c2, dims.cols - 1) + 1];
+          const T = v.rowY[a.r1], B = v.rowY[Math.min(a.r2, dims.rows - 1) + 1];
+          const corners = [[L, T, a.r2, a.c2, 'nwse-resize'], [R, T, a.r2, a.c1, 'nesw-resize'], [L, B, a.r1, a.c2, 'nesw-resize'], [R, B, a.r1, a.c1, 'nwse-resize']];
+          for (const [x, y, fr, fc, cursor] of corners) {
+            if (Math.abs(gx - x) <= 5 && Math.abs(gy - y) <= 5) return { mode: 'refSize', i, fixed: { r: fr, c: fc }, cursor };
+          }
+          const onV = (Math.abs(gx - L) <= 3 || Math.abs(gx - R) <= 3) && gy >= T - 3 && gy <= B + 3;
+          const onH = (Math.abs(gy - T) <= 3 || Math.abs(gy - B) <= 3) && gx >= L - 3 && gx <= R + 3;
+          if (onV || onH) return { mode: 'refMove', i, grab: { r: clamp(h.r - a.r1, 0, a.r2 - a.r1), c: clamp(h.c - a.c1, 0, a.c2 - a.c1) }, cursor: 'move' };
+        }
+        return null;
+      }
+
+      function dragRef(d, h) {
+        const ref = editRefs()[d.i];
+        if (!ref || !ref.parts) return;
+        const a = ref.rect;
+        let n;
+        if (d.mode === 'refMove') {
+          const hh = a.r2 - a.r1, ww = a.c2 - a.c1;
+          const r1 = clamp(h.r - d.grab.r, 0, Math.max(0, dims.rows - 1 - hh)), c1 = clamp(h.c - d.grab.c, 0, Math.max(0, dims.cols - 1 - ww));
+          n = { r1, c1, r2: r1 + hh, c2: c1 + ww };
+        } else {
+          n = rectOf(d.fixed, { r: h.r, c: h.c });
+        }
+        if (n.r1 === a.r1 && n.c1 === a.c1 && n.r2 === a.r2 && n.c2 === a.c2) return;
+        replaceRef(ref, n);
+        showRefSize(n);
+      }
+
+      // 참조 글자를 새 범위로 바꿈. $ 고정과 시트 이름은 그대로 둔다
+      function replaceRef(ref, a) {
+        const ed = state.edit, inp = editInput();
+        const txt = inp.value;
+        const [p1, p2] = ref.parts;
+        const prefix = (p) => { const t = txt.slice(p.s, p.e); return t.slice(0, t.lastIndexOf('!') + 1); };
+        const one = (p, r, c, pre) => pre + (p.ca ? '$' : '') + colName(c) + (p.ra ? '$' : '') + (r + 1);
+        const single = a.r1 === a.r2 && a.c1 === a.c2;
+        const text = one(p1, a.r1, a.c1, prefix(p1)) + (single ? '' : ':' + one(p2 || p1, a.r2, a.c2, p2 ? prefix(p2) : ''));
+        inp.value = txt.slice(0, ref.s) + text + txt.slice(ref.e);
+        const end = ref.s + text.length;
+        inp.setSelectionRange(end, end);
+        if (inp === els.editor) els.fx.value = inp.value;
+        else if (ed.via === 'cell') els.editor.value = inp.value;
+        Object.assign(ed, { pt: null, ptRect: null, kp: null });
+        setMode('참조');
+        positionEditor();
+        syncInk();
         scheduleDraw();
       }
 
@@ -5246,6 +5546,7 @@
         els.fx.value = els.editor.value;
         typedInEditor();
         positionEditor();
+        syncInk();
       });
 
       els.editor.addEventListener('keydown', (e) => {
@@ -5269,6 +5570,15 @@
         } else if (e.key === 'F4') {
           e.preventDefault();
           toggleAbsRef(els.editor);
+        } else if (e.key === 'F2' && state.edit) {
+          // F2: 입력 ↔ 편집 (편집이면 방향키가 글자 사이를 움직임, 입력이면 수식에서 방향키로 칸을 고름)
+          e.preventDefault();
+          state.edit.mode = state.edit.mode === 'enter' ? 'edit' : 'enter';
+          setMode(state.edit.mode === 'enter' ? '입력' : '편집');
+        } else if (state.edit && state.edit.mode === 'enter' && ARROWS[e.key] && !ctrl && !e.altKey && els.editor.value.startsWith('=') && canPointRef()) {
+          // 수식의 =, 연산자, 쉼표 뒤에서 방향키 = 칸 주소 넣기 (Shift: 범위)
+          e.preventDefault();
+          keyPoint(e.key, e.shiftKey);
         } else if (state.edit && state.edit.mode === 'enter' && ARROWS[e.key] && !els.editor.value.startsWith('=')) {
           // 입력 모드에서 방향키 = 확정 후 이동 (엑셀과 같음). 수식은 방향키로 글자 사이를 움직임
           e.preventDefault();
@@ -5563,28 +5873,44 @@
       }
 
       // ===== 복사 범위 점선 (엑셀처럼 테두리를 따라 도는 점선) =====
-      const marqueeClip = $('marqueeClip'), marqueeEl = $('copyMarquee');
-      function setMarquee(m) { state.marquee = m; scheduleDraw(); }
+      const marqueeClip = $('marqueeClip'), marqueeEl = $('copyMarquee'), ptAntsEl = $('ptAnts');
+      const COPY_MODE_TEXT = '붙여넣을 곳을 고르고 Enter 또는 Ctrl+V (Esc: 취소)';
+      // 상태 표시줄 왼쪽: 복사 점선이 있으면 엑셀처럼 붙여넣기 안내, 아니면 '준비'
+      function setReady() { setMode(state.marquee ? COPY_MODE_TEXT : '준비'); }
+      function setMarquee(m) {
+        state.marquee = m;
+        if (!state.edit) setReady();
+        scheduleDraw();
+      }
       function clearMarquee() {
         if (!state.marquee) return;
         state.marquee = null;
         if (clip && clip.cut) clip.cut = null;   // 점선이 없어지면 잘라내기도 취소 (엑셀과 같음)
         marqueeEl.hidden = true;
+        if (!state.edit && els.mode.textContent === COPY_MODE_TEXT) setReady();
         scheduleDraw();
       }
-      function positionMarquee() {
-        const m = state.marquee;
-        if (!m || m.sheet !== state.current || !state.data[m.sheet]) { marqueeEl.hidden = true; return; }
-        const v = view(), sc = els.scroller, a = m.area;
-        marqueeClip.style.width = Math.max(0, sc.clientWidth - HEAD_W) + 'px';
-        marqueeClip.style.height = Math.max(0, sc.clientHeight - HEAD_H) + 'px';
+      function placeAnts(el, a) {
+        const v = view(), sc = els.scroller;
         const c2 = Math.min(a.c2, dims.cols - 1), r2 = Math.min(a.r2, dims.rows - 1);
-        const s = marqueeEl.style;
+        const s = el.style;
         s.left = (v.colX[a.c1] - sc.scrollLeft - 1) + 'px';
         s.top = (v.rowY[a.r1] - sc.scrollTop - 1) + 'px';
         s.width = (v.colX[c2 + 1] - v.colX[a.c1] + 1) + 'px';
         s.height = (v.rowY[r2 + 1] - v.rowY[a.r1] + 1) + 'px';
-        marqueeEl.hidden = false;
+        el.hidden = false;
+      }
+      function positionMarquee() {
+        const sc = els.scroller;
+        marqueeClip.style.width = Math.max(0, sc.clientWidth - HEAD_W) + 'px';
+        marqueeClip.style.height = Math.max(0, sc.clientHeight - HEAD_H) + 'px';
+        const m = state.marquee;
+        if (!m || m.sheet !== state.current || !state.data[m.sheet]) marqueeEl.hidden = true;
+        else placeAnts(marqueeEl, m.area);
+        // 수식 입력 중 방금 고른 참조: 그 참조 색으로 도는 점선
+        const pr = pointRef();
+        if (!pr || pr.sheet !== state.current || pr.rect.r1 >= dims.rows || pr.rect.c1 >= dims.cols) ptAntsEl.hidden = true;
+        else { ptAntsEl.style.setProperty('--ants', pr.color); placeAnts(ptAntsEl, pr.rect); }
       }
 
       // ===== 선택과 이동 =====
@@ -5899,6 +6225,15 @@
         if (e.button !== 0 || !isData(state.current)) return;
         const h = hit(e);
         if (!h.inside) return;   // 스크롤바 클릭
+        // 수식 입력 중 색 상자의 테두리·모서리를 누르면 그 참조를 옮기거나 크기를 바꿈
+        const rb = !h.beyond ? refBoxHit(h) : null;
+        if (rb) {
+          e.preventDefault();
+          drag = { id: e.pointerId, ...rb };
+          setMode('참조');
+          capture(e.pointerId);
+          return;
+        }
         // 수식 입력 중이면 누른 칸의 주소를 수식에 넣음 (엑셀의 참조 모드)
         if (h.zone === 'cell' && !h.beyond && canPointRef()) {
           e.preventDefault();
@@ -5950,7 +6285,8 @@
         if (!drag) {
           if (e.pointerType === 'mouse' && isData(state.current)) {
             const h = hit(e);
-            setCursor(h.edge ? (h.edge.axis === 'col' ? 'col-resize' : 'row-resize') : h.handle ? 'crosshair' : 'cell');
+            const rb = state.edit && !h.beyond ? refBoxHit(h) : null;
+            setCursor(rb ? rb.cursor : h.edge ? (h.edge.axis === 'col' ? 'col-resize' : 'row-resize') : h.handle ? 'crosshair' : 'cell');
           }
           return;
         }
@@ -5981,12 +6317,16 @@
         if (drag.mode === 'point') {
           const r = state.edit && state.edit.ptRect;
           const nr = rectOf(drag.anchor, h);
-          if (!r || r.r1 !== nr.r1 || r.r2 !== nr.r2 || r.c1 !== nr.c1 || r.c2 !== nr.c2) insertRef(drag.anchor, { r: h.r, c: h.c });
+          if (!r || r.r1 !== nr.r1 || r.r2 !== nr.r2 || r.c1 !== nr.c1 || r.c2 !== nr.c2) { insertRef(drag.anchor, { r: h.r, c: h.c }); showRefSize(nr); }
+          return;
+        }
+        if (drag.mode === 'refMove' || drag.mode === 'refSize') {
+          if (state.edit) dragRef(drag, h);
           return;
         }
         const f = view().focus;
         const next = drag.mode === 'col' ? { r: dims.rows - 1, c: h.c } : drag.mode === 'row' ? { r: h.r, c: dims.cols - 1 } : { r: h.r, c: h.c };
-        if (next.r !== f.r || next.c !== f.c) extendTo(h, drag.mode);
+        if (next.r !== f.r || next.c !== f.c) { extendTo(h, drag.mode); showRefSize(view().areas[view().areas.length - 1]); }
       });
 
       function endDrag(e, cancelled) {
@@ -5994,14 +6334,19 @@
         const d = drag;
         drag = null;
         if (d.mode === 'size') {
-          setMode('준비');
+          setReady();
           const sheet = state.current, n = d.lines.length;
           const label = d.axis === 'col' ? `열 너비 ${colChars(view().colW[d.i])}` : `행 높이 ${rowPt(view().rowH[d.i])}`;
           commitSize(sheet, d.colBefore, d.rowBefore, n > 1 ? `${n}개 ${label}` : label);
         } else if (d.mode === 'fill') {
-          setMode('준비');
+          setReady();
           scheduleDraw();
           if (!cancelled && d.target) performFill(d.src, d.target);
+        } else if (d.mode === 'refMove' || d.mode === 'refSize') {
+          if (state.edit) setMode(state.edit.mode === 'enter' ? '입력' : '편집');
+          updateFormulaBar();   // 이름 상자의 '5R x 2C'를 주소로 되돌림
+        } else {
+          updateFormulaBar();
         }
       }
 
@@ -6075,7 +6420,12 @@
         }
         const page = Math.max(1, Math.floor((sc.clientHeight - HEAD_H) / Math.max(view().rowH[view().active.r], 4)) - 1);
         switch (k) {
-          case 'Enter': e.preventDefault(); moveWithin(e.shiftKey ? -1 : 1, 0); return;
+          case 'Enter':
+            e.preventDefault();
+            // 복사 점선이 있으면 엑셀처럼 Enter = 고른 곳에 붙여넣고 복사 끝내기
+            if (state.marquee && clip && !e.shiftKey) { pasteText(clip.text); clearMarquee(); return; }
+            moveWithin(e.shiftKey ? -1 : 1, 0);
+            return;
           case 'Tab': e.preventDefault(); moveWithin(0, e.shiftKey ? -1 : 1); return;
           case 'PageDown': e.preventDefault(); moveActive(page, 0, false); return;
           case 'PageUp': e.preventDefault(); moveActive(-page, 0, false); return;
@@ -6176,8 +6526,14 @@
               const blank = cell.blank !== undefined ? cell.blank : (!cell.f && Number.isNaN(cell.v));
               if (o.skip && blank) continue;   // 내용 있는 셀만: 빈 칸은 원래 값을 둠
               const kk = r * STRIDE + c;
+              if (calc && spillOwner(sheet, kk) >= 0) continue;   // 수식 결과가 펼쳐진 칸은 그대로 (수식 칸에 연산하면 함께 바뀜)
               idxL.push(kk);
-              if (calc) {
+              const curF = calc ? state.formulas[sheet].get(kk) : undefined;
+              if (calc && isRealFormula(curF)) {   // 수식 칸: 덮어쓰지 않고 =(수식)+값 으로 감쌈
+                const src = Number.isNaN(cell.v) ? 0 : cell.v;
+                if (o.op === 'div' && src === 0) divZero = true;
+                valL.push(NaN); fL.push(o.op === 'div' && src === 0 ? curF : opFormula(curF, o.op, Number(src.toPrecision(12))));
+              } else if (calc) {
                 const cur = data[kk], src = Number.isNaN(cell.v) ? 0 : cell.v;
                 if (o.op === 'div' && src === 0) divZero = true;
                 const res = o.op === 'div' && src === 0 ? (Number.isNaN(cur) ? 0 : cur) : calc(Number.isNaN(cur) ? 0 : cur, src);
@@ -6502,6 +6858,15 @@
         div: { title: '나누기', sym: '÷', prompt: '선택한 셀을 나눌 값을 입력하세요.', calc: (a, n) => a / n },
       };
 
+      // 수식 칸에 연산: 덮어쓰지 않고 엑셀처럼 =(원래 수식)+n 으로 감쌈. 값이 그대로인 계산(+0, ×1)은 수식도 그대로
+      const isRealFormula = (f) => typeof f === 'string' && f.startsWith('=');
+      function opFormula(f, key, n) {
+        if (((key === 'add' || key === 'sub') && n === 0) || ((key === 'mul' || key === 'div') && n === 1)) return f;
+        let sym = { add: '+', sub: '-', mul: '*', div: '/' }[key], x = n;
+        if ((key === 'add' || key === 'sub') && n < 0) { sym = key === 'add' ? '-' : '+'; x = -n; }   // +-5 대신 -5
+        return `=(${f.slice(1)})${sym}${fmtFull(x)}`;
+      }
+
       async function runOperation(key) {
         commitEdit();
         if (!requireDataSheet()) return;
@@ -6516,18 +6881,27 @@
         });
         if (n === null) return;
         const all = selectedIndices(v), fm = state.formulas[sheet];
-        const idx = all.filter((k) => !fm.has(k));   // 수식 칸은 그대로 둠 (원본 매크로와 같음)
-        const skipped = all.length - idx.length;
         const arr = state.data[sheet];
-        const after = new Float64Array(idx.length);
-        for (let i = 0; i < idx.length; i++) {
-          const cur = arr[idx[i]];
-          const res = op.calc(Number.isNaN(cur) ? 0 : cur, n);
-          after[i] = Number(res.toPrecision(12));   // 엑셀처럼 음수·255 초과도 그대로 둠
+        const idx = [], after = [], fs = [];
+        let wrapped = 0, skipped = 0;
+        for (const k of all) {
+          const f = fm.get(k);
+          if (isRealFormula(f)) {   // 수식 칸: =(수식)+n 으로 감싸 수식을 살림
+            const nf = opFormula(f, key, n);
+            if (nf !== f) wrapped++;
+            idx.push(k); after.push(NaN); fs.push(nf);
+          } else if (f !== undefined || spillOwner(sheet, k) >= 0) {
+            skipped++;   // 글자·분수 칸, 수식 결과가 펼쳐진 칸은 그대로 둠
+          } else {
+            const cur = arr[k];
+            const res = op.calc(Number.isNaN(cur) ? 0 : cur, n);
+            idx.push(k); after.push(Number(res.toPrecision(12))); fs.push(null);   // 엑셀처럼 음수·255 초과도 그대로 둠
+          }
         }
         const label = `${sheetLabel(sheet)} 시트 ${where} ${op.sym} ${fmtFull(n)}`;
-        const note = skipped ? ` 수식이 든 칸 ${skipped}개는 그대로 두었습니다.` : '';
-        if (applyChange(sheet, idx, after, label)) toast(`${label} 계산을 적용했습니다.${note}`);
+        const note = (wrapped ? ` 수식 칸 ${wrapped}개는 수식 뒤에 ${op.sym} ${fmtFull(n)}을(를) 붙였습니다.` : '') +
+          (skipped ? ` 글자·분수 칸이나 수식 결과가 펼쳐진 칸 ${skipped}개는 그대로 두었습니다.` : '');
+        if (applyChange(sheet, Int32Array.from(idx), Float64Array.from(after), label, fs)) toast(`${label} 계산을 적용했습니다.${note}`);
         else toast('바뀐 값이 없습니다. (× 1, ÷ 1, + 0처럼 값이 그대로인 계산이에요)');
       }
 

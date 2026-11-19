@@ -153,6 +153,74 @@
             box-shadow: 0 4px 12px rgba(92, 184, 92, 0.3);
         }
 
+        .sample-picker {
+            width: min(92vw, 640px);
+            max-height: 85vh;
+            margin: auto;
+            border: none;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            color: var(--text-dark);
+        }
+
+        .sample-picker::backdrop { background: rgba(0, 0, 0, 0.45); }
+
+        .sample-picker-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .sample-picker-head h2 { font-size: 1.2rem; color: var(--primary); }
+
+        .sample-picker-close {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 10px;
+            background: var(--bg-light);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .sample-picker-hint { margin: 4px 0 12px; font-size: 0.9rem; color: var(--text-gray); }
+
+        .sample-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            gap: 10px;
+        }
+
+        .sample-pick {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 6px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
+        .sample-pick:hover { border-color: var(--primary); background: #eef4ff; }
+
+        .sample-pick img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .sample-picker-close:focus-visible,
+        .sample-pick:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+
         .sample-btn:hover {
             background: #4cae4c;
             transform: translateY(-2px);
@@ -193,6 +261,10 @@
         .workspace.row-mode .panel:nth-child(1) { order: 2; } /* A */
         .workspace.row-mode .panel:nth-child(2) { order: 1; } /* T */
         .workspace.row-mode .panel:nth-child(3) { order: 3; } /* R */
+
+        .workspace .panel-t-right { display: none; }
+        .workspace.both-mode .panel-t-right { display: block; order: 3; }
+        .workspace.both-mode .panel:nth-child(3) { order: 4; grid-column: 2; } /* R: A 아래 */
 
         .panel {
             background: var(--bg-light);
@@ -577,25 +649,68 @@
             gap: 6px;
         }
 
+        .placement-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-gray);
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .placement-btns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .placement-btn {
+            min-height: 44px;
+            padding: 0 2px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--primary);
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .placement-btn:hover { background: #eef4ff; }
+        .placement-btn[aria-pressed="true"] { background: var(--primary); color: #fff; }
+        .placement-btn[aria-pressed="true"]::before { content: '✓'; margin-right: 2px; }
+        .placement-btn:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+
+        .ctrl-aside #applyBtn { flex-wrap: wrap; row-gap: 8px; }
+
         .auto-inline-toggle {
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            background: rgba(255,255,255,0.25);
-            border-radius: 5px;
-            padding: 2px 6px;
+            gap: 6px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #065f46;
+            background: #fff;
+            border-radius: 999px;
+            padding: 4px 10px 4px 7px;
             cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.5);
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
         }
 
         .auto-inline-toggle input[type=checkbox] {
-            accent-color: white;
-            width: 13px;
-            height: 13px;
+            accent-color: #065f46;
+            width: 18px;
+            height: 18px;
+            margin: 0;
             cursor: pointer;
         }
+
+        .auto-inline-toggle span::after { content: ' OFF'; font-weight: 700; color: #6b7280; }
+        .auto-inline-toggle:has(input:checked) { background: #065f46; color: #fff; }
+        .auto-inline-toggle:has(input:checked) input[type=checkbox] { accent-color: #fff; }
+        .auto-inline-toggle:has(input:checked) span::after { content: ' ON'; color: #a7f3d0; }
+        .auto-inline-toggle:has(input:focus-visible) { outline: 3px solid #fbbf24; outline-offset: 2px; }
 
         .ctrl-aside .auto-compute-toggle {
             display: flex;
@@ -656,6 +771,17 @@
             display: flex;
             gap: 10px;
             flex-wrap: nowrap;
+        }
+
+        .result-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .result-actions .btn {
+            min-height: 44px;
+            white-space: normal;
         }
 
         .matrix-presets {
@@ -858,21 +984,13 @@
                 gap: 30px;
             }
 
+            .workspace.both-mode .panel:nth-child(3) { grid-column: auto; }
+
             .controls {
                 flex-direction: row;
                 flex-wrap: wrap;
             }
 
-            .pixel-cell {
-                width: 30px;
-                height: 30px;
-                font-size: 0.6rem;
-            }
-
-            .matrix-cell {
-                width: 35px;
-                height: 35px;
-            }
         }
 
         canvas {
@@ -884,6 +1002,71 @@
             color: var(--text-gray);
             margin-bottom: 10px;
             font-weight: 600;
+        }
+
+        /* ===== 확대·축소(브라우저 배율) 대응 ===== */
+
+        /* 사용 방법 단계: 좁아지면 다음 줄로 (정사각형 고정이 가로 넘침을 만들었음) */
+        .step-boxes { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+        .step-box { aspect-ratio: auto; min-height: 150px; min-width: 0; }
+        .step-text, .label-text, .panel-title { word-break: keep-all; }
+
+        /* 조작 패널: 메뉴 버튼(☰) 아래에서 시작, 화면보다 길면 패널 안에서 스크롤 */
+        .ctrl-aside {
+            top: max(72px, calc(50vh - 290px));
+            transform: none;
+            max-height: calc(100vh - 84px);
+            overflow-y: auto;
+        }
+
+        /* 격자 글자: 격자 폭에 맞춰 크기 조절 (옛 브라우저는 위의 값 사용) */
+        .pixel-grid, .matrix-with-labels { container-type: inline-size; }
+        .pixel-cell { font-size: clamp(7px, 4.4cqi, 12px); }
+        .matrix-cell { font-size: clamp(7px, 6cqi, 17px); }
+        .matrix-label { font-size: clamp(7px, 4.6cqi, 14px); }
+
+        /* 한 줄 배치일 때 격자가 지나치게 커지지 않게 */
+        @media (max-width: 1200px) {
+            .pixel-grid { max-width: 420px; }
+            .matrix-with-labels { max-width: 460px; }
+        }
+
+        /* 좁은 화면(크게 확대): 조작 패널을 화면 아래 한 줄 막대로, 넘치면 옆으로 밀어 보기 */
+        @media (max-width: 900px) {
+            body { padding: 10px; }
+            .page-layout { flex-direction: column; align-items: stretch; gap: 10px; }
+            .container { padding: 24px 14px; border-radius: 14px; }
+            .panel { padding: 16px 12px; }
+            h1 { font-size: 1.9rem; }
+
+            .ctrl-aside {
+                order: 2;
+                position: sticky;
+                top: auto;
+                bottom: 0;
+                z-index: 50;
+                width: 100%;
+                max-height: none;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 8px 10px;
+                border-radius: 12px 12px 0 0;
+            }
+            .ctrl-aside > * { flex: 0 0 auto; }
+            .ctrl-aside-title, .placement-title { display: none; }
+            .ctrl-aside .operation-label { font-size: 1.1rem; margin: 0 4px; white-space: nowrap; }
+            .ctrl-aside .btn { width: auto; min-height: 44px; padding: 8px 12px; white-space: nowrap; }
+            .ctrl-aside #applyBtn { flex-wrap: nowrap; }
+            .placement-btns { grid-template-columns: repeat(3, auto); }
+            .placement-btn { padding: 0 10px; }
+            .ctrl-aside-info { margin-top: 0; padding: 6px 10px; line-height: 1.4; font-size: 0.85rem; white-space: nowrap; }
+            .ctrl-aside-info.visible { display: flex; gap: 8px; align-items: center; }
+            .ctrl-aside-info strong { display: inline; margin: 0; font-size: 0.85rem; }
+            .ctrl-aside-info .swap-item { display: inline; font-size: 0.95rem; }
+            .ctrl-aside-info br { display: none; }
         }
     </style>
 </head>
@@ -914,7 +1097,7 @@
             <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><i class="fa fa-pencil-alt"></i><span>손글씨 인식</span></a>
             <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><i class="fa fa-shoe-prints"></i><span>숫자 판별 단계</span></a>
             <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><i class="fa fa-calculator"></i><span>MNIST 데이터 탐구</span></a>
-            <a href="../03_숫자인식과_유사도/activity11_similarity_check.html" data-nav-group="data"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
+            <a href="../03_숫자인식과_유사도/hamming_motion/index.html" data-nav-group="data"><i class="fa fa-ruler"></i><span>해밍 거리</span></a>
             <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
             <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><i class="fa fa-expand"></i><span>이미지 업스케일러</span></a>
             <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><i class="fa fa-image"></i><span>AI 업스케일러</span></a>
@@ -924,7 +1107,7 @@
             <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><i class="fa fa-random"></i><span>임의(Arbitrary)신경망
                     변환</span></a>
             <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
-            <a href="../07_CNN과_합성곱/activity17_kernel.html" data-nav-group="cnn"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
+            <a href="../07_CNN과_합성곱/kernel_filter/index.html" data-nav-group="cnn"><i class="fa fa-sliders-h"></i><span>이미지 커널 필터 체험</span></a>
             <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><i class="fa fa-network-wired"></i><span>CNN 합성곱 시각화</span></a>
       <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><i class="fa fa-eye"></i><span>CNN 기술 체험</span></a>
       <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><i class="fa fa-palette"></i><span>색 군집화</span></a>
@@ -937,6 +1120,15 @@
     <aside class="ctrl-aside hidden" id="ctrlAside">
         <div class="ctrl-aside-title">🎮 조작</div>
         <div class="operation-label" id="operationLabel">A</div>
+        <div class="placement-group" role="group" aria-labelledby="placementTitle">
+            <div class="placement-title" id="placementTitle">T를 어디에 둘까?</div>
+            <div class="placement-btns">
+                <button type="button" class="placement-btn" data-place="front" aria-pressed="false" onclick="choosePlacement('front')" title="T × A">앞에</button>
+                <button type="button" class="placement-btn" data-place="back" aria-pressed="false" onclick="choosePlacement('back')" title="A × T">뒤에</button>
+                <button type="button" class="placement-btn" data-place="both" aria-pressed="false" onclick="choosePlacement('both')" title="T × A × T">양옆</button>
+            </div>
+        </div>
+        <button type="button" class="btn btn-transpose" id="transposeABtn" onclick="transposeImageA()" disabled>🔁 A 전치 (행↔열)</button>
         <button type="button" class="btn btn-transpose" id="transposeBtn" onclick="transposeMatrix()" disabled>🔁 T 전치 (행↔열)</button>
         <button type="button" class="btn btn-shuffle-row" id="shuffleRowBtn" onclick="doRowShuffle()" disabled>🔀 행 섞기</button>
         <button type="button" class="btn btn-shuffle-col" id="shuffleColBtn" onclick="doColShuffle()" disabled>🔀 열 섞기</button>
@@ -962,7 +1154,8 @@
                 📁 이미지 업로드 / 변경하기
             </label>
             <input type="file" id="imageInput" accept="image/*">
-            <button class="sample-btn" onclick="loadSampleImage()">🎲 샘플 사진 불러오기</button>
+            <button type="button" class="sample-btn" onclick="loadSampleImage()">🎲 샘플 사진 불러오기</button>
+            <button type="button" class="sample-btn" onclick="openSamplePicker()">🖼️ 샘플 직접 고르기</button>
             <p class="upload-info">이미지를 선택하세요 (10×10으로 변환됩니다)</p>
         </div>
 
@@ -973,11 +1166,11 @@
                 <div class="step-boxes">
                     <div class="step-box">
                         <div class="step-number">1️⃣</div>
-                        <div class="step-text">행 섞기 또는<br>열 섞기<br>스위치 선택</div>
+                        <div class="step-text">행 섞기 또는<br>열 섞기로<br>이미지 섞기</div>
                     </div>
                     <div class="step-box">
                         <div class="step-number">2️⃣</div>
-                        <div class="step-text">"이미지 섞기"<br>버튼으로<br>이미지 섞기</div>
+                        <div class="step-text">T를 앞에·뒤에·<br>양옆 중<br>어디에 둘지 고르기</div>
                     </div>
                     <div class="step-box">
                         <div class="step-number">3️⃣</div>
@@ -997,7 +1190,7 @@
             <div class="workspace" id="workspace">
                 <!-- A 이미지 -->
                 <div class="panel">
-                    <div class="panel-title">🖼️ 이미지 A</div>
+                    <div class="panel-title" id="imageATitle">🖼️ 이미지 A</div>
                     <div class="image-display">
                         <div class="toggle-section">
                             <button class="toggle-btn active" onclick="toggleDisplay('both')">숫자+그림</button>
@@ -1009,7 +1202,7 @@
 
                 <!-- T 변환 행렬 -->
                 <div class="panel">
-                    <div class="panel-title">🔢 변환 행렬 T</div>
+                    <div class="panel-title" id="tPanelTitle">🔢 변환 행렬 T</div>
                     <div class="matrix-container">
                         <div class="label-text">클릭으로 0↔1 변경</div>
                         <div id="transformMatrixWithLabels" class="matrix-with-labels">
@@ -1031,6 +1224,18 @@
                             <button class="toggle-btn" onclick="toggleResultDisplay('image')">그림만</button>
                         </div>
                         <div id="resultPixelGrid" class="pixel-grid"></div>
+                        <div class="result-actions">
+                            <button type="button" class="btn btn-primary" id="moveResultBtn" onclick="moveResultToA()">⬆️ 결과를 A로 옮기기</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 오른쪽 T (T를 양옆에 둘 때만 보임, 왼쪽 T와 같은 행렬) -->
+                <div class="panel panel-t-right" aria-hidden="true">
+                    <div class="panel-title">🔢 변환 행렬 T (오른쪽)</div>
+                    <div class="matrix-container">
+                        <div class="label-text">왼쪽 T와 같은 행렬 (함께 바뀜)</div>
+                        <div id="transformMatrixRight" class="matrix-with-labels"></div>
                     </div>
                 </div>
             </div>
@@ -1041,6 +1246,15 @@
         </div>
     </div><!-- /.container -->
     </div><!-- /.page-layout -->
+
+    <dialog id="samplePicker" class="sample-picker" aria-labelledby="samplePickerTitle">
+        <div class="sample-picker-head">
+            <h2 id="samplePickerTitle">샘플 사진 고르기</h2>
+            <button type="button" class="sample-picker-close" aria-label="닫기" onclick="closeSamplePicker()">✕</button>
+        </div>
+        <p class="sample-picker-hint">그림을 누르면 10×10으로 바꿔 불러옵니다.</p>
+        <div class="sample-picker-grid" id="samplePickerGrid"></div>
+    </dialog>
 
     <canvas id="canvas"></canvas>
 
@@ -1078,9 +1292,72 @@
         let transformMatrix = [];
         let pixelColors = [];
         let originalPixelColors = []; // 원본 색상 저장
-        let shuffleMode = null; // 'row' 또는 'col'
+        let shuffleMode = null; // 마지막 섞기 종류: 'row' 또는 'col'
+        let tPlacement = 'back'; // T 위치: 'front'(T×A), 'back'(A×T), 'both'(T×A×T)
+        const PLACEMENTS = {
+            front: { formula: 'T × A', word: '앞에' },
+            back: { formula: 'A × T', word: '뒤에' },
+            both: { formula: 'T × A × T', word: '양옆에' }
+        };
         let isShuffled = false; // 실제로 섞였는지 여부
         let lastShuffleInfo = '';
+        let isATransposed = false; // A 전치 상태 (제목 표시용)
+        let isAFromResult = false; // A가 이전 결과에서 옮겨 왔는지 (제목 표시용)
+        let baseImageData = [];    // 섞기의 출발점이 되는 A (전치·결과 옮기기가 반영됨)
+        let basePixelColors = [];
+        let lastResultData = [];   // 결과 R에 지금 보이는 값
+        let lastResultColors = [];
+
+        function transpose2D(m) {
+            return m[0].map((_, j) => m.map(row => row[j]));
+        }
+
+        // 섞기 출발점 A로 되돌림
+        function restoreBaseA() {
+            currentImageData = JSON.parse(JSON.stringify(baseImageData));
+            pixelColors = JSON.parse(JSON.stringify(basePixelColors));
+        }
+
+        // 원본 이미지로 A·결과 상태를 처음처럼 맞춤
+        function resetBaseToOriginal() {
+            baseImageData = JSON.parse(JSON.stringify(originalImageData));
+            basePixelColors = JSON.parse(JSON.stringify(originalPixelColors));
+            lastResultData = JSON.parse(JSON.stringify(originalImageData));
+            lastResultColors = JSON.parse(JSON.stringify(originalPixelColors));
+            isATransposed = false;
+            isAFromResult = false;
+            updateImageATitle();
+        }
+
+        function updateImageATitle() {
+            const notes = [];
+            if (isAFromResult) notes.push('이전 결과');
+            if (isATransposed) notes.push('전치됨');
+            document.getElementById('imageATitle').textContent = '🖼️ 이미지 A' + (notes.length ? ` (${notes.join('·')})` : '');
+        }
+
+        function clearShuffleInfo() {
+            const infoEl = document.getElementById('ctrlAsideInfo');
+            infoEl.innerHTML = '';
+            infoEl.classList.remove('visible');
+        }
+
+        // 결과 R을 새 A로 옮겨 연산을 이어 감
+        function moveResultToA() {
+            if (!lastResultData.length) return;
+            currentImageData = JSON.parse(JSON.stringify(lastResultData));
+            pixelColors = JSON.parse(JSON.stringify(lastResultColors));
+            baseImageData = JSON.parse(JSON.stringify(lastResultData));
+            basePixelColors = JSON.parse(JSON.stringify(lastResultColors));
+            isShuffled = false;
+            isAFromResult = true;
+            isATransposed = false;
+            updateImageATitle();
+            clearShuffleInfo();
+            renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
+            if (document.getElementById('autoComputeCheck').checked) applyTransform();
+            showToast('결과 R을 A로 옮겼습니다. 이 A로 다시 연산할 수 있어요');
+        }
 
         // 항등 행렬 초기화
         function initializeIdentityMatrix() {
@@ -1160,47 +1437,64 @@
             
             currentImageData = JSON.parse(JSON.stringify(originalImageData));
             initializeIdentityMatrix();
+            resetBaseToOriginal();
             
             renderPixelGrid(originalImageData, pixelColors, 'originalPixelGrid');
             renderTransformMatrix();
             renderPixelGrid(currentImageData, pixelColors, 'resultPixelGrid');
 
             // 이미지 로드 완료 → 열 섞기 기본 선택
+            document.getElementById('transposeABtn').disabled = false;
             document.getElementById('transposeBtn').disabled = false;
             document.getElementById('shuffleRowBtn').disabled = false;
             document.getElementById('shuffleColBtn').disabled = false;
-            selectShuffleMode('col');
+            isShuffled = false;
+            clearShuffleInfo();
+            setPlacement('back');
         }
 
-        // 섞기 모드 설정 (내부용)
-        function selectShuffleMode(mode) {
-            const operationLabel = document.getElementById('operationLabel');
+        // T 위치 설정: 연산식·패널 순서·버튼 상태를 맞춤
+        function setPlacement(place) {
+            tPlacement = place;
+            document.getElementById('operationLabel').textContent = PLACEMENTS[place].formula;
             const workspace = document.getElementById('workspace');
-            const applyBtn = document.getElementById('applyBtn');
+            workspace.classList.toggle('row-mode', place !== 'back'); // 앞·양옆: T 패널을 A 앞에
+            workspace.classList.toggle('col-mode', place === 'back');
+            workspace.classList.toggle('both-mode', place === 'both');
+            document.querySelector('.panel-t-right').setAttribute('aria-hidden', String(place !== 'both'));
+            document.querySelectorAll('.placement-btn').forEach(btn => {
+                btn.setAttribute('aria-pressed', String(btn.dataset.place === place));
+            });
+            document.getElementById('tPanelTitle').textContent =
+                place === 'both' ? '🔢 변환 행렬 T (왼쪽)' : '🔢 변환 행렬 T';
+            document.getElementById('applyBtn').disabled = false;
+        }
 
-            shuffleMode = mode;
-            applyBtn.disabled = false;
+        function choosePlacement(place) {
+            setPlacement(place);
+            if (document.getElementById('autoComputeCheck').checked) applyTransform();
+            showToast(`T를 ${PLACEMENTS[place].word} 두었습니다: ${PLACEMENTS[place].formula}`);
+        }
 
-            if (mode === 'row') {
-                operationLabel.textContent = 'T × A';
-                workspace.classList.add('row-mode');
-                workspace.classList.remove('col-mode');
-            } else {
-                operationLabel.textContent = 'A × T';
-                workspace.classList.add('col-mode');
-                workspace.classList.remove('row-mode');
-            }
+        // A 전치 (이미지 A의 행↔열 교환)
+        function transposeImageA() {
+            currentImageData = transpose2D(currentImageData);
+            pixelColors = transpose2D(pixelColors);
+            baseImageData = transpose2D(baseImageData);
+            basePixelColors = transpose2D(basePixelColors);
+            isATransposed = !isATransposed;
+            updateImageATitle();
+            renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
 
-            // 이미 섞여있었다면 원상복구
+            // 섞인 상태라면 섞기 안내 아래에 전치 사실을 덧붙임
+            const infoEl = document.getElementById('ctrlAsideInfo');
             if (isShuffled) {
-                currentImageData = JSON.parse(JSON.stringify(originalImageData));
-                pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
-                renderPixelGrid(currentImageData, pixelColors, 'originalPixelGrid');
-                isShuffled = false;
-                const infoEl = document.getElementById('ctrlAsideInfo');
-                infoEl.innerHTML = '';
-                infoEl.classList.remove('visible');
+                infoEl.innerHTML += '<br><strong>🔁 A 전치</strong>';
+                infoEl.classList.add('visible');
             }
+
+            if (document.getElementById('autoComputeCheck').checked) applyTransform();
+            showToast(isATransposed ? 'A가 전치되었습니다 (행↔열)' : 'A가 다시 원래 방향이 되었습니다');
         }
 
         // T 전치 (행↔열 교환)
@@ -1220,21 +1514,23 @@
 
         // 행 섞기 직접 실행
         function doRowShuffle() {
-            selectShuffleMode('row');
+            shuffleMode = 'row';
+            setPlacement('front');
             shuffleImage();
             if (document.getElementById('autoComputeCheck').checked) applyTransform();
         }
 
         // 열 섞기 직접 실행
         function doColShuffle() {
-            selectShuffleMode('col');
+            shuffleMode = 'col';
+            setPlacement('back');
             shuffleImage();
             if (document.getElementById('autoComputeCheck').checked) applyTransform();
         }
 
         // 자동 연산 체크박스 변경 시
         function onAutoComputeChange() {
-            if (document.getElementById('autoComputeCheck').checked && shuffleMode) {
+            if (document.getElementById('autoComputeCheck').checked && tPlacement) {
                 applyTransform();
             }
         }
@@ -1246,9 +1542,8 @@
                 return;
             }
             
-            // 원본에서 다시 시작
-            currentImageData = JSON.parse(JSON.stringify(originalImageData));
-            pixelColors = JSON.parse(JSON.stringify(originalPixelColors));
+            // 원본(전치 상태면 Aᵀ)에서 다시 시작
+            restoreBaseA();
             
             if (shuffleMode === 'row') {
                 shuffleRows();
@@ -1283,70 +1578,60 @@
             }
         }
 
+        const T_GRID_IDS = ['transformMatrixWithLabels', 'transformMatrixRight'];
+
         function renderTransformMatrix() {
-            const grid = document.getElementById('transformMatrixWithLabels');
+            T_GRID_IDS.forEach(renderTransformGrid);
+        }
+
+        // 11×11 격자 (첫 행·첫 열은 번호)
+        function renderTransformGrid(gridId) {
+            const grid = document.getElementById(gridId);
             grid.innerHTML = '';
-            
-            // 11x11 그리드 생성 (첫 행과 첫 열은 레이블)
             for (let i = 0; i < SIZE + 1; i++) {
                 for (let j = 0; j < SIZE + 1; j++) {
                     if (i === 0 && j === 0) {
-                        // (0,0)은 빈 공간
                         const empty = document.createElement('div');
                         empty.className = 'matrix-empty';
                         grid.appendChild(empty);
-                    } else if (i === 0) {
-                        // 첫 행: 열 번호 (1~10)
+                    } else if (i === 0 || j === 0) {
                         const label = document.createElement('div');
                         label.className = 'matrix-label';
-                        label.textContent = j;
-                        grid.appendChild(label);
-                    } else if (j === 0) {
-                        // 첫 열: 행 번호 (1~10)
-                        const label = document.createElement('div');
-                        label.className = 'matrix-label';
-                        label.textContent = i;
+                        label.textContent = i === 0 ? j : i;
                         grid.appendChild(label);
                     } else {
-                        // 실제 행렬 셀
                         const cell = document.createElement('div');
                         cell.className = 'matrix-cell';
-                        
-                        const actualRow = i - 1;
-                        const actualCol = j - 1;
-                        
-                        // 값에 따라 클래스 추가
-                        if (transformMatrix[actualRow][actualCol] === 1) {
-                            cell.classList.add('value-1');
-                        } else {
-                            cell.classList.add('value-0');
-                        }
-                        
-                        cell.textContent = transformMatrix[actualRow][actualCol];
-                        
-                        // 클릭으로 0↔1 토글
-                        cell.addEventListener('click', function() {
-                            transformMatrix[actualRow][actualCol] = transformMatrix[actualRow][actualCol] === 1 ? 0 : 1;
-
-                            this.textContent = transformMatrix[actualRow][actualCol];
-                            this.classList.remove('value-0', 'value-1');
-                            if (transformMatrix[actualRow][actualCol] === 1) {
-                                this.classList.add('value-1');
-                            } else {
-                                this.classList.add('value-0');
-                            }
-
-                            // 자동 연산
-                            if (document.getElementById('autoComputeCheck').checked && shuffleMode) {
-                                applyTransform();
-                            }
-                        });
-                        
+                        cell.dataset.r = i - 1;
+                        cell.dataset.c = j - 1;
+                        paintTransformCell(cell);
                         grid.appendChild(cell);
                     }
                 }
             }
         }
+
+        function paintTransformCell(cell) {
+            const v = transformMatrix[cell.dataset.r][cell.dataset.c];
+            cell.textContent = v;
+            cell.classList.toggle('value-1', v === 1);
+            cell.classList.toggle('value-0', v !== 1);
+        }
+
+        // 클릭으로 0↔1 토글 (두 격자 모두 이벤트 위임)
+        T_GRID_IDS.forEach(id => {
+            document.getElementById(id).addEventListener('click', (e) => {
+                const cell = e.target.closest('.matrix-cell');
+                if (!cell) return;
+                const r = +cell.dataset.r;
+                const c = +cell.dataset.c;
+                transformMatrix[r][c] = transformMatrix[r][c] === 1 ? 0 : 1;
+                document.querySelectorAll(`.matrix-cell[data-r="${r}"][data-c="${c}"]`).forEach(paintTransformCell);
+                if (document.getElementById('autoComputeCheck').checked && tPlacement) {
+                    applyTransform();
+                }
+            });
+        });
 
         function shuffleRows() {
             const numSwaps = 2 + Math.floor(Math.random() * 2); // 2-3개
@@ -1427,66 +1712,60 @@
             infoEl.classList.add('visible');
         }
 
-        function applyTransform() {
-            if (!shuffleMode) shuffleMode = 'col'; // 미선택 시 기본값: 열 섞기 (A × T)
-            
-            let result = [];
-            let resultColors = [];
-            
-            if (shuffleMode === 'row') {
-                // T × A
-                for (let i = 0; i < SIZE; i++) {
-                    result[i] = [];
-                    resultColors[i] = [];
-                    for (let j = 0; j < SIZE; j++) {
-                        let sum = 0;
-                        let colorR = 0, colorG = 0, colorB = 0;
-                        let count = 0;
-                        
-                        for (let k = 0; k < SIZE; k++) {
-                            sum += transformMatrix[i][k] * currentImageData[k][j];
-                            if (transformMatrix[i][k] === 1) {
-                                const rgb = pixelColors[k][j].match(/\d+/g);
-                                colorR += parseInt(rgb[0]);
-                                colorG += parseInt(rgb[1]);
-                                colorB += parseInt(rgb[2]);
-                                count++;
-                            }
+        // 행렬 곱 + 색 계산: 1이 고른 픽셀들의 평균 색
+        function multiplyTA(T, data, colors) { // T × A
+            return multiplyCore((i, j, k) => T[i][k], (i, j, k) => [k, j], data, colors);
+        }
+
+        function multiplyAT(data, colors, T) { // A × T
+            return multiplyCore((i, j, k) => T[k][j], (i, j, k) => [i, k], data, colors);
+        }
+
+        function multiplyCore(weightOf, sourceOf, data, colors) {
+            const out = [];
+            const outColors = [];
+            for (let i = 0; i < SIZE; i++) {
+                out[i] = [];
+                outColors[i] = [];
+                for (let j = 0; j < SIZE; j++) {
+                    let sum = 0;
+                    let colorR = 0, colorG = 0, colorB = 0;
+                    let count = 0;
+                    for (let k = 0; k < SIZE; k++) {
+                        const w = weightOf(i, j, k);
+                        const [si, sj] = sourceOf(i, j, k);
+                        sum += w * data[si][sj];
+                        if (w === 1) {
+                            const rgb = colors[si][sj].match(/\d+/g);
+                            colorR += parseInt(rgb[0]);
+                            colorG += parseInt(rgb[1]);
+                            colorB += parseInt(rgb[2]);
+                            count++;
                         }
-                        result[i][j] = Math.round(sum);
-                        
-                        count = count || 1;
-                        resultColors[i][j] = `rgb(${Math.round(colorR/count)}, ${Math.round(colorG/count)}, ${Math.round(colorB/count)})`;
                     }
-                }
-            } else {
-                // A × T
-                for (let i = 0; i < SIZE; i++) {
-                    result[i] = [];
-                    resultColors[i] = [];
-                    for (let j = 0; j < SIZE; j++) {
-                        let sum = 0;
-                        let colorR = 0, colorG = 0, colorB = 0;
-                        let count = 0;
-                        
-                        for (let k = 0; k < SIZE; k++) {
-                            sum += currentImageData[i][k] * transformMatrix[k][j];
-                            if (transformMatrix[k][j] === 1) {
-                                const rgb = pixelColors[i][k].match(/\d+/g);
-                                colorR += parseInt(rgb[0]);
-                                colorG += parseInt(rgb[1]);
-                                colorB += parseInt(rgb[2]);
-                                count++;
-                            }
-                        }
-                        result[i][j] = Math.round(sum);
-                        
-                        count = count || 1;
-                        resultColors[i][j] = `rgb(${Math.round(colorR/count)}, ${Math.round(colorG/count)}, ${Math.round(colorB/count)})`;
-                    }
+                    out[i][j] = Math.round(sum);
+                    count = count || 1;
+                    outColors[i][j] = `rgb(${Math.round(colorR/count)}, ${Math.round(colorG/count)}, ${Math.round(colorB/count)})`;
                 }
             }
-            
+            return { data: out, colors: outColors };
+        }
+
+        function applyTransform() {
+            let r;
+            if (tPlacement === 'front') {
+                r = multiplyTA(transformMatrix, currentImageData, pixelColors);
+            } else if (tPlacement === 'both') {
+                const left = multiplyTA(transformMatrix, currentImageData, pixelColors);
+                r = multiplyAT(left.data, left.colors, transformMatrix);
+            } else {
+                r = multiplyAT(currentImageData, pixelColors, transformMatrix);
+            }
+            const result = r.data;
+            const resultColors = r.colors;
+
+            lastResultData = result;
+            lastResultColors = resultColors;
             renderPixelGrid(result, resultColors, 'resultPixelGrid');
         }
 
@@ -1522,12 +1801,13 @@
             
             // 모든 상태 초기화
             isShuffled = false;
+            resetBaseToOriginal();
             shuffleMode = null;
             renderPixelGrid(originalImageData, originalPixelColors, 'originalPixelGrid');
             renderTransformMatrix();
             renderPixelGrid(originalImageData, originalPixelColors, 'resultPixelGrid');
-            // 기본 모드(열 섞기)로 복원 → 연산 실행 버튼 활성 유지
-            selectShuffleMode('col');
+            // 기본 위치(T를 뒤에)로 복원 → 연산 실행 버튼 활성 유지
+            setPlacement('back');
             
             // 우측 패널 섞기 정보 초기화
             const infoEl = document.getElementById('ctrlAsideInfo');
@@ -1582,12 +1862,58 @@
             });
         }
 
-        // 샘플 이미지 불러오기
-        function loadSampleImage() {
-            const randomNum = Math.floor(Math.random() * 12); // 0-11
-            const sampleNum = String(randomNum).padStart(2, '0');
-            const sampleUrl = `../../assets/samples/pixels/sampleimage${sampleNum}.png`;
+        // 샘플 이미지 목록: sampleimage00~11 + 10×10 무지개 + 회전·대칭이 잘 보이는 10×10 물건·캐릭터
+        const SAMPLE_DIR = '../../assets/samples/pixels/';
+        const SAMPLES = [
+            ...Array.from({ length: 12 }, (_, n) => ({
+                url: `${SAMPLE_DIR}sampleimage${String(n).padStart(2, '0')}.png`,
+                name: `샘플 ${n + 1}`
+            })),
+            ...[['rainbow10', '무지개'], ['key10', '열쇠'], ['boot10', '장화'], ['flag10', '깃발'],
+                ['dino10', '공룡'], ['chick10', '병아리'], ['ghost10', '유령'], ['robot10', '로봇']]
+                .map(([file, name]) => ({ url: `${SAMPLE_DIR}${file}.png`, name }))
+        ];
+        const SAMPLE_URLS = SAMPLES.map(sample => sample.url);
 
+        // 샘플 직접 고르기 창
+        const samplePicker = document.getElementById('samplePicker');
+        const samplePickerGrid = document.getElementById('samplePickerGrid');
+
+        function openSamplePicker() {
+            if (!samplePickerGrid.children.length) {
+                samplePickerGrid.innerHTML = SAMPLES.map((sample, i) => `
+                    <button type="button" class="sample-pick" data-index="${i}">
+                        <img src="${sample.url}" alt="" width="64" height="64" loading="lazy">
+                        <span>${sample.name}</span>
+                    </button>`).join('');
+            }
+            samplePicker.showModal();
+        }
+
+        function closeSamplePicker() {
+            samplePicker.close();
+        }
+
+        samplePickerGrid.addEventListener('click', (e) => {
+            const pick = e.target.closest('.sample-pick');
+            if (!pick) return;
+            const sample = SAMPLES[+pick.dataset.index];
+            closeSamplePicker();
+            loadImageFromUrl(sample.url);
+            showToast(`'${sample.name}'을(를) 불러왔습니다`);
+        });
+
+        // 창 바깥(어두운 부분)을 누르면 닫기
+        samplePicker.addEventListener('click', (e) => {
+            if (e.target === samplePicker) closeSamplePicker();
+        });
+
+        // 샘플 이미지 불러오기 (무작위 1장)
+        function loadSampleImage() {
+            loadImageFromUrl(SAMPLE_URLS[Math.floor(Math.random() * SAMPLE_URLS.length)]);
+        }
+
+        function loadImageFromUrl(sampleUrl) {
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = () => {
@@ -1596,7 +1922,7 @@
                 document.getElementById('ctrlAside').classList.remove('hidden');
             };
             img.onerror = () => {
-                alert(`샘플 이미지를 불러올 수 없습니다.\n파일명: ${sampleUrl}\n\nimage 폴더에 sampleimage00.png ~ sampleimage11.png 파일이 있는지 확인하세요.`);
+                alert(`샘플 이미지를 불러올 수 없습니다.\n파일명: ${sampleUrl}\n\nassets/samples/pixels 폴더에 이 파일이 있는지 확인하세요.`);
             };
             img.src = sampleUrl;
         }

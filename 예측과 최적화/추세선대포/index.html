@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>추세선 대포 | 예측과 최적화</title>
+  <meta name="description" content="팀이 함께 대포와 바람으로 직선을 움직여 점들의 추세선을 맞히는 실시간 아이스브레이킹 게임. 평균제곱오차가 가장 작은 팀이 이깁니다.">
+  <meta name="theme-color" content="#b9e8f5">
+  <link rel="icon" href="../../assets/home/faviconlogo.png">
+  <link rel="preload" href="assets/jua-ui.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+<script src="../../unit-nav.js" data-unit="predict" data-pos="tab" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a href="../index.html" class="back"><span aria-hidden="true">◀</span> 목록</a>
+    <div class="brand">
+      <img class="brand-mark" src="assets/cannon-v2.png" width="44" height="36" alt="">
+      <span class="brand-name">추세선 대포</span>
+    </div>
+    <span id="connBadge" class="badge" hidden></span>
+    <button type="button" class="sound-btn" id="btnSound" aria-pressed="true">🔊 소리 켜짐</button>
+  </header>
+
+  <main>
+    <!-- 첫 화면 -->
+    <section id="scrHome" class="screen home">
+      <div class="hero">
+        <div class="hero-text">
+          <p class="eyebrow">함께 쏘고, 함께 불어요!</p>
+          <h1 class="hero-title">추세선 대포<br><span>우리 팀의 선을 맞춰라!</span></h1>
+          <p class="hero-lead">대포는 <b>기울기</b>를, 선풍기는 <b>좌우 위치</b>를!<br>친구들과 힘을 모아 점들에 꼭 맞는 선을 만들어요.</p>
+          <div class="hero-cast" aria-label="두 가지 장비">
+            <div class="cast-item"><img src="assets/cannon-v2.png" width="96" height="64" alt=""><span><b>대포</b><small>기울기 조절</small></span></div>
+            <div class="cast-item"><canvas id="fanHeroPortrait" class="fan-portrait" width="180" height="144" aria-hidden="true"></canvas><span><b>선풍기</b><small>← 좌우 이동 →</small></span></div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn primary big" id="btnJoinScr">학생으로 참가</button>
+            <button type="button" class="btn big" id="btnHost">선생님: 방 만들기</button>
+            <button type="button" class="btn ghost big" id="btnPractice">혼자 연습하기</button>
+          </div>
+          <p id="homeNote" class="note" hidden></p>
+        </div>
+        <div class="hero-art">
+          <div class="arena-heading"><span><i aria-hidden="true"></i> 작은 연습 놀이터</span><small>대포 × 선풍기</small></div>
+          <canvas id="cvHero" class="map-canvas" role="img" aria-label="예시 맵: 테두리의 대포와 선풍기가 직선을 맞혀 움직이는 모습"></canvas>
+        </div>
+      </div>
+
+      <ol class="rules" aria-label="게임 방법">
+        <li class="rule"><span class="rule-number" aria-hidden="true">1</span><div><h2>기울기는 대포로</h2><p>위·아래에서 쏘면 선이 시소처럼 기울어요. 받침점 ▲에서 먼 끝일수록, <b>길게 모아 쏠수록</b> 많이 기울어요.</p></div></li>
+        <li class="rule"><span class="rule-number" aria-hidden="true">2</span><div><h2>좌우 위치는 바람으로</h2><p>왼쪽 선풍기는 <b>오른쪽으로</b>, 오른쪽 선풍기는 <b>왼쪽으로</b> 밀어요. 선의 기울기는 그대로예요.</p></div></li>
+        <li class="rule"><span class="rule-number" aria-hidden="true">3</span><div><h2>우리 팀의 선을 맞춰요</h2><p>팀원들과 역할을 나눠 점들에 가까운 선을 만들어요. 판이 끝나면 <b>평균제곱오차</b>가 작을수록 높은 순위를 받아요.</p></div></li>
+      </ol>
+    </section>
+
+    <!-- 학생 참가 -->
+    <section id="scrJoin" class="screen narrow" hidden>
+      <form id="joinForm" class="card form" novalidate>
+        <h2 class="card-title">참가하기</h2>
+        <div class="field">
+          <label for="inCode"><span class="step">1</span>방 코드 <small>숫자 4자리</small></label>
+          <input id="inCode" class="code-input" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">
+        </div>
+        <div class="field">
+          <label for="inName"><span class="step">2</span>이름 <small>10자 이내</small></label>
+          <input id="inName" maxlength="10" autocomplete="off" placeholder="예: 김하늘">
+        </div>
+        <fieldset id="teamPick" class="field" disabled>
+          <legend><span class="step">3</span>팀 고르기 <small id="teamPickNote">방 코드를 먼저 입력하세요</small></legend>
+          <div class="team-grid" id="teamGrid"></div>
+        </fieldset>
+        <p id="joinErr" class="err" role="alert"></p>
+        <div class="row">
+          <button type="button" class="btn ghost" data-home>처음으로</button>
+          <button type="submit" class="btn primary" id="btnJoin">입장</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 학생 대기 -->
+    <section id="scrWait" class="screen narrow" hidden>
+      <div class="card wait">
+        <p class="muted" id="waitRoom"></p>
+        <div class="team-badge big" id="waitBadge" aria-hidden="true"></div>
+        <h2 id="waitTeam"></h2>
+        <ul id="waitMembers" class="avatars" aria-label="우리 팀 참가자"></ul>
+        <div class="switch" id="waitSwitch" hidden>
+          <p class="switch-title" id="waitSwitchTitle">팀 바꾸기 <small>시작 전까지 바꿀 수 있어요</small></p>
+          <div class="team-grid" id="waitTeamGrid"></div>
+        </div>
+        <p class="status" id="waitStatus">선생님이 게임을 시작하면 바로 맵이 열려요.</p>
+        <p class="wait-tip">기다리는 동안: 한 발은 조금씩이라 <b>팀이 같은 쪽으로 많이</b> 맞혀야 해요. 위·아래(기울기)와 왼쪽·오른쪽(위치) 중 누가 어디를 맡을지 팀원과 정해 보세요.</p>
+        <button type="button" class="btn ghost" id="btnLeave">나가기</button>
+      </div>
+    </section>
+
+    <!-- 게임 (학생·연습 공용) -->
+    <section id="scrPlay" class="screen play" hidden>
+      <div class="hud">
+        <span class="team-badge" id="hudBadge" aria-hidden="true"></span>
+        <div class="hud-who"><span id="hudTeam" class="hud-team"></span><span id="hudRound" class="hud-round"></span></div>
+        <span id="hudTimer" class="timer"></span>
+        <button type="button" class="btn small" id="btnPracticeEnd" hidden>지금 채점</button>
+      </div>
+      <div class="timebar" aria-hidden="true"><span id="timeFill"></span></div>
+      <div class="play-layout">
+        <div class="play-board">
+      <div class="stage">
+        <canvas id="cvPlay" class="map-canvas" role="img" aria-label="게임 맵: 점들과 직선, 테두리의 대포와 선풍기"></canvas>
+        <div id="overlay" class="overlay" hidden></div>
+      </div>
+      <p class="eq"><span class="eq-label">지금 직선</span><span id="eqText"></span></p>
+
+        </div>
+        <aside class="controller-card" aria-label="이동과 발사 조작">
+        <div class="equipment-readout" aria-label="현재 장비"><span class="equipment-portrait"><img id="weaponIcon" src="assets/cannon-v2.png" width="128" height="108" alt=""><canvas id="fanPortrait" class="fan-portrait" width="140" height="112" aria-hidden="true" hidden></canvas></span><span class="equipment-copy"><b id="weaponName">대포</b><span class="weapon-role" id="weaponRole">기울기 조절</span><small id="weaponHint">포탄으로 직선을 기울여요</small></span></div>
+      <div class="pad">
+        <button type="button" class="btn pad-btn" id="padCCW" aria-label="테두리를 따라 반시계 방향으로 이동"><span aria-hidden="true">↺</span> 이동</button>
+        <button type="button" class="btn fire pad-btn" id="padFire">발사</button>
+        <button type="button" class="btn pad-btn" id="padCW" aria-label="테두리를 따라 시계 방향으로 이동">이동 <span aria-hidden="true">↻</span></button>
+      </div>
+      <p class="charge-tip">누르고 모아서, 떼면 발사!</p>
+      <details class="control-help"><summary>조작 방법</summary><p class="help"><b>테두리</b>를 누르면 이동 · <b>맵 안</b>을 누르면 발사<br>길게 누를수록 세게 움직여요.</p></details>
+      <p class="help keyboard-help"><kbd>←↑→↓</kbd> 이동 · <kbd>A</kbd>/<kbd>D</kbd> 조준<br><kbd>Space</kbd> 누르고 떼면 발사</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 판 결과 (학생·연습 공용) -->
+    <section id="scrResult" class="screen result" hidden>
+      <div id="resultCelebration" class="celebration" role="status"></div>
+      <div class="result-wrap">
+        <div class="stage"><canvas id="cvResult" class="map-canvas" role="img" aria-label="결과 맵: 빨간 세로선은 오차, 점선은 오차가 가장 작은 직선"></canvas></div>
+        <div class="card">
+          <h2 class="card-title" id="resTitle"></h2>
+          <div class="score">
+            <div class="score-main"><span class="score-label">우리 오차 <small>평균제곱오차</small></span><strong id="resMse"></strong></div>
+            <div class="compare" aria-hidden="true">
+              <div class="cmp-row"><span>우리</span><span class="cmp-track"><span class="cmp-fill ours" id="barOurs"></span></span></div>
+              <div class="cmp-row"><span>최적</span><span class="cmp-track"><span class="cmp-fill best" id="barBest"></span></span></div>
+            </div>
+          </div>
+          <dl class="stats">
+            <div><dt>가장 작게 만들 수 있는 오차</dt><dd id="resBest"></dd></div>
+            <div><dt>우리 직선</dt><dd id="resEq"></dd></div>
+            <div><dt>최적 직선 <small>(점선)</small></dt><dd id="resBestEq"></dd></div>
+          </dl>
+          <p class="legend"><span class="key resid"></span>점마다 오차 <span class="key best"></span>오차가 가장 작은 직선</p>
+          <ol id="resTable" class="rank" aria-label="팀 순위"></ol>
+          <p id="resStatus" class="status"></p>
+          <p id="resNext" class="next-line" aria-live="polite"></p>
+          <div class="row" id="resActions"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 교사 화면 -->
+    <section id="scrHost" class="screen wide" hidden>
+      <div class="host-bar">
+        <div class="code-box"><span>방 코드</span><strong id="hostCode"></strong></div>
+        <div class="join-box">
+          <button type="button" class="qr-btn" id="qrBtn" aria-label="참가용 QR 코드 크게 보기"><span id="hostQr" class="qr"></span><span class="qr-zoom" aria-hidden="true">크게</span></button>
+          <div class="join-how">
+            <span>참가 방법</span>
+            <ol>
+              <li>휴대폰 카메라로 <b>QR</b>을 찍기</li>
+              <li>또는 사이트 첫 화면 → <b>예측과 최적화</b> → <b>추세선 대포</b> → 방 코드 입력</li>
+            </ol>
+            <button type="button" class="link-btn" id="btnCopyLink">참가 주소 복사</button>
+            <span id="hostLink" class="sr-only"></span>
+          </div>
+        </div>
+        <div class="host-state"><span id="hostRound"></span><span id="hostTimer" class="timer"></span></div>
+        <div class="timebar host" aria-hidden="true"><span id="hostTimeFill"></span></div>
+      </div>
+      <div class="host-controls">
+        <label for="selTeams">팀 수</label>
+        <select id="selTeams"><option value="2">2팀</option><option value="3">3팀</option><option value="4">4팀</option><option value="5">5팀</option><option value="6">6팀</option><option value="7">7팀</option><option value="8" selected>8팀</option></select>
+        <label for="selRounds">판 수</label>
+        <select id="selRounds"><option>3</option><option>5</option><option selected>8</option><option>10</option><option>12</option></select>
+        <label for="selTime">제한 시간</label>
+        <select id="selTime"><option value="10">10초</option><option value="15" selected>15초</option><option value="20">20초</option><option value="30">30초</option><option value="60">60초</option></select>
+        <label class="chk"><input type="checkbox" id="chkAuto" checked> 자동 진행</label>
+        <span id="hostCount" class="count-pill"></span>
+        <span class="spacer"></span>
+        <button type="button" class="btn primary" id="btnStart">1판 시작</button>
+        <button type="button" class="btn" id="btnEndNow" hidden>지금 끝내기</button>
+        <button type="button" class="btn primary" id="btnFinal" hidden>최종 결과</button>
+        <button type="button" class="btn fire" id="btnPresent" hidden>결과 발표 화면</button>
+        <button type="button" class="btn ghost" id="btnClose">방 닫기</button>
+      </div>
+      <div id="hostRankBox" class="card" hidden>
+        <div id="hostCelebration" class="celebration compact" role="status"></div>
+        <h2 class="card-title" id="hostRankTitle"></h2>
+        <ol id="hostRank" class="rank"></ol>
+        <p id="hostMvp" class="mvp" hidden></p>
+      </div>
+      <div class="team-cards" id="teamCards"></div>
+    </section>
+  </main>
+
+  <!-- 결과 발표 화면 (교사 프로젝터·학생 공용) -->
+  <div id="present" class="present" role="dialog" aria-modal="true" aria-labelledby="pvTitle" hidden>
+    <div class="pv-top">
+      <h2 id="pvTitle" class="pv-title"></h2>
+      <div class="pv-seg" id="pvRounds" role="group" aria-label="판 고르기"></div>
+      <div class="pv-seg" id="pvModes" role="group" aria-label="보기 방식"></div>
+      <span class="spacer"></span>
+      <button type="button" class="pv-pill" id="pvFull">전체 화면</button>
+      <button type="button" class="pv-pill close" id="pvClose" aria-label="발표 화면 닫기">닫기 ✕</button>
+    </div>
+    <div class="pv-body" id="pvBody"></div>
+    <div class="pv-foot" id="pvFoot"></div>
+    <p class="pv-keys"><kbd>←</kbd><kbd>→</kbd> 넘기기 · <kbd>Space</kbd> 순위 공개 · <kbd>1</kbd>~<kbd>4</kbd> 보기 바꾸기 · <kbd>F</kbd> 전체 화면 · <kbd>Esc</kbd> 닫기</p>
+  </div>
+
+  <!-- 참가 QR 크게 보기 -->
+  <div id="qrModal" class="qr-modal" role="dialog" aria-modal="true" aria-label="참가용 QR 코드" hidden>
+    <div class="qr-modal-card">
+      <div id="qrBig" class="qr"></div>
+      <p class="qr-modal-code">방 코드 <strong id="qrCode"></strong></p>
+      <p class="qr-modal-how">휴대폰 카메라로 찍으면 방 코드가 채워진 참가 화면이 열려요</p>
+      <button type="button" class="btn" id="qrClose">닫기</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

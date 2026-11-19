@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f2faf7">
+  <meta name="description" content="같은 회색에서 RGB 차이를 관찰하고, 3:6:1 흑백 밝기를 예측하는 비교용 sensitivity 2 게임.">
+  <title>RGB sensitivity 2 · 같은 회색, 다른 밝기 | 색감 실험실</title>
+  <link rel="icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="rgb-sensitivity2.css">
+  <link rel="stylesheet" href="../../nav.css">
+  <script src="../../nav.js" defer></script>
+  <script src="rgb-sensitivity2.js" defer></script>
+</head>
+<body class="color-lab-page sensitivity2-page">
+  <button type="button" class="sidebar-toggle" aria-label="메뉴 열기" aria-controls="imageSidebar" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<aside class="sidebar" id="imageSidebar" aria-hidden="true">
+    <nav aria-label="이미지 수업 활동">
+      <div class="nav-sec" data-nav-group="start">시작</div>
+      <a href="../indeximage.html" data-nav-group="start"><span>홈</span></a>
+      <a href="activity1_intro.html"  data-nav-group="start"><span>행렬 시각화</span></a>
+      <div class="nav-sec" data-nav-group="color">색과 이미지</div>
+      <a href="activity2_matrix_extract.html" data-nav-group="color"><span>RGB 행렬 알아보기</span></a>
+      <a href="activity3_rgb_hub.html" data-nav-group="color"><span>RGB 데이터 탐구</span></a>
+      <a href="activity4_rgb_channels2.html" data-nav-group="color"><span>RGB·RGBA 행렬 추출기</span></a>
+      <a href="rgb_filter/index.html" data-nav-group="color"><span>사진 필터와 RGB</span></a>
+      <a href="activity4_rgb_excel.html" data-nav-group="color"><span>RGB 웹 엑셀</span></a>
+      <a href="activity4_rgb_channels.html" data-nav-group="color"><span>RGB 채널 탐구</span></a>
+      <a href="../02_행렬과_이미지변환/activity5_image_merge.html" data-nav-group="color"><span>이미지 합성</span></a>
+      <a href="../02_행렬과_이미지변환/activity6_composite_explore.html" data-nav-group="color"><span>합성 원리</span></a>
+      <div class="nav-sec" data-nav-group="matrix">행렬 연산</div>
+      <a href="../02_행렬과_이미지변환/activity7_matrix_product.html" data-nav-group="matrix"><span>행렬 곱셈</span></a>
+      <a href="../02_행렬과_이미지변환/activity8_rotation_matrix.html" data-nav-group="matrix"><span>회전 행렬</span></a>
+      <div class="nav-sec" data-nav-group="data">데이터와 인식</div>
+      <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><span>손글씨 인식</span></a>
+      <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><span>숫자 판별 단계</span></a>
+      <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><span>MNIST 데이터 탐구</span></a>
+      <a href="../03_숫자인식과_유사도/hamming_motion/index.html" data-nav-group="data"><span>해밍 거리</span></a>
+      <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
+      <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><span>이미지 업스케일러</span></a>
+      <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><span>AI 업스케일러</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo.html" data-nav-group="ai"><span>YOLO 객체 탐지</span></a>
+      <a href="../05_객체탐지_YOLO/activity14_yolo_lab.html" data-nav-group="ai"><span>YOLO 직접 학습시키기</span></a>
+      <a href="../06_스타일전이/activity15_styletransper.html" data-nav-group="ai"><span>신경망 스타일 변환</span></a>
+      <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><span>임의(Arbitrary)신경망 변환</span></a>
+      <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
+      <a href="../07_CNN과_합성곱/kernel_filter/index.html" data-nav-group="cnn"><span>이미지 커널 필터 체험</span></a>
+      <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><span>CNN 합성곱 시각화</span></a>
+      <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><span>CNN 기술 체험</span></a>
+      <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><span>색 군집화</span></a>
+    </nav>
+  </aside>
+  <a class="skip-link" href="#activity">활동으로 건너뛰기</a>
+  <main>
+    <nav class="top-nav" aria-label="이동">
+      <a href="activity3_color_sense.html">← 게임 선택</a>
+      <a href="activity3_rgb_sensitivity.html">기존 sensitivity ↗</a>
+    </nav>
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">비교 버전 <span>RGB SENSITIVITY 2</span></p>
+        <h1>같은 회색, <span>다른 밝기</span></h1>
+        <p class="lead">내가 발견한 색 차이와, 흑백 공식이 만드는 밝기 차이를 만나보세요.</p>
+      </div>
+      <div class="heading-mark" aria-hidden="true"><i>R</i><i>G</i><i>B</i></div>
+    </header>
+    <ol class="steps" aria-label="활동 진행">
+      <li id="stepObserve" aria-current="step"><b>01</b><span>내 눈으로 관찰</span></li>
+      <li id="stepPredict"><b>02</b><span>흑백 밝기 예측</span></li>
+      <li id="stepResult"><b>03</b><span>두 결과 비교</span></li>
+    </ol>
+
+    <div id="activity" tabindex="-1">
+      <section class="panel ready-panel" id="readyPanel" aria-labelledby="readyTitle">
+        <div class="ready-copy">
+          <p class="section-label">출발점은 똑같이</p>
+          <h2 id="readyTitle" tabindex="-1">같은 회색에서<br> 한 채널만 바꿔요.</h2>
+          <p>세 채널 모두 같은 회색·같은 증가량으로 비교해요.<br> 먼저 다른 칸을 찾고, 이어서 흑백 밝기를 예측해요.</p>
+          <button type="button" class="btn" id="startBtn">관찰 시작하기 <span aria-hidden="true">→</span></button>
+          <p class="small-note">관찰 45문제 · 예측 6문제 · 약 3~5분</p>
+        </div>
+        <div class="ready-art" aria-label="회색 128,128,128에서 각 채널에 24를 더한 예시">
+          <div class="base-card"><span class="base-swatch"></span><div><strong>모두 같은 회색</strong><code>(128, 128, 128)</code></div></div>
+          <div class="branch-lines" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="sample-row">
+            <div class="sample-card"><div class="sample-color sample-r"></div><b>R +24</b><small>R만 바꿔요</small></div>
+            <div class="sample-card"><div class="sample-color sample-g"></div><b>G +24</b><small>G만 바꿔요</small></div>
+            <div class="sample-card"><div class="sample-color sample-b"></div><b>B +24</b><small>B만 바꿔요</small></div>
+          </div>
+          <p>바탕색도, 더하는 양도 같아요.</p>
+        </div>
+        <div class="ready-rules">
+          <article><span class="rule-number">01</span><div><h3>내 눈으로 관찰</h3><p>25칸 중 다른 한 칸을 찾아요. 채널마다 15문제, 문제마다 10초. 정답 1개는 똑같이 1점이에요.</p></div></article>
+          <article><span class="rule-number">02</span><div><h3>흑백 밝기 예측</h3><p>3:6:1 공식으로 바꾸면 어떤 카드가 가장 밝을까요? 선택하면 실제 흑백 결과와 계산을 보여줘요.</p></div></article>
+        </div>
+        <p class="experiment-note">관찰에서는 색과 밝기를 함께 구별해요. 특정 채널이 꼭 1등일 필요는 없어요.</p>
+      </section>
+
+      <section class="panel observation-panel" id="observePanel" hidden aria-labelledby="observeTitle">
+        <div class="panel-heading"><div><p class="section-label">01 / 내 눈으로 관찰</p><h2 id="observeTitle" tabindex="-1">다른 한 칸을 찾아보세요.</h2></div><span class="counter" id="observeCount">1 / 45</span></div>
+        <div class="progress-track" aria-hidden="true"><div id="observeProgress"></div></div>
+        <div class="observe-layout">
+          <div class="board-column">
+            <div class="board-caption"><span class="channel-pill" id="activeChannel">R 빨강</span><span id="stimulusLabel"></span></div>
+            <div class="board" id="board" role="group" aria-label="다른 칸 찾기. 방향키로 이동, Enter 또는 Space로 선택."></div>
+            <p class="keyboard-hint">방향키로 이동 · Enter / Space로 선택</p>
+          </div>
+          <aside class="observe-aside" aria-label="시간과 기록">
+            <div class="timer-box"><span>남은 시간</span><strong id="timeValue">10.0<small>초</small></strong><div class="timer-track" aria-hidden="true"><div id="timeFill"></div></div></div>
+            <div class="live-records" id="liveRecords" aria-label="채널별 관찰 기록"></div>
+            <div class="round-response"><p id="observeFeedback" role="status" aria-live="polite" aria-atomic="true">색이 다른 칸을 골라주세요.</p><button type="button" class="btn" id="nextObserveBtn" hidden>다음 문제 →</button><button type="button" class="text-btn" id="pauseBtn">잠시 멈추기</button></div>
+            <p class="small-note">맞힌 수로 비교해요.<br>풀이 시간은 별도로 기록해요.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="panel" id="observedPanel" hidden aria-labelledby="observedTitle">
+        <div class="panel-heading"><div><p class="section-label">첫 번째 기록</p><h2 id="observedTitle" tabindex="-1">내 눈으로 관찰한 결과</h2></div><span class="complete-badge">45문제 완료</span></div>
+        <div id="observationSummary"></div>
+        <div class="bridge-note"><b>이제, 흑백 공식의 차례!</b><p>방금 기록은 내가 차이를 찾아낸 결과예요. 다음에는 정해진 공식이 만드는 밝기를 예측해 보세요.</p></div>
+        <button type="button" class="btn" id="startPredictBtn">흑백 밝기 예측하기 →</button>
+      </section>
+
+      <section class="panel prediction-panel" id="predictPanel" hidden aria-labelledby="predictTitle">
+        <div class="panel-heading"><div><p class="section-label">02 / 흑백 밝기 예측</p><h2 id="predictTitle" tabindex="-1">흑백으로 바꾸면, 가장 밝은 카드는?</h2></div><span class="counter" id="predictCount">1 / 6</span></div>
+        <div class="formula-banner"><span>사용할 흑백 변환 공식</span><strong><span class="text-r">0.3R</span> + <span class="text-g">0.6G</span> + <span class="text-b">0.1B</span></strong><small>밝기 기여를 비교하는 학습용 근사식</small></div>
+        <p class="prediction-instruction" id="predictionInstruction"></p>
+        <div class="prediction-cards" id="predictionCards" role="group" aria-label="흑백 밝기 예측 카드"></div>
+        <div class="prediction-feedback"><p id="predictFeedback" role="status" aria-live="polite" aria-atomic="true">R·G·B와 증가량을 보고 카드를 선택하세요.</p><button type="button" class="btn" id="nextPredictBtn" hidden>다음 예측 →</button></div>
+        <p class="model-note">여기서의 정답은 위 공식의 계산 결과예요. 내 눈의 민감도를 측정하는 단계는 아니에요.</p>
+      </section>
+
+      <section class="panel" id="resultPanel" hidden aria-labelledby="resultTitle">
+        <div class="panel-heading"><div><p class="section-label">03 / 두 결과 비교</p><h2 id="resultTitle" tabindex="-1">내 관찰과 흑백 공식, 함께 보기</h2></div><span class="complete-badge">실험 완료</span></div>
+        <div class="final-prediction"><div><b>흑백 예측 기록</b><p>모든 문제는 같은 1점, 시간 보너스는 없어요.</p></div><strong id="predictionScore">0 / 6</strong></div>
+        <h3>내 눈으로 찾은 차이</h3>
+        <div id="finalObservationSummary"></div>
+        <div class="model-comparison"><div><p class="section-label">공식으로 계산한 밝기 변화</p><h3>같은 +12, 흑백에서는 서로 달라요.</h3><p>회색 (128,128,128)에서 한 채널만 +12를 넣은 예시예요.</p></div><div class="model-bars"><div><b>R</b><span><i class="bar-r" style="width:50%"></i></span><strong>+3.6</strong></div><div><b>G</b><span><i class="bar-g" style="width:100%"></i></span><strong>+7.2</strong></div><div><b>B</b><span><i class="bar-b" style="width:16.6667%"></i></span><strong>+1.2</strong></div></div></div>
+        <p class="takeaway">이 공식에서 G는 같은 증가량을 밝기에 가장 크게 반영해요. 내가 색 차이를 잘 찾은 채널과 공식의 가중치는 서로 다른 결과예요.</p>
+        <div class="actions"><button type="button" class="btn" id="retryBtn">처음부터 다시 비교</button><a class="btn secondary" href="activity3_rgb_sensitivity.html">기존 sensitivity 해보기 ↗</a></div>
+      </section>
+    </div>
+    <details class="method-note"><summary>어떻게 같은 조건으로 비교하나요?</summary><p>관찰에서는 회색값 104·128·152와 증가량(Δ) 24·16·10·6·3의 조합을 R·G·B에 똑같이 한 번씩 제시해요. 채널마다 15문제이며, 각 증가량은 3번씩 나와요. 제시 순서와 위치는 섞고, 같은 위치 묶음을 세 채널에 사용해요.</p><p>관찰 점수는 정답마다 1점이에요. 정답일 때의 평균 풀이 시간은 별도로 보여줘요. 작은 Δ를 찾은 기록도 색조와 밝기의 영향을 함께 받은 관찰 기록이에요. 같은 화면과 밝기에서 비교해 보세요.</p><p>예측 단계는 표시된 3:6:1 공식을 적용한 결과를 맞히는 게임이에요. 이 식은 학습용 근사식이며 실제 화면 휘도의 정밀 측정식은 아니에요. 공식의 계산을 개인 시각의 측정 결과로 해석하지 않아요.</p></details>
+  </main>
+  <dialog id="pauseDialog" aria-labelledby="pauseTitle"><p class="section-label">잠시 쉬어가요</p><h2 id="pauseTitle">관찰을 멈췄어요.</h2><p>남은 시간은 그대로예요.<br>준비되면 이어서 찾아보세요.</p><button type="button" class="btn" id="resumeBtn">계속 관찰하기 →</button></dialog>
+  <noscript>이 게임은 JavaScript가 필요해요. 브라우저 설정에서 JavaScript를 켜주세요.</noscript>
+</body>
+</html>

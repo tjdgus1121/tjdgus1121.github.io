@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="평균·편차·분산에서 시작해 오차와 손실함수를 거쳐 경사하강법의 식을 유도하는 3편짜리 모션 해설입니다.">
+<title>평균에서 경사하강법까지</title>
+<style>
+  :root {
+    --ink: #3b3355; --muted: #6f6787; --cream: #fff8ec; --page: #efe6d8;
+    --yellow: #ffd966; --yellow-soft: #fff4c4; --blue-ink: #2f6fd6;
+    --c1: #ff9fb8; --c2: #ffc75a; --c3: #8fd9a8;
+    --font: "NanumSquareRound", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 48px 16px 64px; background: var(--page); color: var(--ink); font-family: var(--font);
+    background-image: radial-gradient(rgba(59,51,85,.08) 2px, transparent 2.5px); background-size: 34px 34px;
+  }
+  main { max-width: 1120px; margin: 0 auto; }
+  .kick { margin: 0; font-weight: 800; color: var(--muted); }
+  h1 { margin: 6px 0 10px; font-size: clamp(32px, 5vw, 52px); line-height: 1.2; }
+  h1 mark { background: linear-gradient(transparent 58%, var(--yellow) 58%); color: inherit; padding: 0 4px; }
+  .lead { margin: 0 0 30px; font-size: 18px; line-height: 1.6; max-width: 46em; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 30px; padding: 0; list-style: none; font-weight: 800; }
+  .flow li { padding: 6px 14px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; }
+  .flow li.arrow { border: 0; background: none; padding: 0; color: var(--muted); }
+  .eps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: 0; padding: 0; list-style: none; }
+  .ep { display: flex; flex-direction: column; gap: 12px; padding: 24px; background: #fff; border: 3px solid var(--ink); border-radius: 26px; box-shadow: 0 6px 0 rgba(59,51,85,.16); }
+  .ep .num { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--muted); }
+  .ep .num b { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--ink); color: var(--ink); font-size: 17px; }
+  .ep:nth-child(1) .num b { background: var(--c1); } .ep:nth-child(2) .num b { background: var(--c2); } .ep:nth-child(3) .num b { background: var(--c3); }
+  .ep h2 { margin: 0; font-size: 26px; }
+  .ep p { margin: 0; line-height: 1.6; }
+  .ep .key { padding: 10px 14px; border-radius: 14px; background: var(--yellow-soft); font-weight: 800; }
+  .ep .steps { margin: 0; padding-left: 20px; line-height: 1.7; color: var(--muted); }
+  .ep .go { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; border: 2px solid var(--ink); border-radius: 999px; background: var(--yellow); color: var(--ink); font: 800 17px var(--font); text-decoration: none; box-shadow: 0 3px 0 rgba(59,51,85,.2); }
+  .ep .go:hover { background: #ffe58f; }
+  .ep .go:focus-visible { outline: 3px solid var(--blue-ink); outline-offset: 3px; }
+  .act { margin-top: 26px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 24px; background: var(--yellow-soft); border: 3px dashed var(--ink); border-radius: 26px; }
+  .act > div { flex: 1 1 420px; }
+  .act h2 { margin: 4px 0 8px; font-size: 24px; }
+  .act p { margin: 0; line-height: 1.6; }
+  .act .go { display: inline-flex; align-items: center; min-height: 52px; padding: 0 26px; border: 2px solid var(--ink); border-radius: 999px; background: var(--yellow); color: var(--ink); font: 800 18px var(--font); text-decoration: none; box-shadow: 0 3px 0 rgba(59,51,85,.2); }
+  .act .go:hover { background: #ffe58f; }
+  .act .gos { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+  .act .go { justify-content: center; }
+  .act .go.alt { background: #fff; font-size: 16px; min-height: 46px; }
+  .act .go:focus-visible { outline: 3px solid var(--blue-ink); outline-offset: 3px; }
+  .note { margin-top: 30px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+  @media (max-width: 900px) { .eps { grid-template-columns: 1fr; } body { padding-top: 32px; } }
+</style>
+<style>.site-back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 8px; font-weight: 800; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.site-back:focus-visible { outline: 3px solid #f2b705; outline-offset: 3px; }</style>
+<script src="../../../unit-nav.js" data-unit="predict" defer></script>
+</head>
+<body>
+<main>
+  <a class="site-back" href="../../index.html" aria-label="예측과 최적화 목록으로 돌아가기">◀ 예측과 최적화 목록</a>
+  <p class="kick">모션으로 이해하는 AI 수학 · 3편</p>
+  <h1><mark>평균</mark>에서 <mark>경사하강법</mark>까지</h1>
+  <p class="lead">흩어진 정도를 재는 분산에서 출발해, 예측이 얼마나 틀렸는지를 나타내는 손실함수를 만들고, 기울기만 보고 가장 낮은 곳을 찾아가는 경사하강법의 식까지 이어서 유도합니다. 1편부터 차례대로 보는 것을 권해요.</p>
+
+  <ol class="flow" aria-label="이어지는 개념">
+    <li>평균</li><li class="arrow" aria-hidden="true">→</li>
+    <li>분산</li><li class="arrow" aria-hidden="true">→</li>
+    <li>손실함수</li><li class="arrow" aria-hidden="true">→</li>
+    <li>경사하강법</li>
+  </ol>
+
+  <ol class="eps">
+    <li class="ep">
+      <span class="num"><b>1</b>1편 · 약 3분 49초</span>
+      <h2>평균·편차·분산</h2>
+      <p>다섯 친구의 퀴즈 점수로 흩어진 정도를 수 하나로 나타내요.</p>
+      <p class="key">분산 = 편차의 제곱의 평균</p>
+      <ul class="steps">
+        <li>평균은 똑같이 나눈 값이자 균형점</li>
+        <li>편차의 합은 언제나 0</li>
+        <li>그래서 제곱해서 평균 → 분산, 표준편차</li>
+      </ul>
+      <a class="go" href="ep1-mean-variance/index.html">1편 보기</a>
+    </li>
+    <li class="ep">
+      <span class="num"><b>2</b>2편 · 약 4분 25초</span>
+      <h2>오차와 손실함수</h2>
+      <p>평균을 예측으로 바꾸면 편차는 오차, 분산은 손실이 돼요.</p>
+      <p class="key">L(a) = 13a² − 52a + 53</p>
+      <ul class="steps">
+        <li>평균은 오차 제곱의 평균을 가장 작게 하는 예측</li>
+        <li>공부 시간으로 예측 y = ax</li>
+        <li>손실함수는 a에 대한 이차함수</li>
+      </ul>
+      <a class="go" href="ep2-loss-function/index.html">2편 보기</a>
+    </li>
+    <li class="ep">
+      <span class="num"><b>3</b>3편 · 약 4분 33초</span>
+      <h2>경사하강법</h2>
+      <p>공식 없이 기울기만 보고 가장 낮은 곳을 찾아가는 식을 유도해요.</p>
+      <p class="key">a ← a − αL′(a)</p>
+      <ul class="steps">
+        <li>기울기의 반대 방향으로</li>
+        <li>기울기에 비례한 걸음(학습률 α)</li>
+        <li>남은 거리는 (1 − 26α)배 → 학습률 조건</li>
+      </ul>
+      <a class="go" href="ep3-gradient-descent/index.html">3편 보기</a>
+    </li>
+  </ol>
+
+  <section class="act" aria-labelledby="actTitle">
+    <div>
+      <p class="kick">세 편을 본 뒤 · 직접 해 보기</p>
+      <h2 id="actTitle">체험활동 · 손실함수와 경사하강법 실험실</h2>
+      <p>A. 오차 → 손실 → 손실함수 → 이차함수와 꼭짓점(2편), B. 미분계수 → 방향 → 경사하강법 식 → 수렴 유도 → 학습률 조건(3편). 10단계를 직접 조작하며 고등학교 인공지능 수학의 핵심을 확인해요.</p>
+    </div>
+    <div class="gos">
+      <a class="go" href="activity/index.html">체험활동 시작</a>
+      <a class="go alt" href="activity/plus.html">추가 활동: 절편 b까지</a>
+    </div>
+  </section>
+
+  <p class="note">각 편은 인터넷 없이 재생되며, 화면 위쪽 버튼으로 다른 편과 체험활동으로 바로 이동할 수 있어요.</p>
+</main>
+</body>
+</html>

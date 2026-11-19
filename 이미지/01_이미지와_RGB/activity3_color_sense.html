@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="다른 색 한 칸을 찾는 두 가지 게임. 60초 색감 도전과 R·G·B 비교 실험을 골라 즐겨 보세요.">
+<meta name="description" content="60초 색감 도전, R·G·B 색감 테스트, 같은 회색에서 비교하는 sensitivity 2를 골라 즐겨 보세요.">
 <meta name="theme-color" content="#f2faf7">
 <title>색감 실험실 | 이미지와 RGB</title>
 <link rel="icon" href="../../favicon.ico">
@@ -34,6 +34,14 @@
   .games { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
   .game-card { --card-accent: #a94e39; --card-soft: #fff0e7; --card-line: #edd9ca; display: flex; flex-direction: column; min-width: 0; padding: 12px; background: #fff; border: 1px solid #dbeae4; border-radius: 28px; text-decoration: none; box-shadow: 0 5px 0 #dfede6, 0 12px 24px #243d2d04; animation: arrive .85s cubic-bezier(.2,.7,.2,1) backwards; transition: transform .28s, box-shadow .28s, border-color .28s; }
   .rgb-card { --card-accent: #4d6caa; --card-soft: #edf3ff; --card-line: #d7e2f5; }
+  .sensitivity2-card { --card-accent: #286d59; --card-soft: #e9f4e9; --card-line: #d6e6d6; grid-column: 1/-1; display: grid; grid-template-columns: 260px minmax(0,1fr); animation-delay: .38s; }
+  .sensitivity2-card .preview { height: 100%; min-height: 240px; background: #edf1e8; }
+  .sensitivity2-card .preview-label, .sensitivity2-card .sample-caption { color: #587663; }
+  .comparison-samples { display: flex; align-items: end; gap: 10px; }
+  .comparison-samples i { display: flex; flex-direction: column; align-items: center; gap: 10px; font-style: normal; font-size: 13px; font-weight: 750; color: #56685c; }
+  .comparison-samples i::before { content: ""; display: block; width: 49px; height: 73px; border: 6px solid white; border-radius: 12px; box-shadow: 0 5px 0 #d6ded2; background: rgb(152,128,128); }
+  .comparison-samples i:nth-child(2)::before { background: rgb(128,152,128); }
+  .comparison-samples i:nth-child(3)::before { background: rgb(128,128,152); }
   .game-card:nth-child(1) { animation-delay: .08s; }
   .game-card:nth-child(2) { animation-delay: .23s; }
   .game-card:hover { transform: translateY(-5px); box-shadow: 0 7px 0 var(--card-line), 0 20px 36px #243d2d0a; border-color: var(--card-line); }
@@ -62,9 +70,9 @@
   .mini-grid i { aspect-ratio: 1; display: block; background: var(--base); border-radius: 3px; }
   .mini-grid i:nth-child(5) { background: var(--tile); }
   .rgb-sample b { display: block; text-align: center; font-size: 13px; margin-top: 8px; color: var(--label); }
-  .rgb-sample.red { --base: #b04040; --tile: #e04040; --label: #a94946; }
-  .rgb-sample.green { --base: #40b040; --tile: #40e040; --label: #477553; }
-  .rgb-sample.blue { --base: #4040b0; --tile: #4040e0; --label: #496eaa; }
+  .rgb-sample.red { --base: #a06060; --tile: #b86060; --label: #a94946; }
+  .rgb-sample.green { --base: #60a060; --tile: #60b860; --label: #477553; }
+  .rgb-sample.blue { --base: #6060a0; --tile: #6060b8; --label: #496eaa; }
   .rgb-preview .sample-caption { color: #72839b; }
   .card-copy { padding: 24px 20px 16px; flex: 1; display: flex; flex-direction: column; }
   .card-overline { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .01em; color: var(--card-accent); margin: 0 0 12px; }
@@ -86,6 +94,8 @@
     .intro { margin-bottom: 26px; padding: 10px 0 0; }
     .intro-friends { width: 90px; height: 66px; top: 0; right: -4px; }
     .games { grid-template-columns: 1fr; gap: 20px; }
+    .sensitivity2-card { display: flex; }
+    .sensitivity2-card .preview { height: 200px; min-height: 0; }
     .preview { height: 200px; }
     .card-copy { padding: 20px 16px 12px; }
     .lead { font-size: 14px; }
@@ -122,7 +132,7 @@
       <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><span>손글씨 인식</span></a>
       <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><span>숫자 판별 단계</span></a>
       <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><span>MNIST 데이터 탐구</span></a>
-      <a href="../03_숫자인식과_유사도/activity11_similarity_check.html" data-nav-group="data"><span>해밍 거리</span></a>
+      <a href="../03_숫자인식과_유사도/hamming_motion/index.html" data-nav-group="data"><span>해밍 거리</span></a>
       <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
       <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><span>이미지 업스케일러</span></a>
       <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><span>AI 업스케일러</span></a>
@@ -131,7 +141,7 @@
       <a href="../06_스타일전이/activity15_styletransper.html" data-nav-group="ai"><span>신경망 스타일 변환</span></a>
       <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><span>임의(Arbitrary)신경망 변환</span></a>
       <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
-      <a href="../07_CNN과_합성곱/activity17_kernel.html" data-nav-group="cnn"><span>이미지 커널 필터 체험</span></a>
+      <a href="../07_CNN과_합성곱/kernel_filter/index.html" data-nav-group="cnn"><span>이미지 커널 필터 체험</span></a>
       <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><span>CNN 합성곱 시각화</span></a>
       <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><span>CNN 기술 체험</span></a>
       <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><span>색 군집화</span></a>
@@ -156,7 +166,7 @@
       <path d="M151 18v12m-6-6h12M26 15v8m-4-4h8" stroke="#8abdb0" stroke-width="2.5" stroke-linecap="round"/>
     </svg>
     <h1>색 구별 능력 <span>테스트</span></h1>
-    <p class="lead">색이 다른 한 칸을 찾아보세요.<br>60초 도전과 R·G·B 테스트 중 하나를 선택하세요.</p>
+    <p class="lead">색이 다른 한 칸을 찾아보세요.<br>60초 도전, R·G·B 테스트, 회색 바탕의 비교 실험 중 하나를 선택하세요.</p>
   </div>
   <section class="games" id="games" aria-label="색감 게임 선택" tabindex="-1">
     <a class="game-card sprint-card" href="activity3_color_sprint.html" aria-labelledby="sprintTitle" aria-describedby="sprintDescription">
@@ -187,9 +197,29 @@
       <div class="card-copy">
         <p class="card-overline"><span>02</span>RGB 비교</p>
         <h2 id="rgbTitle">R·G·B 색감 테스트</h2>
-        <p class="description" id="rgbDescription">빨강·초록·파랑 계열에서 다른 색 칸을 찾습니다.<br>같은 RGB 증가량으로 세 계열의 기록을 비교합니다.</p>
-        <div class="tags"><span>문제마다 10초</span><span>색마다 20문제</span><span>R → G → B</span></div>
+        <p class="description" id="rgbDescription">빨강·초록·파랑 계열 안에서 다른 색 칸을 찾습니다.<br>공통 바탕값 32와 같은 기준값 순서·난이도표로 비교합니다.</p>
+        <div class="tags"><span>연습 3문제</span><span>색마다 7문제</span><span>R·G·B 번갈아</span></div>
         <div class="card-bottom"><span>RGB 테스트 시작</span><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+      </div>
+    </a>
+    <a class="game-card sensitivity2-card" href="activity3_rgb_sensitivity2.html" aria-labelledby="sensitivity2Title" aria-describedby="sensitivity2Description">
+      <div class="preview" aria-hidden="true"><span class="preview-label">SENSITIVITY 2</span><div class="comparison-samples"><i>R +24</i><i>G +24</i><i>B +24</i></div><span class="sample-caption">같은 회색에서 출발하기</span></div>
+      <div class="card-copy">
+        <p class="card-overline"><span>03</span>비교 버전 · sensitivity 2</p>
+        <h2 id="sensitivity2Title">같은 회색, 다른 밝기</h2>
+        <p class="description" id="sensitivity2Description">회색 바탕에서 한 채널만 바꿔 차이를 찾습니다.<br>내 관찰 기록과 3:6:1 흑백 공식의 결과를 비교합니다.</p>
+        <div class="tags"><span>같은 회색·같은 증가량</span><span>관찰 45문제</span><span>흑백 예측 6문제</span></div>
+        <div class="card-bottom"><span>sensitivity 2 시작</span><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+      </div>
+    </a>
+    <a class="game-card sensitivity2-card sensitivity3-card" href="activity3_rgb_sensitivity3.html" aria-labelledby="sensitivity3Title" aria-describedby="sensitivity3Description">
+      <div class="preview" aria-hidden="true"><span class="preview-label">SENSITIVITY 3</span><div class="comparison-samples"><i>R +9</i><i>G +9</i><i>B +9</i></div><span class="sample-caption">내 눈에 맞춰 고르기</span></div>
+      <div class="card-copy">
+        <p class="card-overline"><span>04</span>실험 버전 · sensitivity 3</p>
+        <h2 id="sensitivity3Title">내 눈에 맞춘 색감 측정</h2>
+        <p class="description" id="sensitivity3Description">맞히고 틀린 기록으로 내 경계를 추정해 다음 문제를 고릅니다(QUEST).<br>색마다 얼마나 작은 차이까지 봤는지 비교합니다.</p>
+        <div class="tags"><span>색마다 7문제</span><span>R·G·B 번갈아</span><span>9→16→25칸</span></div>
+        <div class="card-bottom"><span>sensitivity 3 시작</span><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
       </div>
     </a>
   </section>

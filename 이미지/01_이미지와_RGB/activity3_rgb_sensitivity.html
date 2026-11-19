@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="color-games.css">
 <link rel="stylesheet" href="rgb-sensitivity.css">
 <script src="rgb-sensitivity.js" defer></script>
+<script src="rgb-sensitivity-ranking-loader.js" defer></script>
 <link rel="stylesheet" href="../../nav.css">
 <script src="../../nav.js" defer></script>
 </head>
@@ -35,7 +36,7 @@
       <a href="../03_숫자인식과_유사도/activity9_mnist_recognizer.html" data-nav-group="data"><span>손글씨 인식</span></a>
       <a href="../03_숫자인식과_유사도/activity9_mnist_steps.html" data-nav-group="data"><span>숫자 판별 단계</span></a>
       <a href="../03_숫자인식과_유사도/activity10_hamming_distance.html" data-nav-group="data"><span>MNIST 데이터 탐구</span></a>
-      <a href="../03_숫자인식과_유사도/activity11_similarity_check.html" data-nav-group="data"><span>해밍 거리</span></a>
+      <a href="../03_숫자인식과_유사도/hamming_motion/index.html" data-nav-group="data"><span>해밍 거리</span></a>
       <div class="nav-sec" data-nav-group="ai">AI 이미지 기술</div>
       <a href="../04_이미지확대와_복원/activity12_interpolation.html" data-nav-group="ai"><span>이미지 업스케일러</span></a>
       <a href="../04_이미지확대와_복원/activity13_realesrgan.html" data-nav-group="ai"><span>AI 업스케일러</span></a>
@@ -44,7 +45,7 @@
       <a href="../06_스타일전이/activity15_styletransper.html" data-nav-group="ai"><span>신경망 스타일 변환</span></a>
       <a href="../06_스타일전이/activity16_Arbitrary_transfer.html" data-nav-group="ai"><span>임의(Arbitrary)신경망 변환</span></a>
       <div class="nav-sec" data-nav-group="cnn">CNN과 군집화</div>
-      <a href="../07_CNN과_합성곱/activity17_kernel.html" data-nav-group="cnn"><span>이미지 커널 필터 체험</span></a>
+      <a href="../07_CNN과_합성곱/kernel_filter/index.html" data-nav-group="cnn"><span>이미지 커널 필터 체험</span></a>
       <a href="../07_CNN과_합성곱/activity17_cnn_visualizer.html" data-nav-group="cnn"><span>CNN 합성곱 시각화</span></a>
       <a href="../07_CNN과_합성곱/activity18_home.html" data-nav-group="cnn"><span>CNN 기술 체험</span></a>
       <a href="../08_색군집화/activity19_kmeans_svd.html" data-nav-group="cnn"><span>색 군집화</span></a>
@@ -59,7 +60,7 @@
     <div><p class="game-eyebrow">02 / RGB 비교</p><h1>R·G·B 색감 테스트</h1></div>
     <span class="game-emblem" aria-hidden="true"><svg viewBox="0 0 72 72" fill="none"><rect x="4" y="9" width="31" height="34" rx="11" fill="#ffdbce"/><path d="M14 21v3m11-3v3m-9 7q3.5 3 7 0" stroke="#a95d4d" stroke-width="2" stroke-linecap="round"/><rect x="37" y="5" width="31" height="34" rx="11" fill="#cde9d6"/><path d="M47 17v3m11-3v3m-9 7q3.5 3 7 0" stroke="#417c5c" stroke-width="2" stroke-linecap="round"/><rect x="23" y="38" width="31" height="31" rx="11" fill="#d8e5ff"/><path d="M33 49v3m11-3v3m-9 7q3.5 3 7 0" stroke="#5676ad" stroke-width="2" stroke-linecap="round"/></svg></span>
   </div>
-  <p class="lead">빨강·초록·파랑 계열에서 색이 다른 한 칸을 찾아보세요.<br><strong>R → G → B</strong>로 진행하며, 같은 단계의 RGB 증가량은 모두 같아요.</p>
+  <p class="lead">빨강·초록·파랑 계열에서 색이 다른 한 칸을 찾아보세요.<br><strong>R → G → B</strong>를 한 문제씩 번갈아 진행하며, 각 색 계열 안에서 해당 채널 값만 달라져요.</p>
 
   <section class="channel-records" aria-label="색 계열별 실시간 점수">
     <article class="record-card" id="recordR" data-ch="R" aria-label="R 빨강 기록">
@@ -79,23 +80,19 @@
     </article>
   </section>
 
+  <div class="game-layout">
+  <div class="game-column">
   <section class="panel" id="readyPanel" aria-labelledby="readyTitle">
-    <h2 class="ready-title" id="readyTitle">세 가지 색 계열, 차례로 도전</h2>
-    <div class="route" aria-label="진행 순서: R 빨강, G 초록, B 파랑"><b>R</b><span aria-hidden="true">→</span><b>G</b><span aria-hidden="true">→</span><b>B</b></div>
-    <ul class="ready-rules">
-      <li><strong>R은 빨강 판, G는 초록 판, B는 파랑 판</strong>에서 해당 채널 값만 달라져요.</li>
-      <li>색마다 <strong>20문제</strong>, 한 문제에 <strong>10초</strong>.</li>
-      <li>맞히면 <strong>한 단계 어렵게</strong>, 틀리거나 시간이 지나면 <strong>두 단계 쉽게</strong>.</li>
-      <li>틀려도 탈락하지 않아요. 내 눈의 경계 근처를 오르내리게 돼요.</li>
-      <li>결과는 <strong>구별 경계</strong>로 비교해요. 작을수록 더 작은 차이까지 구별한 거예요.</li>
-    </ul>
-    <button class="btn" type="button" id="startBtn">R부터 시작하기 →</button>
+    <h2 class="ready-title" id="readyTitle">세 가지 색 계열, 같은 조건으로 도전</h2>
+    <div class="route" aria-label="진행 순서: R 빨강, G 초록, B 파랑을 한 문제씩 번갈아"><b>R</b><span aria-hidden="true">→</span><b>G</b><span aria-hidden="true">→</span><b>B</b><span aria-hidden="true">→</span><b>R</b><span aria-hidden="true">…</span></div>
+    <p class="ready-intro">R·G·B 번갈아 21문제(색마다 7문제) · 한 문제에 10초<br>규칙을 확인하고, 5초 뒤 연습부터 시작해요.</p>
+    <button class="btn" type="button" id="startBtn">게임 시작 <span aria-hidden="true">→</span></button>
   </section>
 
   <section class="panel" id="playPanel" data-ch="R" hidden aria-label="색감 테스트 진행">
-    <div class="stage-heading"><h2 id="chValue">R 빨강</h2><div class="life-display">문제 <strong id="questionValue">1 / 20</strong></div></div>
+    <div class="stage-heading"><h2 id="chValue">R 빨강</h2><div class="life-display">문제 <strong id="questionValue">1 / 21</strong></div></div>
     <div class="status">
-      <div><span class="stat-label">단계</span><span class="stat-value" id="stageValue">1 / 16</span></div>
+      <div><span class="stat-label">단계</span><span class="stat-value" id="stageValue">8 / 16</span></div>
       <div><span class="stat-label">맞힌 수</span><span class="stat-value" id="correctValue">0개</span></div>
       <div><span class="stat-label">남은 시간</span><span class="stat-value" id="timeValue">10.0</span></div>
     </div>
@@ -107,11 +104,11 @@
 
   <section class="panel" id="resultPanel" hidden aria-labelledby="resultTitle">
     <div class="result-summary">
-      <div><p class="result-eyebrow">세 계열 최종 기록</p><h2 class="result-heading" id="resultTitle">R → G → B, 도전 완료!</h2></div>
+      <div><p class="result-eyebrow">세 계열 최종 기록</p><h2 class="result-heading" id="resultTitle">R · G · B, 도전 완료!</h2></div>
       <p class="total-score"><span id="totalScore">0</span><small> 점</small></p>
     </div>
     <p class="score-breakdown" id="scoreBreakdown"></p>
-    <dl class="result-stats"><div><dt>총 맞힌 수</dt><dd id="totalCorrect">0 / 60개</dd></div><div><dt>총 풀이 시간</dt><dd id="totalTime">0.0초</dd></div></dl>
+    <dl class="result-stats"><div><dt>총 맞힌 수</dt><dd id="totalCorrect">0 / 45개</dd></div><div><dt>총 풀이 시간</dt><dd id="totalTime">0.0초</dd></div></dl>
     <p class="result-note" id="resultNote"></p>
     <p class="hint" id="resultInsight"></p>
     <div class="table-wrap">
@@ -125,15 +122,45 @@
       <div class="bar-row" data-ch="G"><span class="bar-label">G 초록</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" id="barG"></div></div><span class="bar-text" id="barTextG"></span></div>
       <div class="bar-row" data-ch="B"><span class="bar-label">B 파랑</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" id="barB"></div></div><span class="bar-text" id="barTextB"></span></div>
     </div>
+    <form id="rankingForm" class="ranking-form">
+      <label for="rankingName">랭킹에 쓸 별명 <small>다른 사람에게 공개돼요 · 12자 이내</small></label>
+      <div class="ranking-submit-row"><input id="rankingName" maxlength="12" autocomplete="nickname" placeholder="예: 초록탐정" required><button class="btn" type="submit" id="rankingSubmit" disabled>최고 기록 등록</button></div>
+      <p id="rankingSaveStatus" class="ranking-save-status" role="status" aria-live="polite">랭킹 연결 후 등록할 수 있어요.</p>
+    </form>
     <div class="actions"><button class="btn" type="button" id="retryBtn">R부터 다시 도전</button><a href="activity3_color_sense.html">다른 게임 고르기</a></div>
   </section>
 
+  </div>
+  <aside class="panel leaderboard-panel" id="liveRankingPanel" aria-labelledby="leaderboardTitle" hidden>
+    <div class="leaderboard-heading"><div><p class="game-eyebrow">LIVE RANKING</p><h2 id="leaderboardTitle">실시간 랭킹</h2></div><span id="rankingConnection" class="ranking-connection">연결 준비</span></div>
+    <p class="ranking-caption">개인별 최고 기록 · 상위 50명 · 같은 점수는 공동 순위예요.</p>
+    <p class="ranking-message" id="rankingMessage" role="status" aria-live="polite">랭킹 연결을 확인하고 있어요.</p>
+    <div class="table-wrap ranking-table-wrap"><table class="ranking-table"><caption class="sr-only">별명별 종합 점수와 R·G·B 점수</caption><thead><tr><th scope="col">순위</th><th scope="col">별명</th><th scope="col">종합</th><th scope="col">R</th><th scope="col">G</th><th scope="col">B</th></tr></thead><tbody id="rankingRows"></tbody></table></div>
+    <button class="ranking-reconnect" type="button" id="rankingReconnect" hidden>랭킹 다시 연결</button>
+  </aside>
+  </div>
+
+  <section class="panel rules-panel" aria-labelledby="rulesTitle"><h2 id="rulesTitle">그림으로 보는 게임 룰</h2><div data-rule-image></div><p class="rules-fairness">판은 색마다 9칸 → 16칸 → 25칸으로 커지고, 한 판의 칸은 모두 같은 색 계열이에요. 문제는 R→G→B를 한 문제씩 번갈아 나와서, 손이 풀리거나 지치는 효과가 세 색에 고르게 나뉘어요. 나머지 두 채널은 32, 기준값 순서·난이도표·단계 규칙·배점은 세 색에 같게 적용해요.</p></section>
+
   <details class="score-guide">
     <summary>점수는 어떻게 계산하나요?</summary>
-    <p>각 색의 점수 = 정답 점수 + 시간 보너스<br>정답 점수: 맞힌 문제마다 그 단계 × 10점 (어려운 단계일수록 커요)<br>시간 보너스: 맞힌 수 × 50점에서 풀이 1초당 5점을 빼요. 0점 아래로 내려가지는 않아요.</p>
-    <p>색마다 시간 보너스를 반올림한 뒤 세 점수를 합해요. 오답과 시간 초과의 풀이 시간도 포함하며, 안내와 색 전환 시간은 제외해요. 문제당 제한은 10초로 같아요.</p>
-    <p>구별 경계: 맞히다가 틀린 곳, 틀리다가 다시 맞힌 곳의 증가량(Δ)을 평균한 값이에요. 처음 바뀐 한두 곳은 초반 실수일 수 있어 빼고 계산해요. 한 번도 안 틀렸으면 "○ 이하"로 보여 줘요.</p>
+    <p>각 색의 점수는 맞힌 문제의 단계 × 10점을 더한 값이에요. 세 채널의 배점은 같고, 시간 보너스는 없어요. 연습은 점수와 시간에 포함하지 않아요.</p>
+    <p>칸 수는 색마다 1·2번째 문제 9칸, 3·4번째 16칸, 5~7번째 25칸으로 세 색이 같아요. 비선택 채널은 모두 32이며, 주 채널 기준값 7개는 130~190 범위에서 한 번 뽑아 세 색에 같은 순서로 사용해요. 같은 단계의 증가량(Δ, 24부터 1까지 16단계)도 같아요. 본게임은 Δ9(8단계)에서 시작해 맞히면 1단계씩 어려워지고 틀리면 1단계 쉬워져요(세 색 모두 같은 규칙). 실제로 제시되는 단계는 각 채널의 정답·오답에 따라 달라져요.</p>
+    <p>풀이 시간은 오답·시간 초과까지 포함해 별도로 보여 줘요. 안내와 색 전환 시간은 제외하며, 문제당 제한은 10초로 같아요.</p>
+    <p>구별 경계는 맞히다가 틀린 곳과 틀리다가 다시 맞힌 곳의 Δ를 평균한 추정치예요. 처음 바뀐 한두 곳은 초반 실수일 수 있어 빼고 계산해요. 한 번도 안 틀렸으면 "○ 이하"로 보여 줘요. 특정 색이 꼭 1등일 필요는 없어요.</p>
   </details>
 </main>
+<template id="rulesImageTemplate">
+  <div class="rules-visual" role="group" aria-label="다른 색 찾기, 난이도 변화, 제한 시간과 점수 안내">
+    <div class="rules-grid">
+      <article class="rule-picture"><svg viewBox="0 0 96 96" aria-hidden="true"><g fill="#a06060"><rect x="6" y="6" width="25" height="25" rx="5"/><rect x="35" y="6" width="25" height="25" rx="5"/><rect x="64" y="6" width="25" height="25" rx="5"/><rect x="6" y="35" width="25" height="25" rx="5"/><rect x="64" y="35" width="25" height="25" rx="5"/><rect x="6" y="64" width="25" height="25" rx="5"/><rect x="35" y="64" width="25" height="25" rx="5"/><rect x="64" y="64" width="25" height="25" rx="5"/></g><rect x="35" y="35" width="25" height="25" rx="5" fill="#d76060" stroke="#fff" stroke-width="3"/><path d="m40 47 5 5 9-10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h3>다른 색, 딱 한 칸!</h3><p>판은 <b>9 → 16 → 25칸</b>으로 커져요.<br><b>색이 다른 칸</b>을 찾아요.</p></div></article>
+      <article class="rule-picture"><svg viewBox="0 0 96 96" aria-hidden="true"><path d="M12 78h22V58h22V38h26" fill="none" stroke="#d4e7d8" stroke-width="14" stroke-linejoin="round"/><path d="M18 43 58 15m-15-1 17-1-4 17" fill="none" stroke="#35785a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="m55 66 23 16m-1-15 4 17-17-1" fill="none" stroke="#b56e56" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h3>맞히면 더 섬세하게</h3><p><b>Δ9</b>에서 시작해 정답 <b>+1단계</b><br>오답·시간 초과 <b>−1단계</b></p></div></article>
+      <article class="rule-picture"><svg viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="50" r="32" fill="#edf3ff" stroke="#7295bc" stroke-width="4"/><path d="M48 28v23l14 8M39 9h18M48 9v9" fill="none" stroke="#4d72a1" stroke-width="5" stroke-linecap="round"/><circle cx="48" cy="50" r="4" fill="#4d72a1"/></svg><div><h3>한 문제에 10초</h3><p>정답은 <b>그 단계 × 10점</b><br>시간 보너스는 없어요.</p></div></article>
+    </div>
+    <div class="rules-route" aria-label="연습 3문제 후 빨강·초록·파랑을 한 문제씩 번갈아 색마다 7문제"><span>연습 <b>3문제</b></span><i aria-hidden="true">→</i><span class="route-r"><b>R</b> 7문제</span><i aria-hidden="true">·</i><span class="route-g"><b>G</b> 7문제</span><i aria-hidden="true">·</i><span class="route-b"><b>B</b> 7문제</span><span>한 문제씩 <b>번갈아</b></span></div>
+  </div>
+</template>
+<dialog id="startRulesDialog" class="start-rules-dialog" aria-labelledby="startRulesTitle"><p class="game-eyebrow">READY TO PLAY</p><h2 id="startRulesTitle">시작 전에, 이것만 기억해요!</h2><div data-rule-image></div><p class="start-rules-note">연습은 점수에 포함하지 않아요. 규칙을 확인했으면 출발!</p><div class="dialog-actions"><button class="btn secondary" type="button" id="closeStartRules">잠깐만요</button><button class="btn" type="button" id="confirmStartRules">확인! 5초 뒤 시작 →</button></div></dialog>
+<dialog id="countdownDialog" class="countdown-dialog" aria-labelledby="countdownTitle"><p class="game-eyebrow">R → G → B 번갈아</p><h2 id="countdownTitle">준비됐나요?</h2><p id="countdownNumber" class="countdown-number" role="status" aria-live="assertive" aria-atomic="true">5!</p><p>색이 다른 한 칸에 집중하세요.</p><button type="button" class="countdown-cancel" id="cancelCountdown">시작 취소</button></dialog>
 </body>
 </html>

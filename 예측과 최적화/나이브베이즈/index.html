@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="스팸 문자 20통으로 조건부확률, 베이즈 정리, 나이브 베이즈 분류를 직접 조작하며 배우는 인터랙티브 모션 해설입니다.">
+<title>조건부확률에서 나이브 베이즈까지</title>
+<link rel="icon" href="../../favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+<script src="../../unit-nav.js" data-unit="predict" data-pos="tab" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="header-content">
+  <a class="home-link" href="../index.html" title="예측과 최적화 목록으로" aria-label="예측과 최적화 목록으로 돌아가기">◀ 목록</a>
+  <div class="brand"><span class="logo" aria-hidden="true">P</span><div><strong>조건부확률 → 나이브 베이즈</strong><small>직접 조작하며 배우는 모션 해설</small></div></div>
+  <div class="step-picker"><label for="stepSelect">단계 이동</label><select id="stepSelect" aria-label="학습 단계 이동"></select></div>
+  <nav class="chapters" id="chapters" aria-label="장 이동"></nav>
+  <details class="learning-tools"><summary>학습 도구</summary><div class="tools-menu">
+    <button type="button" id="historyBtn">설명 다시 보기</button>
+    <label for="viewScale">그림 크기</label><select id="viewScale"><option value="auto">화면 너비에 맞춤</option><option value="1">읽기 크기 100%</option><option value="1.25">확대 125%</option><option value="fit">전체 보기</option></select>
+    <button type="button" id="focusTarget">조작 위치로 이동</button><button type="button" id="dataBtn">문자 자료 크게 보기</button>
+    <p id="viewTip">그림이 화면보다 크면 가로·세로로 움직여 보세요.</p>
+    <button type="button" id="restartLesson">처음부터 다시 풀기</button>
+  </div></details>
+  <button type="button" class="sound-btn" id="soundBtn" aria-pressed="true">♪ 소리 켬</button>
+  </div>
+</header>
+
+<main class="layout">
+  <div class="phone-tip" id="phoneTip" hidden><p>그림 글자가 작으면 <b>가로로 돌리거나</b> 학습 도구 › 그림 크기 100%로 키워 보세요.</p><button type="button" id="phoneTipClose" aria-label="안내 닫기">✕</button></div>
+  <div class="resume-banner" id="resumeBanner" hidden><p id="resumeText"></p><button type="button" id="resumeLesson">이어서 학습</button><button type="button" id="reviewStart">첫 화면부터 복습</button></div>
+  <div class="stage-wrap" id="stageWrap">
+    <div id="questionLayer">
+      <section class="task" id="task" aria-label="질문">
+        <div class="asker" aria-hidden="true">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <ellipse cx="62" cy="112" rx="38" ry="6" fill="#1f2a44" fill-opacity=".15"/>
+            <path d="M60 22 C92 22 106 44 106 68 C106 94 86 108 60 108 C34 108 14 94 14 68 C14 44 28 22 60 22 Z" fill="#ffc845" stroke="#1f2a44" stroke-width="4"/>
+            <path d="M60 4 L100 20 L60 36 L20 20 Z" fill="#1f2a44"/>
+            <path d="M92 23 V40" stroke="#1f2a44" stroke-width="3"/><circle cx="92" cy="43" r="5" fill="#ee6c55" stroke="#1f2a44" stroke-width="2.5"/>
+            <circle cx="34" cy="76" r="8" fill="#ee6c55" fill-opacity=".45"/><circle cx="86" cy="76" r="8" fill="#ee6c55" fill-opacity=".45"/>
+            <g class="face-ask"><ellipse cx="45" cy="64" rx="5.5" ry="7.5" fill="#1f2a44"/><ellipse cx="75" cy="64" rx="5.5" ry="7.5" fill="#1f2a44"/><path d="M68 49 Q76 44 84 49" fill="none" stroke="#1f2a44" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="60" cy="86" rx="6" ry="7" fill="#1f2a44"/></g>
+            <g class="face-joy"><path d="M38 66 Q45 57 52 66 M68 66 Q75 57 82 66" fill="none" stroke="#1f2a44" stroke-width="4" stroke-linecap="round"/><path d="M45 80 Q60 96 75 80 Z" fill="#1f2a44"/></g>
+          </svg>
+        </div>
+        <div class="ask-bubble">
+          <button type="button" id="questionToggle" class="question-toggle" aria-expanded="true">그림 보기</button>
+          <div class="question-body">
+            <p class="task-prompt" id="taskPrompt"></p>
+            <div class="task-controls" id="taskControls"></div>
+            <p class="feedback" id="feedback" aria-live="polite"></p>
+            <div class="task-help" id="taskHelp" hidden><button type="button" class="btn" id="hintBtn">힌트 보기</button><p id="hintText" aria-live="polite"></p><button type="button" class="btn" id="assistBtn" hidden>함께 해보기</button></div>
+            <button type="button" class="qnext" id="qnext" hidden>다음 ▶</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div id="stageSpace" aria-hidden="true"></div>
+    <div class="stage" id="stage">
+      <div class="stage-head"><p id="kicker"></p><h1 id="title"></h1></div>
+      <div class="layer" id="decor" aria-hidden="true"></div>
+      <div class="layer" id="back"></div>
+      <div class="layer" id="deck"></div>
+      <div class="layer" id="front"></div>
+    </div>
+  </div>
+
+  <section class="panel" aria-label="설명">
+    <div class="narration">
+      <p class="step-count" id="stepCount"></p>
+      <p id="progressStatus" role="status"></p>
+      <p id="narration"></p>
+    </div>
+    <div class="nav">
+      <button type="button" id="prev" class="nav-back">◀ 이전</button>
+      <button type="button" id="next" class="primary">다음 ▶</button>
+    </div>
+  </section>
+  <details class="model-note"><summary>이 수업의 분류기는 어떻게 계산하나요?</summary><p>문자 20통과 단어장 5개(무료·쿠폰·당첨·내일·숙제)를 사용하는 입문용 모델입니다. 같은 단어가 여러 번 나와도 한 번만 세고, 문자에 있는 단어의 가능도만 곱합니다. 없는 단어와 단어장 밖의 단어는 계산에서 제외합니다.</p><p>+1, +2는 각 분류에서 단어 ‘있음’과 ‘없음’에 가상 개수 1씩을 더하는 스무딩입니다. 실제 문자 자료가 늘어난 것은 아닙니다. 단어의 있음·없음을 모두 반영하는 Bernoulli 나이브 베이즈는 없는 단어의 가능도도 곱합니다.</p><p>화면의 확률은 이 자료와 가정으로 계산한 모델의 출력입니다. 100%가 나오더라도 실제 문자가 반드시 스팸이라는 뜻은 아닙니다.</p></details>
+</main>
+
+<dialog id="historyDialog" aria-labelledby="historyTitle"><div class="dialog-head"><h2 id="historyTitle">설명 다시 보기</h2><button type="button" data-close="historyDialog">닫기</button></div><div id="historyContent"></div></dialog>
+<dialog id="dataDialog" aria-labelledby="dataTitle"><div class="dialog-head"><h2 id="dataTitle">문자 자료 크게 보기</h2><button type="button" data-close="dataDialog">닫기</button></div><label for="dataFilter">고르는 범위</label><select id="dataFilter"><option value="all">전체 20통</option><option value="free">‘무료’가 있는 문자</option></select><p id="dataCount" role="status"></p><div id="dataContent" class="readable-cards"></div></dialog>
+<dialog id="restartDialog" aria-labelledby="restartTitle"><h2 id="restartTitle">처음부터 다시 풀까요?</h2><p>이 브라우저에 저장된 진도와 확인 문제 기록을 지우고 시작합니다.</p><div class="dialog-actions"><button type="button" data-close="restartDialog">계속 학습할게요</button><button type="button" id="confirmRestart">처음부터 다시 풀기</button></div></dialog>
+<script src="app.js"></script>
+<script src="learning.js"></script>
+<script src="scenes.js"></script>
+<script>
+  // 휴대폰 세로 화면 안내: 한 번 닫으면 이 브라우저에서는 다시 띄우지 않음
+  (() => {
+    const tip = document.getElementById('phoneTip');
+    let seen = false;
+    try { seen = localStorage.getItem('nb-phone-tip') === 'seen'; } catch (_) { /* 저장소를 못 쓰면 매번 보여 줌 */ }
+    const mq = window.matchMedia('(max-width: 600px) and (orientation: portrait)');
+    const sync = () => {
+      const show = !seen && mq.matches;
+      if (tip.hidden === !show) return;
+      tip.hidden = !show;
+      window.dispatchEvent(new Event('resize'));   // 무대 크기 다시 맞추기
+    };
+    sync();
+    if (mq.addEventListener) mq.addEventListener('change', sync); else mq.addListener(sync);
+    document.getElementById('phoneTipClose').addEventListener('click', () => {
+      seen = true;
+      try { localStorage.setItem('nb-phone-tip', 'seen'); } catch (_) { /* 무시 */ }
+      sync();
+    });
+  })();
+</script>
+</body>
+</html>

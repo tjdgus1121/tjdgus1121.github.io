@@ -1,0 +1,1888 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="DFS·BFS·다익스트라·탐욕적 최선 우선 탐색을 거쳐 A*까지, 길찾기 규칙이 격자 지도 위에서 움직이는 모습을 보여 주는 모션 해설입니다.">
+<link rel="canonical" href="https://tjdgus1121.github.io/%EC%98%88%EC%B8%A1%EA%B3%BC%20%EC%B5%9C%EC%A0%81%ED%99%94/%EA%B8%B8%EC%B0%BE%EA%B8%B0/motion.html">
+<meta property="og:title" content="A*까지 가는 길 — 모션 해설">
+<meta property="og:image" content="https://tjdgus1121.github.io/%EC%98%88%EC%B8%A1%EA%B3%BC%20%EC%B5%9C%EC%A0%81%ED%99%94/%EA%B8%B8%EC%B0%BE%EA%B8%B0/thumb_motion.jpg">
+<link rel="icon" href="../../favicon.ico">
+<title>A*까지 가는 길</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=STIX+Two+Text:ital,wght@1,500&display=swap">
+<style>
+/* Layout: 수업용 플레이어. 위에는 장(章) 레일, 가운데 격자 지도 무대, 오른쪽 개념 카드, 아래 자막. 그 아래 정리표와 실습 보드. */
+:root{
+  --bg:#eef1f5; --panel:#f8fafc; --raise:#ffffff; --soft:#e4e9f0; --line:#d4dbe4;
+  --ink:#131a23; --muted:#5a6676; --on-accent:#ffffff;
+  --cell:#ffffff; --grid:#d0d8e2; --wall:#2a3442; --swamp:#c9b083; --swamp-ink:#8d7448;
+  --c-intro:#536a86; --c-dfs:#7651d0; --c-bfs:#cf3f7c; --c-dij:#2a5ddf; --c-greedy:#d9690f; --c-astar:#0f8f55;
+  --f-display:"Do Hyeon","IBM Plex Sans KR","Malgun Gothic",sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --f-math:"STIX Two Text","Times New Roman",serif;
+  --algo:var(--c-intro);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1218; --panel:#121920; --raise:#17202a; --soft:#1f2934; --line:#29343f;
+    --ink:#e8edf3; --muted:#94a1b1; --on-accent:#ffffff;
+    --cell:#1b2430; --grid:#0e141a; --wall:#566680; --swamp:#6b5735; --swamp-ink:#ab9060;
+    --c-intro:#8aa3c2; --c-dfs:#a385ff; --c-bfs:#ff6aa4; --c-dij:#6d96ff; --c-greedy:#ff9a48; --c-astar:#35c985;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1218; --panel:#121920; --raise:#17202a; --soft:#1f2934; --line:#29343f;
+  --ink:#e8edf3; --muted:#94a1b1; --on-accent:#ffffff;
+  --cell:#1b2430; --grid:#0e141a; --wall:#566680; --swamp:#6b5735; --swamp-ink:#ab9060;
+  --c-intro:#8aa3c2; --c-dfs:#a385ff; --c-bfs:#ff6aa4; --c-dij:#6d96ff; --c-greedy:#ff9a48; --c-astar:#35c985;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;word-break:keep-all;overflow-wrap:break-word}
+.wrap{max-width:1220px;margin-inline:auto;padding-inline:clamp(16px,3vw,32px);padding-block:32px 72px;display:flex;flex-direction:column;gap:64px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--c-dij);outline-offset:2px}
+
+/* ---------- 머리말 ---------- */
+.hero{display:grid;gap:14px}
+.eyebrow{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(44px,7.5vw,80px);line-height:1;letter-spacing:-.01em;text-wrap:balance}
+h1 .star{color:var(--c-astar)}
+.lead{margin:0;max-width:60ch;font-size:17px;color:var(--muted)}
+.route{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 6px}
+.route li{display:flex;align-items:center;gap:6px}
+.route .stop{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 10px;border-radius:999px;background:var(--raise);border:1px solid var(--line);font-size:14px;font-weight:600}
+.route .stop i{width:9px;height:9px;border-radius:50%;background:var(--algo)}
+.route .to{color:var(--muted);font-size:13px}
+
+/* ---------- 플레이어 ---------- */
+.player{display:grid;grid-template-columns:minmax(0,1fr) 308px;grid-template-areas:"rail rail" "stage side" "sub side" "ctrl side";gap:14px 22px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+@media (max-width:920px){.player{grid-template-columns:minmax(0,1fr);grid-template-areas:"rail" "stage" "sub" "ctrl" "side";padding:14px}}
+.player:fullscreen{border-radius:0;border:0;overflow:auto;align-content:start;padding:24px 32px}
+.player:fullscreen .single{max-width:calc((100vh - 400px) * 19 / 11);margin-inline:auto}
+.player:fullscreen .race{max-width:calc((100vh - 400px) * 19 / 11 * 1.6);margin-inline:auto}
+
+.rail{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.rail button{flex:none;display:flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer}
+.rail button:hover{color:var(--ink)}
+.rail .n{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--soft);color:var(--ink);font:700 12px var(--f-mono)}
+.rail button.seen .n{box-shadow:inset 0 0 0 2px var(--algo)}
+.rail button[aria-current="step"]{background:var(--raise);border-color:var(--line);color:var(--ink)}
+.rail button[aria-current="step"] .n{background:var(--algo);color:var(--on-accent);box-shadow:none}
+
+.stage{grid-area:stage;min-width:0;display:flex;flex-direction:column;gap:12px}
+.stage-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+.stage-head .num{font:700 13px var(--f-mono);color:var(--algo)}
+.stage-head h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(25px,3.2vw,34px);line-height:1.15;text-wrap:balance}
+.crit{font-size:14px;color:var(--muted)}
+.crit b{color:var(--ink);font-weight:600}
+.stage-body{position:relative}
+.hud{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;min-height:34px}
+.case-chip{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:999px;background:var(--soft);font-size:14px;font-weight:600}
+.case-chip .k{padding:2px 9px;border-radius:999px;background:var(--algo);color:var(--on-accent);font:700 12px var(--f-mono)}
+.hud-n{display:flex;align-items:baseline;gap:7px;font-size:13px;color:var(--muted)}
+.hud-n b{display:inline-block;min-width:2.4ch;font:700 22px var(--f-mono);color:var(--algo);font-variant-numeric:tabular-nums}
+.hud-n:first-of-type{margin-left:auto}
+.tcard{position:absolute;inset:0;z-index:3;display:grid;place-items:center;padding:16px;border-radius:12px;background:var(--algo);color:var(--on-accent);text-align:center}
+.tc-in{display:grid;justify-items:center;gap:8px}
+.tc-k{font:700 13px var(--f-mono);letter-spacing:.12em;opacity:.85}
+.tc-t{font-family:var(--f-display);font-weight:400;font-size:clamp(36px,6.5vw,70px);line-height:1.05}
+.tc-s{font-size:clamp(15px,1.9vw,20px);font-weight:600;opacity:.92}
+.cbox{position:relative;width:100%}
+.cbox canvas{display:block;width:100%}
+.start{position:absolute;inset:0;display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--bg) 52%,transparent);backdrop-filter:blur(2px)}
+.start-card{display:grid;justify-items:center;gap:10px;text-align:center;padding:16px}
+.start-card .btn{height:56px;padding:0 28px;font-size:18px;border-radius:14px}
+.start-card p{margin:0;font-size:14px;color:var(--muted);font-weight:500}
+.view{display:flex;flex-direction:column;gap:48px}
+.railbox{grid-area:rail;min-width:0;display:grid;gap:0}
+.railbox .rail{border-bottom:0}
+.prog{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--algo);transition:width .5s cubic-bezier(.2,.8,.2,1),background .3s}
+.next-go{position:relative;overflow:hidden}
+.next-go .fill{position:absolute;inset:0 auto 0 0;width:0;background:color-mix(in srgb,var(--algo) 70%,var(--ink))}
+.next-go .lbl{position:relative}
+/* 한눈에 정리: 접었다 펴기 */
+.sum-box{border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.sum-box summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 22px;cursor:pointer;border-radius:16px}
+.sum-box summary::-webkit-details-marker{display:none}
+.sum-box summary:hover .sum-toggle{border-color:var(--muted)}
+.sum-head{display:grid;gap:2px}
+.sum-head strong{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,3vw,32px);line-height:1.15}
+.sum-toggle{flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--raise);font-size:13px;font-weight:600}
+.sum-toggle .chev{width:16px;height:16px;transition:transform .3s}
+.sum-box[open] .chev{transform:rotate(180deg)}
+.sum-box .when-open,.sum-box[open] .when-closed{display:none}
+.sum-box[open] .when-open{display:inline}
+.sum-body{padding:0 22px 20px;overflow:hidden}
+.sum-lead{margin:0 0 16px;max-width:62ch;color:var(--muted)}
+.hero{gap:10px}
+.hero h1{font-size:clamp(36px,5.5vw,60px)}
+.endcard{z-index:4;background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:blur(3px)}
+.endcard .start-card{max-width:440px;gap:8px}
+.end-k{font:700 13px var(--f-mono)!important;letter-spacing:.12em;color:var(--algo)!important}
+.end-t{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,4.5vw,44px);line-height:1.1}
+.end-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:8px}
+.end-btns .btn.primary{height:50px;padding:0 22px;font-size:16px}
+#toLabBtn{border-color:var(--algo);color:var(--ink)}
+.back{justify-self:start;margin-bottom:6px}
+.next-pill{position:absolute;right:12px;bottom:12px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.paused-badge{position:absolute;left:12px;top:12px;padding:4px 10px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:12px;font-weight:700;letter-spacing:.04em}
+
+.sub{grid-area:sub;min-height:8.6em;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+.sub .prev{margin:0;min-height:1.55em;font-size:14px;color:var(--muted)}
+.sub .cur{margin:0;max-width:54ch;font-size:clamp(18px,2.1vw,23px);font-weight:500;line-height:1.55;text-wrap:pretty}
+.sub b{font-weight:700}
+.dots{display:flex;gap:4px;margin-top:4px}
+.dots i{height:4px;flex:1;max-width:26px;border-radius:2px;background:var(--soft);transition:background .3s}
+.dots i.on{background:var(--algo)}
+
+.ctrl{grid-area:ctrl;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--raise);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn.primary:hover{opacity:.9}
+.btn svg{width:16px;height:16px;flex:none}
+.btn.icon{width:40px;padding:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--raise)}
+.seg button{height:38px;padding:0 10px;border:0;background:transparent;color:var(--muted);font:600 13px var(--f-mono);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--soft);color:var(--ink)}
+.hint{margin-left:auto;font-size:12px;color:var(--muted)}
+.hint kbd{font:600 11px var(--f-mono);padding:1px 5px;border:1px solid var(--line);border-radius:4px;background:var(--raise)}
+@media (max-width:640px){.hint{display:none}}
+
+/* ---------- 오른쪽 카드 ---------- */
+.side{grid-area:side;min-width:0;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card-t{margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.legend{list-style:none;margin:0;padding:0;display:grid;gap:7px;font-size:14px}
+.legend li{display:flex;align-items:center;gap:10px;padding:2px 6px;margin-inline:-6px;border-radius:6px;transition:background .3s}
+.legend li.hl{background:color-mix(in srgb,var(--algo) 16%,transparent)}
+.swt{flex:none;width:22px;height:22px;border-radius:5px;display:grid;place-items:center;font:700 11px var(--f-mono)}
+.swt.s{border-radius:50%;background:var(--ink);color:var(--bg)}
+.swt.g{border-radius:50%;border:2px solid var(--ink);color:var(--ink)}
+.swt.wall{background:var(--wall)}
+.swt.plain{background:var(--cell);border:1px solid var(--line)}
+.swt.swamp{background:var(--swamp);color:var(--swamp-ink);font-size:13px}
+.swt.v{background:color-mix(in srgb,var(--algo) 34%,var(--cell))}
+.swt.f{background:color-mix(in srgb,var(--algo) 10%,var(--cell));border:2px solid var(--algo)}
+.swt.stack{background:color-mix(in srgb,var(--algo) 58%,var(--cell))}
+.swt.dead{background:color-mix(in srgb,var(--muted) 30%,var(--cell))}
+.question{margin:0;font-family:var(--f-display);font-size:22px;line-height:1.35;transition:color .3s}
+.question.hl{color:var(--algo)}
+.rule{margin:0;font-size:16px;font-weight:600;line-height:1.5}
+.rule-sub{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.order{display:flex;gap:6px;margin-top:10px}
+.order span{display:grid;justify-items:center;gap:2px;flex:1;padding:6px 0;border-radius:8px;background:var(--soft);font-size:11px;color:var(--muted)}
+.order b{font-size:18px;line-height:1;color:var(--ink)}
+.cost-row{display:flex;align-items:center;gap:10px;font-size:14px}
+.cost-list{display:grid;gap:8px}
+.cost-row .c{margin-left:auto;font:700 14px var(--f-mono)}
+.stats{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px}
+.stats dt{color:var(--muted)}
+.stats dd{margin:0;font:700 15px var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.q{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.q li{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;background:var(--soft);font:500 13px var(--f-mono);font-variant-numeric:tabular-nums}
+.q .tag{min-width:4.6em;font:500 12px var(--f-body);color:var(--muted)}
+.q li.is-next{background:color-mix(in srgb,var(--algo) 18%,var(--raise));box-shadow:inset 0 0 0 1.5px var(--algo)}
+.q li.is-next .tag{color:var(--ink);font-weight:700}
+.q .sw{margin-left:auto;padding:0 6px;border-radius:4px;background:var(--swamp);color:var(--ink);font:600 11px var(--f-body)}
+.q-empty{font-size:13px;color:var(--muted);margin:0}
+.q-more{margin:8px 0 0;font-size:12px;color:var(--muted)}
+.v{font-family:var(--f-math);font-weight:500;white-space:nowrap}
+.v i{font-style:italic}
+.v-g{color:var(--c-dij)} .v-h{color:var(--c-greedy)} .v-f{color:var(--c-astar)}
+.fx{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-family:var(--f-math);font-size:26px}
+.fx .op{color:var(--muted);font-size:22px}
+.fx [data-p],.fx-cap [data-p]{transition:opacity .3s, transform .3s}
+.formula.focus [data-p]{opacity:.28}
+.formula.focus [data-p].on{opacity:1}
+.fx-cap{display:grid;gap:3px;margin-top:8px;font-size:13px;color:var(--muted)}
+.fx-cap b{font-weight:600;color:var(--ink)}
+.bars{margin-top:14px;display:grid;gap:6px}
+.bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--soft)}
+.bar span{display:block;height:100%;transition:width .25s ease}
+.bar .bg{background:var(--c-dij)} .bar .bh{background:var(--c-greedy)}
+.bar-cap{font:500 12px var(--f-mono);color:var(--muted)}
+.race-t{width:100%;border-collapse:collapse;font-size:13px}
+.race-t th,.race-t td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+.race-t th{font-size:11px;color:var(--muted);font-weight:700}
+.race-t td.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.race-t tr.hl td{background:color-mix(in srgb,var(--algo) 12%,transparent)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--algo);margin-right:6px;vertical-align:middle}
+.badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700;background:var(--soft);color:var(--ink);white-space:nowrap}
+.badge.best{background:var(--c-astar);color:var(--on-accent)}
+
+/* ---------- 비교 레이스 ---------- */
+.race{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.race{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.race{grid-template-columns:minmax(0,1fr)}}
+.race figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.race figcaption{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px}
+.race figcaption b{font-weight:700;color:var(--algo)}
+.race figcaption span{font:500 12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.race-note{display:grid;align-content:center;gap:6px;padding:12px;border:1px dashed var(--line);border-radius:10px;font-size:13px;color:var(--muted)}
+.race-note .cost-row{font-size:13px}
+
+/* ---------- 정리표 ---------- */
+.sec-head{display:grid;gap:8px;margin-bottom:20px}
+.sec-head h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(30px,4vw,42px);line-height:1.1}
+.sec-head p{margin:0;max-width:62ch;color:var(--muted)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.sum{width:100%;min-width:820px;border-collapse:collapse;font-size:15px}
+.sum th,.sum td{padding:14px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.sum tr:last-child td{border-bottom:0}
+.sum th{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);background:var(--soft)}
+.sum td.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.sum td.alg{font-weight:700;white-space:nowrap}
+.sum tr.astar td{background:color-mix(in srgb,var(--c-astar) 8%,transparent)}
+.yes{color:var(--c-astar);font-weight:700} .no{color:var(--muted)}
+.foot{margin:10px 2px 0;font-size:13px;color:var(--muted)}
+
+/* ---------- 실습 ---------- */
+.lab-grid{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.lab-grid{grid-template-columns:minmax(0,1fr)}}
+.tools{display:grid;gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.tools h3{margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.pick{display:flex;flex-wrap:wrap;gap:6px}
+.pick button{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 11px;border-radius:9px;border:1px solid var(--line);background:var(--raise);font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+.pick button[aria-pressed="true"]{color:var(--ink);border-color:var(--algo,var(--ink));box-shadow:inset 0 0 0 1px var(--algo,var(--ink));background:color-mix(in srgb,var(--algo,var(--ink)) 10%,var(--raise))}
+.pick .swt{width:14px;height:14px;border-radius:3px;font-size:9px}
+.speed{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.speed input{flex:1;accent-color:var(--ink)}
+.tool-btns{display:flex;flex-wrap:wrap;gap:8px}
+.lab-main{display:grid;gap:12px;min-width:0}
+.lab-board .cbox canvas{touch-action:none;cursor:crosshair;border-radius:10px}
+.lab-stat{margin:0;font-size:15px;font-weight:500;min-height:1.6em}
+.lab-stat .num{font-family:var(--f-mono);font-weight:700}
+.log{width:100%;border-collapse:collapse;font-size:14px}
+.log th,.log td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+.log th{font-size:12px;color:var(--muted);font-weight:700;background:var(--soft)}
+.log td.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.log .empty td{color:var(--muted);text-align:center;padding:18px}
+.log-wrap{border:1px solid var(--line);border-radius:12px;overflow-x:auto;background:var(--panel)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<script src="../../unit-nav.js" data-unit="predict" defer></script>
+</head>
+<body>
+<div class="wrap">
+ <div class="view" id="lessonView">
+  <header class="hero">
+    <p class="eyebrow">고등학생을 위한 탐색 알고리즘 수업 · 코딩 지식 필요 없음</p>
+    <h1><span class="star">A*</span>까지 가는 길</h1>
+    <p class="lead">다섯 가지 길찾기 규칙이 격자 지도 위에서 움직이는 모습을 차례로 봐요. 규칙마다 사례를 두 개씩 보여 줘요.</p>
+    <ol class="route" aria-label="수업 순서">
+      <li><span class="stop" style="--algo:var(--c-dfs)"><i></i>DFS</span><span class="to" aria-hidden="true">→</span></li>
+      <li><span class="stop" style="--algo:var(--c-bfs)"><i></i>BFS</span><span class="to" aria-hidden="true">→</span></li>
+      <li><span class="stop" style="--algo:var(--c-dij)"><i></i>다익스트라</span><span class="to" aria-hidden="true">→</span></li>
+      <li><span class="stop" style="--algo:var(--c-greedy)"><i></i>탐욕적 최선 우선 탐색</span><span class="to" aria-hidden="true">→</span></li>
+      <li><span class="stop" style="--algo:var(--c-astar)"><i></i>A*</span></li>
+    </ol>
+  </header>
+
+  <section class="player" id="player" aria-label="애니메이션 수업">
+    <div class="railbox">
+      <nav class="rail" id="rail" aria-label="장 선택"></nav>
+      <div class="prog" aria-hidden="true"><i id="progBar"></i></div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-head">
+        <span class="num" id="chNum">0장</span>
+        <h2 id="chTitle">길찾기 문제</h2>
+        <span class="crit" id="chCrit"></span>
+      </div>
+      <div class="hud">
+        <span class="case-chip" id="caseChip"><span class="k">도입</span>길찾기란?</span>
+        <span class="hud-n" id="hudVBox">확인한 칸 <b id="hudV">0</b></span>
+        <span class="hud-n" id="hudCBox">찾은 길 <b id="hudC">–</b></span>
+      </div>
+      <div class="stage-body" id="stageBody">
+        <div class="tcard" id="tcard" hidden><div class="tc-in"><span class="tc-k" id="tcK"></span><strong class="tc-t" id="tcT"></strong><span class="tc-s" id="tcS"></span></div></div>
+        <div class="cbox single" id="singleView"><canvas id="mainCanvas" aria-label="격자 지도 애니메이션"></canvas></div>
+        <div class="race" id="raceView" hidden></div>
+        <div class="start" id="startOverlay">
+          <div class="start-card">
+            <button class="btn primary" id="startBtn" type="button">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>수업 시작
+            </button>
+            <p>7개 장 · 장마다 사례 2개 · 약 12분 · 언제든 멈추고 다시 볼 수 있어요</p>
+          </div>
+        </div>
+        <span class="paused-badge" id="pausedBadge" hidden>일시정지</span>
+        <div class="next-pill" id="nextPill" hidden></div>
+        <div class="start endcard" id="endCard" hidden>
+          <div class="start-card">
+            <p class="end-k">수업 끝</p>
+            <strong class="end-t">이제 여러분 차례예요</strong>
+            <p>벽과 늪을 직접 그리고, 다섯 알고리즘이 어떻게 다르게 움직이는지 살펴보세요.</p>
+            <div class="end-btns">
+              <button class="btn primary" type="button" data-act="lab">내 지도로 직접 살펴보기 →</button>
+              <button class="btn" type="button" data-act="again">이 장 다시</button>
+              <button class="btn" type="button" data-act="first">처음부터</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub" aria-live="polite">
+      <p class="prev" id="subPrev"></p>
+      <p class="cur" id="subCur">컴퓨터는 길을 어떻게 찾을까요? 시작 버튼을 누르면 설명과 애니메이션이 함께 나와요.</p>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn primary" id="playBtn" type="button"></button>
+      <button class="btn" id="skipBtn" type="button" title="다음 설명으로 건너뛰기">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3v10l7-5zM11 3h2v10h-2z" fill="currentColor"/></svg>다음 설명
+      </button>
+      <button class="btn" id="restartBtn" type="button" title="이 장을 처음부터">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3a5 5 0 1 1-4.6 3H1.8A6.5 6.5 0 1 0 8 1.5V0L4.5 2.5 8 5z" fill="currentColor"/></svg>이 장 다시
+      </button>
+      <div class="seg" role="group" aria-label="재생 속도" id="speedSeg">
+        <button type="button" data-s="0.5" aria-pressed="false">0.5×</button>
+        <button type="button" data-s="1" aria-pressed="true">1×</button>
+        <button type="button" data-s="1.5" aria-pressed="false">1.5×</button>
+        <button type="button" data-s="2" aria-pressed="false">2×</button>
+      </div>
+      <button class="btn icon" id="fullBtn" type="button" title="전체 화면" aria-label="전체 화면">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 1.5h5v1.5H3v3.5H1.5zM9.5 1.5h5v5H13V3H9.5zM1.5 9.5H3V13h3.5v1.5h-5zM13 9.5h1.5v5h-5V13H13z" fill="currentColor"/></svg>
+      </button>
+      <button class="btn" id="toLabBtn" type="button" hidden>내 지도로 직접 살펴보기 →</button>
+      <span class="hint"><kbd>Space</kbd> 재생·멈춤 &nbsp;<kbd>→</kbd> 다음 설명</span>
+    </div>
+
+    <aside class="side" id="side" aria-label="개념 카드"></aside>
+  </section>
+
+  <details class="sum-box" id="sumBox">
+    <summary>
+      <span class="sum-head">
+        <span class="eyebrow">한눈에 정리</span>
+        <strong id="sumTitle">다섯 규칙, 무엇이 다를까</strong>
+      </span>
+      <span class="sum-toggle"><span class="when-closed">펼치기</span><span class="when-open">접기</span>
+        <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6l4.5 4.5L12.5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </summary>
+    <div class="sum-body">
+    <p class="sum-lead">다섯 알고리즘은 모두 “후보 칸 중에서 어느 칸을 먼저 확인할까”라는 같은 질문에 서로 다르게 답해요. 숫자는 수업의 비교 장에 나온 두 지도에서 실제로 실행한 결과예요.</p>
+    <div class="tbl-wrap">
+      <table class="sum">
+        <thead><tr><th scope="col">알고리즘</th><th scope="col">탐색 기준</th><th scope="col">가장 싼 길 보장</th><th scope="col" style="text-align:right">확인한 칸<br>늪 · 터널</th><th scope="col" style="text-align:right">찾은 길의 비용<br>늪 · 터널</th><th scope="col">교육적 의미</th></tr></thead>
+        <tbody id="sumBody"></tbody>
+      </table>
+    </div>
+    <p class="foot">두 지도 모두 19×11칸이고, 평지는 1칸에 비용 1, 늪은 1칸에 비용 5예요. 가장 싼 길의 비용은 늪 지도가 24, 터널 지도가 19예요.</p>
+    </div>
+  </details>
+ </div>
+
+  <section class="view" id="lab" aria-labelledby="labTitle" hidden>
+    <div class="sec-head">
+      <button class="btn back" id="backBtn" type="button">← 모션그래픽으로 돌아가기</button>
+      <p class="eyebrow">직접 해보기</p>
+      <h2 id="labTitle" tabindex="-1" style="outline:none">나만의 지도로 실험하기</h2>
+      <p>지도를 눌러서 벽과 늪을 그리고, 출발점과 도착점을 옮겨 보세요. 같은 지도에서 여러 알고리즘을 실행하면 아래 기록표에서 확인한 칸 수와 비용을 비교할 수 있어요.</p>
+    </div>
+    <div class="lab-grid">
+      <div class="tools">
+        <div>
+          <h3>지도 고르기</h3>
+          <div class="pick" id="mapPick">
+            <button type="button" data-map="A" aria-pressed="false">미로</button>
+            <button type="button" data-map="C" aria-pressed="false">옆집</button>
+            <button type="button" data-map="B" aria-pressed="true">늪</button>
+            <button type="button" data-map="D" aria-pressed="false">강</button>
+            <button type="button" data-map="E" aria-pressed="false">터널</button>
+            <button type="button" data-map="empty" aria-pressed="false">빈 지도</button>
+          </div>
+        </div>
+        <div>
+          <h3>그리기 도구</h3>
+          <div class="pick" id="toolPick">
+            <button type="button" data-tool="wall" aria-pressed="true"><span class="swt wall"></span>벽</button>
+            <button type="button" data-tool="swamp" aria-pressed="false"><span class="swt swamp">≈</span>늪</button>
+            <button type="button" data-tool="erase" aria-pressed="false"><span class="swt plain"></span>지우개</button>
+            <button type="button" data-tool="start" aria-pressed="false"><span class="swt s">S</span>출발점 옮기기</button>
+            <button type="button" data-tool="goal" aria-pressed="false"><span class="swt g">G</span>도착점 옮기기</button>
+          </div>
+        </div>
+        <div>
+          <h3>알고리즘</h3>
+          <div class="pick" id="algoPick"></div>
+        </div>
+        <label class="speed" for="labSpeed">느리게<input type="range" id="labSpeed" min="1" max="10" value="6">빠르게</label>
+        <div class="tool-btns">
+          <button class="btn primary" id="labRun" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>실행</button>
+          <button class="btn" id="labAll" type="button">다섯 개 모두 기록</button>
+          <button class="btn" id="labClear" type="button">결과 지우기</button>
+        </div>
+      </div>
+      <div class="lab-main">
+        <div class="lab-board"><div class="cbox"><canvas id="labCanvas" aria-label="실습용 격자 지도. 눌러서 벽과 늪을 그릴 수 있어요"></canvas></div></div>
+        <p class="lab-stat" id="labStat">알고리즘을 고르고 실행을 눌러 보세요.</p>
+        <div class="log-wrap">
+          <table class="log">
+            <thead><tr><th scope="col">지도</th><th scope="col">알고리즘</th><th scope="col" style="text-align:right">확인한 칸</th><th scope="col" style="text-align:right">길이</th><th scope="col" style="text-align:right">비용</th><th scope="col">비고</th></tr></thead>
+            <tbody id="logBody"><tr class="empty"><td colspan="6">아직 기록이 없어요. 실행하면 여기에 쌓여요.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const now = () => performance.now();
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeBack = t => { const c = 1.6; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const $ = id => document.getElementById(id);
+
+/* =========================================================
+   1. 지도와 탐색 알고리즘
+   ========================================================= */
+const COST = [1, Infinity, 5];                  // 0 평지, 1 벽, 2 늪
+const DIRS = [[0,-1],[1,0],[0,1],[-1,0]];       // 위, 오른쪽, 아래, 왼쪽
+
+function parseMap(rows){
+  const H = rows.length, W = rows[0].length, cells = new Uint8Array(W*H);
+  let s = 0, g = 0;
+  rows.forEach((r, y) => [...r].forEach((ch, x) => {
+    const i = y*W + x;
+    cells[i] = ch === '#' ? 1 : ch === '~' ? 2 : 0;
+    if (ch === 'S') s = i;
+    if (ch === 'G') g = i;
+  }));
+  return { W, H, cells, s, g };
+}
+const cloneMap = m => ({ W:m.W, H:m.H, cells:new Uint8Array(m.cells), s:m.s, g:m.g });
+function nbrs(m, i){
+  const x = i % m.W, y = (i / m.W) | 0, out = [];
+  for (const [dx, dy] of DIRS){
+    const nx = x+dx, ny = y+dy;
+    if (nx < 0 || ny < 0 || nx >= m.W || ny >= m.H) continue;
+    const j = ny*m.W + nx;
+    if (m.cells[j] !== 1) out.push(j);
+  }
+  return out;
+}
+const manhattan = (m, a, b) => Math.abs(a % m.W - b % m.W) + Math.abs(((a / m.W) | 0) - ((b / m.W) | 0));
+function pathCost(m, p){ let c = 0; for (let k = 1; k < p.length; k++) c += COST[m.cells[p[k]]]; return c; }
+
+// DFS: 한 길로 끝까지 가 보고, 막히면 되돌아가기
+function runDFS(m){
+  const seen = new Set([m.s]), stack = [m.s], events = [{ t:'move', c:m.s }];
+  let found = false;
+  while (stack.length){
+    const top = stack[stack.length-1];
+    if (top === m.g){ found = true; break; }
+    const nx = nbrs(m, top).find(j => !seen.has(j));
+    if (nx !== undefined){ seen.add(nx); stack.push(nx); events.push({ t:'move', c:nx }); }
+    else { stack.pop(); if (stack.length) events.push({ t:'back', c:stack[stack.length-1], from:top }); }
+  }
+  const path = found ? stack.slice() : null;
+  return { algo:'dfs', kind:'walk', events, path, visited:seen.size, cost: path ? pathCost(m, path) : null };
+}
+
+// 나머지 넷은 "후보 목록에서 무엇을 먼저 꺼내나"만 다르다
+function keyOf(algo, e){
+  switch (algo){
+    case 'bfs':    return [e.order];
+    case 'dij':    return [e.g, e.order];
+    case 'greedy': return [e.h, e.order];
+    case 'astar':  return [e.g + e.h, e.h, e.order];
+  }
+}
+function less(a, b){ for (let k = 0; k < a.length; k++){ if (a[k] !== b[k]) return a[k] < b[k]; } return false; }
+const sortOpen = (algo, list) => list.sort((a, b) => less(keyOf(algo, a), keyOf(algo, b)) ? -1 : 1);
+
+function runBest(m, algo){
+  const open = new Map(), closed = new Set(), parent = new Map(), steps = [];
+  let order = 0, found = false;
+  open.set(m.s, { c:m.s, g:0, d:0, h:manhattan(m, m.s, m.g), order:order++, from:-1 });
+  while (open.size){
+    let best = null, bk = null;
+    for (const e of open.values()){ const k = keyOf(algo, e); if (!best || less(k, bk)){ best = e; bk = k; } }
+    open.delete(best.c); closed.add(best.c); parent.set(best.c, best.from);
+    const step = { c:best.c, g:best.g, d:best.d, h:best.h, pushes:[] };
+    steps.push(step);
+    if (best.c === m.g){ found = true; break; }
+    for (const j of nbrs(m, best.c)){
+      if (closed.has(j)) continue;
+      const ng = best.g + COST[m.cells[j]];
+      const ex = open.get(j);
+      if (ex && (algo === 'bfs' || algo === 'greedy' || ex.g <= ng)) continue;
+      const e = { c:j, g:ng, d:best.d+1, h:manhattan(m, j, m.g), order:order++, from:best.c };
+      open.set(j, e); step.pushes.push(e);
+    }
+  }
+  let path = null;
+  if (found){ path = []; for (let c = m.g; c !== -1; c = parent.get(c)) path.push(c); path.reverse(); }
+  return { algo, kind:'best', steps, path, visited:steps.length, cost: path ? pathCost(m, path) : null };
+}
+const runAlgo = (m, algo) => algo === 'dfs' ? runDFS(m) : runBest(m, algo);
+
+const MAP_A = parseMap([
+  "...................",
+  ".#######.#######.#.",
+  ".#.....#.#.....#.#.",
+  ".#.###.#...###.#...",
+  ".S.#...#####.#.#.G.",
+  ".#.#.#.....#.#.###.",
+  ".#...#####.#.#.....",
+  ".#####...#.#.#####.",
+  ".......#.#.......#.",
+  ".#####.#.#######.#.",
+  ".......#...........",
+]);
+const MAP_B = parseMap([
+  "...................",
+  "...................",
+  ".......~~~~~.......",
+  "......~~~~~~~......",
+  ".....~~~~~~~~~.....",
+  ".S...~~~~~~~~~...G.",
+  ".....~~~~~~~~~.....",
+  "......~~~~~~~......",
+  ".......~~~~~.......",
+  "...................",
+  "...................",
+]);
+const MAP_C = parseMap([            // 바로 옆집: 탁 트인 동네
+  "...................",
+  "...................",
+  "..##.......##......",
+  "..##..##...##..##..",
+  "......##.......##..",
+  ".......S...G.......",
+  "...##.........##...",
+  "...##..##.....##...",
+  ".......##..........",
+  "...................",
+  "...................",
+]);
+const MAP_D = parseMap([            // 강 건너기: 늪이 지도를 가로막음
+  "........~~.........",
+  ".S......~~......G..",
+  "........~~.........",
+  ".......~~..........",
+  ".......~~..........",
+  "........~~.........",
+  "........~~.........",
+  ".........~~........",
+  ".........~~........",
+  "........~~.........",
+  "...................",
+]);
+const MAP_E = parseMap([            // 지름길처럼 보이는 터널
+  "...................",
+  "...................",
+  "...................",
+  "...................",
+  "..#############....",
+  ".S............#.G..",
+  "..###########.#....",
+  "............#.#....",
+  "............#.#....",
+  "............#.#....",
+  "...................",
+]);
+const MAPS = { A:MAP_A, B:MAP_B, C:MAP_C, D:MAP_D, E:MAP_E };
+const ORDER = ['dfs','bfs','dij','greedy','astar'];
+const R = {};
+for (const k in MAPS){ R[k] = {}; for (const a of ORDER) R[k][a] = runAlgo(MAPS[k], a); }
+// 강 지도에서 늪을 밟지 않고 돌아가는 길
+const D_DETOUR = (() => { const m = cloneMap(MAP_D); m.cells = m.cells.map(v => v === 2 ? 1 : v); return runAlgo(m, 'dij'); })();
+const hasSwamp = m => m.cells.includes(2);
+
+const ALGO = {
+  intro: { name:'기본',          full:'',                      tok:'c-intro', label:null },
+  dfs:   { name:'DFS',           full:'깊이 우선 탐색',          tok:'c-dfs',   label:null },
+  bfs:   { name:'BFS',           full:'너비 우선 탐색',          tok:'c-bfs',   label:'d'  },
+  dij:   { name:'다익스트라',     full:'다익스트라',              tok:'c-dij',   label:'g'  },
+  greedy:{ name:'탐욕적 탐색',    full:'탐욕적 최선 우선 탐색',    tok:'c-greedy',label:'h'  },
+  astar: { name:'A*',            full:'A* 탐색',                tok:'c-astar', label:'f'  },
+};
+
+/* =========================================================
+   2. 색 토큰 (캔버스용)
+   ========================================================= */
+const TOKS = ['bg','panel','cell','grid','wall','swamp','swamp-ink','ink','muted','on-accent','c-intro','c-dfs','c-bfs','c-dij','c-greedy','c-astar'];
+const T = {};
+function hexRgb(h){
+  h = h.trim().replace('#','');
+  if (h.length === 3) h = [...h].map(c => c + c).join('');
+  const n = parseInt(h, 16);
+  return isNaN(n) ? [128,128,128] : [n >> 16 & 255, n >> 8 & 255, n & 255];
+}
+function readTokens(){
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of TOKS) T[k] = hexRgb(cs.getPropertyValue('--' + k));
+  boards.forEach(b => b.touch());
+}
+const C = (k, a = 1) => { const c = T[k] || [128,128,128]; return `rgba(${c[0]},${c[1]},${c[2]},${a})`; };
+
+/* =========================================================
+   3. 격자 보드 (캔버스)
+   ========================================================= */
+const boards = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => {
+  const b = e.target._board; b.visible = e.isIntersecting; if (b.visible) b.dirty = true;
+}));
+
+function rr(ctx, x, y, w, h, r){
+  r = Math.max(0, Math.min(r, w/2, h/2));
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+}
+
+class Board {
+  constructor(canvas){
+    this.cv = canvas; this.ctx = canvas.getContext('2d'); canvas._board = this;
+    this.algo = 'intro'; this.labelMode = null; this.live = false; this.visible = true;
+    this.dirty = true; this.animUntil = 0; this.map = null; this.heatOn = false; this.heatA = 0;
+    this.speed = () => 1;
+    boards.add(this); io.observe(canvas);
+    new ResizeObserver(() => this.resize()).observe(canvas.parentElement);
+  }
+  setMap(m, cascade = true){
+    const changed = this.map !== m;
+    this.map = m;
+    this.mapT0 = (cascade && changed && !RM) ? now() : -1e9;
+    this.clear(); this.resize(); this.touch(1100);
+  }
+  clear(){
+    const N = this.map ? this.map.W * this.map.H : 0;
+    this.st = new Array(N).fill(null);
+    this.cur = -1; this.next = -1; this.path = null; this.ghost = null; this.token = null;
+    this.callouts = []; this.demo = null; this.flash = null; this.heatOn = false; this.parts = null;
+    this.touch();
+  }
+  resize(){
+    const w = this.cv.parentElement.clientWidth;
+    if (!w || !this.map) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), h = w * this.map.H / this.map.W;
+    this.cv.style.height = h + 'px';
+    this.cv.width = Math.round(w * dpr); this.cv.height = Math.round(h * dpr);
+    this.w = w; this.h = h; this.cs = w / this.map.W; this.dpr = dpr; this.dirty = true;
+  }
+  touch(ms = 450){ this.animUntil = Math.max(this.animUntil, now() + ms); this.dirty = true; }
+  set(c, k, data){
+    const prev = this.st[c];
+    this.st[c] = Object.assign({ k, t: (prev && prev.k === k) ? prev.t : now() }, data);
+    this.touch(650);
+  }
+  burst(c){
+    if (RM || P.ff || c == null) return;
+    const [x, y] = this.center(c), cs = this.cs, cols = [ALGO[this.algo].tok, 'ink', 'c-astar', 'c-greedy', 'c-dij', 'c-bfs'];
+    this.parts = Array.from({ length:34 }, (_, k) => {
+      const a = Math.random() * Math.PI * 2, s = (1.6 + Math.random() * 2.8) * cs;
+      return { x, y, vx:Math.cos(a) * s, vy:Math.sin(a) * s - cs * 1.2, col:cols[k % cols.length], r:cs * (.07 + Math.random() * .08), rot:Math.random() * 6 };
+    });
+    this.burstT = now(); this.burstC = [x, y]; this.touch(1200);
+  }
+  moveToken(c){ this.token = { from: this.token ? this.token.c : c, c, t: now() }; this.touch(); }
+  callout(c, text){ this.callouts.push({ c, text, t: now() }); this.touch(); }
+  clearCallouts(){ this.callouts = []; this.touch(); }
+  showPath(cells, { reverse = false, dur } = {}){
+    if (!cells) return 0;
+    const d = (P.ff || RM) ? 0 : (dur || Math.min(2400, 300 + cells.length * 45)) / this.speed();
+    this.path = { cells, reverse, t: now(), dur: Math.max(d, 1) };
+    this.touch(d + 120);
+    return d;
+  }
+  center(i){ const cs = this.cs; return [(i % this.map.W + .5) * cs, (((i / this.map.W) | 0) + .5) * cs]; }
+
+  draw(t){
+    const { ctx, map, cs, w, h } = this;
+    if (!map || !w) return;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C('grid'); rr(ctx, 0, 0, w, h, Math.min(10, cs * .35)); ctx.fill();
+
+    const gap = cs >= 24 ? 1.5 : cs >= 12 ? 1 : .6, rad = Math.min(6, cs * .16);
+    const ac = ALGO[this.algo].tok, N = map.W * map.H, maxH = map.W + map.H;
+    const tile = (px, py, s = 1) => {
+      const full = cs - 2 * gap, sz = full * s, o = gap + (full - sz) / 2;
+      rr(ctx, px + o, py + o, sz, sz, rad * s);
+    };
+    const hk = this.heatOn ? 1 : 0;
+    this.heatA += (hk - this.heatA) * .12;
+    if (Math.abs(hk - this.heatA) < .01) this.heatA = hk; else this.touch(60);
+
+    // 바닥 타일, 지형, 방문 상태
+    for (let i = 0; i < N; i++){
+      const x = i % map.W, y = (i / map.W) | 0, px = x * cs, py = y * cs;
+      const p = clamp((t - this.mapT0 - (x + y) * 16) / 280);
+      if (p <= 0) continue;
+      const type = map.cells[i];
+      ctx.globalAlpha = p;
+      ctx.fillStyle = type === 1 ? C('wall') : type === 2 ? C('swamp') : C('cell');
+      tile(px, py, .55 + .45 * easeOut(p)); ctx.fill();
+      if (type === 2 && cs >= 13){
+        ctx.strokeStyle = C('swamp-ink', .8); ctx.lineWidth = Math.max(1, cs * .045); ctx.lineCap = 'round';
+        const amp = cs * .075 * ((this.live && !RM) ? Math.sin(t / 380 + x * .9 + y * .6) : 1);
+        for (const oy of [.4, .62]){
+          ctx.beginPath();
+          const y0 = py + cs * oy, x0 = px + cs * .24, ww = cs * .52;
+          ctx.moveTo(x0, y0);
+          ctx.bezierCurveTo(x0 + ww*.25, y0 - amp, x0 + ww*.25, y0 + amp, x0 + ww*.5, y0);
+          ctx.bezierCurveTo(x0 + ww*.75, y0 - amp, x0 + ww*.75, y0 + amp, x0 + ww, y0);
+          ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+      if (type === 1) continue;
+      if (this.heatA > .01){
+        const hv = manhattan(map, i, map.g);
+        ctx.fillStyle = C('c-greedy', (.05 + .5 * (1 - hv / maxH)) * this.heatA);
+        tile(px, py); ctx.fill();
+      }
+      const st = this.st[i];
+      if (!st) continue;
+      const q = RM ? 1 : clamp((t - st.t) / 260);
+      if (q < 1) this.touch(60);
+      if (st.k === 'f'){
+        ctx.fillStyle = C(ac, .10 * q); tile(px, py); ctx.fill();
+        const lw = Math.max(1.4, cs * .075), ins = gap + lw / 2;
+        ctx.strokeStyle = C(ac, .95 * q); ctx.lineWidth = lw;
+        rr(ctx, px + ins, py + ins, cs - 2 * ins, cs - 2 * ins, rad); ctx.stroke();
+      } else {
+        ctx.fillStyle = st.k === 'dead' ? C('muted', .3) : C(ac, st.k === 'stack' ? .55 : .32);
+        tile(px, py, .4 + .6 * easeBack(q)); ctx.fill();
+      }
+    }
+
+    // 새로 확인한 칸에서 퍼지는 물결
+    if (!RM){
+      ctx.lineWidth = Math.max(1, cs * .06);
+      for (let i = 0; i < N; i++){
+        const st = this.st[i];
+        if (!st || st.k === 'f' || st.k === 'dead') continue;
+        const rq = (t - st.t) / 600;
+        if (rq >= 1 || rq < 0) continue;
+        const [cx, cy] = this.center(i);
+        ctx.strokeStyle = C(ac, .6 * (1 - rq));
+        ctx.beginPath(); ctx.arc(cx, cy, cs * (.3 + .95 * easeOut(rq)), 0, Math.PI * 2); ctx.stroke();
+        this.touch(60);
+      }
+    }
+
+    // 깜빡임 강조 (벽, 늪)
+    if (this.flash){
+      const k = (t - this.flash.t) / 1800;
+      if (k >= 1) this.flash = null;
+      else {
+        const a = (1 - k) * (.55 + .45 * Math.sin((t - this.flash.t) / 110));
+        ctx.strokeStyle = C('c-intro', a); ctx.lineWidth = Math.max(2, cs * .09);
+        for (let i = 0; i < N; i++) if (map.cells[i] === this.flash.type){
+          const px = (i % map.W) * cs, py = ((i / map.W) | 0) * cs;
+          rr(ctx, px + gap + 1, py + gap + 1, cs - 2*gap - 2, cs - 2*gap - 2, rad); ctx.stroke();
+        }
+        this.touch(60);
+      }
+    }
+
+    // 지금 확인 중인 칸, 다음 차례 칸
+    if (this.cur >= 0){
+      const px = (this.cur % map.W) * cs, py = ((this.cur / map.W) | 0) * cs;
+      ctx.fillStyle = C(ac, .92); tile(px, py); ctx.fill();
+      if (this.live && !RM){
+        const ph = (t % 1100) / 1100, e = cs * .16 * ph;
+        ctx.strokeStyle = C(ac, (1 - ph) * .7); ctx.lineWidth = 2;
+        rr(ctx, px + gap - e, py + gap - e, cs - 2*gap + 2*e, cs - 2*gap + 2*e, rad + e); ctx.stroke();
+      }
+    }
+    if (this.next >= 0 && this.next !== this.cur && cs >= 12){
+      const px = (this.next % map.W) * cs, py = ((this.next / map.W) | 0) * cs;
+      ctx.setLineDash([3, 3]); ctx.strokeStyle = C('ink', .85); ctx.lineWidth = 1.6;
+      rr(ctx, px + 1, py + 1, cs - 2, cs - 2, rad + 1); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // 칸 안의 숫자
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (this.heatA > .3 && cs >= 22){
+      ctx.font = `500 ${Math.round(cs * .3)}px "JetBrains Mono", monospace`;
+      ctx.fillStyle = C('ink', .7 * this.heatA);
+      for (let i = 0; i < N; i++){
+        if (map.cells[i] === 1 || i === map.s || i === map.g || this.st[i]) continue;
+        const [cx, cy] = this.center(i);
+        ctx.fillText(manhattan(map, i, map.g), cx, cy + 1);
+      }
+    }
+    if (this.labelMode && cs >= 22){
+      for (let i = 0; i < N; i++){
+        const st = this.st[i];
+        if (!st || (st.k !== 'v' && st.k !== 'f') || i === map.s || i === map.g) continue;
+        const [cx, cy] = this.center(i), isCur = i === this.cur;
+        const main = isCur ? C('on-accent') : C('ink', st.k === 'f' ? .6 : .92);
+        if (this.labelMode === 'f'){
+          const f = st.g + st.h;
+          if (cs >= 38){
+            ctx.font = `700 ${Math.round(cs * .3)}px "JetBrains Mono", monospace`;
+            ctx.fillStyle = main; ctx.fillText(f, cx, cy - cs * .1);
+            ctx.font = `500 ${Math.round(cs * .2)}px "JetBrains Mono", monospace`;
+            ctx.fillStyle = isCur ? C('on-accent', .9) : C('c-dij', st.k === 'f' ? .7 : 1);
+            ctx.fillText(st.g, cx - cs * .22, cy + cs * .25);
+            ctx.fillStyle = isCur ? C('on-accent', .9) : C('c-greedy', st.k === 'f' ? .7 : 1);
+            ctx.fillText(st.h, cx + cs * .22, cy + cs * .25);
+          } else {
+            ctx.font = `700 ${Math.round(cs * .32)}px "JetBrains Mono", monospace`;
+            ctx.fillStyle = main; ctx.fillText(f, cx, cy + 1);
+          }
+        } else {
+          const v = this.labelMode === 'd' ? st.d : this.labelMode === 'g' ? st.g : st.h;
+          ctx.font = `700 ${Math.round(cs * .32)}px "JetBrains Mono", monospace`;
+          ctx.fillStyle = main; ctx.fillText(v, cx, cy + 1);
+        }
+      }
+    }
+
+    // 경로
+    const line = (cells, prog, color, lw, dashed) => {
+      let pts = cells.map(c => this.center(c));
+      const n = pts.length - 1; if (n < 1) return;
+      const f = prog * n, k = Math.floor(f);
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let j = 1; j <= k && j <= n; j++) ctx.lineTo(pts[j][0], pts[j][1]);
+      let head = pts[Math.min(k, n)];
+      if (k < n){
+        const a = pts[k], b = pts[k + 1], r = f - k;
+        head = [a[0] + (b[0] - a[0]) * r, a[1] + (b[1] - a[1]) * r];
+        ctx.lineTo(head[0], head[1]);
+      }
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      if (dashed) ctx.setLineDash([lw * 1.2, lw * 1.6]);
+      ctx.strokeStyle = C('bg', .85); ctx.lineWidth = lw + 4; ctx.stroke();
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.stroke();
+      ctx.setLineDash([]);
+      if (prog < 1){ ctx.fillStyle = color; ctx.beginPath(); ctx.arc(head[0], head[1], lw * 1.1, 0, Math.PI * 2); ctx.fill(); }
+    };
+    if (this.ghost) line(this.ghost, 1, C('ink', .7), Math.max(2, cs * .1), true);
+    if (this.path){
+      const pr = clamp((t - this.path.t) / this.path.dur);
+      const cells = this.path.reverse ? [...this.path.cells].reverse() : this.path.cells;
+      ctx.shadowColor = C(ac, .55); ctx.shadowBlur = cs * .45;
+      line(cells, easeOut(pr), C(ac), Math.max(2.5, cs * .2), false);
+      ctx.shadowBlur = 0;
+      if (pr < 1) this.touch(60);
+      else if (!RM && this.path.cells.length > 1){
+        // 완성된 길 위를 S에서 G로 계속 달리는 점
+        const pc = this.path.cells, n = pc.length - 1, period = Math.max(1600, n * 120);
+        const k = ((t - this.path.t - this.path.dur) % period) / period, f = k * n, j = Math.min(n - 1, Math.floor(f));
+        const a = this.center(pc[j]), b = this.center(pc[j + 1]), r = f - j;
+        const x = a[0] + (b[0] - a[0]) * r, y = a[1] + (b[1] - a[1]) * r;
+        ctx.shadowColor = C(ac, .9); ctx.shadowBlur = cs * .6;
+        ctx.beginPath(); ctx.arc(x, y, Math.max(2.5, cs * .17), 0, Math.PI * 2);
+        ctx.fillStyle = C('on-accent'); ctx.fill();
+        ctx.lineWidth = Math.max(1.5, cs * .06); ctx.strokeStyle = C(ac); ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // 출발점 S, 도착점 G
+    const marker = (i, label, filled) => {
+      const [cx, cy] = this.center(i), r = cs * .36;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      if (filled){ ctx.fillStyle = C('ink'); ctx.fill(); }
+      else { ctx.fillStyle = C('cell'); ctx.fill(); ctx.strokeStyle = C('ink'); ctx.lineWidth = Math.max(1.5, cs * .08); ctx.stroke(); }
+      if (cs >= 15){
+        ctx.fillStyle = filled ? C('bg') : C('ink');
+        ctx.font = `700 ${Math.round(cs * .38)}px "JetBrains Mono", monospace`;
+        ctx.fillText(label, cx, cy + 1);
+      }
+    };
+    marker(map.s, 'S', true); marker(map.g, 'G', false);
+
+    // DFS 탐험가
+    if (this.token){
+      const k = RM ? 1 : clamp((t - this.token.t) / (140 / this.speed()));
+      const a = this.center(this.token.from), b = this.center(this.token.c), e = easeOut(k);
+      const x = a[0] + (b[0] - a[0]) * e, y = a[1] + (b[1] - a[1]) * e;
+      const r = cs * .3;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = C(ac); ctx.fill(); ctx.strokeStyle = C('bg'); ctx.lineWidth = 2.5; ctx.stroke();
+      // 가는 방향을 바라보는 눈
+      let dx = b[0] - a[0], dy = b[1] - a[1];
+      if (dx || dy){ const L = Math.hypot(dx, dy); this.look = [dx / L, dy / L]; }
+      const [lx, ly] = this.look || [1, 0];
+      if (cs >= 14) for (const s of [-1, 1]){
+        const ex = x + lx * r * .3 - ly * s * r * .4, ey = y + ly * r * .3 + lx * s * r * .4;
+        ctx.beginPath(); ctx.arc(ex, ey, r * .3, 0, Math.PI * 2); ctx.fillStyle = C('on-accent'); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + lx * r * .13, ey + ly * r * .13, r * .15, 0, Math.PI * 2); ctx.fillStyle = C('wall'); ctx.fill();
+      }
+      if (k < 1) this.touch(60);
+    }
+
+    // 도착 축하 폭죽
+    if (this.parts){
+      const dt = (t - this.burstT) / 1000;
+      if (dt >= 1.1) this.parts = null;
+      else {
+        const [bx, by] = this.burstC;
+        ctx.strokeStyle = C(ac, Math.max(0, .8 * (1 - dt))); ctx.lineWidth = Math.max(2, cs * .1);
+        ctx.beginPath(); ctx.arc(bx, by, cs * (.4 + 3.2 * easeOut(Math.min(1, dt))), 0, Math.PI * 2); ctx.stroke();
+        for (const p of this.parts){
+          const px = p.x + p.vx * dt, py = p.y + p.vy * dt + 3 * cs * dt * dt;
+          ctx.globalAlpha = Math.max(0, 1 - dt / 1.1);
+          ctx.save(); ctx.translate(px, py); ctx.rotate(p.rot + dt * 8);
+          ctx.fillStyle = C(p.col); ctx.fillRect(-p.r, -p.r * .6, p.r * 2, p.r * 1.2);
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+        this.touch(60);
+      }
+    }
+
+    // 맨해튼 거리 시연
+    const pill = (text, x, y, fg, bg) => {
+      const fs = clamp(cs * .34, 11, 15);
+      ctx.font = `600 ${fs}px "IBM Plex Sans KR", sans-serif`;
+      const tw = ctx.measureText(text).width, bw = tw + 14, bh = fs + 10;
+      const bx = clamp(x - bw / 2, 3, w - bw - 3), by = clamp(y - bh / 2, 3, h - bh - 3);
+      ctx.fillStyle = bg; rr(ctx, bx, by, bw, bh, bh / 2); ctx.fill();
+      ctx.fillStyle = fg; ctx.fillText(text, bx + bw / 2, by + bh / 2 + 1);
+    };
+    if (this.demo){
+      const a = RM ? 1 : clamp((t - this.demo.t) / 900);
+      if (a < 1) this.touch(60);
+      const [x0, y0] = this.center(this.demo.c), [x1, y1] = this.center(map.g);
+      const dx = Math.abs(this.demo.c % map.W - map.g % map.W), dy = Math.abs(((this.demo.c / map.W) | 0) - ((map.g / map.W) | 0));
+      const lenH = Math.abs(x1 - x0), lenV = Math.abs(y1 - y0), tot = lenH + lenV, dist = tot * a;
+      ctx.strokeStyle = C('c-greedy'); ctx.lineWidth = Math.max(2, cs * .08); ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + Math.sign(x1 - x0) * Math.min(dist, lenH), y0);
+      if (dist > lenH) ctx.lineTo(x1, y0 + Math.sign(y1 - y0) * (dist - lenH));
+      ctx.stroke(); ctx.setLineDash([]);
+      if (a >= 1){
+        pill(`가로 ${dx}칸`, (x0 + x1) / 2, y0 - cs * .55, C('on-accent'), C('c-greedy'));
+        pill(`세로 ${dy}칸`, x1 + cs * 1.1, (y0 + y1) / 2, C('on-accent'), C('c-greedy'));
+      }
+      ctx.beginPath(); ctx.arc(x0, y0, cs * .2, 0, Math.PI * 2); ctx.fillStyle = C('c-greedy'); ctx.fill();
+    }
+
+    // 말풍선
+    for (const co of this.callouts){
+      const a = RM ? 1 : clamp((t - co.t) / 260);
+      if (a < 1) this.touch(60);
+      const [cx, cy] = this.center(co.c);
+      const fs = clamp(cs * .36, 11, 16);
+      ctx.font = `600 ${fs}px "IBM Plex Sans KR", sans-serif`;
+      const tw = ctx.measureText(co.text).width, bw = tw + 18, bh = fs + 12;
+      const row = (co.c / map.W) | 0, below = row < 2;
+      const bx = clamp(cx - bw / 2, 3, w - bw - 3);
+      let by = below ? cy + cs * .5 + 8 : cy - cs * .5 - bh - 8;
+      by += (1 - easeBack(a)) * (below ? -14 : 14);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = C('ink');
+      rr(ctx, bx, by, bw, bh, 8); ctx.fill();
+      ctx.beginPath();
+      if (below){ ctx.moveTo(cx - 6, by); ctx.lineTo(cx, by - 6); ctx.lineTo(cx + 6, by); }
+      else { ctx.moveTo(cx - 6, by + bh); ctx.lineTo(cx, by + bh + 6); ctx.lineTo(cx + 6, by + bh); }
+      ctx.fill();
+      ctx.fillStyle = C('bg'); ctx.fillText(co.text, bx + bw / 2, by + bh / 2 + 1);
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+function loop(t){
+  for (const b of boards){
+    if (b.visible && (b.dirty || b.live || t < b.animUntil || (b.path && !RM))){ b.draw(t); b.dirty = false; }
+  }
+  requestAnimationFrame(loop);
+}
+
+/* 알고리즘 결과를 한 단계씩 보드에 옮기는 재생기 */
+class Runner {
+  constructor(board, res){
+    this.b = board; this.res = res; this.i = 0; this.open = new Map(); this.backs = 0; this.moves = 0; this.last = null;
+    this.n = res.kind === 'walk' ? res.events.length : res.steps.length;
+  }
+  get done(){ return this.i >= this.n; }
+  get visited(){ return this.res.kind === 'walk' ? this.moves : this.i; }
+  step(){
+    const b = this.b, res = this.res;
+    if (res.kind === 'walk'){
+      const e = res.events[this.i++];
+      if (e.t === 'move'){ b.set(e.c, 'stack'); this.moves++; }
+      else { b.set(e.from, 'dead'); this.backs++; }
+      b.moveToken(e.c);
+      return;
+    }
+    const s = res.steps[this.i++]; this.last = s;
+    this.open.delete(s.c);
+    b.set(s.c, 'v', { g:s.g, h:s.h, d:s.d }); b.cur = s.c;
+    for (const e of s.pushes){ this.open.set(e.c, e); b.set(e.c, 'f', { g:e.g, h:e.h, d:e.d }); }
+    if (this.done){ b.next = -1; return; }
+    let best = null, bk = null;
+    for (const e of this.open.values()){ const k = keyOf(res.algo, e); if (!best || less(k, bk)){ best = e; bk = k; } }
+    b.next = best ? best.c : -1;
+  }
+  finish(){ while (!this.done) this.step(); }
+}
+
+/* =========================================================
+   4. 플레이어 엔진
+   ========================================================= */
+const P = { scene:0, tok:0, paused:true, ff:false, speed:1, started:false, running:false, ended:false, line:0 };
+class Cancel extends Error {}
+const frame = () => new Promise(r => requestAnimationFrame(r));
+function check(tok){ if (tok !== P.tok) throw new Cancel(); }
+async function wait(ms){
+  const tok = P.tok; let left = ms, last = now();
+  for (;;){
+    check(tok);
+    if (P.ff || left <= 0) return;
+    await frame(); check(tok);
+    const t = now(); if (!P.paused) left -= (t - last) * P.speed; last = t;
+  }
+}
+function fmt(s){
+  return s.replace(/\b([fgh])\(n\)/g, '<span class="v v-$1"><i>$1</i>(<i>n</i>)</span>');
+}
+const subPrev = $('subPrev'), subCur = $('subCur');
+function setSub(text){
+  subPrev.innerHTML = subCur.innerHTML;
+  subCur.innerHTML = fmt(text);
+  if (!RM) subCur.animate([{ opacity:0, transform:'translateY(6px)' }, { opacity:1, transform:'none' }], { duration:320, easing:'ease-out' });
+}
+async function say(text, extra = 0){
+  P.ff = false;
+  P.line++; renderDots();
+  setSub(text);
+  await wait(1400 + text.replace(/<[^>]+>/g, '').length * 62 + extra);
+}
+async function play(r, { until = Infinity, ms = 100, ui } = {}){
+  const tok = P.tok;
+  while (!r.done && r.i < until){
+    r.step();
+    if (P.ff) continue;
+    ui && ui(r);
+    await wait(ms);
+  }
+  check(tok);
+  ui && ui(r);
+}
+const stageBody = $('stageBody');
+function shake(){
+  if (RM || P.ff) return;
+  stageBody.animate([{ transform:'none' }, { transform:'translateX(-7px)' }, { transform:'translateX(6px)' }, { transform:'translateX(-4px)' }, { transform:'translateX(2px)' }, { transform:'none' }], { duration:420, easing:'ease-out' });
+}
+function punch(){
+  if (RM || P.ff) return;
+  stageBody.animate([{ transform:'scale(1)' }, { transform:'scale(1.018)' }, { transform:'scale(1)' }], { duration:420, easing:'cubic-bezier(.2,.8,.2,1)' });
+}
+async function drawPath(b, cells, opt = {}){
+  const d = b.showPath(cells, opt);
+  await wait(d * P.speed);
+  b.burst(opt.reverse ? cells[0] : cells[cells.length - 1]);
+  if (b === main) punch();
+}
+
+/* 장·사례 제목 카드: 무대를 쓸고 지나가는 색 띠 */
+let tcSeq = 0;
+async function titleCard(kicker, title, sub, mid){
+  const el = $('tcard');
+  if (P.ff || RM){ mid && mid(); return; }
+  const my = ++tcSeq;
+  el.getAnimations().forEach(a => a.cancel());
+  $('tcK').textContent = kicker; $('tcT').textContent = title; $('tcS').textContent = sub || '';
+  el.hidden = false;
+  el.animate([{ clipPath:'inset(0 100% 0 0)' }, { clipPath:'inset(0 0% 0 0)' }], { duration:480, easing:'cubic-bezier(.7,0,.2,1)', fill:'forwards' });
+  el.querySelector('.tc-in').animate([{ opacity:0, transform:'translateY(22px) scale(.96)' }, { opacity:1, transform:'none' }], { duration:520, delay:200, easing:'cubic-bezier(.2,.8,.2,1)', fill:'backwards' });
+  try {
+    await wait(1700);
+    mid && mid();
+    if (main.map){ main.mapT0 = now(); main.touch(1100); }
+  } finally {
+    const out = el.animate([{ clipPath:'inset(0 0 0 0%)' }, { clipPath:'inset(0 0 0 100%)' }], { duration:460, easing:'cubic-bezier(.7,0,.2,1)', fill:'forwards' });
+    const done = () => { if (my === tcSeq){ el.hidden = true; el.getAnimations().forEach(a => a.cancel()); } };
+    out.onfinish = done;
+    setTimeout(done, 520);
+  }
+  await wait(300);
+}
+function hideTitleCard(){ tcSeq++; const el = $('tcard'); el.getAnimations().forEach(a => a.cancel()); el.hidden = true; }
+
+/* 무대 위 머리줄: 사례 이름과 숫자 */
+function setCase(k, label){
+  const chip = $('caseChip');
+  chip.innerHTML = `<span class="k">${k}</span>${label}`;
+  if (!RM) chip.animate([{ opacity:0, transform:'translateY(-8px)' }, { opacity:1, transform:'none' }], { duration:360, easing:'cubic-bezier(.2,.8,.2,1)' });
+}
+function hudReset(show = true){
+  $('hudV').textContent = '0'; $('hudC').textContent = '–';
+  $('hudVBox').hidden = $('hudCBox').hidden = !show;
+}
+function bump(el){ if (!RM && !P.ff) el.animate([{ transform:'scale(1.5)' }, { transform:'scale(1)' }], { duration:420, easing:'cubic-bezier(.2,.8,.2,1)' }); }
+function hud(r){
+  $('hudV').textContent = r.visited;
+  const c = $('hudC');
+  if (r.done && r.res.path){
+    const txt = hasSwamp(MAP_IN_USE) ? `비용 ${r.res.cost}` : `${r.res.path.length - 1}칸`;
+    if (c.textContent !== txt){ c.textContent = txt; bump(c); }
+  } else c.textContent = '–';
+}
+const both = (...ps) => Promise.all(ps);
+
+/* ---------- 오른쪽 카드 ---------- */
+const side = $('side');
+const card = (title, body, cls = '') => `<section class="card ${cls}"><h3 class="card-t">${title}</h3>${body}</section>`;
+const CARDS = {
+  legend: () => card('지도 읽는 법', `<ul class="legend">
+      <li><span class="swt s">S</span>출발점</li>
+      <li><span class="swt g">G</span>도착점</li>
+      <li><span class="swt wall"></span>벽 · 지나갈 수 없어요</li>
+      <li data-lg="v"><span class="swt v"></span>확인을 마친 칸</li>
+      <li data-lg="f"><span class="swt f"></span>다음에 확인할 후보 칸</li>
+    </ul>`),
+  question: () => card('오늘의 핵심 질문', `<p class="question" id="question">후보 칸이 여러 개일 때, 어느 칸부터 확인할까?</p>`),
+  dfsRule: () => card('DFS의 규칙', `<p class="rule">한 길로 끝까지 가 보고, 막히면 바로 전 갈림길로 되돌아간다.</p>
+      <div class="order" aria-label="갈림길에서 고르는 순서"><span><b>↑</b>1 위</span><span><b>→</b>2 오른쪽</span><span><b>↓</b>3 아래</span><span><b>←</b>4 왼쪽</span></div>
+      <ul class="legend" style="margin-top:12px"><li><span class="swt stack"></span>지금 걷고 있는 길</li><li><span class="swt dead"></span>되돌아 나온 막다른 길</li></ul>`),
+  bfsRule: () => card('BFS의 규칙', `<p class="rule">후보 칸은 줄을 선다. 먼저 줄 선 칸부터 확인한다.</p><p class="rule-sub">그래서 1걸음 칸을 모두 본 뒤에 2걸음 칸, 그다음 3걸음 칸… 가까운 단계부터 퍼져요. 칸의 숫자는 출발점에서 몇 걸음인지예요.</p>`),
+  terrain: () => card('지형과 비용', `<div class="cost-list">
+      <div class="cost-row"><span class="swt plain"></span>평지<span class="c">1</span></div>
+      <div class="cost-row"><span class="swt swamp">≈</span>늪<span class="c">5</span></div>
+      <div class="cost-row"><span class="swt wall"></span>벽<span class="c">×</span></div></div>
+      <p class="rule-sub">그 칸으로 한 걸음 들어갈 때 드는 비용이에요.</p>`),
+  dijRule: () => card('다익스트라의 규칙', `<p class="rule">후보 중에서 ${fmt('g(n)')}이 가장 작은 칸부터 확인한다.</p><p class="rule-sub">${fmt('g(n)')}: 출발점에서 칸 n까지 실제로 쓴 비용의 합. 칸의 숫자가 ${fmt('g(n)')}이에요.</p>`),
+  greedyRule: () => card('탐욕적 탐색의 규칙', `<p class="rule">후보 중에서 ${fmt('h(n)')}이 가장 작은 칸부터 확인한다.</p><p class="rule-sub">${fmt('h(n)')}: 칸 n에서 G까지 남은 거리의 어림값. 벽과 늪은 무시하고 가로 칸 수 + 세로 칸 수로 계산해요.</p>`),
+  formula: () => card('A*의 점수', `<div class="fx"><span data-p="f">${fmt('f(n)')}</span><span class="op">=</span><span data-p="g">${fmt('g(n)')}</span><span class="op">+</span><span data-p="h">${fmt('h(n)')}</span></div>
+      <div class="fx-cap"><span data-p="f"><b>f</b> 이 칸을 지나는 길의 전체 예상 비용</span><span data-p="g"><b>g</b> 출발점부터 지금까지 쓴 비용</span><span data-p="h"><b>h</b> G까지 남은 예상 비용</span></div>
+      <div class="bars"><div class="bar"><span class="bg" id="barG" style="width:0"></span><span class="bh" id="barH" style="width:0"></span></div>
+      <span class="bar-cap" id="barCap">방금 확인한 칸의 점수가 여기 나와요</span></div>`, 'formula'),
+  queue: (title) => card(title, `<ol class="q" id="q"></ol><p class="q-more" id="qMore"></p>`),
+  stats: (rows) => card('기록', `<dl class="stats">${rows.map(([k, label]) => `<dt>${label}</dt><dd id="st-${k}">0</dd>`).join('')}</dl>`),
+  race: () => card('결과', `<table class="race-t"><thead><tr><th>알고리즘</th><th style="text-align:right">확인</th><th style="text-align:right">비용</th><th></th></tr></thead><tbody>
+      ${ORDER.map(a => `<tr id="rr-${a}" style="--algo:var(--${ALGO[a].tok})"><td><span class="dot"></span>${ALGO[a].name}</td><td class="num" id="rv-${a}">0</td><td class="num" id="rc-${a}">–</td><td id="rb-${a}"></td></tr>`).join('')}
+      </tbody></table>`),
+};
+function setSide(list){
+  side.innerHTML = list.join('');
+  if (!RM) side.querySelectorAll('.card').forEach((c, k) => c.animate([{ opacity:0, transform:'translateY(14px)' }, { opacity:1, transform:'none' }], { duration:420, delay:120 + k * 90, easing:'cubic-bezier(.2,.8,.2,1)', fill:'backwards' }));
+}
+function resetStats(){ side.querySelectorAll('.stats dd').forEach(d => d.textContent = d.id === 'st-visited' || d.id === 'st-backs' ? '0' : '–'); }
+function setStat(k, v){ const el = $('st-' + k); if (el) el.textContent = v; }
+
+function qValue(algo, e){
+  if (algo === 'bfs') return `${e.d}걸음`;
+  if (algo === 'dij') return `g ${e.g}`;
+  if (algo === 'greedy') return `h ${e.h}`;
+  return `${e.g} + ${e.h} = ${e.g + e.h}`;
+}
+function renderQueue(r){
+  const el = $('q'); if (!el) return;
+  const algo = r.res.algo, list = sortOpen(algo, [...r.open.values()]), top = list.slice(0, 6);
+  const before = new Map();
+  if (!RM && !P.ff) el.querySelectorAll('li').forEach(li => before.set(li.dataset.k, li.getBoundingClientRect().top));
+  el.innerHTML = top.length ? top.map((e, k) => `<li data-k="${e.c}" class="${k === 0 ? 'is-next' : ''}"><span class="tag">${k === 0 ? '다음 차례' : (k + 1) + '번째'}</span>${qValue(algo, e)}${MAP_IN_USE.cells[e.c] === 2 ? '<span class="sw">늪</span>' : ''}</li>`).join('')
+    : `<li><span class="tag">비어 있음</span></li>`;
+  $('qMore').textContent = list.length > 6 ? `후보 ${list.length}개 중 앞의 6개` : `후보 ${list.length}개`;
+  if (RM || P.ff) return;
+  el.querySelectorAll('li').forEach(li => {
+    const b = before.get(li.dataset.k), a = li.getBoundingClientRect().top;
+    if (b === undefined) li.animate([{ opacity:0, transform:'translateX(-10px)' }, { opacity:1, transform:'none' }], { duration:240, easing:'ease-out' });
+    else if (Math.abs(b - a) > 1) li.animate([{ transform:`translateY(${b - a}px)` }, { transform:'none' }], { duration:260, easing:'cubic-bezier(.2,.8,.2,1)' });
+  });
+}
+function bestUI(r){
+  renderQueue(r); hud(r);
+  setStat('visited', r.visited);
+  if (r.done && r.res.path){ setStat('len', (r.res.path.length - 1) + '칸'); setStat('cost', r.res.cost); }
+  const bg = $('barG');
+  if (bg && r.last){
+    const max = 40;
+    bg.style.width = (r.last.g / max * 100) + '%';
+    $('barH').style.width = (r.last.h / max * 100) + '%';
+    $('barCap').textContent = `g ${r.last.g} + h ${r.last.h} = f ${r.last.g + r.last.h}`;
+  }
+}
+function walkUI(r){
+  hud(r);
+  setStat('visited', r.visited); setStat('backs', r.backs);
+  if (r.done && r.res.path) setStat('len', (r.res.path.length - 1) + '칸');
+}
+
+/* ---------- 무대 ---------- */
+const main = new Board($('mainCanvas'));
+main.speed = () => P.speed;
+let MAP_IN_USE = MAP_A;
+function useMap(m){ MAP_IN_USE = m; main.setMap(m); }
+
+const raceView = $('raceView'), singleView = $('singleView');
+const raceBoards = {};
+raceView.innerHTML = ORDER.map(a => `<figure style="--algo:var(--${ALGO[a].tok})"><figcaption><b>${ALGO[a].name}</b><span id="rs-${a}">확인 0</span></figcaption><div class="cbox"><canvas id="rc-cv-${a}"></canvas></div></figure>`).join('')
+  + `<div class="race-note"><div class="cost-row"><span class="swt plain"></span>평지 비용 1</div><div class="cost-row"><span class="swt swamp">≈</span>늪 비용 5</div><span>모두 같은 지도, 같은 출발점에서 동시에 출발해요.</span></div>`;
+for (const a of ORDER){
+  const b = new Board($('rc-cv-' + a)); b.algo = a; b.speed = () => P.speed; raceBoards[a] = b;
+}
+function showRace(on, key = 'B'){
+  raceView.hidden = !on; singleView.hidden = on;
+  if (on) for (const a of ORDER){ raceBoards[a].setMap(MAPS[key]); raceBoards[a].resize(); }
+}
+
+/* =========================================================
+   5. 장면 (대본) · 장마다 사례 2개
+   ========================================================= */
+const A_DFS = R.A.dfs, A_BFS = R.A.bfs;
+const firstBack = A_DFS.events.findIndex(e => e.t === 'back');
+const afterBacks = A_DFS.events.findIndex((e, k) => k > firstBack && e.t === 'move');
+const B = R.B, Cm = R.C, D = R.D, E = R.E;
+const at = (m, x, y) => y * m.W + x;
+const TUNNEL_END = at(MAP_E, 13, 5), TUNNEL_TURN = at(MAP_E, 13, 6);
+
+// 사례 2로 넘어가기: 제목 카드가 무대를 덮는 동안 지도를 바꾼다
+async function nextCase(label, map, prep){
+  const s = SCENES[P.scene];
+  await titleCard(`${s.num} · ${s.rail}`, '사례 2', label, () => {
+    setCase(2, label);
+    if (map) useMap(map);
+    hudReset(); resetStats();
+    main.labelMode = null; main.ghost = null; main.token = null;
+    prep && prep();
+  });
+}
+
+const SCENES = [
+  {
+    rail:'시작', num:'0장', title:'길찾기 문제', crit:'<b>칸을 확인하는 순서</b>가 전부예요', algo:'intro', cases:null,
+    setup(){ useMap(MAP_A); setSide([CARDS.legend(), CARDS.question()]); },
+    async run(){
+      const m = MAP_A;
+      await say('게임 캐릭터, 내비게이션, 배달 로봇은 모두 같은 문제를 풀어요. “여기서 저기까지 어떻게 가지?”');
+      main.callout(m.s, '출발점 S'); await wait(400); main.callout(m.g, '도착점 G');
+      await say('S에서 출발해서 G에 도착하는 길을 찾는 것이 목표예요.');
+      main.clearCallouts(); main.flash = { type:1, t:now() }; main.touch(1900);
+      await say('진한 칸은 벽이에요. 벽은 지나갈 수 없어요.');
+      main.set(m.s, 'v'); main.cur = m.s;
+      await say('사람은 지도를 한눈에 보지만, 컴퓨터는 한 번에 한 칸씩만 확인할 수 있어요.');
+      const ns = nbrs(m, m.s);
+      await both(say('한 칸에서는 위, 아래, 왼쪽, 오른쪽으로만 움직여요. 그래서 갈 수 있는 이웃 칸이 다음 후보가 돼요.'),
+        (async () => { for (const n of ns){ await wait(500); main.set(n, 'f'); } })());
+      side.querySelectorAll('[data-lg]').forEach(li => li.classList.add('hl'));
+      await say('확인을 마친 칸은 색으로 칠하고, 앞으로 확인할 후보 칸은 테두리로 표시할게요.');
+      side.querySelectorAll('[data-lg]').forEach(li => li.classList.remove('hl'));
+      ns.forEach(n => main.callout(n, '?')); $('question')?.classList.add('hl');
+      await say('후보가 여러 개일 때 어느 칸부터 확인해야 할까요? 이것이 오늘의 핵심 질문이에요.');
+      main.clearCallouts();
+      await say('그 순서를 정하는 규칙을 <b>탐색 알고리즘</b>이라고 불러요. 이제 규칙 다섯 가지를 차례로 만나 볼게요. 규칙마다 사례를 두 개씩 볼 거예요.');
+    }
+  },
+  {
+    rail:'DFS', num:'1장', title:'깊이 우선 탐색 (DFS)', crit:'탐색 기준 · <b>한 경로를 끝까지 탐색</b>', algo:'dfs', cases:['미로 탈출', '바로 옆집 가기'],
+    setup(){ useMap(MAP_A); setSide([CARDS.dfsRule(), CARDS.stats([['visited','확인한 칸'],['backs','되돌아간 횟수'],['len','찾은 길의 길이']])]); setStat('len','–'); },
+    async run(){
+      const ui = walkUI;
+      // 사례 1: 미로 탈출
+      const r = new Runner(main, A_DFS);
+      await say('첫 번째 규칙은 미로를 빠져나가는 방법과 비슷해요. 한 길을 정하면 막힐 때까지 계속 가 봐요.');
+      await say('갈림길에서는 늘 같은 순서로 골라요. 위, 오른쪽, 아래, 왼쪽 중에서 아직 안 가 본 쪽으로요.');
+      await both(say('출발! 진한 색이 지금 걷고 있는 길이에요.'), play(r, { until:firstBack, ms:230, ui }));
+      const dead = A_DFS.events[firstBack].from;
+      main.callout(dead, '막다른 길!'); shake();
+      await say('막다른 길이에요. 더 갈 곳이 없으면 한 칸 전으로 되돌아가요.');
+      await play(r, { until:afterBacks, ms:420, ui });
+      main.clearCallouts();
+      await say('안 가 본 길이 남은 갈림길까지 되돌아오면, 그쪽으로 다시 출발해요. 이것을 <b>백트래킹</b>(되돌아가기)이라고 해요.');
+      await both(say('“가 보고, 막히면 되돌아가기.” DFS는 이 규칙만 계속 반복해요.'), play(r, { ms:120, ui }));
+      main.token = null; main.callout(MAP_A.g, '도착!');
+      await drawPath(main, A_DFS.path);
+      await say(`도착했어요! DFS가 찾은 길은 ${A_DFS.path.length - 1}칸이에요. 그런데 이게 가장 짧은 길일까요?`);
+      main.clearCallouts(); main.ghost = A_BFS.path; main.touch();
+      await say(`점선이 가장 짧은 길이에요. 겨우 ${A_BFS.path.length - 1}칸이죠. DFS는 길을 찾아 주지만, 가장 짧은 길이라는 보장은 없어요.`);
+
+      // 사례 2: 바로 옆집 가기
+      await nextCase('바로 옆집 가기', MAP_C);
+      main.callout(MAP_C.g, '친구 집');
+      await say(`사례 2. 이번엔 탁 트인 동네예요. 친구 집 G는 S에서 겨우 ${Cm.bfs.path.length - 1}칸 떨어져 있어요.`);
+      main.clearCallouts();
+      const r2 = new Runner(main, Cm.dfs);
+      await both(say('DFS는 이번에도 같은 순서를 지켜요. 위쪽이 열려 있으니 일단 위로 올라가요.'), play(r2, { until:12, ms:260, ui }));
+      await both(say('친구 집이 바로 옆인데도, 규칙대로 동네를 크게 한 바퀴 돌아요.'), play(r2, { ms:70, ui }));
+      main.token = null;
+      await drawPath(main, Cm.dfs.path);
+      main.ghost = Cm.bfs.path; main.touch(); shake();
+      await say(`무려 ${Cm.dfs.path.length - 1}칸! 점선으로 표시한 가장 짧은 길은 단 ${Cm.bfs.path.length - 1}칸이에요.`);
+      await say('잃어버린 물건을 찾을 때 서랍 하나를 끝까지 다 뒤진 다음에야 옆 서랍으로 가는 것과 같아요. 물건이 바로 옆 서랍에 있어도요.');
+      await say('DFS에서 기억할 것은 두 가지예요. 탐색에는 정해진 순서가 있고, 막히면 되돌아간다는 것.');
+    }
+  },
+  {
+    rail:'BFS', num:'2장', title:'너비 우선 탐색 (BFS)', crit:'탐색 기준 · <b>가까운 단계부터 탐색</b>', algo:'bfs', cases:['미로 탈출, 다시', '바로 옆집 가기, 다시'],
+    setup(){ useMap(MAP_A); main.labelMode = 'd'; setSide([CARDS.bfsRule(), CARDS.queue('후보 줄 (먼저 선 칸부터)'), CARDS.stats([['visited','확인한 칸'],['len','찾은 길의 길이']])]); setStat('len','–'); renderQueue(new Runner(main, A_BFS)); },
+    async run(){
+      const ui = bestUI;
+      // 사례 1: DFS와 같은 미로
+      const r = new Runner(main, A_BFS);
+      await say('두 번째 규칙은 DFS와 정반대예요. 멀리 가기 전에, 가까운 칸부터 전부 확인해요.');
+      await both(say('출발점에서 1걸음 칸을 전부, 그다음 2걸음 칸을 전부 확인해요. 칸에 적힌 숫자가 걸음 수예요.'), play(r, { until:9, ms:560, ui }));
+      await both(say('후보 칸은 줄을 서요. 오른쪽 후보 줄에서 먼저 선 칸이 먼저 확인돼요. 점선 칸이 다음 차례예요.'), play(r, { until:22, ms:440, ui }));
+      await both(say('호수에 돌을 던지면 물결이 둥글게 퍼지죠? BFS도 그렇게 사방으로 퍼져 나가요.'), play(r, { ms:70, ui }));
+      main.cur = -1; main.callout(MAP_A.g, '도착!');
+      await say('물결이 G에 처음 닿는 순간, 그 길이 가장 적은 걸음으로 가는 길이에요.');
+      main.clearCallouts();
+      await both(say('각 칸은 자기가 어느 칸에서 왔는지 기억해요. 그래서 G에서 거꾸로 따라가면 길이 나와요.'), drawPath(main, A_BFS.path, { reverse:true, dur:2600 }));
+      await say(`BFS가 찾은 길은 ${A_BFS.path.length - 1}칸, 가장 짧은 길이에요. 대신 ${A_BFS.visited}칸이나 확인해야 했어요.`);
+
+      // 사례 2: DFS가 88칸을 돌아간 동네
+      await nextCase('바로 옆집 가기, 다시', MAP_C, () => { main.labelMode = 'd'; });
+      const r2 = new Runner(main, Cm.bfs); renderQueue(r2);
+      await say(`사례 2. DFS가 ${Cm.dfs.path.length - 1}칸을 돌아간 그 동네예요. 이번엔 BFS로 가 볼게요.`);
+      await both(say('물결이 S를 중심으로 마름모 모양으로 퍼져요. 1걸음, 2걸음, 3걸음…'), play(r2, { ms:420, ui }));
+      main.cur = -1;
+      await drawPath(main, Cm.bfs.path);
+      await say(`${Cm.bfs.path.length - 1}걸음 만에 도착! 확인한 칸도 ${Cm.bfs.visited}개뿐이에요. 목표가 가까우면 BFS는 금방 찾아요.`);
+      await say('SNS의 “알 수도 있는 친구”도 비슷해요. 내 친구(1촌)를 먼저 보고, 그다음에 친구의 친구(2촌)를 봐요.');
+      await say('그런데 BFS는 모든 칸을 똑같이 한 걸음으로 쳐요. 진짜 지도에는 빨리 지나는 길도, 느린 늪도 있는데 말이죠.');
+    }
+  },
+  {
+    rail:'다익스트라', num:'3장', title:'다익스트라 알고리즘', crit:'탐색 기준 · <b>출발점부터 누적 비용 g(n)</b>', algo:'dij', cases:['늪 돌아가기', '늪을 건널까, 돌아갈까?'],
+    setup(){ useMap(MAP_B); main.algo = 'bfs'; setSide([CARDS.terrain(), CARDS.dijRule(), CARDS.queue('후보 목록 (g가 작은 순)'), CARDS.stats([['visited','확인한 칸'],['len','찾은 길의 길이'],['cost','찾은 길의 비용']])]); setStat('len','–'); setStat('cost','–'); },
+    async run(){
+      const ui = bestUI;
+      // 사례 1: 늪 돌아가기
+      main.flash = { type:2, t:now() }; main.touch(1900);
+      await say('새 지도예요. 갈색 칸은 늪이에요. 평지는 한 칸 가는 데 비용 1, 늪은 비용 5가 들어요.');
+      const rb = new Runner(main, B.bfs);
+      await both(say('먼저 BFS로 가 볼까요?'), play(rb, { ms:8 }));
+      main.cur = -1; main.next = -1;
+      await drawPath(main, B.bfs.path, { dur:1400 });
+      main.callout(at(MAP_B, 9, 5), `비용 ${B.bfs.cost}`); shake();
+      await say(`BFS는 걸음 수가 가장 적은 길로 늪을 곧장 건너요. 걸음은 ${B.bfs.path.length - 1}번뿐이지만 비용은 ${B.bfs.cost}이나 들어요.`);
+      main.clear(); main.algo = 'dij'; main.labelMode = 'g';
+      const r = new Runner(main, B.dij); renderQueue(r);
+      await say('다익스트라 알고리즘은 칸마다 출발점부터 그 칸까지 실제로 쓴 비용을 적어 둬요. 이 값을 g(n)이라고 불러요.');
+      await both(say('그리고 후보 칸 중에서 g(n)이 가장 작은 칸을 먼저 확인해요. 오른쪽 후보 목록을 보세요.'), play(r, { until:12, ms:620, ui }));
+      await both(say('늪 칸에 들어가면 g(n)이 한 번에 5씩 커져요. 그래서 늪 칸은 후보 목록 뒤로 밀려나요.'), play(r, { until:48, ms:200, ui }));
+      await both(say('다익스트라는 G가 어디 있는지 몰라요. 그래서 비용이 같은 곳까지 사방으로 고르게 퍼져요.'), play(r, { ms:38, ui }));
+      main.cur = -1; main.labelMode = null; main.callout(MAP_B.g, '도착!');
+      await drawPath(main, B.dij.path);
+      await say(`늪을 빙 돌아가는 길을 찾았어요. 비용 ${B.dij.cost}, 이 지도에서 가장 싼 길이에요!`);
+      main.clearCallouts();
+
+      // 사례 2: 늪이 강처럼 가로막은 지도
+      await nextCase('늪을 건널까, 돌아갈까?', MAP_D);
+      main.flash = { type:2, t:now() }; main.touch(1900);
+      await say('사례 2. 이번엔 늪이 강처럼 지도를 위아래로 가로막고 있어요. 늪이 없는 곳은 맨 아래 한 줄뿐이에요.');
+      main.ghost = D_DETOUR.path; main.touch();
+      main.callout(D_DETOUR.path[Math.floor(D_DETOUR.path.length / 2)], `돌아가면 비용 ${D_DETOUR.cost}`);
+      await say(`늪을 피해서 아래로 빙 돌아가면 비용이 ${D_DETOUR.cost}이에요. 이 길이 정답일까요?`);
+      main.clearCallouts(); main.ghost = null; main.labelMode = 'g';
+      const r2 = new Runner(main, D.dij); renderQueue(r2);
+      await both(say('다익스트라는 이번에도 g(n)이 가장 작은 칸부터 확인해요.'), play(r2, { until:40, ms:150, ui }));
+      await both(say('늪 칸은 비싸지만, 그래도 돌아가는 길보다 싸다면 다익스트라는 늪을 건너요.'), play(r2, { ms:30, ui }));
+      main.cur = -1; main.labelMode = null;
+      await drawPath(main, D.dij.path);
+      main.ghost = D_DETOUR.path; main.touch();
+      main.callout(D.dij.path.find(c => MAP_D.cells[c] === 2), '늪 2칸');
+      await say(`늪 두 칸을 건너는 길, 비용 ${D.dij.cost}! 점선으로 돌아가는 길(${D_DETOUR.cost})보다 ${D_DETOUR.cost - D.dij.cost}만큼 싸요.`);
+      main.clearCallouts();
+      await say('다익스트라는 늪을 무조건 피하지 않아요. 전체 비용을 비교해서 가장 싼 길을 골라요. 지하철 길찾기가 역 개수가 아니라 걸리는 시간의 합으로 길을 고르는 것과 같아요.');
+      await say(`하지만 이번에도 ${D.dij.visited}칸이나 확인했어요. G와 반대쪽까지 다 살펴본 거죠. 목표 방향을 안다면 더 빨리 찾을 수 있지 않을까요?`);
+    }
+  },
+  {
+    rail:'탐욕적 탐색', num:'4장', title:'탐욕적 최선 우선 탐색', crit:'탐색 기준 · <b>목표까지 추정 비용 h(n)</b>', algo:'greedy', cases:['늪 지도', '지름길처럼 보이는 터널'],
+    setup(){ useMap(MAP_B); setSide([CARDS.greedyRule(), CARDS.queue('후보 목록 (h가 작은 순)'), CARDS.stats([['visited','확인한 칸'],['len','찾은 길의 길이'],['cost','찾은 길의 비용']])]); setStat('len','–'); setStat('cost','–'); },
+    async run(){
+      const ui = bestUI;
+      // 사례 1: 늪 지도
+      await say('이번엔 정반대 전략이에요. 지금까지 쓴 비용은 신경 쓰지 않고, 목표까지 얼마나 남았는지만 봐요.');
+      main.heatOn = true; main.touch();
+      await say('남은 거리는 벽과 늪을 무시하고 “가로 칸 수 + 세로 칸 수”로 어림해요. 이 어림값을 h(n)이라고 해요. G에 가까울수록 색이 진해요.');
+      const demoCell = at(MAP_B, 5, 2);
+      main.demo = { c:demoCell, t:now() }; main.touch(1000);
+      await say(`예를 들어 이 칸은 G에서 가로 ${Math.abs(demoCell % 19 - MAP_B.g % 19)}칸, 세로 ${Math.abs(((demoCell / 19) | 0) - ((MAP_B.g / 19) | 0))}칸 떨어져 있으니 h(n) = ${manhattan(MAP_B, demoCell, MAP_B.g)}이에요.`);
+      await say('이렇게 “대충 이 정도 남았겠지” 하고 짐작하는 값을 <b>휴리스틱</b>이라고 해요. 정확하진 않지만 계산이 아주 빨라요.');
+      main.demo = null; main.heatOn = false; main.labelMode = 'h'; main.touch();
+      const r = new Runner(main, B.greedy); renderQueue(r);
+      await both(say('후보 칸 중 h(n)이 가장 작은 칸, 즉 G에 가장 가까워 보이는 칸을 먼저 확인해요.'), play(r, { until:5, ms:700, ui }));
+      await both(say('G를 향해 곧장 달려가요!'), play(r, { ms:280, ui }));
+      main.cur = -1;
+      await drawPath(main, B.greedy.path);
+      await say(`엄청 빨라요! 확인한 칸이 겨우 ${B.greedy.visited}개예요. 다익스트라는 ${B.dij.visited}개였죠.`);
+      main.callout(B.greedy.path[Math.floor(B.greedy.path.length / 2)], '늪 한가운데!'); shake();
+      await say(`그런데 늪을 그대로 건넜어요. 비용이 ${B.greedy.cost}이에요. 다익스트라가 찾은 ${B.dij.cost}보다 훨씬 비싸요.`);
+      main.clearCallouts();
+
+      // 사례 2: 지름길처럼 보이는 터널
+      await nextCase('지름길처럼 보이는 터널', MAP_E, () => { main.labelMode = 'h'; });
+      main.callout(TUNNEL_END, '막혀 있음');
+      await say('사례 2. S 앞에 G 쪽으로 곧게 뻗은 터널이 있어요. 그런데 터널 끝은 G 바로 앞에서 벽에 막혀 있어요.');
+      main.clearCallouts();
+      await say('위쪽으로 돌아가는 넓은 길도 있어요. 탐욕적 탐색은 어느 쪽을 고를까요?');
+      const r2 = new Runner(main, E.greedy); renderQueue(r2);
+      await both(say('h(n)이 작아지는 쪽, 터널로 쏙 들어가요!'), play(r2, { until:13, ms:330, ui }));
+      shake(); main.callout(TUNNEL_TURN, '아래로 꺾여요');
+      await both(say('터널이 아래로 꺾여도 G와 여전히 가까워 보이니까, 계속 따라가요.'), play(r2, { ms:330, ui }));
+      main.clearCallouts(); main.cur = -1;
+      await drawPath(main, E.greedy.path);
+      main.ghost = E.astar.path; main.touch();
+      await say(`길 비용 ${E.greedy.cost}. 점선으로 표시한 위쪽 길은 비용 ${E.astar.cost}이에요. 가까워 보이는 길이 꼭 가까운 길은 아니에요.`);
+      await say('산에서 길을 잃었을 때 마을이 보이는 쪽으로만 걷다가 절벽을 만나는 것과 같아요.');
+      await say('어림값만 믿고 서두르면 빠르지만, 가장 좋은 길을 놓칠 수 있어요. 이것이 휴리스틱의 한계예요.');
+    }
+  },
+  {
+    rail:'A*', num:'5장', title:'A* 탐색', crit:'탐색 기준 · <b>f(n) = g(n) + h(n)</b>', algo:'astar', cases:['늪 지도', '같은 터널 앞에서'],
+    setup(){ useMap(MAP_B); setSide([CARDS.formula(), CARDS.queue('후보 목록 (f가 작은 순)'), CARDS.stats([['visited','확인한 칸'],['len','찾은 길의 길이'],['cost','찾은 길의 비용']])]); setStat('len','–'); setStat('cost','–'); },
+    async run(){
+      const ui = bestUI;
+      const fc = side.querySelector('.formula');
+      const focus = p => { fc.classList.toggle('focus', !!p); fc.querySelectorAll('[data-p]').forEach(el => el.classList.toggle('on', p ? p.includes(el.dataset.p) : false)); };
+      // 사례 1: 늪 지도
+      await say('다익스트라는 정확하지만 느리고, 탐욕적 탐색은 빠르지만 실수를 해요. 둘의 장점을 합치면 어떨까요?');
+      focus('g');
+      await say('g(n)은 출발점부터 지금까지 실제로 쓴 비용이에요. 다익스트라가 보던 값이죠.');
+      focus('h');
+      await say('h(n)은 여기서 G까지 남은 예상 비용이에요. 탐욕적 탐색이 보던 값이죠.');
+      focus('fgh');
+      await say('A*는 둘을 더해요. f(n) = g(n) + h(n). 이 칸을 지나서 G까지 가는 길 전체의 예상 비용이에요.');
+      focus(null);
+      await say('내비게이션으로 치면 “지금까지 달린 거리 + 앞으로 남은 거리 예상”이에요.');
+      main.labelMode = 'f';
+      const r = new Runner(main, B.astar); renderQueue(r);
+      await both(say('후보 칸 중 f(n)이 가장 작은 칸을 먼저 확인해요. 칸 가운데 큰 숫자가 f, 아래 작은 숫자가 g와 h예요.'), play(r, { until:9, ms:680, ui }));
+      await both(say('늪에 발을 들이면 g(n)이 확 커지고, 그래서 f(n)도 커져요. A*는 늪을 뒤로 미루고 다른 길을 살펴봐요.'), play(r, { until:32, ms:300, ui }));
+      await both(say('G 쪽을 바라보면서도, 늪을 피해 돌아가는 길을 찾아가요.'), play(r, { ms:120, ui }));
+      main.cur = -1; main.callout(MAP_B.g, '도착!');
+      await drawPath(main, B.astar.path);
+      await say(`비용 ${B.astar.cost}! 다익스트라와 똑같이 가장 싼 길을 찾았어요.`);
+      main.clearCallouts();
+      await say(`그런데 확인한 칸은 ${B.astar.visited}개뿐이에요. 다익스트라의 ${B.dij.visited}개보다 훨씬 적죠. 정확함과 빠름을 함께 잡았어요.`);
+
+      // 사례 2: 탐욕적 탐색이 속았던 터널
+      await nextCase('같은 터널 앞에서', MAP_E, () => { main.labelMode = 'f'; });
+      const r2 = new Runner(main, E.astar); renderQueue(r2);
+      await say('사례 2. 탐욕적 탐색이 속았던 그 터널 지도예요. A*는 어떻게 할까요?');
+      await both(say(`A*도 처음엔 터널로 들어가요. 터널 안에서는 f(n)이 ${manhattan(MAP_E, MAP_E.s, MAP_E.g)}로 가장 작거든요.`), play(r2, { until:13, ms:420, ui }));
+      main.callout(TUNNEL_TURN, 'f가 커져요');
+      await both(say('아래로 꺾이는 순간 g(n)이 계속 쌓여서 f(n)이 17, 19로 커져요. 그러자 A*는 위쪽 길로 갈아타요.'), play(r2, { until:19, ms:650, ui }));
+      main.clearCallouts();
+      await both(say('위쪽 길의 f(n)이 더 작으니 그쪽을 따라가요.'), play(r2, { ms:170, ui }));
+      main.cur = -1;
+      await drawPath(main, E.astar.path);
+      await say(`비용 ${E.astar.cost}, 가장 싼 길이에요! 확인한 칸은 ${E.astar.visited}개예요. 같은 지도에서 다익스트라는 ${E.dij.visited}개를 확인해야 했어요.`);
+      await say('A*는 가까워 보이는 길에 끌려가더라도, 실제로 쓴 비용 g(n)을 함께 보기 때문에 잘못된 길에서 금방 빠져나와요.');
+      await say('조건이 하나 있어요. h(n)이 실제로 남은 비용보다 크게 어림하면 안 돼요. 이 조건만 지키면 A*는 항상 가장 싼 길을 찾아요.');
+    }
+  },
+  {
+    rail:'비교', num:'6장', title:'다섯 규칙 한판 비교', crit:'<b>같은 지도, 다른 기준</b>', algo:'astar', cases:['늪 지도', '터널 지도'],
+    setup(){ MAP_IN_USE = MAP_B; showRace(true, 'B'); setSide([CARDS.race()]); hudReset(false); },
+    async run(){
+      await say('같은 늪 지도에서 다섯 가지 규칙을 동시에 출발시켜 볼게요. 누가 가장 적게 확인하고, 누가 가장 싼 길을 찾을까요?');
+      await both(say('출발!'), raceRound('B'));
+      hl(['dfs', 'bfs']);
+      await say(`DFS는 길을 찾았지만 멀리 돌아갔어요(비용 ${B.dfs.cost}). BFS는 걸음 수만 세서 늪을 곧장 건넜고요(비용 ${B.bfs.cost}).`);
+      hl(['greedy']);
+      await say(`탐욕적 탐색은 ${B.greedy.visited}칸만 보고 가장 먼저 끝났지만, 비싼 길(비용 ${B.greedy.cost})을 골랐어요.`);
+      hl(['dij', 'astar']);
+      await say(`다익스트라와 A*는 둘 다 가장 싼 길(비용 ${B.dij.cost})을 찾았어요. 하지만 A*가 확인한 칸은 ${B.astar.visited}개로, 다익스트라의 ${B.dij.visited}개보다 훨씬 적어요.`);
+      hl([]);
+
+      await titleCard('6장 · 비교', '사례 2', '터널 지도에서 한 번 더', () => { setCase(2, '터널 지도'); showRace(true, 'E'); raceReset('E'); });
+      await both(say('이번엔 터널 지도예요. 다시 동시에 출발!'), raceRound('E'));
+      hl(['greedy']);
+      await say(`탐욕적 탐색은 이번에도 가장 먼저 끝났지만, 터널에 속아서 비용 ${E.greedy.cost}인 길을 골랐어요.`);
+      hl(['dij', 'astar']);
+      await say(`다익스트라와 A*는 둘 다 비용 ${E.astar.cost}! 하지만 다익스트라는 ${E.dij.visited}칸, A*는 ${E.astar.visited}칸을 확인했어요.`);
+      hl([]);
+      await say('다섯 알고리즘의 차이는 딱 하나, “다음에 확인할 칸을 고르는 기준”이에요. 기준 하나가 결과를 이렇게 바꿔요.');
+      await say('이제 여러분 차례예요. 벽과 늪을 직접 그려서, 나만의 지도로 다섯 규칙을 실험해 보세요.');
+    }
+  },
+];
+SCENES.forEach(s => { s.lines = (s.run.toString().match(/\bsay\(/g) || []).length; });
+
+/* ---------- 비교 레이스 ---------- */
+const MAP_NAME = { B:'늪 지도', E:'터널 지도' };
+function hl(list){ ORDER.forEach(a => $('rr-' + a)?.classList.toggle('hl', list.includes(a))); }
+function raceReset(key){
+  const t = side.querySelector('.card-t'); if (t) t.textContent = `결과 · ${MAP_NAME[key]}`;
+  ORDER.forEach(a => { $('rv-' + a).textContent = '0'; $('rc-' + a).textContent = '–'; $('rb-' + a).innerHTML = ''; $('rs-' + a).textContent = '확인 0'; });
+  hl([]);
+}
+async function raceRound(key){
+  const RES = R[key];
+  raceReset(key);
+  const rs = ORDER.map(a => new Runner(raceBoards[a], RES[a]));
+  rs.forEach(r => { r.b.clear(); r.b.live = true; });
+  const ui = () => rs.forEach(r => {
+    const a = r.res.algo;
+    $('rs-' + a).textContent = r.done ? `확인 ${r.visited} · 비용 ${r.res.cost}` : `확인 ${r.visited}`;
+    $('rv-' + a).textContent = r.visited;
+    if (r.done) $('rc-' + a).textContent = r.res.cost;
+  });
+  const finish = r => {
+    const b = r.b; b.cur = -1; b.next = -1; b.token = null;
+    if (!b.path){ b.showPath(r.res.path); b.burst(r.res.path[r.res.path.length - 1]); }
+  };
+  const tok = P.tok;
+  while (rs.some(r => !r.done)){
+    for (const r of rs) if (!r.done){ r.step(); if (r.done) finish(r); }
+    if (P.ff) continue;
+    ui(); await wait(70);
+  }
+  check(tok);
+  rs.forEach(r => { finish(r); r.b.live = false; });
+  ui();
+  const minCost = Math.min(...ORDER.map(a => RES[a].cost));
+  const best = ORDER.filter(a => RES[a].cost === minCost).sort((a, b) => RES[a].visited - RES[b].visited)[0];
+  ORDER.forEach(a => { if (RES[a].cost === minCost) $('rb-' + a).innerHTML = a === best ? '<span class="badge best">가장 싼 길 · 효율 1등</span>' : '<span class="badge">가장 싼 길</span>'; });
+}
+
+/* ---------- 레일, 버튼 ---------- */
+const rail = $('rail');
+rail.innerHTML = SCENES.map((s, i) => `<button type="button" data-i="${i}" style="--algo:var(--${ALGO[s.algo].tok})"><span class="n">${i}</span>${s.rail}</button>`).join('');
+rail.addEventListener('click', e => { const b = e.target.closest('button'); if (b) startScene(+b.dataset.i); });
+
+function renderDots(){
+  const s = SCENES[P.scene];
+  $('dots').innerHTML = Array.from({ length:s.lines }, (_, k) => `<i class="${k < P.line ? 'on' : ''}"></i>`).join('');
+  // 수업 전체 진행률: 끝낸 장 + 이번 장에서 지나온 설명
+  const part = P.ended ? 1 : (P.started ? Math.min(1, P.line / Math.max(1, s.lines)) : 0);
+  $('progBar').style.width = ((P.scene + part) / SCENES.length * 100) + '%';
+}
+const playBtn = $('playBtn');
+function renderPlay(){
+  const playing = P.started && !P.paused && !P.ended;
+  playBtn.innerHTML = playing
+    ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor"/></svg>일시정지'
+    : P.ended && P.scene < SCENES.length - 1
+      ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>다음 장'
+      : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>재생';
+  $('pausedBadge').hidden = !(P.started && P.paused && !P.ended);
+}
+
+function setupScene(i){
+  const s = SCENES[i];
+  P.scene = i;
+  const color = `var(--${ALGO[s.algo].tok})`;
+  document.querySelector('.player').style.setProperty('--algo', color);
+  rail.querySelectorAll('button').forEach((b, k) => {
+    if (k === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  $('chNum').textContent = s.num;
+  $('chTitle').textContent = s.title;
+  $('chCrit').innerHTML = fmt(s.crit);
+  $('nextPill').hidden = true;
+  $('endCard').hidden = true;
+  hideTitleCard();
+  showRace(false);
+  hudReset(true);
+  if (s.cases) setCase(1, s.cases[0]);
+  else $('caseChip').innerHTML = '<span class="k">도입</span>길찾기란?';
+  main.algo = s.algo; main.labelMode = null; main.live = false;
+  s.setup();
+  P.line = 0; renderDots();
+  if (!RM) $('chTitle').animate([{ opacity:0, transform:'translateX(-16px)' }, { opacity:1, transform:'none' }], { duration:480, easing:'cubic-bezier(.2,.8,.2,1)' });
+}
+
+async function startScene(i){
+  cancelAuto();
+  P.tok++; P.ff = false; P.started = true; P.paused = false; P.ended = false;
+  $('startOverlay').hidden = true;
+  setupScene(i);
+  renderPlay();
+  const tok = P.tok, s = SCENES[i];
+  main.live = true;
+  try {
+    await titleCard(s.num, s.title, s.cases ? `사례 1 · ${s.cases[0]}` : '컴퓨터는 길을 어떻게 찾을까?');
+    await s.run();
+    check(tok);
+    rail.children[i].classList.add('seen');
+    P.ended = true; main.live = false;
+    renderDots();
+    showNextPill(i);
+    renderPlay();
+  } catch (e){ if (!(e instanceof Cancel)) console.error(e); }
+}
+/* 장이 끝나면 6초 뒤 다음 장으로 자동 진행 (버튼 안의 막대가 차오름) */
+const AUTO_MS = 6000;
+let autoTimer = null;
+function cancelAuto(){
+  clearTimeout(autoTimer); autoTimer = null;
+  $('nextPill').querySelectorAll('.fill').forEach(f => f.getAnimations().forEach(a => a.cancel()));
+  $('nextPill').querySelector('[data-act="stay"]')?.remove();
+}
+function showNextPill(i){
+  if (i === SCENES.length - 1) return showEndCard();
+  const pill = $('nextPill');
+  pill.innerHTML = (RM ? '' : `<button class="btn" type="button" data-act="stay">여기서 멈춤</button>`)
+    + `<button class="btn" type="button" data-act="again">이 장 다시</button>`
+    + `<button class="btn primary next-go" type="button" data-act="next"><span class="fill"></span><span class="lbl">다음 장 · ${SCENES[i + 1].rail} ▶</span></button>`;
+  pill.hidden = false;
+  if (!RM) pill.animate([{ opacity:0, transform:'translateY(10px)' }, { opacity:1, transform:'none' }], { duration:320, easing:'cubic-bezier(.2,.8,.2,1)' });
+  if (RM) return;
+  pill.querySelector('.fill').animate([{ width:'0%' }, { width:'100%' }], { duration:AUTO_MS, easing:'linear', fill:'forwards' });
+  autoTimer = setTimeout(() => { if (P.scene === i && P.ended && !$('lessonView').hidden) startScene(i + 1); }, AUTO_MS);
+}
+$('nextPill').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.act === 'stay') return cancelAuto();
+  startScene(b.dataset.act === 'next' ? P.scene + 1 : P.scene);
+});
+
+/* 마지막 장이 끝나면: 실습 화면으로 가는 문이 열린다 */
+function showEndCard(){
+  const el = $('endCard');
+  el.hidden = false;
+  $('toLabBtn').hidden = false;
+  if (RM) return;
+  el.animate([{ opacity:0 }, { opacity:1 }], { duration:400, easing:'ease-out' });
+  el.querySelectorAll('.start-card > *').forEach((c, k) => c.animate(
+    [{ opacity:0, transform:'translateY(18px)' }, { opacity:1, transform:'none' }],
+    { duration:520, delay:150 + k * 110, easing:'cubic-bezier(.2,.8,.2,1)', fill:'backwards' }));
+}
+$('endCard').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.act === 'lab') openLab();
+  else startScene(b.dataset.act === 'first' ? 0 : P.scene);
+});
+function swapView(show, hide){
+  hide.hidden = true; show.hidden = false;
+  window.scrollTo(0, 0);
+  if (!RM) show.animate([{ opacity:0, transform:'translateY(16px)' }, { opacity:1, transform:'none' }], { duration:420, easing:'cubic-bezier(.2,.8,.2,1)' });
+}
+function openLab(){
+  cancelAuto();
+  if (P.started && !P.ended){ P.paused = true; renderPlay(); }
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  swapView($('lab'), $('lessonView'));
+  labBoard.resize(); labBoard.mapT0 = RM ? -1e9 : now(); labBoard.touch(1100);
+  $('labTitle').focus({ preventScroll:true });
+}
+function closeLab(){
+  labStop();
+  swapView($('lessonView'), $('lab'));
+  $('player').scrollIntoView({ block:'start' });
+}
+$('toLabBtn').addEventListener('click', openLab);
+
+/* 한눈에 정리: 부드럽게 접었다 펴기 */
+(() => {
+  const box = $('sumBox'), body = box.querySelector('.sum-body');
+  box.open = false;   // 새로 열 때는 항상 접힌 상태로 시작
+  let busy = false;
+  box.querySelector('summary').addEventListener('click', e => {
+    if (RM) return;
+    e.preventDefault();
+    if (busy) return;
+    busy = true;
+    if (box.open){
+      const h = body.offsetHeight;
+      body.animate([{ height:h + 'px', opacity:1 }, { height:'0px', opacity:0 }], { duration:280, easing:'cubic-bezier(.4,0,1,1)' })
+        .onfinish = () => { box.open = false; busy = false; };
+    } else {
+      box.open = true;
+      const h = body.offsetHeight;
+      body.animate([{ height:'0px', opacity:0 }, { height:h + 'px', opacity:1 }], { duration:360, easing:'cubic-bezier(.2,.8,.2,1)' })
+        .onfinish = () => { busy = false; };
+      body.querySelectorAll('tbody tr').forEach((tr, k) => tr.animate([{ opacity:0, transform:'translateX(-12px)' }, { opacity:1, transform:'none' }], { duration:360, delay:120 + k * 70, easing:'cubic-bezier(.2,.8,.2,1)', fill:'backwards' }));
+    }
+  });
+})();
+$('backBtn').addEventListener('click', closeLab);
+$('startBtn').addEventListener('click', () => startScene(0));
+playBtn.addEventListener('click', togglePlay);
+function togglePlay(){
+  if (!P.started) return startScene(0);
+  if (P.ended) return startScene(P.scene < SCENES.length - 1 ? P.scene + 1 : 0);
+  P.paused = !P.paused; renderPlay();
+}
+function skip(){
+  if (!P.started) return startScene(0);
+  if (P.ended) return;
+  P.ff = true;
+}
+$('skipBtn').addEventListener('click', skip);
+$('restartBtn').addEventListener('click', () => startScene(P.scene));
+$('speedSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  P.speed = +b.dataset.s;
+  $('speedSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+$('fullBtn').addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await $('player').requestFullscreen();
+  } catch (_) { /* 전체 화면을 지원하지 않는 환경 */ }
+});
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (['input', 'select', 'textarea', 'button', 'a'].includes(tag) || $('lessonView').hidden) return;
+  if (e.key === ' '){ e.preventDefault(); togglePlay(); }
+  else if (e.key === 'ArrowRight'){ e.preventDefault(); skip(); }
+});
+
+/* =========================================================
+   6. 정리표
+   ========================================================= */
+const SUM = [
+  ['dfs',   '한 경로를 끝까지 탐색', '보장 안 함', '탐색 순서와 되돌아가기'],
+  ['bfs',   '가까운 단계부터 탐색', '걸음 수만 최소', '최단 경로의 기본 원리'],
+  ['dij',   '출발점부터 누적 비용 g(n)', '보장', '실제 이동 비용'],
+  ['greedy','목표까지 추정 비용 h(n)', '보장 안 함', '휴리스틱의 활용과 한계'],
+  ['astar', 'f(n) = g(n) + h(n)', '보장 (h가 과대 추정하지 않을 때)', '실제 비용과 추정 비용의 결합'],
+];
+$('sumBody').innerHTML = SUM.map(([a, crit, ok, mean]) => `<tr class="${a}" style="--algo:var(--${ALGO[a].tok})">
+  <td class="alg"><span class="dot"></span>${ALGO[a].full}${a === 'dfs' || a === 'bfs' ? ` (${ALGO[a].name})` : ''}</td>
+  <td>${fmt(crit)}</td>
+  <td class="${ok.startsWith('보장 (') || ok === '보장' ? 'yes' : 'no'}">${ok}</td>
+  <td class="num">${B[a].visited} · ${E[a].visited}</td><td class="num">${B[a].cost} · ${E[a].cost}</td>
+  <td>${mean}</td></tr>`).join('');
+
+/* =========================================================
+   7. 직접 해보기
+   ========================================================= */
+const lab = { map: cloneMap(MAP_B), tool:'wall', algo:'astar', tok:0, ver:1, mapDirty:false, log:[] };
+const labBoard = new Board($('labCanvas'));
+labBoard.setMap(lab.map, false); labBoard.algo = 'astar';
+const SPEEDS = [320, 220, 150, 100, 70, 45, 28, 16, 8, 3];
+
+$('algoPick').innerHTML = ORDER.map(a => `<button type="button" data-algo="${a}" aria-pressed="${a === lab.algo}" style="--algo:var(--${ALGO[a].tok})"><span class="dot"></span>${ALGO[a].name}</button>`).join('');
+$('algoPick').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  lab.algo = b.dataset.algo;
+  $('algoPick').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+$('toolPick').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  lab.tool = b.dataset.tool;
+  $('toolPick').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+
+function labStop(){ lab.tok++; labBoard.live = false; }
+function labCellAt(e){
+  const r = labBoard.cv.getBoundingClientRect(), m = lab.map;
+  const x = Math.floor((e.clientX - r.left) / r.width * m.W), y = Math.floor((e.clientY - r.top) / r.height * m.H);
+  return (x < 0 || y < 0 || x >= m.W || y >= m.H) ? -1 : y * m.W + x;
+}
+let painting = false, paintVal = 1;
+function labApply(c){
+  const m = lab.map; if (c < 0) return;
+  let changed = false;
+  if (lab.tool === 'start' || lab.tool === 'goal'){
+    if (c === m.s || c === m.g) return;
+    if (lab.tool === 'start') m.s = c; else m.g = c;
+    if (m.cells[c] === 1) m.cells[c] = 0;
+    changed = true;
+  } else {
+    if (c === m.s || c === m.g) return;
+    if (m.cells[c] !== paintVal){ m.cells[c] = paintVal; changed = true; }
+  }
+  if (changed){
+    lab.mapDirty = true; labStop(); labBoard.clear();
+    $('labStat').textContent = '지도를 바꿨어요. 실행을 눌러 보세요.';
+  }
+}
+labBoard.cv.addEventListener('pointerdown', e => {
+  const c = labCellAt(e); if (c < 0) return;
+  e.preventDefault();
+  const target = { wall:1, swamp:2, erase:0 }[lab.tool];
+  paintVal = target === undefined ? 0 : (lab.map.cells[c] === target && target !== 0 ? 0 : target);
+  painting = true; labBoard.cv.setPointerCapture(e.pointerId);
+  labApply(c);
+});
+labBoard.cv.addEventListener('pointermove', e => { if (painting) labApply(labCellAt(e)); });
+const endPaint = () => { painting = false; };
+labBoard.cv.addEventListener('pointerup', endPaint);
+labBoard.cv.addEventListener('pointercancel', endPaint);
+
+function labLog(res, algo){
+  if (lab.mapDirty){ lab.ver++; lab.mapDirty = false; }
+  lab.log.unshift({ ver:lab.ver, algo, visited:res.visited, len:res.path ? res.path.length - 1 : null, cost:res.cost });
+  lab.log = lab.log.slice(0, 15);
+  renderLog();
+}
+function renderLog(){
+  const body = $('logBody');
+  if (!lab.log.length){ body.innerHTML = '<tr class="empty"><td colspan="6">아직 기록이 없어요. 실행하면 여기에 쌓여요.</td></tr>'; return; }
+  const best = {};
+  for (const r of lab.log){
+    if (r.cost == null) continue;
+    const b = best[r.ver];
+    if (!b || r.cost < b.cost || (r.cost === b.cost && r.visited < b.visited)) best[r.ver] = r;
+  }
+  body.innerHTML = lab.log.map(r => `<tr style="--algo:var(--${ALGO[r.algo].tok})"><td>지도 ${r.ver}</td><td><span class="dot"></span>${ALGO[r.algo].name}</td>
+    <td class="num">${r.visited}</td><td class="num">${r.len ?? '–'}</td><td class="num">${r.cost ?? '–'}</td>
+    <td>${r.cost == null ? '<span class="badge">길 없음</span>' : best[r.ver] === r ? '<span class="badge best">이 지도 최고</span>' : ''}</td></tr>`).join('');
+}
+async function labRun(){
+  labStop();
+  const tok = lab.tok, algo = lab.algo, res = runAlgo(lab.map, algo);
+  labBoard.clear(); labBoard.algo = algo; labBoard.labelMode = ALGO[algo].label; labBoard.live = true;
+  const r = new Runner(labBoard, res), stat = $('labStat');
+  while (!r.done){
+    const ms = SPEEDS[+$('labSpeed').value - 1];
+    const per = ms < 16 ? Math.ceil(16 / ms) : 1;
+    for (let k = 0; k < per && !r.done; k++) r.step();
+    stat.innerHTML = `${ALGO[algo].name} 탐색 중 · 확인한 칸 <span class="num">${r.visited}</span>`;
+    await new Promise(res => setTimeout(res, Math.max(ms, 16)));
+    if (tok !== lab.tok) return;
+  }
+  labBoard.live = false; labBoard.cur = -1; labBoard.next = -1; labBoard.token = null;
+  if (res.path){
+    labBoard.showPath(res.path);
+    stat.innerHTML = `${ALGO[algo].name} · 확인한 칸 <span class="num">${res.visited}</span> · 길이 <span class="num">${res.path.length - 1}</span>칸 · 비용 <span class="num">${res.cost}</span>`;
+  } else {
+    labBoard.callout(lab.map.s, '갈 수 있는 길이 없어요');
+    stat.innerHTML = `${ALGO[algo].name} · 확인한 칸 <span class="num">${res.visited}</span> · 벽에 막혀서 G까지 가는 길이 없어요.`;
+  }
+  labLog(res, algo);
+}
+$('labRun').addEventListener('click', labRun);
+$('labAll').addEventListener('click', () => {
+  labStop();
+  for (const a of ORDER) labLog(runAlgo(lab.map, a), a);
+  const res = runAlgo(lab.map, lab.algo);
+  labBoard.clear(); labBoard.algo = lab.algo; labBoard.labelMode = ALGO[lab.algo].label;
+  new Runner(labBoard, res).finish();
+  labBoard.cur = -1; labBoard.next = -1; labBoard.token = null;
+  if (res.path) labBoard.showPath(res.path);
+  $('labStat').textContent = `다섯 알고리즘의 결과를 기록표에 넣었어요. 지도에는 ${ALGO[lab.algo].name}의 결과를 보여 줘요.`;
+});
+$('labClear').addEventListener('click', () => { labStop(); labBoard.clear(); $('labStat').textContent = '결과를 지웠어요. 지도는 그대로예요.'; });
+$('mapPick').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  labStop();
+  const key = b.dataset.map;
+  const m = cloneMap(key === 'empty' ? MAP_B : MAPS[key]);
+  if (key === 'empty') m.cells.fill(0);
+  lab.map = m; lab.mapDirty = true; labBoard.setMap(m);
+  $('mapPick').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  $('labStat').textContent = key === 'empty' ? '빈 지도예요. 벽과 늪을 그려 보세요.' : `수업에 나온 ${b.textContent} 지도를 불러왔어요. 그대로 실행하거나 고쳐 보세요.`;
+});
+
+/* =========================================================
+   8. 시작
+   ========================================================= */
+readTokens();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens);
+new MutationObserver(readTokens).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme', 'class', 'style'] });
+document.fonts && document.fonts.ready.then(() => boards.forEach(b => b.touch()));
+setupScene(0);
+renderPlay();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

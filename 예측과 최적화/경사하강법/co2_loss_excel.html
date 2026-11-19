@@ -291,13 +291,19 @@
       position: absolute;
       pointer-events: none;
       background:
-        linear-gradient(90deg, var(--xl) 50%, #fff 50%) 0 0 / 8px 2px repeat-x,
-        linear-gradient(90deg, var(--xl) 50%, #fff 50%) 0 100% / 8px 2px repeat-x,
-        linear-gradient(0deg, var(--xl) 50%, #fff 50%) 0 0 / 2px 8px repeat-y,
-        linear-gradient(0deg, var(--xl) 50%, #fff 50%) 100% 0 / 2px 8px repeat-y;
+        linear-gradient(90deg, var(--ants, var(--xl)) 50%, #fff 50%) 0 0 / 8px 2px repeat-x,
+        linear-gradient(90deg, var(--ants, var(--xl)) 50%, #fff 50%) 0 100% / 8px 2px repeat-x,
+        linear-gradient(0deg, var(--ants, var(--xl)) 50%, #fff 50%) 0 0 / 2px 8px repeat-y,
+        linear-gradient(0deg, var(--ants, var(--xl)) 50%, #fff 50%) 100% 0 / 2px 8px repeat-y;
       animation: marquee-ants .5s linear infinite;
     }
     .copy-marquee[hidden] { display: none }
+    /* 수식 입력 중: 수식 속 주소를 같은 색 글자로 (입력 칸 위에 겹쳐 그림, 입력 칸 글자는 투명) */
+    .ref-ink { position: absolute; z-index: 3; overflow: hidden; white-space: pre; pointer-events: none; color: var(--text) }
+    .ref-ink[hidden] { display: none }
+    .ref-ink > span { display: inline-block; white-space: pre }
+    input.has-ink { color: transparent !important; caret-color: var(--text) }
+    input.has-ink::selection { color: transparent; background: rgba(15, 108, 189, .25) }
     /* 차트: 시트 위에 떠 있는 상자 (엑셀처럼 끌어서 옮기기·모서리로 크기 조절) */
     .chart-clip { position: absolute; left: 44px; top: 22px; overflow: hidden; pointer-events: none; z-index: 1 }
     .chart-layer { position: absolute; inset: 0 }
@@ -1305,7 +1311,101 @@
       .toast { transition: none }
       .copy-marquee { animation: none }   /* 점선은 그대로 두고 움직임만 멈춤 */
     }
-  
+
+    /* ── 힌트: 시트마다 할 일을 짧은 움직임으로 (작은 시트 위에서 커서가 직접 해 보임) ── */
+    .hint-fab {
+      position: absolute; right: 22px; bottom: 22px; z-index: 4;
+      display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px 0 12px;
+      border: 1px solid var(--xl); border-radius: 999px; background: #fff; color: #0b5c31;
+      font: inherit; font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(0, 0, 0, .16); cursor: pointer;
+    }
+    .hint-fab:hover { background: #f1f8f4 }
+    .hint-fab:focus-visible, .hint-panel button:focus-visible { outline: 2px solid #0f6cbd; outline-offset: 2px }
+    .hint-fab[aria-expanded="true"] { background: var(--xl); color: #fff }
+    .hint-fab[hidden] { display: none }
+    .hint-fab svg { width: 18px; height: 18px; flex: none }
+    .hint-panel {
+      position: fixed; right: 18px; bottom: 56px; z-index: 60; width: 372px; max-width: calc(100vw - 16px);
+      max-height: calc(100vh - 72px); overflow: auto; display: flex; flex-direction: column;
+      background: #fff; border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: 0 8px 28px rgba(0, 0, 0, .22);
+    }
+    .hint-panel[hidden] { display: none }
+    .hint-head { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--line); cursor: move; touch-action: none; user-select: none }
+    .hint-head h2 { flex: 1; margin: 0; font-size: 15px; outline: none }
+    .hint-x { width: 36px; height: 36px; border: 0; border-radius: 4px; background: transparent; font-size: 16px; color: var(--muted); cursor: pointer }
+    .hint-x:hover { background: #f3f2f1 }
+    .hint-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 8px 10px 0; list-style: none }
+    .hint-tab { min-height: 32px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 999px; background: #fff; font: inherit; font-size: 12.5px; color: var(--text); cursor: pointer }
+    .hint-tab[aria-current="step"] { border-color: var(--xl); background: #e6f2ea; color: #0b5c31; font-weight: 700 }
+    .hint-stage { position: relative; flex: none; margin: 10px 10px 0; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 4px; background: #fff }
+    .hint-say { margin: 8px 10px 0; padding: 0; list-style: none; counter-reset: hs }
+    .hint-say li { position: relative; padding: 5px 8px 5px 32px; border-radius: 4px; font-size: 13px; line-height: 1.5; color: var(--muted) }
+    .hint-say li::before {
+      counter-increment: hs; content: counter(hs); position: absolute; left: 7px; top: 6px; width: 19px; height: 19px;
+      border-radius: 50%; background: #e1dfdd; color: #444; font-size: 11px; font-weight: 700; line-height: 19px; text-align: center;
+    }
+    .hint-say li.is-now { background: #f1f8f4; color: var(--text) }
+    .hint-say li.is-now::before { background: var(--xl); color: #fff }
+    .hint-say code { padding: 0 3px; border-radius: 3px; background: #f3f2f1; font-family: Consolas, 'Malgun Gothic', monospace; font-size: 12px; word-break: break-all }
+    .hint-ctrl { display: flex; justify-content: flex-end; gap: 6px; padding: 10px }
+    .hint-ctrl button { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 4px; background: #fff; font: inherit; font-size: 13px; color: var(--text); cursor: pointer }
+    .hint-ctrl .is-primary { border-color: var(--xl); background: var(--xl); color: #fff }
+    .hint-ctrl button:disabled { opacity: .45; cursor: default }
+    /* 무대: 340×232 고정 크기로 그리고 패널 폭에 맞춰 줄임 */
+    .hs-inner { position: absolute; left: 0; top: 0; width: 340px; height: 232px; transform-origin: 0 0; font: 11px 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', 'Segoe UI', sans-serif; color: var(--text) }
+    .hs-bar { position: absolute; left: 0; right: 0; top: 0; height: 48px; display: flex; align-items: flex-start; border-bottom: 1px solid #d6d6d6; background: #fafafa }
+    .hs-name { flex: none; width: 60px; height: 24px; padding: 0 6px; border-right: 1px solid #d6d6d6; line-height: 24px; white-space: nowrap; overflow: hidden }
+    .hs-fxl { flex: none; padding: 0 6px; line-height: 24px; color: #888; font-style: italic }
+    .hs-fx { flex: 1; min-width: 0; padding: 5px 6px 0 0; font-family: Consolas, 'Malgun Gothic', monospace; line-height: 1.35; word-break: break-all; overflow: hidden; max-height: 46px }
+    .hs-sheet { position: absolute; left: 0; right: 0; top: 48px; bottom: 0; overflow: hidden }
+    .hs-h { position: absolute; box-sizing: border-box; border-right: 1px solid #dadada; border-bottom: 1px solid #dadada; background: #f5f5f5; color: #555; font-size: 10.5px; line-height: 18px; text-align: center }
+    .hs-c { position: absolute; box-sizing: border-box; padding: 0 4px; border-right: 1px solid #e6e6e6; border-bottom: 1px solid #e6e6e6; white-space: nowrap; overflow: hidden; text-align: right }
+    .hs-c.is-text { text-align: left }
+    .hs-c.is-ell { background: #fafafa }
+    .hs-c.head { background: #dde8f6; font-weight: 700; text-align: center }
+    .hs-c.base { background: #f3f2f1; font-weight: 700 }
+    .hs-c.input { background: #fff2cc; font-weight: 700; text-align: center }
+    .hs-c.answer { background: #e2f0d9; font-weight: 700 }
+    .hs-c.flash { animation: hs-flash .7s ease-out }
+    .hs-sel { position: absolute; z-index: 2; box-sizing: border-box; border: 2px solid var(--xl); pointer-events: none; transition: left var(--hs-t, 0ms), top var(--hs-t, 0ms), width var(--hs-t, 0ms), height var(--hs-t, 0ms) }
+    .hs-sel::after { content: ''; position: absolute; right: -4px; bottom: -4px; width: 6px; height: 6px; border: 1px solid #fff; background: var(--xl) }
+    .hs-dash { position: absolute; z-index: 2; box-sizing: border-box; border: 1.5px dashed #555; pointer-events: none; transition: width var(--hs-t, 0ms) linear, height var(--hs-t, 0ms) linear }
+    .hs-ref { position: absolute; z-index: 1; box-sizing: border-box; border: 2px solid; pointer-events: none }
+    .hs-spill { position: absolute; z-index: 1; box-sizing: border-box; border: 1px solid #2f80ed; pointer-events: none }
+    .hs-spill[hidden] { display: none }
+    .hs-name.flash { animation: hs-flash .7s ease-out }
+    .hs-ed { position: absolute; z-index: 3; box-sizing: border-box; padding: 0 3px; border: 2px solid var(--xl); background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); white-space: nowrap; overflow: hidden; font-family: Consolas, 'Malgun Gothic', monospace }
+    .hs-caret { display: inline-block; width: 1px; height: 12px; margin-left: 1px; background: #222; vertical-align: -2px; animation: hs-blink 1s steps(1) infinite }
+    .hs-cursor { position: absolute; left: 0; top: 0; z-index: 8; width: 16px; height: 22px; pointer-events: none; transition: transform var(--hs-t, 0ms) cubic-bezier(.3, .7, .3, 1) }
+    .hs-ripple { position: absolute; z-index: 7; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid rgba(16, 124, 65, .85); border-radius: 50%; pointer-events: none; animation: hs-ripple .45s ease-out forwards }
+    .hs-rib { position: absolute; z-index: 6; top: 54px; right: 8px; padding: 5px 10px; border: 1px solid var(--line-strong); border-radius: 4px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .16); color: #0b5c31; font-weight: 700; white-space: nowrap }
+    .hs-rib::before { content: '리본  '; color: var(--muted); font-weight: 400 }
+    .hs-chart { position: absolute; z-index: 5; right: 4px; bottom: 4px; width: 104px; height: 118px; border: 1px solid #c8c6c4; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .14); animation: hs-in .3s ease-out }
+    .hs-chart svg { display: block }
+    .hs-pt { transform-box: fill-box; transform-origin: center; animation: hs-pop .25s ease-out both }
+    .hs-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: hs-draw .9s ease-out forwards }
+    .hs-instant, .hs-instant * { animation: none !important; stroke-dashoffset: 0 }
+    .hs-note { position: absolute; z-index: 6; padding: 3px 8px; border: 1px solid #e8d9a8; border-radius: 4px; background: #fffdf3; box-shadow: 0 1px 4px rgba(0, 0, 0, .12); font-weight: 700; white-space: nowrap; animation: hs-in .3s ease-out }
+    .hs-exp { position: absolute; z-index: 6; left: 8px; right: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px 6px; padding: 6px 8px; border: 1px solid #e8d9a8; border-radius: 4px; background: #fffdf3; font-size: 11.5px; animation: hs-in .3s ease-out }
+    .hs-exp span { padding: 1px 6px; border-radius: 3px; background: #fff2cc }
+    .hs-exp span.is-now { background: #ffd966; font-weight: 700 }
+    .hs-mark { border-radius: 2px; background: #ffd966 }
+    @keyframes hs-flash { from { background-color: #bfe3cc } }
+    @keyframes hs-blink { 50% { opacity: 0 } }
+    @keyframes hs-ripple { from { transform: scale(.3); opacity: 1 } to { transform: scale(1.5); opacity: 0 } }
+    @keyframes hs-in { from { opacity: 0; transform: translateY(6px) } }
+    @keyframes hs-pop { from { opacity: 0; transform: scale(.2) } }
+    @keyframes hs-draw { to { stroke-dashoffset: 0 } }
+    @media (prefers-reduced-motion: reduce) {
+      .hs-cursor, .hs-sel, .hs-dash { transition: none }
+      .hs-ripple, .hs-c.flash, .hs-caret, .hs-chart, .hs-pt, .hs-note, .hs-exp { animation: none }
+      .hs-draw { animation: none; stroke-dashoffset: 0 }
+    }
+    @media (max-width: 640px) {
+      .hint-panel { left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 72vh }
+      .hint-fab { right: 14px; bottom: 14px }
+    }
+
     /* ── 설명서 (2026-11-05 정리: 기본 4단계 · 더 해 보기 · 단축키) ── */
     /* 설명서: 활동 순서 */
     .g-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 10px }
@@ -1364,6 +1464,7 @@
     .ps-hint { margin: 0; font-size: 12.5px; color: #6b6b6b }
     .ps-set[hidden] { display: none }
   </style>
+<script src="../../unit-nav.js" data-unit="predict" data-pos="tab" defer></script>
 </head>
 
 <body>
@@ -1489,6 +1590,14 @@
             </svg>
             도움말
           </button>
+          <button type="button" class="rbtn" data-action="hint" title="지금 시트에서 할 일을 짧은 움직임으로 보여 줍니다.">
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M16 4a9 9 0 0 0-5.4 16.2c.9.7 1.4 1.6 1.4 2.6V24h8v-1.2c0-1 .5-1.9 1.4-2.6A9 9 0 0 0 16 4z" fill="#ffd966" stroke="#8a6d00" stroke-width="1.5" />
+              <rect x="12" y="25.5" width="8" height="2.6" rx="1" fill="#8a6d00" />
+              <path d="M16 11v6m-2.6-2.6L16 17l2.6-2.6" fill="none" stroke="#8a6d00" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            힌트
+          </button>
         </div>
         <div class="rgroup-label" id="grpHelp">안내</div>
       </div>
@@ -1511,9 +1620,13 @@
         <div id="scroller" tabindex="0" role="region" aria-roledescription="스프레드시트" aria-label="셀 영역. 방향키로 이동하고 숫자를 입력하세요." aria-describedby="srLive">
           <div id="spacer"></div>
         </div>
-        <div class="marquee-clip" id="marqueeClip" aria-hidden="true"><div class="copy-marquee" id="copyMarquee" hidden></div></div>
+        <div class="marquee-clip" id="marqueeClip" aria-hidden="true"><div class="copy-marquee" id="copyMarquee" hidden></div><div class="copy-marquee" id="ptAnts" hidden></div></div>
         <div class="chart-clip" id="chartClip"><div id="chartLayer" class="chart-layer"></div></div>
         <input id="cellEditor" class="cell-editor" hidden autocomplete="off" spellcheck="false" aria-label="셀 값 입력">
+        <button type="button" class="hint-fab" id="hintBtn" data-action="hint" aria-expanded="false" aria-controls="hintPanel" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a6.8 6.8 0 0 0-4.1 12.2c.7.5 1.1 1.3 1.1 2.1v.7h6v-.7c0-.8.4-1.6 1.1-2.1A6.8 6.8 0 0 0 12 2.5z" fill="#ffd966" stroke="currentColor" stroke-width="1.4"/><path d="M9.5 20h5M10.3 22h3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          힌트
+        </button>
       </section>
 
       <section id="viewGuide" class="doc-sheet" aria-label="설명서 시트">
@@ -1521,7 +1634,7 @@
           <div class="guide-head">
             <div>
               <h1>실제 데이터로 손실함수 찾기</h1>
-              <p class="guide-sub">하와이 마우나로아에서 잰 이산화탄소 농도 10년치. 직선 하나로 예측한다면, 기울기를 얼마로 해야 오차가 가장 작을까요?</p>
+              <p class="guide-sub">하와이 마우나로아에서 1959년부터 2025년까지 잰 이산화탄소 농도 67년치. 직선 하나로 예측한다면, 기울기를 얼마로 해야 오차가 가장 작을까요?</p>
             </div>
             <div class="guide-actions">
               <button type="button" class="start-btn" data-action="start">데이터 시트에서 시작하기</button>
@@ -1530,28 +1643,34 @@
           </div>
 
           <h2 class="g-sec">활동 순서</h2>
+          <p class="guide-note" style="margin:0 0 12px">막히면 각 시트 오른쪽 아래 <b>힌트</b> 버튼을 누르세요. 그 시트에서 할 일을 짧은 움직임으로 보여 줘요.</p>
           <ol class="g-steps">
             <li><b>x와 y 만들기</b> <span class="g-where">데이터 시트</span>
-              <p>2015년을 기준(0, 0)으로 잡으면 <b>y = a·x</b> 하나로 예측할 수 있어요. C5에 <code>=A5-$B$2</code>, D5에 <code>=B5-$D$2</code>를 쓰고 오른쪽 아래 점을 끌어 14행까지 채웁니다.</p></li>
+              <p>첫 관측 해인 1959년을 기준(0, 0)으로 잡으면 <b>y = a·x</b> 하나로 예측할 수 있어요. C5에 <code>=A5-$B$2</code>, D5에 <code>=B5-$D$2</code>를 쓰고, 두 칸을 함께 골라 오른쪽 아래 점을 <b>두 번 누르면</b> 70행(2025년)까지 한 번에 채워집니다.</p></li>
             <li><b>산점도 그리기</b>
-              <p>C4:D14를 고르고 리본 <b>차트 삽입 › 분산형</b>. 점들이 거의 한 줄로 늘어서 있나요?</p></li>
+              <p>이름 상자(왼쪽 위 주소 칸)에 <code>C4:D70</code>을 쓰고 Enter로 고른 뒤 리본 <b>차트 삽입 › 분산형</b>. 점 66개가 곧은 직선인가요, 조금 휘어 있나요?</p></li>
             <li><b>예측하고 오차 재기</b>
-              <p>J4의 기울기 a(처음 2)로 E5 <code>=$J$4*C5</code>, 오차 F5 <code>=D5-E5</code>, 오차² G5 <code>=F5^2</code>를 채우고, J5에 평균제곱오차 <code>=AVERAGE(G5:G14)</code>. a를 2.5, 3으로 바꾸면 J5는?</p></li>
-            <li><b>손실함수 표 만들기</b> <span class="g-where">손실함수 시트</span>
-              <p>A4·A5의 1.5, 1.6을 함께 골라 점을 끌어 3.5까지(24행). B4에 <code>=AVERAGE((데이터!$D$5:$D$14-A4*데이터!$C$5:$C$14)^2)</code>를 쓰고 아래로 채우기. 한 칸에 오차 10개를 한꺼번에 계산하는 식이에요.</p></li>
+              <p>J4의 기울기 a(처음 1)로 E5 <code>=$J$4*C5</code>, 오차 F5 <code>=D5-E5</code>, 오차² G5 <code>=F5^2</code>를 쓰고 70행까지 채운 뒤, J5에 평균제곱오차 <code>=AVERAGE(G5:G70)</code>. a를 1.5, 2로 바꾸면 J5는?</p></li>
+            <li><b>a 목록과 x · y 이름 붙이기</b> <span class="g-where">손실함수 시트 → 데이터 시트</span>
+              <p>손실함수 시트 A4·A5의 0.5, 0.6을 함께 골라 점을 끌어 2.5까지(24행). 그다음 데이터 시트에서 이름 상자에 <code>C5:C70</code> Enter → 이름 상자에 <code>x</code> Enter. 같은 방법으로 <code>D5:D70</code>에 <code>y</code>. 이제 수식에서 <b>x, y</b>라고 쓰면 66개 칸을 한꺼번에 부를 수 있어요.</p></li>
+            <li><b>한 칸에서 오차 66개 계산하기</b> <span class="g-where">손실함수 시트</span>
+              <p>G4에 <code>=y-A4*x</code> → a = 0.5일 때 오차 66개가 아래로 펼쳐져요. 같은 칸을 <code>=(y-A4*x)^2</code>로 고치면 오차², <code>=AVERAGE((y-A4*x)^2)</code>로 고치면 평균 하나 = <b>L(0.5)</b>. 데이터 시트 J4를 0.5로 바꿨을 때의 J5와 같은지 확인해 보세요.</p></li>
+            <li><b>a마다 L(a) 구하기</b>
+              <p>B4에 <code>=AVERAGE((y-A4*x)^2)</code>를 쓰고 아래로 채우면 a마다 L(a)가 나와요. 데이터 시트 값을 하나씩 옮겨 적을 필요가 없어요. (G4 연습 칸은 지워도 돼요)</p></li>
             <li><b>그래프와 가장 낮은 곳</b>
               <p>A3:B24로 분산형 차트 → 포물선. E3 <code>=MIN(B4:B24)</code>, E4 <code>=INDEX(A4:A24,MATCH(E3,B4:B24,0))</code>. 차트를 두 번 눌러 <b>추세선: 다항식 2차</b>를 켜고, 수식 y = Ax² + Bx + C의 꼭짓점 <b>−B ÷ (2A)</b>도 구해 보세요.</p></li>
             <li><b>경사하강법으로 내려가기</b> <span class="g-where">경사하강법 시트</span>
-              <p>발밑 기울기 C6 <code>=AVERAGE(2*(B6*데이터!$C$5:$C$14-데이터!$D$5:$D$14)*데이터!$C$5:$C$14)</code>, 다음 a는 B7 <code>=B6-$B$3*C6</code>. 16행까지 채우고 학습률 B3을 <b>0.005 · 0.01 · 0.02 · 0.03</b>으로 바꿔 보세요.</p></li>
+              <p>발밑 기울기 C6 <code>=AVERAGE(2*(B6*x-y)*x)</code>, 그때의 L(a) D6 <code>=AVERAGE((y-B6*x)^2)</code>, 다음 a는 B7 <code>=B6-$B$3*C6</code>. 16행까지 채우고 학습률 B3을 <b>0.0001 · 0.0003 · 0.0006 · 0.0007</b>로 바꿔 보세요. x가 66까지 커서 학습률도 아주 작아야 해요.</p></li>
             <li><b>확인하고 예측하기</b>
-              <p>데이터 시트 차트를 두 번 눌러 <b>추세선: 선형 + 절편 = 0 + 수식 표시</b>. 내가 찾은 a와 같나요? 이 a로 2030년 농도를 예측하면? <code>=D2+a*15</code></p></li>
+              <p>데이터 시트 차트를 두 번 눌러 <b>추세선: 선형 + 절편 = 0 + 수식 표시</b>. 내가 찾은 a와 같나요? 이 a로 2030년 농도를 예측하면? <code>=D2+a*71</code></p></li>
           </ol>
 
           <h2 class="g-sec">생각해 보기</h2>
           <ul class="g-think">
-            <li>학습률을 0.03으로 하면 a가 어떻게 되나요? 왜 그럴까요? (손실함수 그래프의 기울기를 떠올려 보세요)</li>
-            <li><code>=SLOPE(D5:D14,C5:C14)</code>는 내가 찾은 a와 조금 다릅니다. SLOPE는 y = ax + b처럼 절편도 함께 정하기 때문이에요. 어느 쪽이 이 자료에 더 알맞을까요?</li>
-            <li>2016년과 2025년의 오차(F열)를 보세요. 최근에는 직선보다 위에 있나요, 아래에 있나요? 이산화탄소가 늘어나는 빠르기가 어떻게 변하고 있을까요?</li>
+            <li>학습률을 0.0007로 하면 a가 어떻게 되나요? 왜 그럴까요? (손실함수 그래프의 기울기를 떠올려 보세요)</li>
+            <li><code>=SLOPE(D5:D70,C5:C70)</code>는 내가 찾은 a와 조금 다릅니다. SLOPE는 y = ax + b처럼 절편도 함께 정하기 때문이에요. 어느 쪽이 이 자료에 더 알맞을까요?</li>
+            <li>1970년대·1990년대·2020년대의 오차(F열)를 보세요. 직선보다 위에 있나요, 아래에 있나요? 이산화탄소가 늘어나는 빠르기가 어떻게 변하고 있을까요?</li>
+            <li>직선으로 예측한 2030년 농도가 2025년 실제 값(427.35)보다 작게 나와요. 왜 그럴까요? 직선 대신 어떤 모양으로 예측하면 좋을까요? (데이터 차트에 <b>다항식 2차</b> 추세선을 켜 보세요)</li>
           </ul>
 
           <h2 class="g-sec">데이터 출처</h2>
@@ -1559,10 +1678,12 @@
 
           <h2 class="g-sec">자주 쓰는 기능</h2>
           <ul class="g-keys">
-            <li><span>오른쪽 아래 점 끌기</span>수식·수열을 옆 칸으로 채우기</li>
+            <li><span>오른쪽 아래 점 끌기</span>수식·수열을 옆 칸으로 채우기 (두 번 누르면 옆 열 길이만큼)</li>
+            <li><span><kbd>=</kbd> 뒤에 칸 누르기</span>그 칸 주소가 들어가요. 끌면 범위, 방향키(<kbd>Shift</kbd>: 범위)로도 골라요</li>
+            <li><span>색 상자</span>수식 속 주소마다 같은 색 상자가 보여요. 테두리를 끌면 옮기기, 모서리를 끌면 범위 바꾸기</li>
             <li><span><kbd>F4</kbd></span>수식 속 주소를 $A$1 → A$1 → $A1로</li>
             <li><span><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd></span>되돌리기 / 다시 실행</li>
-            <li><span><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd></span>복사 / 붙여넣기 (<kbd>Esc</kbd>: 점선 끄기)</li>
+            <li><span><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd></span>복사 / 붙여넣기 (점선이 도는 동안 <kbd>Enter</kbd>로도 붙여넣기, <kbd>Esc</kbd>: 점선 끄기)</li>
             <li><span><kbd>Ctrl</kbd>+<kbd>D</kbd></span>위 칸으로 아래 채우기</li>
             <li><span><kbd>Ctrl</kbd>+<kbd>`</kbd></span>수식 보이기</li>
             <li><span>차트</span>끌어서 옮기기 · 모서리로 크기 · 두 번 눌러 추세선 · <kbd>Delete</kbd> 삭제</li>
@@ -1804,6 +1925,20 @@
     </div>
   </dialog>
   <div class="fx-pop" id="fxPop" hidden></div>
+  <section class="hint-panel" id="hintPanel" role="dialog" aria-modal="false" aria-labelledby="hintTitle" hidden>
+    <div class="hint-head" id="hintHead">
+      <h2 id="hintTitle" tabindex="-1">힌트</h2>
+      <button type="button" class="hint-x" data-hint="close" aria-label="힌트 닫기" title="닫기 (Esc)">✕</button>
+    </div>
+    <ul class="hint-tabs" id="hintTabs" aria-label="단계"></ul>
+    <div class="hint-stage" id="hintStage" aria-hidden="true"></div>
+    <ol class="hint-say" id="hintSay"></ol>
+    <div class="hint-ctrl">
+      <button type="button" data-hint="prev">◀ 이전</button>
+      <button type="button" data-hint="replay">↻ 다시 보기</button>
+      <button type="button" class="is-primary" data-hint="next">다음 ▶</button>
+    </div>
+  </section>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="sr-only" id="srLive" aria-live="polite"></div>
 
@@ -2327,7 +2462,7 @@
                   ? { k: 'ref', sheet: nm.sheet, r: g.r1, c: g.c1 }
                   : { k: 'range', sheet: nm.sheet, r1: g.r1, c1: g.c1, r2: g.r2, c2: g.c2 };
               }
-              return { k: 'err', v: '#NAME?' };
+              return { k: 'err', v: '#NAME?', msg: `'${tk.s}'이라는 이름이 아직 없어요. 범위를 고르고 이름 상자에 ${tk.s}를 쓰고 Enter로 이름을 붙였는지 확인하세요 (예: 데이터 시트 C5:C70 → x, D5:D70 → y).` };
             }
           }
           fail('#SYNTAX', '수식에 문제가 있습니다. 연산자와 괄호를 확인하세요.');
@@ -2479,7 +2614,7 @@
       function evalNode(n, ctx) {
         switch (n.k) {
           case 'num': case 'str': case 'bool': return n.v;
-          case 'err': return fail(n.v);
+          case 'err': return fail(n.v, n.msg);
           case 'ref': return cellValueAt(n.sheet, n.r * STRIDE + n.c);
           case 'range': return rangeToArr(n);
           case 'spillref': return rangeToArr(spillRange(n));
@@ -4960,8 +5095,30 @@
           ctx.restore();
         };
         if (drag && drag.mode === 'fill' && drag.target) dashed(drag.target, '#555');
-        // 수식 입력 중 클릭으로 넣은 참조 범위
-        if (state.edit && state.edit.ptRect && state.edit.ptSheet === sheet) dashed(state.edit.ptRect, '#0f6cbd');
+        // 수식 입력 중: 수식 속 주소마다 색 상자 (엑셀과 같음). 방금 고른 주소는 같은 색 점선이 돎(ptAnts)
+        if (state.edit) {
+          const pt = pointRef();
+          for (const ref of editRefs()) {
+            if (ref.sheet !== sheet || ref.rect.r1 >= dims.rows || ref.rect.c1 >= dims.cols) continue;
+            const a = { ...ref.rect, r2: Math.min(ref.rect.r2, dims.rows - 1), c2: Math.min(ref.rect.c2, dims.cols - 1) };
+            const x = Math.round(xOf(a.c1)), y = Math.round(yOf(a.r1)), w = rectW(a), h = rectH(a);
+            ctx.save();
+            ctx.globalAlpha = 0.13;
+            ctx.fillStyle = ref.color;
+            ctx.fillRect(x, y, w, h);
+            ctx.globalAlpha = 1;
+            if (ref !== pt) {
+              ctx.strokeStyle = ref.color;
+              ctx.lineWidth = 2;
+              ctx.strokeRect(x, y, w - 1, h - 1);
+              if (!ref.name && !ref.spill) {   // 네 모서리 손잡이: 끌면 범위 크기 바꾸기
+                ctx.fillStyle = ref.color;
+                for (const [cx, cy] of [[x, y], [x + w - 1, y], [x, y + h - 1], [x + w - 1, y + h - 1]]) ctx.fillRect(cx - 3, cy - 3, 6, 6);
+              }
+            }
+            ctx.restore();
+          }
+        }
         ctx.restore();
 
         // 열 머리글
@@ -5032,6 +5189,7 @@
 
         positionEditor();
         positionMarquee();
+        syncInk();
         syncCharts();
       }
 
@@ -5068,9 +5226,11 @@
       function endEditUI() {
         const wasCell = state.edit && state.edit.via === 'cell';
         state.edit = null;
+        refCache.text = null;
         hideFxPop();
         els.editor.hidden = true;
-        setMode('준비');
+        syncInk();
+        setReady();
         updateFormulaBar();
         scheduleDraw();
         return wasCell;
@@ -5134,11 +5294,232 @@
         ed.pt = { s, e: s + text.length };
         ed.ptRect = rect;
         ed.ptSheet = state.current;
+        ed.kp = { anchor: { r: a.r, c: a.c }, cur: { r: b.r, c: b.c } };   // 방향키로 이어서 움직일 자리
         inp.setSelectionRange(ed.pt.e, ed.pt.e);
         if (inp === els.editor) els.fx.value = inp.value;
         else if (ed.via === 'cell') els.editor.value = inp.value;
         setMode('참조');
         positionEditor();
+        syncInk();
+        scheduleDraw();
+      }
+
+      // ===== 수식 참조 색 표시 (엑셀처럼: 수식 속 주소마다 색 상자 + 같은 색 글자) =====
+      const REF_COLORS = ['#2f6fde', '#d6303b', '#8b45c4', '#1f8f4e', '#c06400', '#0e8a99', '#c2338a', '#6f7c12'];
+      const REF_SCAN = /^(?:'([^']+)'!|([A-Za-z_가-힣][A-Za-z0-9_가-힣]*)!)?(\$?)([A-Za-z]{1,3})(\$?)(\d{1,5})(#?)(?![A-Za-z0-9_(가-힣])/;
+      let refCache = { text: null, sheet: null, refs: [] };
+
+      // 입력 중인(덜 끝난) 수식도 읽을 수 있게 너그럽게 훑는다.
+      // 결과: [{ s, e, sheet, rect, color, parts, name, spill }] — s·e는 수식 글자 속 위치('=' 포함)
+      function formulaRefs(text, host) {
+        if (refCache.text === text && refCache.sheet === host) return refCache.refs;
+        const toks = [];
+        if (text && text[0] === '=') {
+          let i = 1;
+          while (i < text.length) {
+            const ch = text[i], rest = text.slice(i);
+            let m;
+            if (ch === '"') {   // 글자열 속 "A1"은 주소가 아님 (닫히지 않았으면 끝까지)
+              let j = i + 1;
+              while (j < text.length) { if (text[j] === '"') { if (text[j + 1] === '"') { j += 2; continue; } break; } j++; }
+              i = j + 1;
+              continue;
+            }
+            if ((m = REF_SCAN.exec(rest))) {
+              toks.push({ t: 'ref', s: i, e: i + m[0].length, sheet: m[1] || m[2] || null, ca: Boolean(m[3]), col: m[4].toUpperCase(), ra: Boolean(m[5]), row: Number(m[6]), spill: Boolean(m[7]) });
+              i += m[0].length;
+              continue;
+            }
+            if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/.exec(rest))) { toks.push({ t: 'num', s: i, e: i + m[0].length }); i += m[0].length; continue; }
+            if ((m = /^[A-Za-z_가-힣][A-Za-z0-9_.가-힣]*/.exec(rest))) { toks.push({ t: 'name', s: i, e: i + m[0].length, v: m[0].toUpperCase() }); i += m[0].length; continue; }
+            if (!/\s/.test(ch)) toks.push({ t: ch === ':' ? 'colon' : 'op', s: i, e: i + 1 });
+            i++;
+          }
+        }
+        const refs = [];
+        const sheetOf = (name) => (name ? sheetIdByName(name) : host);
+        const inBounds = (p) => p.r >= 0 && p.r < MAX_DIM && p.c >= 0 && p.c < MAX_DIM;
+        for (let k = 0; k < toks.length; k++) {
+          const tk = toks[k];
+          if (tk.t === 'ref') {
+            const sheet = sheetOf(tk.sheet);
+            const p1 = { r: tk.row - 1, c: colIndex(tk.col) };
+            let p2 = p1, e = tk.e, parts = [tk];
+            const nx = toks[k + 1], nr = toks[k + 2];
+            if (!tk.spill && nx && nx.t === 'colon' && nx.s === tk.e && nr && nr.t === 'ref' && nr.s === nx.e && !nr.spill && (!nr.sheet || sheetOf(nr.sheet) === sheet)) {
+              p2 = { r: nr.row - 1, c: colIndex(nr.col) };
+              e = nr.e;
+              parts = [tk, nr];
+              k += 2;
+            }
+            if (!sheet || !state.data[sheet] || !inBounds(p1) || !inBounds(p2)) continue;
+            let rect = rectOf(p1, p2);
+            if (tk.spill) {   // F1# = 펼쳐진 결과 전체
+              const sa = state.spillArea[sheet] && state.spillArea[sheet].get(p1.r * STRIDE + p1.c);
+              if (sa) rect = { ...sa };
+            }
+            refs.push({ s: tk.s, e, sheet, rect, parts, spill: tk.spill });
+          } else if (tk.t === 'name') {
+            const nm = state.names.get(tk.v);
+            if (nm && state.data[nm.sheet] && text.slice(tk.e).trimStart()[0] !== '(') refs.push({ s: tk.s, e: tk.e, sheet: nm.sheet, rect: { ...nm.rect }, parts: null, name: true });
+          }
+        }
+        // 같은 범위는 같은 색 (나온 순서대로 색을 돌려 씀)
+        const colorOf = new Map();
+        for (const ref of refs) {
+          const key = `${ref.sheet}:${ref.rect.r1},${ref.rect.c1},${ref.rect.r2},${ref.rect.c2}`;
+          if (!colorOf.has(key)) colorOf.set(key, REF_COLORS[colorOf.size % REF_COLORS.length]);
+          ref.color = colorOf.get(key);
+        }
+        refCache = { text, sheet: host, refs };
+        return refs;
+      }
+
+      // 편집 중인 수식의 참조 (수식이 아니면 빈 목록)
+      function editRefs() {
+        const inp = editInput();
+        if (!inp || !inp.value.startsWith('=')) return [];
+        return formulaRefs(inp.value, state.edit.sheet);
+      }
+      // 방금 누르거나 방향키로 고른 참조 (점선이 도는 것)
+      function pointRef() {
+        const ed = state.edit;
+        if (!ed || !ed.pt) return null;
+        return editRefs().find((x) => x.s === ed.pt.s && x.e === ed.pt.e) || null;
+      }
+
+      // 입력 칸 위에 같은 글자를 색칠해 겹쳐 그림 (입력 칸 글자는 투명, 커서·선택 표시는 그대로)
+      function makeInk(inp) {
+        const ink = document.createElement('div');
+        ink.className = 'ref-ink';
+        ink.setAttribute('aria-hidden', 'true');
+        ink.hidden = true;
+        const inner = document.createElement('span');
+        ink.appendChild(inner);
+        inp.insertAdjacentElement('afterend', ink);
+        return { inp, ink, inner, key: '' };
+      }
+      const inks = [makeInk(els.editor), makeInk(els.fx)];
+      function inkHtml(text, refs) {
+        let out = '', at = 0;
+        for (const r of refs) {
+          out += esc(text.slice(at, r.s)) + `<span style="color:${r.color}">${esc(text.slice(r.s, r.e))}</span>`;
+          at = r.e;
+        }
+        return out + esc(text.slice(at));
+      }
+      function syncInk() {
+        for (const k of inks) {
+          const { inp, ink, inner } = k;
+          const ed = state.edit;
+          const on = !!ed && !inp.hidden && inp.value.startsWith('=') && (inp === els.fx || ed.via === 'cell');
+          if (!on) {
+            if (!ink.hidden) { ink.hidden = true; inp.classList.remove('has-ink'); k.key = ''; }
+            continue;
+          }
+          const refs = formulaRefs(inp.value, ed.sheet);
+          const key = inp.value + '|' + refs.map((r) => r.color).join(',');
+          if (key !== k.key) { k.key = key; inner.innerHTML = inkHtml(inp.value, refs); }
+          const cs = getComputedStyle(inp);
+          const bl = parseFloat(cs.borderLeftWidth) || 0, bt = parseFloat(cs.borderTopWidth) || 0;
+          const pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0;
+          const s = ink.style;
+          s.left = (inp.offsetLeft + bl + pl) + 'px';
+          s.top = (inp.offsetTop + bt) + 'px';
+          s.width = Math.max(0, inp.clientWidth - pl - pr) + 'px';
+          s.height = inp.clientHeight + 'px';
+          s.lineHeight = inp.clientHeight + 'px';
+          s.font = cs.font;
+          s.letterSpacing = cs.letterSpacing;
+          inner.style.transform = `translateX(${-inp.scrollLeft}px)`;
+          if (ink.hidden) { ink.hidden = false; inp.classList.add('has-ink'); }
+        }
+      }
+      for (const inp of [els.editor, els.fx]) {
+        inp.addEventListener('input', () => { syncInk(); scheduleDraw(); });
+        inp.addEventListener('scroll', syncInk);
+        inp.addEventListener('keydown', () => { if (state.edit) scheduleDraw(); });   // 커서가 움직여 칸 안 글자가 밀리면 따라감
+      }
+      document.addEventListener('selectionchange', () => { if (state.edit) scheduleDraw(); });
+
+      // 방향키로 참조 고르기 (엑셀의 '참조' 모드: =, 연산자, 쉼표 뒤에서 ←↑→↓, Shift를 누르면 범위)
+      function keyPoint(key, extend) {
+        const ed = state.edit, [dr, dc] = ARROWS[key];
+        if (!ed.pt || !ed.kp) {
+          const base = state.current === ed.sheet ? { r: ed.r, c: ed.c } : { ...view().active };
+          ed.kp = { anchor: base, cur: base };
+        }
+        const cur = ed.kp.cur;
+        const next = { r: clamp(cur.r + dr, 0, dims.rows - 1), c: clamp(cur.c + dc, 0, dims.cols - 1) };
+        insertRef(extend ? ed.kp.anchor : next, next);
+        ensureVisible(next.r, next.c);
+        showRefSize(state.edit.ptRect);
+      }
+
+      // 이름 상자에 고르는 중인 범위 크기 (엑셀처럼 5R x 2C)
+      function showRefSize(a) {
+        if (!a) return;
+        const rows = a.r2 - a.r1 + 1, cols = a.c2 - a.c1 + 1;
+        if (rows > 1 || cols > 1) els.nameBox.value = `${rows}R x ${cols}C`;
+      }
+
+      // 색 상자 테두리를 끌면 주소 옮기기, 모서리를 끌면 범위 크기 바꾸기 (엑셀과 같음)
+      function refBoxHit(h) {
+        if (!state.edit || h.zone !== 'cell') return null;
+        const v = view(), sc = els.scroller;
+        const gx = h.x - HEAD_W + sc.scrollLeft, gy = h.y - HEAD_H + sc.scrollTop;
+        const refs = editRefs();
+        for (let i = refs.length - 1; i >= 0; i--) {
+          const ref = refs[i], a = ref.rect;
+          if (ref.sheet !== state.current || ref.name || ref.spill || a.r1 >= dims.rows || a.c1 >= dims.cols) continue;
+          const L = v.colX[a.c1], R = v.colX[Math.min(a.c2, dims.cols - 1) + 1];
+          const T = v.rowY[a.r1], B = v.rowY[Math.min(a.r2, dims.rows - 1) + 1];
+          const corners = [[L, T, a.r2, a.c2, 'nwse-resize'], [R, T, a.r2, a.c1, 'nesw-resize'], [L, B, a.r1, a.c2, 'nesw-resize'], [R, B, a.r1, a.c1, 'nwse-resize']];
+          for (const [x, y, fr, fc, cursor] of corners) {
+            if (Math.abs(gx - x) <= 5 && Math.abs(gy - y) <= 5) return { mode: 'refSize', i, fixed: { r: fr, c: fc }, cursor };
+          }
+          const onV = (Math.abs(gx - L) <= 3 || Math.abs(gx - R) <= 3) && gy >= T - 3 && gy <= B + 3;
+          const onH = (Math.abs(gy - T) <= 3 || Math.abs(gy - B) <= 3) && gx >= L - 3 && gx <= R + 3;
+          if (onV || onH) return { mode: 'refMove', i, grab: { r: clamp(h.r - a.r1, 0, a.r2 - a.r1), c: clamp(h.c - a.c1, 0, a.c2 - a.c1) }, cursor: 'move' };
+        }
+        return null;
+      }
+
+      function dragRef(d, h) {
+        const ref = editRefs()[d.i];
+        if (!ref || !ref.parts) return;
+        const a = ref.rect;
+        let n;
+        if (d.mode === 'refMove') {
+          const hh = a.r2 - a.r1, ww = a.c2 - a.c1;
+          const r1 = clamp(h.r - d.grab.r, 0, Math.max(0, dims.rows - 1 - hh)), c1 = clamp(h.c - d.grab.c, 0, Math.max(0, dims.cols - 1 - ww));
+          n = { r1, c1, r2: r1 + hh, c2: c1 + ww };
+        } else {
+          n = rectOf(d.fixed, { r: h.r, c: h.c });
+        }
+        if (n.r1 === a.r1 && n.c1 === a.c1 && n.r2 === a.r2 && n.c2 === a.c2) return;
+        replaceRef(ref, n);
+        showRefSize(n);
+      }
+
+      // 참조 글자를 새 범위로 바꿈. $ 고정과 시트 이름은 그대로 둔다
+      function replaceRef(ref, a) {
+        const ed = state.edit, inp = editInput();
+        const txt = inp.value;
+        const [p1, p2] = ref.parts;
+        const prefix = (p) => { const t = txt.slice(p.s, p.e); return t.slice(0, t.lastIndexOf('!') + 1); };
+        const one = (p, r, c, pre) => pre + (p.ca ? '$' : '') + colName(c) + (p.ra ? '$' : '') + (r + 1);
+        const single = a.r1 === a.r2 && a.c1 === a.c2;
+        const text = one(p1, a.r1, a.c1, prefix(p1)) + (single ? '' : ':' + one(p2 || p1, a.r2, a.c2, p2 ? prefix(p2) : ''));
+        inp.value = txt.slice(0, ref.s) + text + txt.slice(ref.e);
+        const end = ref.s + text.length;
+        inp.setSelectionRange(end, end);
+        if (inp === els.editor) els.fx.value = inp.value;
+        else if (ed.via === 'cell') els.editor.value = inp.value;
+        Object.assign(ed, { pt: null, ptRect: null, kp: null });
+        setMode('참조');
+        positionEditor();
+        syncInk();
         scheduleDraw();
       }
 
@@ -5183,6 +5564,7 @@
         els.fx.value = els.editor.value;
         typedInEditor();
         positionEditor();
+        syncInk();
       });
 
       els.editor.addEventListener('keydown', (e) => {
@@ -5206,6 +5588,15 @@
         } else if (e.key === 'F4') {
           e.preventDefault();
           toggleAbsRef(els.editor);
+        } else if (e.key === 'F2' && state.edit) {
+          // F2: 입력 ↔ 편집 (편집이면 방향키가 글자 사이를 움직임, 입력이면 수식에서 방향키로 칸을 고름)
+          e.preventDefault();
+          state.edit.mode = state.edit.mode === 'enter' ? 'edit' : 'enter';
+          setMode(state.edit.mode === 'enter' ? '입력' : '편집');
+        } else if (state.edit && state.edit.mode === 'enter' && ARROWS[e.key] && !ctrl && !e.altKey && els.editor.value.startsWith('=') && canPointRef()) {
+          // 수식의 =, 연산자, 쉼표 뒤에서 방향키 = 칸 주소 넣기 (Shift: 범위)
+          e.preventDefault();
+          keyPoint(e.key, e.shiftKey);
         } else if (state.edit && state.edit.mode === 'enter' && ARROWS[e.key] && !els.editor.value.startsWith('=')) {
           // 입력 모드에서 방향키 = 확정 후 이동 (엑셀과 같음). 수식은 방향키로 글자 사이를 움직임
           e.preventDefault();
@@ -5500,28 +5891,44 @@
       }
 
       // ===== 복사 범위 점선 (엑셀처럼 테두리를 따라 도는 점선) =====
-      const marqueeClip = $('marqueeClip'), marqueeEl = $('copyMarquee');
-      function setMarquee(m) { state.marquee = m; scheduleDraw(); }
+      const marqueeClip = $('marqueeClip'), marqueeEl = $('copyMarquee'), ptAntsEl = $('ptAnts');
+      const COPY_MODE_TEXT = '붙여넣을 곳을 고르고 Enter 또는 Ctrl+V (Esc: 취소)';
+      // 상태 표시줄 왼쪽: 복사 점선이 있으면 엑셀처럼 붙여넣기 안내, 아니면 '준비'
+      function setReady() { setMode(state.marquee ? COPY_MODE_TEXT : '준비'); }
+      function setMarquee(m) {
+        state.marquee = m;
+        if (!state.edit) setReady();
+        scheduleDraw();
+      }
       function clearMarquee() {
         if (!state.marquee) return;
         state.marquee = null;
         if (clip && clip.cut) clip.cut = null;   // 점선이 없어지면 잘라내기도 취소 (엑셀과 같음)
         marqueeEl.hidden = true;
+        if (!state.edit && els.mode.textContent === COPY_MODE_TEXT) setReady();
         scheduleDraw();
       }
-      function positionMarquee() {
-        const m = state.marquee;
-        if (!m || m.sheet !== state.current || !state.data[m.sheet]) { marqueeEl.hidden = true; return; }
-        const v = view(), sc = els.scroller, a = m.area;
-        marqueeClip.style.width = Math.max(0, sc.clientWidth - HEAD_W) + 'px';
-        marqueeClip.style.height = Math.max(0, sc.clientHeight - HEAD_H) + 'px';
+      function placeAnts(el, a) {
+        const v = view(), sc = els.scroller;
         const c2 = Math.min(a.c2, dims.cols - 1), r2 = Math.min(a.r2, dims.rows - 1);
-        const s = marqueeEl.style;
+        const s = el.style;
         s.left = (v.colX[a.c1] - sc.scrollLeft - 1) + 'px';
         s.top = (v.rowY[a.r1] - sc.scrollTop - 1) + 'px';
         s.width = (v.colX[c2 + 1] - v.colX[a.c1] + 1) + 'px';
         s.height = (v.rowY[r2 + 1] - v.rowY[a.r1] + 1) + 'px';
-        marqueeEl.hidden = false;
+        el.hidden = false;
+      }
+      function positionMarquee() {
+        const sc = els.scroller;
+        marqueeClip.style.width = Math.max(0, sc.clientWidth - HEAD_W) + 'px';
+        marqueeClip.style.height = Math.max(0, sc.clientHeight - HEAD_H) + 'px';
+        const m = state.marquee;
+        if (!m || m.sheet !== state.current || !state.data[m.sheet]) marqueeEl.hidden = true;
+        else placeAnts(marqueeEl, m.area);
+        // 수식 입력 중 방금 고른 참조: 그 참조 색으로 도는 점선
+        const pr = pointRef();
+        if (!pr || pr.sheet !== state.current || pr.rect.r1 >= dims.rows || pr.rect.c1 >= dims.cols) ptAntsEl.hidden = true;
+        else { ptAntsEl.style.setProperty('--ants', pr.color); placeAnts(ptAntsEl, pr.rect); }
       }
 
       // ===== 선택과 이동 =====
@@ -5835,6 +6242,15 @@
         if (e.button !== 0 || !isData(state.current)) return;
         const h = hit(e);
         if (!h.inside) return;   // 스크롤바 클릭
+        // 수식 입력 중 색 상자의 테두리·모서리를 누르면 그 참조를 옮기거나 크기를 바꿈
+        const rb = !h.beyond ? refBoxHit(h) : null;
+        if (rb) {
+          e.preventDefault();
+          drag = { id: e.pointerId, ...rb };
+          setMode('참조');
+          capture(e.pointerId);
+          return;
+        }
         // 수식 입력 중이면 누른 칸의 주소를 수식에 넣음 (엑셀의 참조 모드)
         if (h.zone === 'cell' && !h.beyond && canPointRef()) {
           e.preventDefault();
@@ -5886,7 +6302,8 @@
         if (!drag) {
           if (e.pointerType === 'mouse' && isData(state.current)) {
             const h = hit(e);
-            setCursor(h.edge ? (h.edge.axis === 'col' ? 'col-resize' : 'row-resize') : h.handle ? 'crosshair' : 'cell');
+            const rb = state.edit && !h.beyond ? refBoxHit(h) : null;
+            setCursor(rb ? rb.cursor : h.edge ? (h.edge.axis === 'col' ? 'col-resize' : 'row-resize') : h.handle ? 'crosshair' : 'cell');
           }
           return;
         }
@@ -5917,12 +6334,16 @@
         if (drag.mode === 'point') {
           const r = state.edit && state.edit.ptRect;
           const nr = rectOf(drag.anchor, h);
-          if (!r || r.r1 !== nr.r1 || r.r2 !== nr.r2 || r.c1 !== nr.c1 || r.c2 !== nr.c2) insertRef(drag.anchor, { r: h.r, c: h.c });
+          if (!r || r.r1 !== nr.r1 || r.r2 !== nr.r2 || r.c1 !== nr.c1 || r.c2 !== nr.c2) { insertRef(drag.anchor, { r: h.r, c: h.c }); showRefSize(nr); }
+          return;
+        }
+        if (drag.mode === 'refMove' || drag.mode === 'refSize') {
+          if (state.edit) dragRef(drag, h);
           return;
         }
         const f = view().focus;
         const next = drag.mode === 'col' ? { r: dims.rows - 1, c: h.c } : drag.mode === 'row' ? { r: h.r, c: dims.cols - 1 } : { r: h.r, c: h.c };
-        if (next.r !== f.r || next.c !== f.c) extendTo(h, drag.mode);
+        if (next.r !== f.r || next.c !== f.c) { extendTo(h, drag.mode); showRefSize(view().areas[view().areas.length - 1]); }
       });
 
       function endDrag(e, cancelled) {
@@ -5930,14 +6351,19 @@
         const d = drag;
         drag = null;
         if (d.mode === 'size') {
-          setMode('준비');
+          setReady();
           const sheet = state.current, n = d.lines.length;
           const label = d.axis === 'col' ? `열 너비 ${colChars(view().colW[d.i])}` : `행 높이 ${rowPt(view().rowH[d.i])}`;
           commitSize(sheet, d.colBefore, d.rowBefore, n > 1 ? `${n}개 ${label}` : label);
         } else if (d.mode === 'fill') {
-          setMode('준비');
+          setReady();
           scheduleDraw();
           if (!cancelled && d.target) performFill(d.src, d.target);
+        } else if (d.mode === 'refMove' || d.mode === 'refSize') {
+          if (state.edit) setMode(state.edit.mode === 'enter' ? '입력' : '편집');
+          updateFormulaBar();   // 이름 상자의 '5R x 2C'를 주소로 되돌림
+        } else {
+          updateFormulaBar();
         }
       }
 
@@ -6011,7 +6437,12 @@
         }
         const page = Math.max(1, Math.floor((sc.clientHeight - HEAD_H) / Math.max(view().rowH[view().active.r], 4)) - 1);
         switch (k) {
-          case 'Enter': e.preventDefault(); moveWithin(e.shiftKey ? -1 : 1, 0); return;
+          case 'Enter':
+            e.preventDefault();
+            // 복사 점선이 있으면 엑셀처럼 Enter = 고른 곳에 붙여넣고 복사 끝내기
+            if (state.marquee && clip && !e.shiftKey) { pasteText(clip.text); clearMarquee(); return; }
+            moveWithin(e.shiftKey ? -1 : 1, 0);
+            return;
           case 'Tab': e.preventDefault(); moveWithin(0, e.shiftKey ? -1 : 1); return;
           case 'PageDown': e.preventDefault(); moveActive(page, 0, false); return;
           case 'PageUp': e.preventDefault(); moveActive(-page, 0, false); return;
@@ -7125,6 +7556,7 @@
         renderTabs();
         updateFormulaBar();
         updateStatus();
+        syncHint();
         if (!keepEdit) focusGrid();
       }
 
@@ -7484,8 +7916,20 @@
       });
 
       // ===== 활동 문서 (마우나로아 CO₂ 연평균, NOAA GML co2_annmean_mlo.txt 2026-10-09 작성 파일) =====
-      const CO2 = [[2015, 401.01], [2016, 404.41], [2017, 406.76], [2018, 408.72], [2019, 411.65], [2020, 414.21],
-        [2021, 416.41], [2022, 418.53], [2023, 421.08], [2024, 424.61], [2025, 427.35]];
+      const CO2 = [
+        [1959, 315.98], [1960, 316.91], [1961, 317.64], [1962, 318.45], [1963, 318.99], [1964, 319.62],
+        [1965, 320.04], [1966, 321.37], [1967, 322.18], [1968, 323.05], [1969, 324.62], [1970, 325.68],
+        [1971, 326.32], [1972, 327.46], [1973, 329.68], [1974, 330.19], [1975, 331.13], [1976, 332.03],
+        [1977, 333.84], [1978, 335.41], [1979, 336.84], [1980, 338.76], [1981, 340.12], [1982, 341.48],
+        [1983, 343.15], [1984, 344.87], [1985, 346.35], [1986, 347.61], [1987, 349.31], [1988, 351.69],
+        [1989, 353.20], [1990, 354.45], [1991, 355.70], [1992, 356.54], [1993, 357.21], [1994, 358.96],
+        [1995, 360.97], [1996, 362.74], [1997, 363.88], [1998, 366.84], [1999, 368.54], [2000, 369.71],
+        [2001, 371.32], [2002, 373.45], [2003, 375.98], [2004, 377.70], [2005, 379.98], [2006, 382.09],
+        [2007, 384.02], [2008, 385.83], [2009, 387.64], [2010, 390.10], [2011, 391.85], [2012, 394.06],
+        [2013, 396.74], [2014, 398.81], [2015, 401.01], [2016, 404.41], [2017, 406.76], [2018, 408.72],
+        [2019, 411.65], [2020, 414.21], [2021, 416.41], [2022, 418.53], [2023, 421.08], [2024, 424.61],
+        [2025, 427.35]];
+      const LAST = 4 + CO2.length - 1;   // 데이터 마지막 행 (첫 해 1959년은 기준 해, 5행부터 1960~2025년 → 70행)
       const ST = {
         title: { b: 1, color: '#0b5c31' },
         head: { b: 1, fill: '#dde8f6', align: 'center' },
@@ -7519,30 +7963,31 @@
       function buildWorkbook() {
         // 데이터: 연도·농도는 채워 두고 x·y·예측·오차는 학생이 수식으로
         putText(S_DATA, 'A1', '하와이 마우나로아 이산화탄소(CO₂) 연평균 농도 — 실제 관측값', ST.title);
-        putText(S_DATA, 'A2', '기준 해', ST.base); putNum(S_DATA, 'B2', 2015, ST.base);
-        putText(S_DATA, 'C2', '기준 해 농도', ST.base); putNum(S_DATA, 'D2', 401.01, ST.base);
+        putText(S_DATA, 'A2', '기준 해', ST.base); putNum(S_DATA, 'B2', CO2[0][0], ST.base);
+        putText(S_DATA, 'C2', '기준 해 농도', ST.base); putNum(S_DATA, 'D2', CO2[0][1], ST.base);
         ['연도', 'CO₂ (ppm)', 'x (몇 년 뒤)', 'y (늘어난 ppm)', '예측 ŷ = a·x', '오차 y − ŷ', '오차²'].forEach((h, i) => putText(S_DATA, colName(i) + '4', h, ST.head));
         CO2.slice(1).forEach(([yr, v], i) => { putNum(S_DATA, 'A' + (5 + i), yr); putNum(S_DATA, 'B' + (5 + i), v); });
-        putText(S_DATA, 'I4', '기울기 a', ST.head); putNum(S_DATA, 'J4', 2, ST.input);
+        putText(S_DATA, 'I4', '기울기 a', ST.head); putNum(S_DATA, 'J4', 1, ST.input);
         putText(S_DATA, 'I5', '평균제곱오차 L(a)', ST.head); styleRange(S_DATA, 'J5', 'J5', ST.answer);
-        putText(S_DATA, 'A16', '출처: 미국 해양대기청(NOAA) GML 마우나로아 관측소 연평균(co2_annmean_mlo.txt, 2026-10-09). 2022년 12월부터는 마우나케아 관측소 값.', ST.note);
-        putText(S_DATA, 'A17', 'ppm = 공기 분자 100만 개 중 이산화탄소 분자 수 · 노란 칸은 바꿔 보는 값, 초록 칸은 구해서 넣는 값', ST.note);
+        putText(S_DATA, 'I7', '출처: 미국 해양대기청(NOAA) GML 마우나로아 관측소 연평균(co2_annmean_mlo.txt, 2026-10-09). 2022년 12월부터는 마우나케아 관측소 값.', ST.note);
+        putText(S_DATA, 'I8', 'ppm = 공기 분자 100만 개 중 이산화탄소 분자 수 · 노란 칸은 바꿔 보는 값, 초록 칸은 구해서 넣는 값', ST.note);
         colWidths(S_DATA, { A: 64, B: 86, C: 92, D: 104, E: 104, F: 92, G: 78, H: 24, I: 128, J: 86 });
 
         // 손실함수: a 시작값 두 개(채우기 핸들로 이어 가기)
         putText(S_LOSS, 'A1', '손실함수 L(a): 기울기 a를 바꾸며 평균제곱오차 재기', ST.title);
         putText(S_LOSS, 'A3', '기울기 a', ST.head); putText(S_LOSS, 'B3', 'L(a)', ST.head);
-        putNum(S_LOSS, 'A4', 1.5); putNum(S_LOSS, 'A5', 1.6);
+        putNum(S_LOSS, 'A4', 0.5); putNum(S_LOSS, 'A5', 0.6);
         putText(S_LOSS, 'D3', '가장 작은 L(a)', ST.head); styleRange(S_LOSS, 'E3', 'E3', ST.answer);
         putText(S_LOSS, 'D4', '그때의 a', ST.head); styleRange(S_LOSS, 'E4', 'E4', ST.answer);
         putText(S_LOSS, 'D6', '포물선 꼭짓점 a = −B ÷ (2A)', ST.head); styleRange(S_LOSS, 'E6', 'E6', ST.answer);
         putText(S_LOSS, 'D7', '← 2차 추세선 수식의 A, B로', ST.note);
-        colWidths(S_LOSS, { A: 80, B: 96, C: 24, D: 190, E: 92 });
+        putText(S_LOSS, 'G3', '연습: 오차 펼쳐 보기', ST.head);   // =y-A4*x → (…)^2 → AVERAGE(…)로 한 칸 수식을 쌓아 보는 자리
+        colWidths(S_LOSS, { A: 80, B: 96, C: 24, D: 190, E: 92, F: 24, G: 140 });
 
         // 경사하강법: 학습률과 출발점
         putText(S_GD, 'A1', '경사하강법: 발밑 기울기의 반대쪽으로 a를 조금씩', ST.title);
-        putText(S_GD, 'A3', '학습률 α', ST.head); putNum(S_GD, 'B3', 0.01, ST.input);
-        putText(S_GD, 'C3', '← 0.005 · 0.01 · 0.02 · 0.03으로 바꿔 보기', ST.note);
+        putText(S_GD, 'A3', '학습률 α', ST.head); putNum(S_GD, 'B3', 0.0003, ST.input);
+        putText(S_GD, 'C3', '← 0.0001 · 0.0003 · 0.0006 · 0.0007로 바꿔 보기', ST.note);
         ['회', 'a', '발밑 기울기 L′(a)', 'L(a)'].forEach((h, i) => putText(S_GD, colName(i) + '5', h, ST.head));
         putNum(S_GD, 'A6', 0); putNum(S_GD, 'A7', 1); putNum(S_GD, 'B6', 0, ST.input);
         colWidths(S_GD, { A: 56, B: 100, C: 140, D: 100 });
@@ -7561,22 +8006,26 @@
           parts.push({ sheet, idx: Int32Array.from(idx), vals: Float64Array.from(vals), fs });
         };
         const rows = (from, to, f) => Array.from({ length: to - from + 1 }, (_, i) => f(from + i, i));
-        const X = '데이터!$C$5:$C$14', Y = '데이터!$D$5:$D$14';
+        // x, y 이름 (학생 활동과 같게: 데이터 시트 C5:C70 = x, D5:D70 = y). 이미 있으면 그대로 둠
+        const nameIt = (n, c) => { if (!state.names.has(n.toUpperCase())) state.names.set(n.toUpperCase(), { name: n, sheet: S_DATA, rect: { r1: 4, c1: c, r2: LAST - 1, c2: c } }); };
+        nameIt('x', 2);
+        nameIt('y', 3);
+        namesChanged();
         put(S_DATA, [
-          ...rows(5, 14, (r) => ['C' + r, `=A${r}-$B$2`]), ...rows(5, 14, (r) => ['D' + r, `=B${r}-$D$2`]),
-          ...rows(5, 14, (r) => ['E' + r, `=$J$4*C${r}`]), ...rows(5, 14, (r) => ['F' + r, `=D${r}-E${r}`]), ...rows(5, 14, (r) => ['G' + r, `=F${r}^2`]),
-          ['J5', '=AVERAGE(G5:G14)'],
+          ...rows(5, LAST, (r) => ['C' + r, `=A${r}-$B$2`]), ...rows(5, LAST, (r) => ['D' + r, `=B${r}-$D$2`]),
+          ...rows(5, LAST, (r) => ['E' + r, `=$J$4*C${r}`]), ...rows(5, LAST, (r) => ['F' + r, `=D${r}-E${r}`]), ...rows(5, LAST, (r) => ['G' + r, `=F${r}^2`]),
+          ['J5', `=AVERAGE(G5:G${LAST})`],
         ]);
         put(S_LOSS, [
-          ...rows(4, 24, (r, i) => ['A' + r, Number((1.5 + i * 0.1).toFixed(1))]),
-          ...rows(4, 24, (r) => ['B' + r, `=AVERAGE((${Y}-A${r}*${X})^2)`]),
-          ['E3', '=MIN(B4:B24)'], ['E4', '=INDEX(A4:A24,MATCH(E3,B4:B24,0))'], ['E6', `=SUMPRODUCT(${X},${Y})/SUMSQ(${X})`],
+          ...rows(4, 24, (r, i) => ['A' + r, Number((0.5 + i * 0.1).toFixed(1))]),
+          ...rows(4, 24, (r) => ['B' + r, `=AVERAGE((y-A${r}*x)^2)`]),
+          ['E3', '=MIN(B4:B24)'], ['E4', '=INDEX(A4:A24,MATCH(E3,B4:B24,0))'], ['E6', '=SUMPRODUCT(x,y)/SUMSQ(x)'],
         ]);
         put(S_GD, [
           ...rows(6, 16, (r, i) => ['A' + r, i]),
           ...rows(7, 16, (r) => ['B' + r, `=B${r - 1}-$B$3*C${r - 1}`]),
-          ...rows(6, 16, (r) => ['C' + r, `=AVERAGE(2*(B${r}*${X}-${Y})*${X})`]),
-          ...rows(6, 16, (r) => ['D' + r, `=AVERAGE((${Y}-B${r}*${X})^2)`]),
+          ...rows(6, 16, (r) => ['C' + r, `=AVERAGE(2*(B${r}*x-y)*x)`]),
+          ...rows(6, 16, (r) => ['D' + r, `=AVERAGE((y-B${r}*x)^2)`]),
         ]);
         applyChanges(parts, '정답 채우기 (교사용)');
         const mk = (sheet, type, x, y, title, xT, yT, trend, box) => {
@@ -7585,7 +8034,7 @@
           chartHistory(sheet, ch.id, null, ch, '정답 차트');
         };
         const v = state.views[S_DATA];
-        mk(S_DATA, 'scatter', { r1: 4, c1: 2, r2: 13, c2: 2 }, { r1: 4, c1: 3, r2: 13, c2: 3 }, '2015년 이후 늘어난 CO₂', 'x (몇 년 뒤)', 'y (늘어난 ppm)', { kind: 'linear', zero: true }, { x: v.colX[8], y: v.rowY[6], w: 440, h: 290 });
+        mk(S_DATA, 'scatter', { r1: 4, c1: 2, r2: LAST - 1, c2: 2 }, { r1: 4, c1: 3, r2: LAST - 1, c2: 3 }, `${CO2[0][0]}년 이후 늘어난 CO₂`, 'x (몇 년 뒤)', 'y (늘어난 ppm)', { kind: 'linear', zero: true }, { x: v.colX[8], y: v.rowY[9], w: 440, h: 290 });
         const lv = state.views[S_LOSS];
         mk(S_LOSS, 'scatter', { r1: 3, c1: 0, r2: 23, c2: 0 }, { r1: 3, c1: 1, r2: 23, c2: 1 }, '손실함수 L(a)', '기울기 a', 'L(a)', { kind: 'poly2' }, { x: lv.colX[3], y: lv.rowY[8], w: 440, h: 290 });
         const gv = state.views[S_GD];
@@ -7595,6 +8044,699 @@
       }
       ACTIONS.teacherFill = teacherFill;
       if (/[?&]teacher\b/.test(location.search)) $('teacherFill').hidden = false;
+
+      // ===== 힌트: 시트마다 할 일을 짧은 움직임으로 =====
+      // 작은 시트(340×232) 위에서 커서가 칸을 누르고, 수식을 치고(주소 색 상자), 채우기 점을 끌고, 차트를 넣는 모습을 보여 준다.
+      // 실제 시트는 건드리지 않는다. '동작 줄이기' 설정이면 움직임 없이 단계의 마지막 모습만 보여 준다.
+      const hintEls = { panel: $('hintPanel'), head: $('hintHead'), title: $('hintTitle'), tabs: $('hintTabs'), stage: $('hintStage'), say: $('hintSay'), fab: $('hintBtn') };
+      const HINT_RM = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+      const HS_W = 340, HS_H = 232, HS_TOP = 48;
+      const HS_STOP = {};   // 다른 단계로 넘어가면 진행 중인 장면을 멈추는 신호
+      const hint = { sheet: null, step: 0, token: 0, stepOf: {} };
+      let hs = null;        // 지금 무대 (칸·커서·선택 상자 등)
+
+      // 힌트 속 숫자도 실제 자료로 계산 (학생 시트에 나올 값과 같게)
+      const H_XY = CO2.slice(1).map(([yr, v]) => [yr - CO2[0][0], Math.round((v - CO2[0][1]) * 100) / 100]);
+      const hLoss = (a) => H_XY.reduce((s, [x, y]) => s + (y - a * x) ** 2, 0) / H_XY.length;
+      const hSlope = (a) => H_XY.reduce((s, [x, y]) => s + 2 * (a * x - y) * x, 0) / H_XY.length;
+      const A_BEST = H_XY.reduce((s, [x, y]) => s + x * y, 0) / H_XY.reduce((s, [x]) => s + x * x, 0);
+      const hGdPath = (lr) => { const p = [0]; for (let i = 0; i < 10; i++) p.push(p[i] - lr * hSlope(p[i])); return p; };
+      const hNum = (v, d = 2) => String(Number(v.toFixed(d)));
+      const yearCells = (rows) => Object.fromEntries(rows.flatMap((r) => [['A' + r, String(CO2[r - 4][0])], ['B' + r, CO2[r - 4][1].toFixed(2)]]));
+      const xyCells = (rows) => Object.fromEntries(rows.flatMap((r) => [['C' + r, String(H_XY[r - 5][0])], ['D' + r, hNum(H_XY[r - 5][1])]]));
+      const errCells = (a, rows) => Object.fromEntries(rows.flatMap((r) => {
+        const [x, y] = H_XY[r - 5], e = y - a * x;
+        return [['E' + r, hNum(a * x)], ['F' + r, hNum(e)], ['G' + r, hNum(e * e, Math.abs(e) < 1 ? 4 : 2)]];
+      }));
+      const lossCells = (rows) => Object.fromEntries(rows.flatMap((r) => { const a = 0.5 + (r - 4) * 0.1; return [['A' + r, hNum(a, 1)], ['B' + r, hNum(hLoss(a))]]; }));
+      const gdCells = (lr, withSlope = true) => {
+        const p = hGdPath(lr), o = {};
+        [[6, 0], [7, 1], [16, 10]].forEach(([r, i]) => {
+          o['B' + r] = hNum(p[i], 4);
+          if (withSlope) { o['C' + r] = hNum(hSlope(p[i])); o['D' + r] = hNum(hLoss(p[i])); }
+        });
+        return o;
+      };
+      // 손실함수 시트에서 붙인 이름 x(데이터!C5:C70), y(데이터!D5:D70)를 쓰는 짧은 식
+      const F_SLOPE = '=AVERAGE(2*(B6*x-y)*x)';
+      const F_GDLOSS = '=AVERAGE((y-B6*x)^2)';
+      // 손실함수 시트 G열 연습: a일 때 오차(또는 오차²)가 r행에 펼쳐진 값 (G4 = 1960년)
+      const errCol = (a, rows, sq) => Object.fromEntries(rows.map((r) => {
+        const [x, y] = H_XY[r - 4], e = y - a * x;
+        return ['G' + r, hNum(sq ? e * e : e, sq && Math.abs(e) < 1 ? 4 : 2)];
+      }));
+      const DATA_TOP = { A2: '기준 해', B2: '1959', C2: '기준 농도', D2: '315.98', A4: '연도', B4: 'CO₂', C4: 'x', D4: 'y' };
+      const ERR_TOP = { C4: 'x', D4: 'y', E4: '예측', F4: '오차', G4: '오차²', I4: 'a', I5: 'L(a)', J4: '1' };
+      const GD_TOP = { A3: '학습률 α', B3: '0.0003', A5: '회', B5: 'a', C5: '기울기', D5: 'L(a)', A6: '0', A7: '1', B6: '0' };
+      const LOSS_TOP = { A3: '기울기 a', B3: 'L(a)' };
+
+      // 장면 대본: [동작, ...]  input = 칸 누르고 입력 후 Enter, fill = 채우기 점(drag 끌기 / dbl 두 번 누르기)
+      const HINTS = {
+        S1: {
+          title: '데이터 시트에서 할 일',
+          steps: [
+            {
+              title: 'x와 y 만들기',
+              cols: [['A', 44], ['B', 54], ['C', 48], ['D', 56]], rows: [2, 4, 5, 6, 7, '⋮', 70],
+              cells: { ...DATA_TOP, ...yearCells([5, 6, 7, 70]) }, styles: { base: ['A2:D2'], head: ['A4:D4'] },
+              say: [
+                'C5에 <code>=A5-$B$2</code>: 1959년부터 몇 년 뒤인지 (x)',
+                'D5에 <code>=B5-$D$2</code>: 그동안 늘어난 농도 (y)',
+                'C5:D5를 고르고 오른쪽 아래 점을 <b>두 번</b> 누르면 70행까지 채워져요. <code>$</code>를 붙인 B2·D2는 그대로예요',
+              ],
+              script: [
+                ['say', 0], ['input', 'C5', '=A5-$B$2', { C5: '1' }],
+                ['say', 1], ['input', 'D5', '=B5-$D$2', { D5: hNum(H_XY[0][1]) }],
+                ['say', 2], ['dragSel', 'C5', 'D5'], ['fill', 'C5:D5', 'C5:D70', xyCells([6, 7, 70]), 'dbl'], ['wait', 1600],
+              ],
+            },
+            {
+              title: '산점도 그리기',
+              cols: [['A', 44], ['B', 54], ['C', 48], ['D', 56]], rows: [2, 4, 5, 6, 7, '⋮', 70],
+              cells: { ...DATA_TOP, ...yearCells([5, 6, 7, 70]), ...xyCells([5, 6, 7, 70]) }, styles: { base: ['A2:D2'], head: ['A4:D4'] },
+              say: [
+                '이름 상자(왼쪽 위 주소 칸)에 <code>C4:D70</code>을 쓰고 Enter',
+                '리본 <b>차트 삽입 › 분산형</b>',
+                '점 66개가 곧은 직선인지, 조금 휘었는지 살펴봐요',
+              ],
+              script: [
+                ['say', 0], ['name', 'C4:D70'],
+                ['say', 1], ['rib', '차트 삽입 › 분산형'], ['chart', 'scatter'],
+                ['say', 2], ['wait', 2200],
+              ],
+            },
+            {
+              title: '예측하고 오차 재기',
+              cols: [['C', 34], ['D', 44], ['E', 46], ['F', 46], ['G', 54], ['…', 10], ['I', 34], ['J', 46]], rows: [4, 5, 6, '⋮', 70],
+              cells: { ...ERR_TOP, ...xyCells([5, 6, 70]) }, styles: { head: ['C4:G4', 'I4:I5'], input: ['J4'], answer: ['J5'] },
+              say: [
+                '예측 E5 <code>=$J$4*C5</code> → 오차 F5 <code>=D5-E5</code> → 오차² G5 <code>=F5^2</code>',
+                '세 칸을 함께 70행까지 채우고, J5에 평균 <code>=AVERAGE(G5:G70)</code>',
+                'J4의 a를 바꾸면 예측·오차와 J5(평균제곱오차)가 한꺼번에 바뀌어요',
+              ],
+              script: [
+                ['say', 0],
+                ['input', 'E5', '=$J$4*C5', errCells(1, [5])], ['input', 'F5', '=D5-E5', {}], ['input', 'G5', '=F5^2', {}],
+                ['say', 1], ['dragSel', 'E5', 'G5'], ['fill', 'E5:G5', 'E5:G70', errCells(1, [6, 70]), 'dbl'],
+                ['input', 'J5', '=AVERAGE(G5:G70)', { J5: hNum(hLoss(1)) }],
+                ['say', 2], ['input', 'J4', '1.5', { J4: '1.5', ...errCells(1.5, [5, 6, 70]), J5: hNum(hLoss(1.5)) }], ['wait', 2000],
+              ],
+            },
+            {
+              title: '추세선으로 확인 (마지막에)',
+              cols: [['A', 44], ['B', 54], ['C', 48], ['D', 56]], rows: [2, 4, 5, 6, 7, '⋮', 70],
+              cells: { ...DATA_TOP, ...yearCells([5, 6, 7, 70]), ...xyCells([5, 6, 7, 70]) }, styles: { base: ['A2:D2'], head: ['A4:D4'] }, chart: ['scatter'],
+              say: [
+                '차트를 두 번 눌러 <b>추세선: 선형 + 절편 = 0 + 수식 표시</b>',
+                `추세선 기울기(y = ${hNum(A_BEST, 4)}x)가 손실함수·경사하강법 시트에서 찾은 a와 같은지 비교해요`,
+              ],
+              script: [
+                ['say', 0], ['go', '@chart'], ['dbl'], ['rib', '추세선: 선형 · 절편 = 0 · 수식'], ['chart', 'trend', { still: true }],
+                ['say', 1], ['wait', 2400],
+              ],
+            },
+          ],
+        },
+        S2: {
+          title: '손실함수 시트에서 할 일',
+          steps: [
+            {
+              title: 'a 목록 만들기',
+              cols: [['A', 56], ['B', 70]], rows: [3, 4, 5, 6, 7, '⋮', 24],
+              cells: { ...LOSS_TOP, A4: '0.5', A5: '0.6' }, styles: { head: ['A3:B3'] },
+              say: [
+                'A4·A5의 0.5, 0.6을 함께 골라요 (두 수의 차이 0.1이 간격이 돼요)',
+                '오른쪽 아래 점을 24행까지 끌면 0.7, 0.8, … 2.5까지 채워져요',
+              ],
+              script: [
+                ['say', 0], ['dragSel', 'A4', 'A5'],
+                ['say', 1], ['fill', 'A4:A5', 'A4:A24', { A6: '0.7', A7: '0.8', A24: '2.5' }, 'drag'], ['wait', 1600],
+              ],
+            },
+            {
+              title: 'x · y 이름 붙이기',
+              cols: [['A', 44], ['B', 54], ['C', 48], ['D', 56]], rows: [2, 4, 5, 6, 7, '⋮', 70],
+              cells: { ...DATA_TOP, ...yearCells([5, 6, 7, 70]), ...xyCells([5, 6, 7, 70]) }, styles: { base: ['A2:D2'], head: ['A4:D4'] },
+              say: [
+                '<b>데이터 시트</b>로 가서 이름 상자에 <code>C5:C70</code> Enter → 이름 상자에 <code>x</code> Enter',
+                '같은 방법으로 <code>D5:D70</code>을 고르고 <code>y</code>',
+                '이제 수식에 <b>x</b>, <b>y</b>라고만 쓰면 66개 칸을 한꺼번에 불러요. 긴 주소를 칠 필요가 없어요',
+              ],
+              script: [
+                ['say', 0], ['name', 'C5:C70'], ['nameAs', 'x'], ['note', 'D5', 'x = C5:C70'],
+                ['say', 1], ['name', 'D5:D70'], ['nameAs', 'y'], ['note', 'D6', 'y = D5:D70'],
+                ['say', 2], ['wait', 2200],
+              ],
+            },
+            {
+              title: '한 칸에서 오차 66개',
+              cols: [['A', 44], ['B', 48], ['…', 10], ['G', 100]], rows: [3, 4, 5, 6, '⋮', 69, 70],
+              cells: { ...LOSS_TOP, A4: '0.5', A5: '0.6', A6: '0.7', G3: '연습' }, styles: { head: ['A3:B3', 'G3'] },
+              say: [
+                'G4에 <code>=y-A4*x</code> → a = 0.5일 때 오차 66개가 아래로 펼쳐져요 (직선보다 위면 +)',
+                '같은 칸을 <code>=(y-A4*x)^2</code>로 고치면 66개 모두 제곱',
+                '<code>=AVERAGE((y-A4*x)^2)</code>로 감싸면 평균 하나 = L(0.5). 데이터 시트 J4에 0.5를 넣었을 때 J5와 같아요',
+              ],
+              script: [
+                ['say', 0], ['input', 'G4', '=y-A4*x', errCol(0.5, [4, 5, 6, 69], false)], ['spill', 'G4:G69'], ['note', 'G5', '66개'], ['wait', 1600],
+                ['say', 1], ['input', 'G4', '=(y-A4*x)^2', errCol(0.5, [4, 5, 6, 69], true)], ['wait', 1600],
+                ['say', 2], ['input', 'G4', '=AVERAGE((y-A4*x)^2)', { G4: hNum(hLoss(0.5)), G5: '', G6: '', G69: '' }], ['spill', null],
+                ['explain', [['y-A4*x', '① 오차 y − a·x (66개)'], ['^2', '② 제곱'], ['AVERAGE(', '③ 평균 → 한 숫자']]], ['wait', 1200],
+              ],
+            },
+            {
+              title: 'a마다 L(a)',
+              cols: [['A', 56], ['B', 70]], rows: [3, 4, 5, '⋮', 9, '⋮', 24],
+              cells: { ...LOSS_TOP, A4: '0.5', A5: '0.6', A9: '1', A24: '2.5' }, styles: { head: ['A3:B3'] },
+              say: [
+                'B4에 같은 식 <code>=AVERAGE((y-A4*x)^2)</code>',
+                '오른쪽 아래 점을 두 번 눌러 24행까지 채우면 a마다 L(a)가 나와요',
+                '데이터 시트 값을 하나씩 옮겨 적을 필요 없어요. a = 1인 B9 = 데이터 시트 J5(a = 1)',
+              ],
+              script: [
+                ['say', 0], ['input', 'B4', '=AVERAGE((y-A4*x)^2)', { B4: hNum(hLoss(0.5)) }],
+                ['say', 1], ['fill', 'B4', 'B4:B24', { B5: hNum(hLoss(0.6)), B9: hNum(hLoss(1)), B24: hNum(hLoss(2.5)) }, 'dbl'],
+                ['say', 2], ['go', 'B9'], ['click', 'B9'], ['note', 'B9', '데이터 시트 J5 (a = 1)와 같아요'], ['wait', 2400],
+              ],
+            },
+            {
+              title: '그래프와 가장 낮은 곳',
+              cols: [['A', 44], ['B', 56], ['…', 10], ['D', 84], ['E', 48]], rows: [3, 4, 5, '⋮', 13, '⋮', 24],
+              cells: { ...LOSS_TOP, ...lossCells([4, 5, 13, 24]), D3: '가장 작은 L(a)', D4: '그때의 a' }, styles: { head: ['A3:B3', 'D3:D4'], answer: ['E3:E4'] },
+              say: [
+                'A3:B24를 골라 <b>차트 삽입 › 분산형</b> → 아래로 볼록한 포물선',
+                'E3 <code>=MIN(B4:B24)</code>, E4 <code>=INDEX(A4:A24,MATCH(E3,B4:B24,0))</code> → 가장 낮은 곳의 a',
+                '차트를 두 번 눌러 <b>추세선: 다항식 2차</b>. 수식 y = Ax² + Bx + C의 꼭짓점 −B ÷ (2A)도 구해 봐요',
+              ],
+              script: [
+                ['say', 0], ['dragSel', 'A3', 'B24'], ['rib', '차트 삽입 › 분산형'], ['chart', 'loss'],
+                ['say', 1], ['input', 'E3', '=MIN(B4:B24)', { E3: hNum(hLoss(1.4), 3) }],
+                ['input', 'E4', '=INDEX(A4:A24,MATCH(E3,B4:B24,0))', { E4: '1.4' }], ['chart', 'loss', { still: true, min: true }],
+                ['say', 2], ['go', '@chart'], ['dbl'], ['rib', '추세선: 다항식 2차 · 수식'], ['chart', 'loss', { still: true, min: true, curve: true }], ['wait', 2400],
+              ],
+            },
+          ],
+        },
+        S3: {
+          title: '경사하강법 시트에서 할 일',
+          steps: [
+            {
+              title: '발밑 기울기 구하기',
+              cols: [['A', 40], ['B', 50], ['C', 62], ['D', 56]], rows: [3, 5, 6, 7, '⋮', 16],
+              cells: { ...GD_TOP, A16: '10' }, styles: { head: ['A5:D5'], input: ['B3', 'B6'] },
+              say: [
+                `C6에 <code>${esc(F_SLOPE)}</code> (x, y는 손실함수 단계에서 붙인 이름)`,
+                'L(a)를 a로 미분한 식이에요: 연도마다 2·(a·x − y)·x를 구해 평균',
+                '값이 음수면 a를 키울수록 L(a)가 내려가요 → a를 오른쪽으로 옮겨야 해요',
+              ],
+              script: [
+                ['say', 0], ['go', 'C6'], ['click', 'C6'], ['type', 'C6', F_SLOPE], ['wait', 500],
+                ['say', 1], ['explain', [['B6*x-y', '① 예측 − 실제'], ['2*(', '② 제곱을 미분하면 2배'], [')*x', '③ x를 곱함'], ['AVERAGE(', '④ 평균']]],
+                ['enter', { C6: hNum(hSlope(0)) }],
+                ['say', 2], ['go', 'C6'], ['note', 'C6', '음수 → 오른쪽이 내리막'], ['wait', 2200],
+              ],
+            },
+            {
+              title: '한 걸음씩 내려가기',
+              cols: [['A', 40], ['B', 50], ['C', 62], ['D', 56]], rows: [3, 5, 6, 7, '⋮', 16],
+              cells: { ...GD_TOP, C6: hNum(hSlope(0)) }, styles: { head: ['A5:D5'], input: ['B3', 'B6'] },
+              say: [
+                'B7에 <code>=B6-$B$3*C6</code>: 기울기의 반대쪽으로 α만큼 옮긴 다음 a',
+                `D6에 <code>${esc(F_GDLOSS)}</code>, 그다음 A·B열과 C·D열을 16행까지 채우기`,
+                `회차가 지날수록 a가 ${hNum(A_BEST, 4)} 근처로 다가가요`,
+              ],
+              script: [
+                ['say', 0], ['input', 'B7', '=B6-$B$3*C6', { B7: hNum(hGdPath(0.0003)[1], 4) }],
+                ['say', 1], ['input', 'D6', F_GDLOSS, { D6: hNum(hLoss(0)) }],
+                ['dragSel', 'A6', 'A7'], ['fill', 'A6:A7', 'A6:A16', { A16: '10' }, 'drag'],
+                ['go', 'B7'], ['click', 'B7'], ['fill', 'B7', 'B7:B16', { B16: hNum(hGdPath(0.0003)[10], 4) }, 'drag'],
+                ['dragSel', 'C6', 'D6'], ['fill', 'C6:D6', 'C6:D16', gdCells(0.0003), 'drag'],
+                ['say', 2], ['chart', 'gd', { lr: 0.0003 }], ['wait', 2200],
+              ],
+            },
+            {
+              title: '학습률 바꿔 보기',
+              cols: [['A', 40], ['B', 50], ['C', 62], ['D', 56]], rows: [3, 5, 6, 7, '⋮', 16],
+              cells: { ...GD_TOP, A16: '10', ...gdCells(0.0003) }, styles: { head: ['A5:D5'], input: ['B3', 'B6'] }, chart: ['gd', { lr: 0.0003 }],
+              say: [
+                '학습률 B3을 <code>0.0001</code>로: 아주 천천히 다가가요',
+                '<code>0.0006</code>: 바닥을 넘었다 돌아오며 출렁여요',
+                '<code>0.0007</code>: 점점 더 멀리 튀어 나가요(발산). 한 걸음이 너무 커서예요',
+              ],
+              script: [
+                ['say', 0], ['input', 'B3', '0.0001', { B3: '0.0001', ...gdCells(0.0001) }], ['chart', 'gd', { lr: 0.0001 }], ['wait', 1200],
+                ['say', 1], ['input', 'B3', '0.0006', { B3: '0.0006', ...gdCells(0.0006) }], ['chart', 'gd', { lr: 0.0006 }], ['wait', 1200],
+                ['say', 2], ['input', 'B3', '0.0007', { B3: '0.0007', ...gdCells(0.0007) }], ['chart', 'gd', { lr: 0.0007 }], ['wait', 2400],
+              ],
+            },
+          ],
+        },
+      };
+
+      // --- 작은 시트의 칸 위치 ---
+      function hsGrid(cols, rows) {
+        let x = 24, y = 18;
+        const colList = cols.map(([k, w]) => { const o = { k, x, w, ell: k === '…' }; x += w; return o; });
+        const rowList = rows.map((k) => { const h = k === '⋮' ? 14 : 22; const o = { k, y, h, ell: k === '⋮' }; y += h; return o; });
+        return { colList, rowList };
+      }
+      // 목록에 없는 행·열(예: 69행)은 사이의 생략 칸(⋮ …) 자리로
+      function hsAxis(list, want, ord) {
+        for (let i = 0; i < list.length; i++) {
+          const it = list[i];
+          if (it.ell) continue;
+          const o = ord(it.k);
+          if (o === want) return it;
+          if (o > want) return i > 0 && list[i - 1].ell ? list[i - 1] : null;
+        }
+        const last = list[list.length - 1];
+        return last && last.ell ? last : null;
+      }
+      function hsCell(a) {
+        const m = /^\$?([A-Z]{1,3})\$?(\d+)$/.exec(a);
+        if (!m || !hs) return null;
+        const c = hsAxis(hs.g.colList, colIndex(m[1]), colIndex), r = hsAxis(hs.g.rowList, Number(m[2]), Number);
+        return c && r ? { x: c.x, y: r.y, w: c.w, h: r.h } : null;
+      }
+      function hsRect(ref) {
+        const [a, b] = ref.split(':');
+        const p = hsCell(a), q = hsCell(b || a);
+        if (!p || !q) return null;
+        const x1 = Math.min(p.x, q.x), y1 = Math.min(p.y, q.y);
+        return { x: x1, y: y1, w: Math.max(p.x + p.w, q.x + q.w) - x1, h: Math.max(p.y + p.h, q.y + q.h) - y1 };
+      }
+      function hsInRange(a, range) {
+        const p = (s) => { const m = /^([A-Z]+)(\d+)$/.exec(s); return [colIndex(m[1]), Number(m[2])]; };
+        const [c, r] = p(a), [x, y] = range.split(':'), [c1, r1] = p(x), [c2, r2] = p(y || x);
+        return c >= c1 && c <= c2 && r >= r1 && r <= r2;
+      }
+
+      // --- 무대 만들기 ---
+      function hsBuild(scene) {
+        const g = hsGrid(scene.cols, scene.rows);
+        let cells = '';
+        for (const c of g.colList) cells += `<div class="hs-h" style="left:${c.x}px;top:0;width:${c.w}px;height:18px">${c.ell ? '' : c.k}</div>`;
+        for (const r of g.rowList) cells += `<div class="hs-h" style="left:0;top:${r.y}px;width:24px;height:${r.h}px;line-height:${r.h}px">${r.k}</div>`;
+        for (const r of g.rowList) {
+          for (const c of g.colList) {
+            const ell = r.ell || c.ell;
+            cells += `<div class="hs-c${ell ? ' is-ell' : ''}"${ell ? '' : ` data-a="${c.k}${r.k}"`} style="left:${c.x}px;top:${r.y}px;width:${c.w}px;height:${r.h}px;line-height:${r.h - 1}px"></div>`;
+          }
+        }
+        const inner = document.createElement('div');
+        inner.className = 'hs-inner';
+        inner.innerHTML =
+          '<div class="hs-bar"><span class="hs-name"></span><span class="hs-fxl">fx</span><span class="hs-fx"></span></div>' +
+          `<div class="hs-sheet">${cells}<div class="hs-refs"></div><div class="hs-spill" hidden></div><div class="hs-sel" hidden></div><div class="hs-dash" hidden></div><div class="hs-ed" hidden></div></div>` +
+          '<div class="hs-cursor"><svg viewBox="0 0 16 22" width="16" height="22"><path d="M1.5 1.5v16.2l4.3-4 2.9 6.4 2.5-1.1-2.9-6.3h5.9z" fill="#fff" stroke="#222" stroke-width="1.3" stroke-linejoin="round"/></svg></div>';
+        hintEls.stage.replaceChildren(inner);
+        const q = (s) => inner.querySelector(s);
+        hs = { g, inner, name: q('.hs-name'), fx: q('.hs-fx'), sel: q('.hs-sel'), spill: q('.hs-spill'), dash: q('.hs-dash'), refs: q('.hs-refs'), ed: q('.hs-ed'), cursor: q('.hs-cursor'), cells: new Map(), chart: null, rib: null, typed: '', cx: 0, cy: 0 };
+        inner.querySelectorAll('.hs-c[data-a]').forEach((el) => hs.cells.set(el.dataset.a, el));
+        for (const [cls, ranges] of Object.entries(scene.styles || {})) {
+          for (const range of ranges) for (const [a, el] of hs.cells) if (hsInRange(a, range)) el.classList.add(cls);
+        }
+        for (const [a, v] of Object.entries(scene.cells || {})) hsSet(a, v, false);
+        hs.name.textContent = 'A1';
+        hsCursorTo(HS_W - 46, HS_H - 40, 0);
+        if (scene.chart) hsChart(scene.chart[0], { ...(scene.chart[1] || {}), instant: true });
+        fitHintStage();
+      }
+      function fitHintStage() {
+        if (!hs || hintEls.panel.hidden) return;
+        const w = hintEls.stage.clientWidth || HS_W, s = Math.min(1, w / HS_W);
+        hs.inner.style.transform = s < 1 ? `scale(${s})` : '';
+        hs.inner.style.left = Math.max(0, (w - HS_W * s) / 2) + 'px';
+        hintEls.stage.style.height = Math.round(HS_H * s) + 'px';
+      }
+      window.addEventListener('resize', fitHintStage);
+
+      // --- 무대 동작 ---
+      const hsSleep = (ms, tk) => new Promise((res) => (HINT_RM.matches || !ms ? res() : setTimeout(res, ms)))
+        .then(() => { if (tk !== hint.token) throw HS_STOP; });
+      function hsSet(a, v, flash = true) {
+        const el = hs && hs.cells.get(a);
+        if (!el) return;
+        el.textContent = v;
+        el.classList.toggle('is-text', v !== '' && Number.isNaN(Number(v)));
+        if (flash && !HINT_RM.matches) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+      }
+      function hsCursorTo(x, y, ms) {
+        hs.cursor.style.setProperty('--hs-t', (HINT_RM.matches ? 0 : ms) + 'ms');
+        hs.cursor.style.transform = `translate(${x - 1.5}px, ${y - 1.5}px)`;
+        hs.cx = x;
+        hs.cy = y;
+      }
+      function hsPoint(target, where) {
+        if (target === '@name') return { x: 30, y: 12 };
+        if (target === '@chart') return { x: HS_W - 4 - 52, y: HS_H - 4 - 59 };
+        if (target === '@rib') return hs.rib ? { x: hs.rib.offsetLeft + hs.rib.offsetWidth / 2, y: hs.rib.offsetTop + hs.rib.offsetHeight / 2 } : { x: HS_W - 60, y: 64 };
+        const r = hsRect(target);
+        if (!r) return { x: hs.cx, y: hs.cy };
+        return where === 'h' ? { x: r.x + r.w, y: HS_TOP + r.y + r.h } : { x: r.x + Math.min(r.w / 2, 24), y: HS_TOP + r.y + r.h / 2 };
+      }
+      async function hsGo(target, where, ms, tk) {
+        const p = hsPoint(target, where);
+        hsCursorTo(p.x, p.y, ms);
+        await hsSleep(ms + 60, tk);
+      }
+      function hsRipple() {
+        if (HINT_RM.matches) return;
+        const d = document.createElement('div');
+        d.className = 'hs-ripple';
+        d.style.left = hs.cx + 'px';
+        d.style.top = hs.cy + 'px';
+        hs.inner.appendChild(d);
+        setTimeout(() => d.remove(), 500);
+      }
+      function hsSelect(ref, ms = 0) {
+        const r = hsRect(ref);
+        if (!r) return;
+        const s = hs.sel;
+        s.hidden = false;
+        s.style.setProperty('--hs-t', (HINT_RM.matches ? 0 : ms) + 'ms');
+        Object.assign(s.style, { left: r.x - 1 + 'px', top: r.y - 1 + 'px', width: r.w + 1 + 'px', height: r.h + 1 + 'px' });
+        hs.name.textContent = ref.split(':')[0];
+      }
+      // 수식 속 주소를 실제 편집 화면처럼 같은 색 글자 + 색 상자로
+      const HS_REF = /(?<![A-Za-z0-9_가-힣$!])((?:[A-Za-z_가-힣][A-Za-z0-9_가-힣]*!)?)(\$?[A-Z]{1,3}\$?\d+)(?::(\$?[A-Z]{1,3}\$?\d+))?(?![A-Za-z0-9_(])/g;
+      const HS_NAME = /(?<![A-Za-z0-9_가-힣$!])([xy])(?![A-Za-z0-9_(!])/g;   // 붙인 이름 x, y (다른 시트 범위라 상자는 없음)
+      function hsRefs(text) {
+        if (!text.startsWith('=')) return [];
+        const out = [];
+        for (const m of text.matchAll(HS_REF)) {
+          out.push({ s: m.index, e: m.index + m[0].length, key: m[0].replace(/\$/g, ''), other: Boolean(m[1]), range: (m[2] + (m[3] ? ':' + m[3] : '')).replace(/\$/g, '') });
+        }
+        for (const m of text.matchAll(HS_NAME)) {
+          if (!out.some((r) => m.index >= r.s && m.index < r.e)) out.push({ s: m.index, e: m.index + 1, key: m[1], other: true, range: '' });
+        }
+        out.sort((p, q) => p.s - q.s);
+        const colors = new Map();
+        for (const r of out) {
+          if (!colors.has(r.key)) colors.set(r.key, REF_COLORS[colors.size % REF_COLORS.length]);
+          r.color = colors.get(r.key);
+        }
+        return out;
+      }
+      function hsShowText(text, editing) {
+        const refs = hsRefs(text);
+        let html = '', at = 0;
+        for (const r of refs) { html += esc(text.slice(at, r.s)) + `<span style="color:${r.color}">${esc(text.slice(r.s, r.e))}</span>`; at = r.e; }
+        html += esc(text.slice(at));
+        hs.fx.innerHTML = html;
+        let boxes = '';
+        if (editing) {
+          hs.ed.innerHTML = html + '<span class="hs-caret"></span>';
+          hs.ed.scrollLeft = hs.ed.scrollWidth;
+          for (const r of refs) {
+            const b = !r.other && hsRect(r.range);
+            if (b) boxes += `<div class="hs-ref" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;border-color:${r.color};background:${r.color}22"></div>`;
+          }
+        }
+        hs.refs.innerHTML = boxes;
+      }
+      async function hsType(a, text, tk) {
+        const r = hsRect(a);
+        if (!r) return;
+        hsSelect(a);
+        Object.assign(hs.ed.style, { left: r.x - 1 + 'px', top: r.y - 1 + 'px', height: r.h + 2 + 'px', lineHeight: r.h - 2 + 'px', minWidth: r.w + 2 + 'px', maxWidth: HS_W - r.x - 4 + 'px' });
+        hs.ed.hidden = false;
+        hs.typed = text;
+        const dt = text.length > 30 ? 38 : 75;
+        for (let i = 1; i <= text.length; i++) {
+          hsShowText(text.slice(0, i), true);
+          if (i < text.length) await hsSleep(dt, tk);
+        }
+      }
+      function hsEnter(vals) {
+        hs.ed.hidden = true;
+        hs.refs.innerHTML = '';
+        hs.inner.querySelectorAll('.hs-exp').forEach((x) => x.remove());
+        hs.fx.textContent = hs.typed;
+        for (const [a, v] of Object.entries(vals || {})) hsSet(a, v);
+      }
+      async function hsTypeName(text, tk) {
+        await hsGo('@name', null, 560, tk);
+        hsRipple();
+        for (let i = 1; i <= text.length; i++) { hs.name.textContent = text.slice(0, i); await hsSleep(90, tk); }
+        await hsSleep(350, tk);
+        hsSelect(text);
+        await hsSleep(300, tk);
+      }
+      async function hsDragSel(from, to, tk) {
+        await hsGo(from, null, 560, tk);
+        hsRipple();
+        hsSelect(from);
+        await hsSleep(140, tk);
+        hsSelect(`${from}:${to}`, 520);
+        const p = hsPoint(to);
+        hsCursorTo(p.x, p.y, 520);
+        await hsSleep(600, tk);
+      }
+      async function hsFill(src, target, vals, how, tk) {
+        await hsGo(src, 'h', 560, tk);
+        if (how === 'dbl') {
+          hsRipple(); await hsSleep(150, tk); hsRipple(); await hsSleep(300, tk);
+        } else {
+          hsRipple();
+          const a = hsRect(src), b = hsRect(target), d = hs.dash;
+          d.hidden = false;
+          d.style.setProperty('--hs-t', '0ms');
+          Object.assign(d.style, { left: a.x + 'px', top: a.y + 'px', width: a.w + 'px', height: a.h + 'px' });
+          void d.offsetWidth;
+          d.style.setProperty('--hs-t', HINT_RM.matches ? '0ms' : '1000ms');
+          Object.assign(d.style, { width: b.w + 'px', height: b.h + 'px' });
+          const p = hsPoint(target, 'h');
+          hsCursorTo(p.x, p.y, 1000);
+          await hsSleep(1080, tk);
+          d.hidden = true;
+        }
+        hsSelect(target);
+        for (const [k, v] of Object.entries(vals || {})) hsSet(k, v);
+        await hsSleep(500, tk);
+      }
+      async function hsRib(label, tk) {
+        const r = document.createElement('div');
+        r.className = 'hs-rib';
+        r.textContent = label;
+        hs.inner.appendChild(r);
+        hs.rib = r;
+        await hsSleep(300, tk);
+        await hsGo('@rib', null, 600, tk);
+        hsRipple();
+        await hsSleep(500, tk);
+        r.remove();
+        hs.rib = null;
+      }
+      function hsNote(a, text) {
+        const r = hsRect(a);
+        if (!r) return;
+        const n = document.createElement('div');
+        n.className = 'hs-note';
+        n.textContent = '◀ ' + text;
+        n.style.left = r.x + r.w + 6 + 'px';
+        n.style.top = HS_TOP + r.y + 1 + 'px';
+        hs.inner.appendChild(n);
+      }
+      // 수식의 부분을 하나씩 짚으며 무슨 뜻인지
+      async function hsExplain(items, tk) {
+        const box = document.createElement('div');
+        box.className = 'hs-exp';
+        hs.inner.appendChild(box);
+        const text = hs.typed;
+        for (const [find, label] of items) {
+          const i = text.indexOf(find);
+          hs.fx.innerHTML = i < 0 ? esc(text) : esc(text.slice(0, i)) + `<mark class="hs-mark">${esc(find)}</mark>` + esc(text.slice(i + find.length));
+          box.querySelectorAll('span').forEach((s) => s.classList.remove('is-now'));
+          const s = document.createElement('span');
+          s.className = 'is-now';
+          s.textContent = label;
+          box.appendChild(s);
+          await hsSleep(1700, tk);
+        }
+        await hsSleep(500, tk);
+        box.querySelectorAll('span').forEach((s) => s.classList.remove('is-now'));
+        hsShowText(text, !hs.ed.hidden);
+      }
+      function hsChart(kind, opt = {}) {
+        if (!hs.chart) {
+          hs.chart = document.createElement('div');
+          hs.chart.className = 'hs-chart';
+          hs.inner.appendChild(hs.chart);
+        }
+        hs.chart.classList.toggle('hs-instant', Boolean(opt.instant));
+        hs.chart.innerHTML = hsChartSvg(kind, opt);
+      }
+      function hsChartSvg(kind, opt) {
+        const W = 104, H = 118, L = 14, R = 5, T = 26, B = 8;
+        let xr, yr, pts, title;
+        if (kind === 'scatter' || kind === 'trend') { xr = [0, 70]; yr = [0, 120]; pts = H_XY; title = 'x · y 산점도'; }
+        else if (kind === 'loss') { xr = [0.4, 2.6]; yr = [0, 1800]; pts = Array.from({ length: 21 }, (_, i) => [0.5 + i * 0.1, hLoss(0.5 + i * 0.1)]); title = 'L(a)'; }
+        else { xr = [0, 10]; yr = [-2, 4.6]; pts = hGdPath(opt.lr).map((a, i) => [i, a]); title = `a  (α = ${opt.lr})`; }
+        const X = (v) => L + ((v - xr[0]) / (xr[1] - xr[0])) * (W - L - R);
+        const Y = (v) => Math.max(T - 3, Math.min(H - 3, H - B - ((v - yr[0]) / (yr[1] - yr[0])) * (H - T - B)));
+        const f = (v) => v.toFixed(1);
+        let g = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Malgun Gothic, sans-serif">`;
+        g += `<text x="${W / 2}" y="11" font-size="8.5" text-anchor="middle" fill="#444">${esc(title)}</text>`;
+        g += `<path d="M${L} ${T - 2}V${H - B}H${W - R}" fill="none" stroke="#bbb"/>`;
+        if (kind === 'gd') {
+          g += `<line x1="${L}" x2="${W - R}" y1="${f(Y(A_BEST))}" y2="${f(Y(A_BEST))}" stroke="#1f8f4e" stroke-dasharray="3 2"/>`;
+          g += `<text x="${W - R - 2}" y="${f(Y(A_BEST) - 3)}" font-size="8" text-anchor="end" fill="#1f8f4e">${hNum(A_BEST, 4)}</text>`;
+          g += `<polyline points="${pts.map(([x, y]) => f(X(x)) + ',' + f(Y(y))).join(' ')}" fill="none" stroke="#4472c4" stroke-width="1.3" pathLength="1"${opt.instant ? '' : ' class="hs-draw"'}/>`;
+        }
+        if (kind === 'loss' && opt.curve) {
+          const cv = Array.from({ length: 45 }, (_, i) => 0.45 + i * 0.05);
+          g += `<polyline points="${cv.map((a) => f(X(a)) + ',' + f(Y(hLoss(a)))).join(' ')}" fill="none" stroke="#c06400" stroke-width="1.3" pathLength="1" class="hs-draw"/>`;
+          g += `<text x="${W / 2}" y="21" font-size="8" text-anchor="middle" fill="#c06400">꼭짓점 a = ${hNum(A_BEST, 4)}</text>`;
+        }
+        if (kind === 'trend') {
+          g += `<line x1="${f(X(0))}" y1="${f(Y(0))}" x2="${f(X(70))}" y2="${f(Y(70 * A_BEST))}" stroke="#d6303b" stroke-width="1.4" pathLength="1" class="hs-draw"/>`;
+          g += `<text x="${W / 2}" y="21" font-size="8.5" text-anchor="middle" fill="#d6303b">y = ${hNum(A_BEST, 4)}x</text>`;
+        }
+        const r = kind === 'scatter' || kind === 'trend' ? 1.2 : 2, step = pts.length > 30 ? 14 : 45;
+        pts.forEach(([x, y], i) => {
+          g += `<circle cx="${f(X(x))}" cy="${f(Y(y))}" r="${r}" fill="#4472c4"${opt.still || opt.instant ? '' : ` class="hs-pt" style="animation-delay:${i * step}ms"`}/>`;
+        });
+        if (kind === 'loss' && opt.min) g += `<circle cx="${f(X(1.4))}" cy="${f(Y(hLoss(1.4)))}" r="4.5" fill="none" stroke="#d6303b" stroke-width="1.6"/>`;
+        return g + '</svg>';
+      }
+
+      async function hsRun(act, tk) {
+        const [op, a, b, c, d] = act;
+        if (op === 'say') hsSay(a);
+        else if (op === 'wait') await hsSleep(a, tk);
+        else if (op === 'go') await hsGo(a, b, 560, tk);
+        else if (op === 'click') { hsRipple(); if (a) hsSelect(a); await hsSleep(220, tk); }
+        else if (op === 'dbl') { hsRipple(); await hsSleep(150, tk); hsRipple(); await hsSleep(320, tk); }
+        else if (op === 'type') await hsType(a, b, tk);
+        else if (op === 'enter') { hsEnter(a); await hsSleep(400, tk); }
+        else if (op === 'input') {   // 칸 누르고 입력 → Enter
+          await hsGo(a, null, 560, tk);
+          hsRipple();
+          hsSelect(a);
+          await hsSleep(200, tk);
+          await hsType(a, b, tk);
+          await hsSleep(550, tk);
+          hsEnter(c);
+          await hsSleep(400, tk);
+        }
+        else if (op === 'name') await hsTypeName(a, tk);
+        else if (op === 'nameAs') {   // 고른 범위에 이름 붙이기: 이름 상자에 이름을 쓰고 Enter
+          hsRipple();
+          for (let i = 1; i <= a.length; i++) { hs.name.textContent = a.slice(0, i); await hsSleep(160, tk); }
+          await hsSleep(350, tk);
+          hs.name.classList.remove('flash');
+          void hs.name.offsetWidth;
+          if (!HINT_RM.matches) hs.name.classList.add('flash');
+          await hsSleep(400, tk);
+        }
+        else if (op === 'spill') {   // 펼쳐진 결과 범위: 파란 테두리 (실제 시트와 같음)
+          const r = a && hsRect(a);
+          hs.spill.hidden = !r;
+          if (!r) hs.inner.querySelectorAll('.hs-note').forEach((n) => n.remove());   // 펼침이 끝나면 '66개' 말풍선도
+          if (r) Object.assign(hs.spill.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+        }
+        else if (op === 'dragSel') await hsDragSel(a, b, tk);
+        else if (op === 'fill') await hsFill(a, b, c, d, tk);
+        else if (op === 'rib') await hsRib(a, tk);
+        else if (op === 'chart') { hsChart(a, b || {}); await hsSleep(900, tk); }
+        else if (op === 'note') { hsNote(a, b); await hsSleep(300, tk); }
+        else if (op === 'explain') await hsExplain(a, tk);
+      }
+
+      // --- 패널 ---
+      function hsSay(i) { [...hintEls.say.children].forEach((li, j) => li.classList.toggle('is-now', j === i)); }
+      function hintRender() {
+        const set = HINTS[hint.sheet], scene = set.steps[hint.step];
+        hintEls.title.textContent = set.title;
+        hintEls.tabs.innerHTML = set.steps.map((s, i) => `<li><button type="button" class="hint-tab" data-step="${i}"${i === hint.step ? ' aria-current="step"' : ''}>${i + 1}. ${esc(s.title)}</button></li>`).join('');
+        hintEls.say.innerHTML = scene.say.map((t) => `<li>${t}</li>`).join('');
+        hintEls.panel.querySelector('[data-hint="prev"]').disabled = hint.step === 0;
+        hintEls.panel.querySelector('[data-hint="next"]').disabled = hint.step === set.steps.length - 1;
+      }
+      async function hintPlay() {
+        const tk = ++hint.token;
+        hint.stepOf[hint.sheet] = hint.step;
+        hintRender();
+        const scene = HINTS[hint.sheet].steps[hint.step];
+        hsBuild(scene);
+        try {
+          await hsSleep(400, tk);
+          for (const act of scene.script) await hsRun(act, tk);
+          if (HINT_RM.matches) hsSay(-1);
+        } catch (e) {
+          if (e !== HS_STOP) throw e;
+        }
+      }
+      function openHint(sheet) {
+        hint.sheet = sheet;
+        hint.step = hint.stepOf[sheet] || 0;
+        hintEls.panel.hidden = false;
+        hintEls.fab.setAttribute('aria-expanded', 'true');
+        hintPlay();
+        hintEls.title.focus({ preventScroll: true });
+      }
+      function closeHint(refocus) {
+        if (hintEls.panel.hidden) return;
+        hint.token++;
+        hintEls.panel.hidden = true;
+        hintEls.fab.setAttribute('aria-expanded', 'false');
+        if (refocus) { if (!hintEls.fab.hidden) hintEls.fab.focus(); else focusGrid(); }
+      }
+      function toggleHint() {
+        if (!hintEls.panel.hidden) { closeHint(true); return; }
+        if (!HINTS[state.current]) { toast('데이터 · 손실함수 · 경사하강법 시트를 열면 그 시트에서 할 일을 힌트로 보여 줘요.'); return; }
+        commitEdit();
+        openHint(state.current);
+      }
+      // 시트를 바꾸면: 힌트 버튼은 힌트가 있는 시트에서만, 열린 패널은 그 시트의 힌트로
+      function syncHint() {
+        hintEls.fab.hidden = !HINTS[state.current];
+        if (hintEls.panel.hidden) return;
+        if (!HINTS[state.current]) closeHint(false);
+        else if (hint.sheet !== state.current) openHint(state.current);
+      }
+      ACTIONS.hint = toggleHint;
+
+      hintEls.panel.addEventListener('click', (e) => {
+        const t = e.target.closest('[data-step], [data-hint]');
+        if (!t) return;
+        const set = HINTS[hint.sheet];
+        if (t.dataset.step !== undefined) {
+          hint.step = Number(t.dataset.step);
+          hintPlay();
+          const cur = hintEls.tabs.querySelector('[aria-current="step"]');
+          if (cur) cur.focus();
+          return;
+        }
+        const h = t.dataset.hint;
+        if (h === 'close') closeHint(true);
+        else if (h === 'replay') hintPlay();
+        else if (h === 'prev' && hint.step > 0) { hint.step--; hintPlay(); }
+        else if (h === 'next' && hint.step < set.steps.length - 1) { hint.step++; hintPlay(); }
+      });
+      hintEls.panel.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); closeHint(true); }
+      });
+      // 머리글을 끌어 패널 옮기기 (가리는 칸이 있으면 비켜 놓도록)
+      hintEls.head.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || e.target.closest('button')) return;
+        const p = hintEls.panel, r = p.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, head = hintEls.head;
+        try { head.setPointerCapture(e.pointerId); } catch (_) { /* 캡처 실패해도 계속 */ }
+        const move = (ev) => {
+          const x = clamp(ev.clientX - dx, 4, Math.max(4, window.innerWidth - r.width - 4));
+          const y = clamp(ev.clientY - dy, 4, Math.max(4, window.innerHeight - 48));
+          Object.assign(p.style, { left: x + 'px', top: y + 'px', right: 'auto', bottom: 'auto' });
+        };
+        const up = () => {
+          head.removeEventListener('pointermove', move);
+          head.removeEventListener('pointerup', up);
+          head.removeEventListener('pointercancel', up);
+        };
+        head.addEventListener('pointermove', move);
+        head.addEventListener('pointerup', up);
+        head.addEventListener('pointercancel', up);
+      });
 
       buildWorkbook();
       buildWorkTabs();
