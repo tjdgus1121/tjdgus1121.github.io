@@ -7791,12 +7791,11 @@
             }
         });
 
-        // ── Gemini 프록시 (Cloudflare Worker) ───────────────────────
-        const GEMINI_PROXY = 'https://tfidf.tjdgus1121.workers.dev';
-
-        function resolveGeminiUrl(model) {
-            return `${GEMINI_PROXY}/${model}`;
-        }
+        // ── 형태소 분석 서버 (Cloudflare Worker) ───────────────────────
+        // 2026-11-20: 예전 Gemini 프록시(tfidf.tjdgus1121.workers.dev)의 API 키가 무효가 되어
+        //   단어 잇기와 같은 Worker의 /morph 로 교체. 서버가 무료(Workers AI)를 먼저 쓰고, 결과가 부실하면 DeepSeek으로 다시 분석.
+        //   요청 { sentences: [...] } → 응답 { sentences: [[{surface, lex, tag}, ...], ...], provider }
+        const MORPH_API = 'https://falling-pond-1450.tjdgus1121.workers.dev/morph';
 
         function initGemini() {
             updateStatus('ready', '✅', '준비 완료');
@@ -7805,59 +7804,16 @@
         }
 
         async function callGeminiMorpheme(sentences) {
-            const prompt = `한국어 문장들을 형태소로 남김없이 쪼개고, 각 형태소에 명사·동사·기타 중 하나의 tag를 붙이세요.
-
-가장 중요한 규칙:
-- 문장의 모든 글자가 빠짐없이 결과에 순서대로 들어가야 합니다. 조사와 어미도 절대 생략하지 말고 tag "기타"로 포함하세요.
-- 형태소를 골라내는 작업이 아니라, 문장 전체를 조각내는 작업입니다.
-
-tag 기준:
-- 명사: 일반명사, 고유명사, 대명사, 수사 → tag: "명사"
-- 동사: 동사, 형용사 모두 포함 → 어간만 반환 (예: "먹었다"→"먹", "아름다운"→"아름답", "조사했다"→"조사하") → tag: "동사"
-  ※ 하다동사는 반드시 "하"를 포함한 어간을 반환 (조사하, 연구하, 발전하, 분석하 등)
-- 기타: 조사(은/는/이/가/을/를/의/에/에서/와/과/로 등), 어미(다/ㄴ다/고/며/지만 등), 부사, 기호
-- surface: 원문에서 그 형태소가 차지한 실제 글자를 그대로 반환
-
-예) "학생은 책을 읽었다." →
-[{"surface":"학생","lex":"학생","tag":"명사"},{"surface":"은","lex":"은","tag":"기타"},{"surface":"책","lex":"책","tag":"명사"},{"surface":"을","lex":"을","tag":"기타"},{"surface":"읽","lex":"읽","tag":"동사"},{"surface":"었다","lex":"었다","tag":"기타"},{"surface":".","lex":".","tag":"기타"}]
-
-JSON 배열만 반환, 설명 없이.
-
-출력 형식: [[{"surface":"원문 형태","lex":"형태소","tag":"명사 또는 동사 또는 기타"}, ...], ...]
-
-문장들:
-${sentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
-
+            // 분석 규칙(프롬프트)은 서버(Worker)에 있음. 여기서는 문장만 보낸다.
             const controller = new AbortController();
             const timeoutId = window.setTimeout(() => controller.abort(), 30000);
             let res;
             try {
-                res = await fetch(resolveGeminiUrl('gemini-2.5-flash-lite'), {
+                res = await fetch(MORPH_API, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     signal: controller.signal,
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0,
-                            responseMimeType: 'application/json',
-                            responseSchema: {
-                                type: 'array',
-                                items: {
-                                    type: 'array',
-                                    items: {
-                                        type: 'object',
-                                        properties: {
-                                            surface: { type: 'string' },
-                                            lex: { type: 'string' },
-                                            tag: { type: 'string' }
-                                        },
-                                        required: ['surface', 'lex', 'tag']
-                                    }
-                                }
-                            }
-                        }
-                    })
+                    body: JSON.stringify({ sentences })
                 });
             } catch (error) {
                 if (error && error.name === 'AbortError') {
@@ -7870,19 +7826,14 @@ ${sentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.error?.message ?? `HTTP ${res.status}`);
+                if (err.detail) console.warn('형태소 분석 서버 상세:', err.detail);
+                throw new Error((typeof err.error === 'string' ? err.error : err.error?.message) ?? `HTTP ${res.status}`);
             }
 
             const data = await res.json().catch(() => null);
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text == null) throw new Error('형태소 분석 결과가 비어 있습니다. 다시 시도해주세요.');
-
-            let raw;
-            try {
-                raw = typeof text === 'string' ? JSON.parse(text) : text;
-            } catch (error) {
-                throw new Error('형태소 분석 결과 형식을 읽지 못했습니다. 다시 시도해주세요.');
-            }
+            const raw = data?.sentences;
+            if (raw == null) throw new Error('형태소 분석 결과가 비어 있습니다. 다시 시도해주세요.');
+            if (data.provider) console.log('형태소 분석:', { cf: 'Cloudflare Workers AI(무료)', deepseek: 'DeepSeek', mixed: '무료 + 일부 문장 DeepSeek' }[data.provider] || data.provider);
 
             const isValidResult = Array.isArray(raw)
                 && raw.length === sentences.length

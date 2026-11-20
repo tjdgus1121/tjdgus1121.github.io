@@ -967,8 +967,10 @@
         const statusMessage = document.getElementById('statusMessage');
         const sampleBtn = document.getElementById('sampleBtn');
         const clearBtn = document.getElementById('clearBtn');
-        const GEMINI_PROXY_URL = 'https://tfidf.tjdgus1121.workers.dev/gemini-2.5-flash-lite';
-        const API_TIMEOUT_MS = 20000;
+        // 2026-11-20: 예전 Gemini 프록시(tfidf.tjdgus1121.workers.dev) 키가 무효가 되어 단어 잇기와 같은 Worker의 /sentiment 로 교체
+        //   (서버가 무료 Workers AI를 먼저 쓰고, 결과가 부실하면 DeepSeek으로 다시 분석)
+        const SENTIMENT_API = 'https://falling-pond-1450.tjdgus1121.workers.dev/sentiment';
+        const API_TIMEOUT_MS = 30000;   // 무료 → DeepSeek 재분석까지 갈 수 있어 넉넉히
         const LOCAL_POSITIVE_STEMS = [
             '좋', '만족', '쉽', '정확', '빠르', '안정', '도움', '친절', '신뢰', '깔끔',
             '유용', '예쁘', '세련', '성공', '행복', '기쁘', '편리', '추천', '잘', '재미'
@@ -1159,73 +1161,25 @@
         }
 
         async function analyzeSentence(sentence, isDetailAnalysis) {
-            const prompt = `다음 한국어 문장을 감성 분석하세요.
-
-문장: "${sentence}"
-
-규칙:
-1. 의미 있는 명사, 동사, 형용사, 부사만 추출하고 조사·어미·문장부호는 제외하세요.
-2. 동사와 형용사는 가능한 경우 기본형으로 쓰세요.
-3. 각 단어의 문맥상 감성을 positive, neutral, negative 중 하나로 분류하세요.
-4. specific_emotion은 기쁨, 슬픔, 분노, 놀람, 두려움, 혐오, 중립 중 하나로 분류하세요.
-5. JSON만 반환하세요.`;
-
+            // 분석 규칙은 서버(Worker /sentiment)에 있음. 문장만 보낸다.
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
             try {
-                const response = await fetch(GEMINI_PROXY_URL, {
+                const response = await fetch(SENTIMENT_API, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     signal: controller.signal,
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0,
-                            responseMimeType: 'application/json',
-                            responseSchema: {
-                                type: 'object',
-                                properties: {
-                                    morphemes: {
-                                        type: 'array',
-                                        items: {
-                                            type: 'object',
-                                            properties: {
-                                                word: { type: 'string' },
-                                                pos: { type: 'string' },
-                                                sentiment: {
-                                                    type: 'string',
-                                                    enum: ['positive', 'neutral', 'negative']
-                                                },
-                                                specific_emotion: {
-                                                    type: 'string',
-                                                    enum: ['기쁨', '슬픔', '분노', '놀람', '두려움', '혐오', '중립']
-                                                }
-                                            },
-                                            required: ['word', 'pos', 'sentiment', 'specific_emotion']
-                                        }
-                                    },
-                                    overall_sentiment: {
-                                        type: 'string',
-                                        enum: ['positive', 'neutral', 'negative']
-                                    }
-                                },
-                                required: ['morphemes', 'overall_sentiment']
-                            }
-                        }
-                    })
+                    body: JSON.stringify({ sentence })
                 });
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
+                    if (errorData.detail) console.warn('감정 분석 서버 상세:', errorData.detail);
                     throw new Error(errorData.error?.message || errorData.error || `API 호출 실패 (${response.status})`);
                 }
                 const data = await response.json();
-                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!responseText) throw new Error('AI 응답 내용이 비어 있습니다.');
-                const parsed = typeof responseText === 'string'
-                    ? JSON.parse(responseText.replace(/```json|```/g, '').trim())
-                    : responseText;
-                return normalizeAnalysisResult(parsed, sentence, isDetailAnalysis);
+                if (!data || !Array.isArray(data.morphemes)) throw new Error('AI 응답 내용이 비어 있습니다.');
+                return normalizeAnalysisResult(data, sentence, isDetailAnalysis);
             } catch (error) {
                 console.warn('Gemini 분석 실패, 로컬 감성사전으로 전환:', error);
                 const reason = error.name === 'AbortError' ? 'AI 응답 시간 초과' : error.message;

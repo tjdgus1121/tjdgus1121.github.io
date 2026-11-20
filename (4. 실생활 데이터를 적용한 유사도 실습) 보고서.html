@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 경영 컨설팅 시스템 V14</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+        :root { --primary: #1a73e8; --bg: #f0f2f5; --card: #ffffff; --pos: #1976d2; --neg: #d32f2f; --group: #673ab7; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: var(--bg); padding: 20px; margin: 0; }
+        .container { max-width: 1400px; margin: 0 auto; background: var(--card); padding: 40px; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1a73e8; margin-bottom: 30px; }
+        .file-upload { margin-bottom: 12px; }
+        .file-upload p { margin: 8px 0 0; font-size: 14px; color: #555; overflow-wrap: anywhere; }
+        .file-upload .is-error { color: #b3261e; }
+        textarea { box-sizing: border-box; width: 100%; height: 150px; padding: 20px; border-radius: 12px; border: 2px solid #ddd; font-size: 15px; margin-bottom: 20px; transition: 0.3s; }
+        textarea:focus { border-color: var(--primary); outline: none; }
+        
+        /* 대시보드 공통 스타일 */
+        .section-title { background: #e8f0fe; padding: 15px 25px; border-radius: 10px; margin: 50px 0 20px 0; border-left: 8px solid var(--primary); font-size: 1.2em; font-weight: bold; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+        .card { background: #fff; border: 1px solid #e0e0e0; padding: 25px; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card h4 { margin-top: 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+
+        /* 워드클라우드 */
+        .cloud-wrapper { height: 300px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; background: #fafafa; border-radius: 12px; padding: 20px; overflow-y: auto; align-content: center; }
+
+        /* 유사도 분석 섹션 */
+        .range-selector { margin-bottom: 20px; padding: 15px; background: #f8f9ff; border-radius: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #d1d9ff; }
+        .matrix-wrapper { display: flex; gap: 25px; align-items: flex-start; }
+        .matrix-container { flex: 1.2; overflow-x: auto; background: white; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
+        .matrix-table { border-collapse: collapse; width: 100%; font-size: 12px; text-align: center; }
+        .matrix-table th { background: #f1f3f4; padding: 8px; font-weight: bold; }
+        .matrix-table td { border: 1px solid #eee; padding: 12px; cursor: pointer; font-weight: bold; }
+        .insight-panel { flex: 0.8; background: #fdfdff; padding: 30px; border-radius: 18px; border: 2px dashed var(--group); min-height: 450px; position: sticky; top: 20px; }
+        
+        /* 버튼 및 기타 */
+        .btn-main { padding: 18px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; width: 100%; }
+        .btn-sub { padding: 10px 20px; background: #5f6368; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .file-upload button:disabled, .btn-main:disabled { opacity: 0.6; cursor: wait; }
+        .num-input { width: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; text-align: center; font-weight: bold; }
+        
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; margin: 2px; display: inline-block; }
+        .pos-badge { background: #e3f2fd; color: #1565c0; }
+        .neg-badge { background: #ffebee; color: #c62828; }
+        .tfidf-badge { background: #e8f5e9; color: #2e7d32; }
+
+        table.detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.detail-table th { background: #f8f9fa; padding: 15px; border-bottom: 2px solid #dee2e6; text-align: left; }
+        table.detail-table td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="inputSection">
+        <h1>🚀 AI 경영 인사이트 시스템 V14</h1>
+        <div class="file-upload">
+            <button type="button" id="reviewFileButton" class="btn-sub" aria-describedby="reviewFileHelp">TXT 파일 첨부</button>
+            <input type="file" id="reviewFile" accept=".txt" hidden>
+            <p id="reviewFileHelp">한 줄에 리뷰 하나를 넣은 .txt 파일을 선택하거나 아래에 직접 입력하세요.</p>
+            <p id="reviewFileStatus" role="status" hidden></p>
+        </div>
+        <textarea id="rawInput" aria-label="리뷰 데이터" placeholder="리뷰 데이터를 입력해 주세요. (한 줄에 리뷰 하나)"></textarea>
+        <button type="button" id="analysisButton" class="btn-main" onclick="startAnalysis()">데이터 분석 및 리포트 생성</button>
+    </div>
+
+    <div id="resultSection" style="display:none;">
+        <div style="display: flex; justify-content: space-between; margin-bottom:30px;">
+            <button class="btn-sub" onclick="location.reload()">← 데이터 다시 입력</button>
+            <button class="btn-sub" style="background:#34a853" onclick="window.print()">🖨️ 결과 PDF 저장</button>
+        </div>
+
+        <div class="card" style="background: #f8f9ff;">
+            <div style="display:flex; gap:20px;">
+                <div style="flex:1"><strong>😊 긍정어 설정:</strong><input type="text" id="posInput" style="width:100%; padding:8px; margin-top:5px;" value="맛있,친절,신선,최고,만족,깔끔,추천,진국,일품"></div>
+                <div style="flex:1"><strong>😡 부정어 설정:</strong><input type="text" id="negInput" style="width:100%; padding:8px; margin-top:5px;" value="비싸,아쉽,실망,최악,머리카락,위생,벌레,이물질,불결"></div>
+                <button class="btn-sub" style="align-self: flex-end; height:40px; background:var(--group)" onclick="updateAnalysis()">반영하기</button>
+            </div>
+        </div>
+
+        <h3 class="section-title">Step 1. 감성 분석 대시보드</h3>
+        <p id="chartLoadStatus" hidden>차트를 불러오지 못했습니다. 워드클라우드, 유사도 매트릭스, 리뷰별 상세 분석은 아래에서 확인할 수 있습니다.</p>
+        <div class="grid-2">
+            <div class="card"><h4>🎯 긍정/부정 비율</h4><div id="pieChart" style="height:350px;"></div></div>
+            <div class="card"><h4>📉 리뷰 감성 흐름 (시계열)</h4><div id="trendChart" style="height:350px;"></div></div>
+        </div>
+
+        <h3 class="section-title">Step 2. 키워드 분석 (빈도 vs TF-IDF)</h3>
+        <div class="grid-2">
+            <div class="card"><h4>📊 긍정 키워드 지표</h4><div id="posFreqChart" style="height:200px;"></div><div id="posTfidfChart" style="height:200px;"></div></div>
+            <div class="card"><h4>📊 부정 키워드 지표</h4><div id="negFreqChart" style="height:200px;"></div><div id="negTfidfChart" style="height:200px;"></div></div>
+        </div>
+
+        <h3 class="section-title">Step 3. 워드클라우드 시각화</h3>
+        <div class="grid-2">
+            <div class="card"><h4>☁️ 단순 빈도 클라우드</h4><div id="cloudFreq" class="cloud-wrapper"></div></div>
+            <div class="card"><h4>☁️ TF-IDF 가중치 클라우드</h4><div id="cloudTfidf" class="cloud-wrapper"></div></div>
+        </div>
+
+        <h3 class="section-title">Step 4. 유사도 매트릭스 (구간 선택)</h3>
+        <div class="card">
+            <div class="range-selector">
+                <strong>🔍 분석 구간 설정 : </strong>
+                <input type="number" id="startRange" class="num-input" value="1"> 번 리뷰부터 ~ 
+                <input type="number" id="endRange" class="num-input" value="15"> 번 리뷰까지
+                <button class="btn-sub" style="background:var(--primary)" onclick="renderMatrix()">구간 적용</button>
+                <span style="color:#666; font-size:12px;">(리뷰가 많을 경우 구간을 나눠서 분석하세요)</span>
+            </div>
+            <div class="matrix-wrapper">
+                <div id="matrixContainer" class="matrix-container"></div>
+                <div id="insightPanel" class="insight-panel">
+                    <div id="insightContent">
+                        <h3 style="color:var(--group); text-align:center; margin-top:100px;">좌측 매트릭스 숫자를 클릭하세요.</h3>
+                        <p style="text-align:center; color:#888;">AI가 유사한 리뷰 2개를 즉시 찾아줍니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="section-title">Step 5. 리뷰별 상세 분석 데이터</h3>
+        <div class="card" style="padding:0; overflow-x:auto;">
+            <table id="analysisTable" class="detail-table"></table>
+        </div>
+    </div>
+</div>
+
+<script>
+const googleCharts = window.google?.charts;
+googleCharts?.load('current', {packages: ['corechart']});
+document.getElementById('chartLoadStatus').hidden = Boolean(googleCharts);
+
+const rawInput = document.getElementById('rawInput');
+const reviewFile = document.getElementById('reviewFile');
+const reviewFileButton = document.getElementById('reviewFileButton');
+const reviewFileStatus = document.getElementById('reviewFileStatus');
+const analysisButton = document.getElementById('analysisButton');
+
+let currentRawLines = [], sentimentDict = {}, allVocab = [], globalTfidfVectors = [], processedDocs = [], scores = [];
+
+function getReviewLines(text) {
+    return text.trim().split(/\r\n|\r|\n/).filter(line => line.trim());
+}
+
+function showInputStatus(message, isError = false) {
+    reviewFileStatus.hidden = false;
+    reviewFileStatus.textContent = message;
+    reviewFileStatus.classList.toggle('is-error', isError);
+}
+
+function decodeReviewFile(buffer) {
+    const [first, second] = new Uint8Array(buffer);
+    const options = {fatal: true};
+    if (first === 0xff && second === 0xfe) return new TextDecoder('utf-16le', options).decode(buffer);
+    if (first === 0xfe && second === 0xff) return new TextDecoder('utf-16be', options).decode(buffer);
+    try {
+        return new TextDecoder('utf-8', options).decode(buffer);
+    } catch {
+        return new TextDecoder('euc-kr', options).decode(buffer);
+    }
+}
+
+reviewFileButton.addEventListener('click', () => reviewFile.click());
+reviewFile.addEventListener('change', async () => {
+    const [file] = reviewFile.files;
+    if (!file) return;
+    reviewFile.value = '';
+
+    if (!/\.txt$/i.test(file.name)) {
+        showInputStatus('.txt 파일을 선택해 주세요.', true);
+        return;
+    }
+
+    reviewFileButton.disabled = true;
+    analysisButton.disabled = true;
+    showInputStatus('파일을 불러오는 중입니다.');
+    try {
+        const contents = decodeReviewFile(await file.arrayBuffer()).replace(/\r\n?/g, '\n');
+        if (contents.includes('\0')) {
+            showInputStatus('텍스트 파일을 읽을 수 없습니다. UTF-8로 저장한 .txt 파일을 선택해 주세요.', true);
+            return;
+        }
+        const lines = getReviewLines(contents);
+        if (!lines.length) {
+            showInputStatus('파일이 비어 있습니다. 리뷰가 들어 있는 .txt 파일을 선택해 주세요.', true);
+            return;
+        }
+        if (rawInput.value.trim() && rawInput.value !== contents &&
+            !window.confirm('현재 입력을 선택한 TXT 파일의 내용으로 바꿀까요?')) {
+            showInputStatus('파일 불러오기를 취소했습니다.');
+            return;
+        }
+        rawInput.value = contents;
+        showInputStatus(`${file.name}에서 리뷰 ${lines.length}개를 불러왔습니다.`);
+    } catch {
+        showInputStatus('파일을 읽지 못했습니다. 다시 선택하거나 UTF-8로 저장한 뒤 시도해 주세요.', true);
+    } finally {
+        reviewFileButton.disabled = false;
+        analysisButton.disabled = false;
+    }
+});
+
+rawInput.addEventListener('input', () => {
+    reviewFileStatus.hidden = true;
+});
+
+function startAnalysis() {
+    currentRawLines = getReviewLines(rawInput.value);
+    if (!currentRawLines.length) {
+        showInputStatus('리뷰를 입력하거나 TXT 파일을 첨부해 주세요.', true);
+        rawInput.focus();
+        return;
+    }
+    document.getElementById('endRange').value = Math.min(15, currentRawLines.length);
+    document.getElementById('inputSection').style.display = 'none';
+    document.getElementById('resultSection').style.display = 'block';
+    updateAnalysis();
+}
+
+function updateAnalysis() {
+    sentimentDict = {};
+    document.getElementById('posInput').value.split(',').forEach(w => { if(w.trim()) sentimentDict[w.trim()] = 2; });
+    document.getElementById('negInput').value.split(',').forEach(w => { if(w.trim()) sentimentDict[w.trim()] = -2; });
+    processData();
+}
+
+function processData() {
+    const stopWords = ["정말", "매우", "너무", "진짜", "했어", "있어", "같아", "하고", "해서", "입니다", "마라탕", "여기", "오늘"];
+    const stopRegex = /(은|는|이|가|을|를|에|의|로|으로|하고|해서|입니다|해요|네요|어서|는데|아요|한다|해요)$/g;
+
+    scores = [];
+    processedDocs = currentRawLines.map(line => {
+        let score = 0;
+        const words = line.split(/\s+/).map(word => {
+            let w = word.replace(/[^\uAC00-\uD7A3]/g, "");
+            for (let key in sentimentDict) { if (w.includes(key)) { score += sentimentDict[key]; return key; } }
+            return w.replace(stopRegex, "");
+        }).filter(w => w.length > 1 && !stopWords.includes(w));
+        scores.push(score);
+        return words;
+    });
+
+    allVocab = Array.from(new Set(processedDocs.flat()));
+    const N = processedDocs.length;
+    const dfMap = {}; allVocab.forEach(w => dfMap[w] = processedDocs.filter(d => d.includes(w)).length);
+
+    const freqMap = {}; const tfidfMaxMap = {};
+    globalTfidfVectors = processedDocs.map((doc) => {
+        const docTfidfs = {};
+        doc.forEach(w => {
+            freqMap[w] = (freqMap[w] || 0) + 1;
+            const tf = doc.filter(word => word === w).length;
+            const idf = Math.log(N / (dfMap[w] || 1)) + 1;
+            const score = tf * idf;
+            docTfidfs[w] = score;
+            if (score > (tfidfMaxMap[w] || 0)) tfidfMaxMap[w] = score;
+        });
+        return allVocab.map(word => docTfidfs[word] || 0);
+    });
+
+    renderWordClouds(freqMap, tfidfMaxMap);
+    renderMatrix();
+    renderTable();
+    googleCharts?.setOnLoadCallback(() => drawCharts(freqMap, tfidfMaxMap));
+}
+
+function drawCharts(fMap, tMap) {
+    // 1. 원그래프
+    const p = scores.filter(s => s > 0).length, n = scores.filter(s => s < 0).length, u = scores.filter(s => s === 0).length;
+    new google.visualization.PieChart(document.getElementById('pieChart')).draw(google.visualization.arrayToDataTable([['감성', '수'], ['긍정', p], ['부정', n], ['중립', u]]), {colors:['#4285f4', '#ea4335', '#fbbc05'], pieHole: 0.4, chartArea:{width:'100%', height:'80%'}});
+
+    // 2. 시계열
+    new google.visualization.LineChart(document.getElementById('trendChart')).draw(google.visualization.arrayToDataTable([["R", "Score"]].concat(scores.map((s,i)=>[i+1, s]))), {legend:'none', colors:['#1a73e8'], chartArea:{width:'85%', height:'75%'}, vAxis:{gridlines:{count:5}}});
+
+    // 3. 막대그래프 세트
+    const filter = (m, type) => Object.entries(m).filter(([w]) => type==='p' ? sentimentDict[w]>0 : sentimentDict[w]<0).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const bar = (id, data, color) => new google.visualization.ColumnChart(document.getElementById(id)).draw(google.visualization.arrayToDataTable([["단어", "값"]].concat(data.length ? data : [["없음", 0]])), {legend:'none', colors:[color], chartArea:{width:'80%', height:'70%'}, vAxis:{minValue:0}});
+    
+    bar("posFreqChart", filter(fMap, 'p'), "#4285f4"); bar("posTfidfChart", filter(tMap, 'p'), "#34a853");
+    bar("negFreqChart", filter(fMap, 'n'), "#ea4335"); bar("negTfidfChart", filter(tMap, 'n'), "#c62828");
+}
+
+function renderWordClouds(fMap, tMap) {
+    const colors = { p: ['#1e88e5', '#1565c0', '#0d47a1', '#42a5f5'], n: ['#e53935', '#c62828', '#b71c1c', '#ef5350'], o: ['#757575', '#bdbdbd', '#9e9e9e'] };
+    const renderCloud = (id, map) => {
+        const div = document.getElementById(id); div.innerHTML = "";
+        const sorted = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0, 30);
+        if(!sorted.length) return;
+        const max = sorted[0][1];
+        sorted.forEach(([w, v]) => {
+            const s = document.createElement("span"); s.innerText = w; s.style.margin="8px"; s.style.fontWeight="bold";
+            s.style.fontSize = (14 + (v/max*30))+"px";
+            const palette = sentimentDict[w]>0 ? colors.p : (sentimentDict[w]<0 ? colors.n : colors.o);
+            s.style.color = palette[Math.floor(Math.random()*palette.length)];
+            div.appendChild(s);
+        });
+    };
+    renderCloud("cloudFreq", fMap); renderCloud("cloudTfidf", tMap);
+}
+
+function calcSim(a, b) {
+    let dot=0, mA=0, mB=0; const v1 = globalTfidfVectors[a], v2 = globalTfidfVectors[b];
+    for(let i=0; i<v1.length; i++) { dot += v1[i] * v2[i]; mA += v1[i] * v1[i]; mB += v2[i] * v2[i]; }
+    return (mA && mB) ? dot / (Math.sqrt(mA) * Math.sqrt(mB)) : (a===b?1:0);
+}
+
+function renderMatrix() {
+    let start = parseInt(document.getElementById('startRange').value) - 1;
+    let end = parseInt(document.getElementById('endRange').value);
+    start = Math.max(0, start); end = Math.min(currentRawLines.length, end);
+
+    let h = "<table class='matrix-table'><tr><th></th>";
+    for(let i=start; i<end; i++) h += `<th>R${i+1}</th>`;
+    h += "</tr>";
+    for(let i=start; i<end; i++) {
+        h += `<tr><th style='background:#f1f3f4'>R${i+1}</th>`;
+        for(let j=start; j<end; j++) {
+            const s = calcSim(i, j);
+            const op = s.toFixed(1);
+            h += `<td onclick="showInsight(${i})" style="background:rgba(103,58,183,${s}); color:${s>0.4?'white':'#444'}">${op}</td>`;
+        }
+        h += "</tr>";
+    }
+    document.getElementById('matrixContainer').innerHTML = h + "</table>";
+}
+
+function escapeHtmlText(text) {
+    return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+function showInsight(idx) {
+    const sims = currentRawLines.map((_, i) => ({idx: i, s: calcSim(idx, i)})).filter(o => o.idx !== idx).sort((a,b)=>b.s-a.s).slice(0, 2);
+    const kw = allVocab.map((w, i) => ({w, s: globalTfidfVectors[idx][i]})).sort((a,b)=>b.s-a.s).slice(0, 4);
+    
+    let h = `<div style="border-bottom:2px solid var(--group); padding-bottom:10px; margin-bottom:20px;">
+                <h3 style="color:var(--group); margin:0;">📝 리뷰 R${idx+1} 상세 분석</h3>
+             </div>
+             <p style="background:#fff; padding:15px; border-radius:10px; border:1px solid #eee; line-height:1.6;">"${escapeHtmlText(currentRawLines[idx])}"</p>
+             <h4 style="margin-top:30px; color:#444;">🔗 AI 추천 유사 리뷰 (TOP 2)</h4>`;
+    
+    sims.forEach(o => {
+        h += `<div style="background:#f8f9ff; padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--group);">
+                <p style="margin:0; font-size:13px;"><b>[R${o.idx+1}]</b> "${escapeHtmlText(currentRawLines[o.idx])}"</p>
+                <div style="text-align:right; margin-top:5px;"><span class="badge tfidf-badge">유사도 ${Math.round(o.s*100)}%</span></div>
+              </div>`;
+    });
+    
+    h += `<h4 style="margin-top:30px; color:#444;">💡 분석 키워드</h4>`;
+    kw.forEach(k => { if(k.s>0) h += `<span class="badge tfidf-badge" style="font-size:14px; padding:6px 12px;">#${k.w}</span> `; });
+    
+    document.getElementById('insightContent').innerHTML = h;
+}
+
+function renderTable() {
+    let h = "<thead><tr><th>ID</th><th>리뷰 내용</th><th>발견된 감성 단어</th><th>감성 점수</th><th>핵심 키워드</th></tr></thead><tbody>";
+    currentRawLines.forEach((line, i) => {
+        const sWords = processedDocs[i].filter(w=>sentimentDict[w]).map(w=>`<span class="badge ${sentimentDict[w]>0?'pos-badge':'neg-badge'}">${w}</span>`).join(" ");
+        const kWords = allVocab.map((w, idx) => ({w, s: globalTfidfVectors[i][idx]})).sort((a,b)=>b.s-a.s).slice(0,2).map(t=> t.s>0?`<span class="badge tfidf-badge">#${t.w}</span>`:"").join(" ");
+        h += `<tr><td><b>R${i+1}</b></td><td style='width:40%'>${escapeHtmlText(line)}</td><td>${sWords}</td>
+              <td style='font-weight:bold; color:${scores[i]>0?'var(--pos)':'(scores[i]<0?"var(--neg)":"#888")'}'>${scores[i]>0?'+':''}${scores[i]}</td><td>${kWords}</td></tr>`;
+    });
+    document.getElementById('analysisTable').innerHTML = h + "</tbody>";
+}
+</script>
+</body>
+</html>

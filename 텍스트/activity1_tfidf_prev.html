@@ -3219,12 +3219,10 @@
             }
         });
 
-        // ── Gemini 프록시 (Cloudflare Worker) ───────────────────────
-        const GEMINI_PROXY = 'https://tfidf.tjdgus1121.workers.dev';
-
-        function resolveGeminiUrl(model) {
-            return `${GEMINI_PROXY}/${model}`;
-        }
+        // ── 형태소 분석 서버 (Cloudflare Worker) ───────────────────────
+        // 2026-11-20: 예전 Gemini 프록시(tfidf.tjdgus1121.workers.dev) 키가 무효가 되어 새 TF-IDF 페이지와 같은 /morph 로 교체
+        //   (서버가 무료 Workers AI를 먼저 쓰고, 결과가 부실하면 DeepSeek으로 다시 분석)
+        const MORPH_API = 'https://falling-pond-1450.tjdgus1121.workers.dev/morph';
 
         function initGemini() {
             updateStatus('ready', '✅', '준비 완료');
@@ -3232,58 +3230,34 @@
         }
 
         async function callGeminiMorpheme(sentences) {
-            const prompt = `한국어 문장들을 형태소로 분리하고 각각을 명사 또는 동사로만 분류하세요.
-
-규칙:
-- 명사: 일반명사, 고유명사, 대명사, 수사 → tag: "명사"
-- 동사: 동사, 형용사 모두 포함 → 어간만 반환 (예: "먹었다"→"먹", "아름다운"→"아름답", "조사했다"→"조사하", "발전했다"→"발전하") → tag: "동사"
-  ※ 하다동사는 반드시 "하"를 포함한 어간을 반환 (조사하, 연구하, 발전하, 분석하 등)
-- 조사, 어미, 부사, 기호 등 나머지 → tag: "기타"
-- 조사와 어미는 반드시 분리
-- JSON 배열만 반환, 설명 없이
-
-출력 형식: [[{"lex":"형태소","tag":"명사 또는 동사 또는 기타"}, ...], ...]
-
-문장들:
-${sentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
-
-            const res = await fetch(
-                resolveGeminiUrl('gemini-2.5-flash-lite'),
-                {
+            // 분석 규칙은 서버(Worker /morph)에 있음. 문장만 보낸다. (응답의 surface는 이 페이지에서 쓰지 않음)
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), 40000);
+            let res;
+            try {
+                res = await fetch(MORPH_API, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0,
-                            responseMimeType: 'application/json',
-                            responseSchema: {
-                                type: 'array',
-                                items: {
-                                    type: 'array',
-                                    items: {
-                                        type: 'object',
-                                        properties: {
-                                            lex: { type: 'string' },
-                                            tag: { type: 'string' }
-                                        },
-                                        required: ['lex', 'tag']
-                                    }
-                                }
-                            }
-                        }
-                    })
-                }
-            );
+                    signal: controller.signal,
+                    body: JSON.stringify({ sentences })
+                });
+            } catch (error) {
+                throw new Error(error && error.name === 'AbortError'
+                    ? '형태소 분석 응답이 늦어지고 있습니다. 잠시 후 다시 시도해주세요.'
+                    : '형태소 분석 서버에 연결하지 못했습니다. 인터넷 연결을 확인해주세요.');
+            } finally {
+                window.clearTimeout(timeoutId);
+            }
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.error?.message ?? `HTTP ${res.status}`);
+                if (err.detail) console.warn('형태소 분석 서버 상세:', err.detail);
+                throw new Error((typeof err.error === 'string' ? err.error : err.error?.message) ?? `HTTP ${res.status}`);
             }
 
             const data = await res.json();
-            const text = data.candidates[0].content.parts[0].text;
-            const raw = typeof text === 'string' ? JSON.parse(text) : text;
+            const raw = data && data.sentences;
+            if (!Array.isArray(raw)) throw new Error('형태소 분석 결과가 비어 있습니다. 다시 시도해주세요.');
 
             return raw.map(sentenceMorphs =>
                 sentenceMorphs.map(morph => {

@@ -7350,34 +7350,18 @@
       // ==========================================
       // Gemini 형태소 분석 (Flash 2.5 Lite)
       // ==========================================
-      const GEMINI_PROXY = 'https://tfidf.tjdgus1121.workers.dev';
+      // 2026-11-20: 예전 Gemini 프록시(tfidf.tjdgus1121.workers.dev) 키가 무효가 되어 단어 잇기와 같은 Worker의 /pos 로 교체
+      //   (서버가 무료 Workers AI를 먼저 쓰고, 결과가 부실하면 DeepSeek으로 다시 분석)
+      const POS_API = 'https://falling-pond-1450.tjdgus1121.workers.dev/pos';
       // 배치(문장 10개)당 응답 제한 시간. 넘기면 Kiwi Worker → 로컬 분석 순으로 폴백한다.
-      const GEMINI_TIMEOUT_MS = 12000;
+      const GEMINI_TIMEOUT_MS = 25000;   // 무료 → DeepSeek 재분석까지 갈 수 있어 넉넉히
 
       async function callGeminiMorpheme(sentences) {
         const BATCH = 10;
         const result = [];
         for (let i = 0; i < sentences.length; i += BATCH) {
           const batch = sentences.slice(i, i + BATCH);
-          const prompt = `한국어 문장들을 형태소로 분리하고 품사를 태깅하세요.
-
-규칙:
-- 명사(일반/고유/대명사) → 원형 그대로 → tag: "NNG"
-- 동사 → 기본형(사전형, ~다 형태)으로 반환 → tag: "VV" (예: 먹었어요 → 먹다)
-- 형용사 → 기본형(사전형, ~다 형태)으로 반환 → tag: "VA" (예: 깨끗해요 → 깨끗하다)
-- 하다 복합 동사/형용사 → 전체 기본형 → tag: "VA" (예: 공부해요 → 공부하다)
-- 조사 → tag: "JX" (분리하지 않음, 어미와 함께 제외)
-- 어미 → tag: "EF" (분리하지 않음)
-- 외국어(영어 등) → tag: "SL"
-- 숫자 → tag: "SN"
-- 나머지(부사, 접속사, 기호 등) → tag: "ETC"
-- 조사와 어미는 어간/어근에 합치지 말고 분리
-- JSON 배열만 반환, 설명 없이
-
-출력 형식: [[{"lex":"형태소","tag":"NNG"}, ...], ...]
-
-문장들:
-${batch.map((s, idx) => `${i + idx + 1}. ${s}`).join('\n')}`;
+          // 분석 규칙(세종 태그·기본형)은 서버(Worker /pos)에 있음. 문장만 보낸다.
 
           // 학교 네트워크가 느리거나 프록시가 죽어 있으면 분석 모달이 무한 대기하므로
           // 배치당 제한 시간을 두고, 넘기면 Kiwi/로컬 분석으로 넘어가게 한다.
@@ -7385,35 +7369,15 @@ ${batch.map((s, idx) => `${i + idx + 1}. ${s}`).join('\n')}`;
           const timer = setTimeout(() => ac.abort(), GEMINI_TIMEOUT_MS);
           let res;
           try {
-            res = await fetch(`${GEMINI_PROXY}/gemini-2.5-flash-lite`, {
+            res = await fetch(POS_API, {
             signal: ac.signal,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0,
-                responseMimeType: 'application/json',
-                responseSchema: {
-                  type: 'array',
-                  items: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      properties: {
-                        lex: { type: 'string' },
-                        tag: { type: 'string' }
-                      },
-                      required: ['lex', 'tag']
-                    }
-                  }
-                }
-              }
-            })
+            body: JSON.stringify({ sentences: batch })
             });
           } catch (e) {
             if (e.name === 'AbortError') {
-              throw new Error(`Gemini 응답 시간 초과 (${GEMINI_TIMEOUT_MS / 1000}초)`);
+              throw new Error(`AI 형태소 분석 응답 시간 초과 (${GEMINI_TIMEOUT_MS / 1000}초)`);
             }
             throw e;
           } finally {
@@ -7422,12 +7386,13 @@ ${batch.map((s, idx) => `${i + idx + 1}. ${s}`).join('\n')}`;
 
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.error?.message ?? `HTTP ${res.status}`);
+            if (err.detail) console.warn('형태소 분석 서버 상세:', err.detail);
+            throw new Error((typeof err.error === 'string' ? err.error : err.error?.message) ?? `HTTP ${res.status}`);
           }
 
           const data = await res.json();
-          const text = data.candidates[0].content.parts[0].text;
-          const raw = typeof text === 'string' ? JSON.parse(text) : text;
+          const raw = data && data.sentences;
+          if (!Array.isArray(raw)) throw new Error('형태소 분석 결과가 비어 있습니다.');
 
           const CONTENT_TAGS = new Set(['NNG', 'SL', 'VV', 'VA']);
           raw.forEach(sentMorphs => {

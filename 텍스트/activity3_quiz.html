@@ -498,6 +498,25 @@
         // Worker API URL
         // ============================================
         const WORKER_API_URL = 'https://falling-pond-1450.tjdgus1121.workers.dev/';
+        // 서버(Worker → Gemini) 응답을 기다리는 동안은 타이머를 멈춤. 사용량 소진이면 serviceDown으로 게임 정지
+        let apiBusy = false, serviceDown = false;
+        // 유사도(bge-m3 코사인) → 점수 변환 기준. 점수 = (유사도 - LO) / (HI - LO) × 100 (0~100)
+        // Worker를 다시 배포하지 않고 여기서 조정할 수 있음
+        // 2026-11-20 실측(30쌍): 관련 없음 0.42~0.48 · 조금 관련 0.52~0.63 · 많이 관련 0.65~0.85
+        //  → 쉬움 60점 = 유사도 0.60, 보통 70점 = 0.66, 어려움 80점 = 0.72, 관련 없는 단어는 약 35점
+        // provider: Worker가 어느 쪽으로 계산했는지 — 'cf'(Cloudflare Workers AI, 기본) | 'google'(Gemini, 예비)
+        //  google은 임시값. Gemini 크레딧 충전 후 실측해서 Worker의 SIM_RANGE와 함께 맞출 것
+        const SIM_RANGE = { cf: [0.24, 0.84], google: [0.55, 0.95] };
+        // 앞 단어를 품거나 두 글자 이상 이어서 겹치면 '글자 장난'으로 보고 막음 (예: 교육자 → 교육자질)
+        function sharesChunk(a, b) {
+            if (a.includes(b) || b.includes(a)) return true;
+            for (let i = 0; i + 2 <= a.length; i++) if (b.includes(a.slice(i, i + 2))) return true;
+            return false;
+        }
+        const simToScore = (sim, provider) => {
+            const [lo, hi] = SIM_RANGE[provider] || SIM_RANGE.cf;
+            return Math.max(0, Math.min(100, Math.round((sim - lo) / (hi - lo) * 100)));
+        };
 
         // ============================================
         // 게임 상태
@@ -536,11 +555,67 @@
             createScreen: 'flex', dashboardScreen: 'block', gameScreen: 'block'
         };
         // 한 번에 한 화면만 보여준다.
-        function showScreen(id) {
+        function rawShowScreen(id) {
             Object.keys(SCREEN_DISPLAY).forEach(s => { const el = document.getElementById(s); if (el) el.style.display = 'none'; });
             const t = document.getElementById(id); if (t) t.style.display = SCREEN_DISPLAY[id] || 'block';
             window.scrollTo({ top: 0 });
         }
+
+        // ============================================
+        // 브라우저 뒤로가기 = 이 페이지 안에서 한 단계 뒤로
+        //   기록 구조: [처음 화면(0단계)] → [참여·대기·방 만들기·대시보드·게임 중 하나(1단계)] → [안내·통계 창(2단계)]
+        //   1단계 화면끼리 이동은 기록을 덮어써서, 뒤로가기 한 번이면 처음 화면으로 돌아옴
+        //   처음 화면에서 뒤로가기 → 사이트의 이전 페이지(텍스트 목록 등)
+        // ============================================
+        let ignorePop = false;              // 코드에서 history.back() 할 때 생기는 popstate는 무시
+        const navState = () => (history.state && history.state.app) ? history.state : null;
+        function showScreen(id) {
+            rawShowScreen(id);
+            const cur = navState();
+            if (id === 'startScreen') {
+                if (cur && cur.depth >= 1) { ignorePop = true; history.back(); }       // 쌓인 기록을 걷어 처음 화면 기록으로
+                else history.replaceState({ app: 1, depth: 0, screen: id }, '');
+            } else if (cur && cur.depth >= 1) {
+                history.replaceState({ app: 1, depth: 1, screen: id }, '');
+            } else {
+                history.pushState({ app: 1, depth: 1, screen: id }, '');
+            }
+        }
+        history.replaceState({ app: 1, depth: 0, screen: 'startScreen' }, '');
+        const isShown = id => { const el = document.getElementById(id); return !!el && el.style.display !== 'none' && el.style.display !== ''; };
+        const visibleScreen = () => Object.keys(SCREEN_DISPLAY).find(s => { const el = document.getElementById(s); return el && el.style.display !== 'none' && (s !== 'startScreen' || el.style.display !== ''); }) || 'startScreen';
+        function openModal(id) {
+            document.getElementById(id).style.display = 'block';
+            const cur = navState();
+            history.pushState({ app: 1, depth: (cur ? cur.depth : 0) + 1, modal: id }, '');
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            const cur = navState();
+            if (cur && cur.modal === id) { ignorePop = true; history.back(); }
+        }
+        window.addEventListener('popstate', () => {
+            if (ignorePop) { ignorePop = false; return; }
+            // 1) 열린 안내·통계 창이 있으면 창만 닫기
+            for (const m of ['infoModal', 'statsModal']) {
+                if (isShown(m)) { document.getElementById(m).style.display = 'none'; return; }
+            }
+            // 2) 게임 결과 창 → 처음 화면
+            if (isShown('endGameModal')) { document.getElementById('endGameModal').style.display = 'none'; teardownStudent(); goHome(); return; }
+            const v = visibleScreen();
+            const stay = () => history.pushState({ app: 1, depth: 1, screen: v }, '');   // 취소하면 지금 화면 기록을 되살림
+            if (v === 'gameScreen' && isGameActive) {
+                if (!confirm('게임을 그만두고 처음 화면으로 갈까요? (점수는 저장되지 않아요)')) { stay(); return; }
+                isGameActive = false; clearInterval(timerInterval);
+                teardownStudent(); goHome(); return;
+            }
+            if (v === 'waitingScreen') { leaveWaiting(); return; }
+            if (v === 'dashboardScreen') {
+                if (dashStatus !== 'closed' && !confirm('대시보드를 나갈까요? 나가면 이 방 화면으로 다시 들어올 수 없어요.')) { stay(); return; }
+                teardownDash(); goHome(); return;
+            }
+            if (v !== 'startScreen') { teardownStudent(); goHome(); }
+        });
         function escapeHtml(s) { return String(s).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c])); }
         function genRoomCode() { const c = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 4; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
         function diffLabel(d) { return d === 'easy' ? '쉬움' : d === 'medium' ? '중간' : '어려움'; }
@@ -578,21 +653,10 @@
         // ============================================
         // 모달 관리
         // ============================================
-        function showInfoModal() {
-            document.getElementById('infoModal').style.display = 'block';
-        }
-
-        function closeInfoModal() {
-            document.getElementById('infoModal').style.display = 'none';
-        }
-
-        function showStatsModal() {
-            document.getElementById('statsModal').style.display = 'block';
-        }
-
-        function closeStatsModal() {
-            document.getElementById('statsModal').style.display = 'none';
-        }
+        function showInfoModal() { openModal('infoModal'); }
+        function closeInfoModal() { closeModal('infoModal'); }
+        function showStatsModal() { openModal('statsModal'); }
+        function closeStatsModal() { closeModal('statsModal'); }
 
         function showEndGameModal() {
             document.getElementById('finalScore').textContent = gameState.score;
@@ -751,6 +815,7 @@
                     clearInterval(timerInterval);
                     return;
                 }
+                if (apiBusy || serviceDown) return;   // 서버 대기·서버 장애 시간은 빼기
                 
                 gameState.timeLeft--;
                 document.getElementById('timer').textContent = gameState.timeLeft;
@@ -778,7 +843,7 @@
         // 단어 제출
         // ============================================
         async function submitWord() {
-            if (!isGameActive) return;
+            if (!isGameActive || serviceDown) return;
             
             const input = document.getElementById('wordInput');
             const newWord = input.value.trim();
@@ -793,12 +858,19 @@
                 input.value = '';
                 return;
             }
+
+            if (sharesChunk(gameState.currentWord, newWord)) {
+                showResult('✋ 앞 단어와 글자가 겹쳐요! 글자 말고 <b>뜻</b>으로 이어 보세요.', 'error');
+                input.value = '';
+                return;
+            }
             
             input.disabled = true;
             document.getElementById('submitBtn').disabled = true;
             
             showResult('<span class="loading"></span> 유사도 계산하는 중...', 'loading');
             
+            apiBusy = true;
             try {
                 // Worker API 호출
                 const response = await fetch(WORKER_API_URL, {
@@ -813,7 +885,14 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`API 오류: ${response.status}`);
+                    let detail = '';
+                    try { const j = await response.json(); detail = (j.message || j.error || ''); } catch (e) {}
+                    const err = new Error(`API 오류: ${response.status}`);
+                    err.server = true;
+                    // Gemini 선불 크레딧·할당량 소진(402 / 429 / RESOURCE_EXHAUSTED)
+                    err.quota = /402|429|4006|RESOURCE_EXHAUSTED|credits|quota|neurons|allocation/i.test(detail);
+                    err.detail = detail;
+                    throw err;
                 }
                 
                 const data = await response.json();
@@ -832,8 +911,8 @@
                     return;
                 }
                 
-                const score = data.score;
                 const similarity = data.similarity;
+                const score = typeof similarity === 'number' ? simToScore(similarity, data.provider) : data.score;
                 
                 console.log(`유사도: ${similarity.toFixed(4)}, 점수: ${score}`);
                 
@@ -882,11 +961,25 @@
                 }
                 
             } catch (error) {
-                console.error('API 오류:', error);
-                showResult('❌ 오류가 발생했습니다: ' + error.message, 'error');
-                gameState.currentCombo = 0;
-                updateDisplay();
+                console.error('API 오류:', error, error.detail || '');
+                if (error.quota) {
+                    // 더 시도해도 같은 오류 → 게임을 멈추고 안내 (점수·시간 그대로)
+                    serviceDown = true;
+                    apiBusy = false;
+                    showResult('🛠️ AI 단어 판정 서비스의 사용량이 모두 소진되어 지금은 게임을 할 수 없어요. 선생님께 알려 주세요!', 'down');
+                    return;
+                }
+                // 서버·네트워크 문제는 학생 잘못이 아니므로 콤보를 깎지 않음
+                showResult(error.server
+                    ? '⚠️ 단어 판정 서버에 잠시 문제가 생겼어요. 같은 단어를 다시 입력해 보세요. (기다린 시간은 빠져요)'
+                    : '⚠️ 인터넷 연결을 확인하고 다시 입력해 보세요. (기다린 시간은 빠져요)', 'error');
+                apiBusy = false;
+                input.disabled = false;
+                document.getElementById('submitBtn').disabled = false;
+                input.focus();
+                return;
             }
+            apiBusy = false;
             
             input.value = '';
             input.disabled = false;
@@ -916,7 +1009,7 @@
             
             let bgColor = 'bg-blue-100 text-blue-800';
             if (type === 'success') bgColor = 'bg-green-100 text-green-800';
-            else if (type === 'error') bgColor = 'bg-red-100 text-red-800';
+            else if (type === 'error' || type === 'down') bgColor = 'bg-red-100 text-red-800';
             else if (type === 'combo') bgColor = 'bg-yellow-100 text-yellow-800 animate-celebrate';
             else if (type === 'loading') bgColor = 'bg-blue-100 text-blue-800';
             
@@ -924,7 +1017,7 @@
             resultDiv.innerHTML = message;
             resultDiv.style.display = 'block';
             
-            if (!message.includes('계산하는 중')) {
+            if (!message.includes('계산하는 중') && type !== 'down') {   // 'down'(서비스 중단)은 계속 보이게
                 resultTimeout = setTimeout(() => {
                     resultDiv.style.display = 'none';
                     resultTimeout = null;
