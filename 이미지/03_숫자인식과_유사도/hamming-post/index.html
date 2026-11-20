@@ -2,16 +2,16 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f5ef">
   <title>나의 취향은? · 우리 반 취향 비교</title>
-  <meta name="description" content="아홉 가지 취향을 고르고, 우리 반 친구들과 3×3 취향 행렬을 비교해 보세요.">
+  <meta name="description" content="아홉 가지 취향을 골라 3×3 취향표를 만들고, 해밍 거리로 우리 반의 취향 분포를 읽어 보세요.">
   <link rel="icon" href="../../../favicon.ico">
   <link rel="preload" href="assets/fonts/Jua-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" type="module"></script>
 </head>
-<body>
+<body data-screen="entry">
   <div class="game-shell">
     <header class="site-header">
       <a href="../index.html" class="lesson-link">← 수업 목록</a>
@@ -20,55 +20,98 @@
     <main>
       <section id="entry-screen" aria-labelledby="entry-title">
         <div class="entry-intro">
-          <div><h1 id="entry-title">나의 취향은<span>?</span></h1><p class="lead">취향 9개를 고르고, 친구와 비교해요.</p></div>
-          <img src="assets/postal-friends.png" width="1536" height="1024" alt="편지를 함께 든 보라색과 살구색 친구" class="intro-friends">
+          <div><h1 id="entry-title">나의 취향은<span>?</span></h1><p class="lead">아홉 번 고르고, 우리 반 친구와 몇 칸 다른지 알아봐요.</p></div>
+          <picture class="intro-friends"><source type="image/webp" srcset="assets/postal-friends.webp"><img src="assets/postal-friends.png" width="1536" height="1024" alt="편지를 함께 든 보라색과 살구색 친구"></picture>
         </div>
         <div class="entry-game">
           <section class="join-panel" aria-labelledby="join-title">
-            <h2 id="join-title">같이 하기</h2>
+            <h2 id="join-title">학생 참여</h2>
             <form id="join-form" novalidate>
-              <div class="entry-fields"><div><label for="room-code-input">방 코드</label><input id="room-code-input" name="room-code" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="숫자 6자리" required></div><div><label for="player-name-input">이름 또는 별명</label><input id="player-name-input" name="player-name" type="text" autocomplete="off" maxlength="12" placeholder="친구들이 알아볼 이름" required></div></div>
-              <button class="primary-button" type="submit" id="join-button">취향 고르러 가기 <span aria-hidden="true">→</span></button>
+              <div class="entry-fields"><div><label for="room-code-input">방 코드</label><input id="room-code-input" name="room-code" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="숫자 6자리" required></div><div><label for="player-name-input">이름 또는 별명</label><input id="player-name-input" name="player-name" type="text" enterkeyhint="go" autocapitalize="off" autocomplete="off" maxlength="12" placeholder="친구가 부를 이름" required></div></div>
+              <button class="primary-button" type="submit" id="join-button">참가하기 <span aria-hidden="true">→</span></button>
             </form>
           </section>
           <section class="host-panel" aria-labelledby="host-title">
-            <div class="host-panel-top"><span class="envelope-icon" aria-hidden="true">✉</span><h2 id="host-title">선생님은 여기서</h2></div>
-            <p>방을 만들고 코드를 알려 주세요.<br>친구들이 다 고르면 함께 비교해요.</p>
+            <div><h2 id="host-title">선생님</h2><p>방 코드를 학생에게 알려 주세요.</p></div>
             <button type="button" id="create-room" class="secondary-button">방 만들기 <span aria-hidden="true">↗</span></button>
           </section>
-          <div class="game-instructions"><span aria-hidden="true">✦</span><p>두 개 중 더 좋은 쪽을 골라요.<br class="mobile-break"> 아홉 번 고르면 내 취향표 완성!</p></div>
         </div>
       </section>
 
       <section id="question-screen" class="question-screen" aria-labelledby="question-title" hidden>
-        <div class="question-heading"><h1>나의 취향은<span>?</span></h1><div class="question-position"><span id="question-count">1 / 9</span><div id="question-progress" class="question-progress" aria-label="질문 진행 상황"></div></div></div>
+        <div class="question-heading"><h1>나의 취향은<span>?</span></h1><span id="question-count">1 / 9</span></div>
         <div class="question-stage">
-          <h2 id="question-title" tabindex="-1">민트초코는?</h2>
-          <div id="choice-list" class="choice-list"></div>
-          <div class="question-bottom"><button id="previous-question" type="button" class="text-button">← 이전 질문</button><div class="question-guide"><img src="assets/postal-friends.png" width="1536" height="1024" alt="" class="guide-friends"><span>더 좋은 쪽을 눌러 줘!</span></div><span id="question-room"></span></div>
-          <button id="retry-submit" type="button" class="primary-button" hidden>답변 다시 보내기</button>
+          <div class="question-play">
+            <h2 id="question-title" tabindex="-1" aria-describedby="question-count">민트초코는?</h2>
+            <div id="choice-list" class="choice-list"></div>
+            <div class="question-bottom"><button id="previous-question" type="button" class="text-button">← 이전 질문</button><span id="question-next"></span></div>
+            <button id="retry-submit" type="button" class="primary-button" hidden>답변 다시 보내기</button>
+          </div>
+          <section class="question-board" aria-labelledby="board-title">
+            <div><h3 id="board-title">내 취향표</h3><p id="answered-count"></p><span id="question-room"></span></div>
+            <ol id="question-progress" class="question-progress" aria-label="문항 순서대로 채워지는 취향표"></ol>
+          </section>
         </div>
       </section>
 
       <section id="room-screen" aria-labelledby="room-title" hidden>
         <div class="room-heading"><div><h1 id="room-title">나의 취향은<span>?</span></h1><p id="room-subtitle" class="lead"></p></div><div class="room-code-box"><span>방 코드</span><strong id="room-code"></strong><button id="copy-room-link" type="button" class="text-button">참가 링크 복사 ↗</button></div></div>
         <nav id="teacher-controls" class="teacher-controls" aria-label="수업 공개 단계" hidden>
-          <button type="button" data-phase="collect">취향 모으기</button><button type="button" data-phase="compare">취향 비교</button><button type="button" data-phase="binary">0 · 1 행렬</button><button type="button" data-phase="distance">해밍 거리</button>
+          <button type="button" data-phase="collect">취향 모으기</button><button type="button" data-phase="compare">취향 비교</button><button type="button" data-phase="binary">0 · 1 행렬</button><button type="button" data-phase="distance">해밍 거리와 통계</button>
         </nav>
+        <section id="teacher-submissions" class="teacher-submissions" aria-labelledby="submission-title" hidden>
+          <h2 id="submission-title">제출 현황</h2>
+          <div class="submission-counts" role="status"><span>참가 <strong id="joined-total">0명</strong></span><span>제출 <strong id="submitted-total">0명</strong></span><span>미제출 <strong id="pending-total">0명</strong></span></div>
+          <details id="pending-submissions">
+            <summary>미제출자 보기</summary>
+            <p id="pending-submission-empty" hidden></p>
+            <ul id="pending-submission-list" class="pending-submission-list" aria-label="미제출자 목록" tabindex="0"></ul>
+          </details>
+        </section>
         <div id="collection-view">
           <div class="collection-bar"><h2 id="collection-title">우리 반 취향</h2><span id="ready-count" role="status"></span><button id="edit-answers" class="text-button" type="button" hidden>내 취향 다시 고르기 ↻</button></div>
-          <div id="student-waiting" class="student-waiting" hidden><div><h2 id="my-taste-title">내 취향표</h2><div id="my-taste-matrix" class="taste-matrix"></div></div><div class="waiting-illustration"><img src="assets/postal-friends.png" width="1536" height="1024" alt="함께 취향표를 기다리는 두 친구"><h3>다 골랐어!</h3><p>친구들도 고르고 있어요.<br>잠시 뒤에 함께 비교해요.</p></div></div>
+          <div id="student-waiting" class="student-waiting" hidden><div><h2 id="my-taste-title">내 취향표</h2><div id="my-taste-matrix" class="taste-matrix"></div></div><div class="waiting-illustration"><picture><source type="image/webp" srcset="assets/postal-friends.webp"><img src="assets/postal-friends.png" width="1536" height="1024" alt="함께 취향표를 기다리는 두 친구" loading="lazy"></picture><h3>다 골랐어!</h3><p>친구들도 고르고 있어요.<br>잠시 뒤에 함께 비교해요.</p></div></div>
           <div id="participant-gallery" class="participant-gallery"></div>
         </div>
         <div id="comparison-view" hidden>
-          <div class="comparison-toolbar"><div><h2 id="comparison-title">누구랑 비교할까?</h2><p id="comparison-instruction">같은 자리의 취향을 비교해 보세요.</p></div><div class="participant-pickers"><div id="first-picker-wrap"><label for="first-player">첫 번째 친구</label><select id="first-player"></select></div><div><label for="second-player">비교할 친구</label><select id="second-player"></select></div></div></div>
+          <div id="comparison-toolbar" class="comparison-toolbar" tabindex="-1"><div><h2 id="comparison-title">누구랑 비교할까?</h2><p id="comparison-instruction">같은 자리의 취향을 비교해 보세요.</p></div><div class="participant-pickers"><div id="first-picker-wrap"><label for="first-player">기준 학생</label><select id="first-player"></select></div><div><label for="second-player">비교할 친구</label><select id="second-player"></select></div></div></div>
+          <div id="teacher-distance-filter" class="teacher-distance-filter" hidden>
+            <label for="distance-filter">기준 학생과의 거리</label>
+            <select id="distance-filter"><option value="all">모든 거리</option><option value="shortest">가장 짧은 거리</option></select>
+            <p id="distance-match-count" role="status"></p>
+          </div>
           <p id="comparison-empty" class="empty-message" hidden>취향을 모두 고른 친구가 두 명 이상 필요해요.</p>
           <div id="comparison-content">
             <div class="matrix-pair"><section class="matrix-card lavender-card"><h3 id="first-player-name"></h3><div id="first-matrix" class="taste-matrix"></div></section><span class="pair-symbol" aria-hidden="true">↔</span><section class="matrix-card peach-card"><h3 id="second-player-name"></h3><div id="second-matrix" class="taste-matrix"></div></section></div>
             <p id="binary-guide" class="binary-guide" hidden>질문에서 왼쪽을 골랐으면 0, 오른쪽을 골랐으면 1이에요.</p>
-            <div id="distance-explanation" class="distance-explanation" hidden><section><h3>다른 자리만 1로 표시하면</h3><div id="difference-matrix" class="taste-matrix difference-matrix"></div></section><div class="distance-total"><p>서로 다른 칸</p><strong id="distance-value"></strong><h2>이 수가 <b>해밍 거리</b>예요.</h2><p id="distance-summary"></p></div></div>
+            <div id="distance-explanation" class="distance-explanation" hidden><section><h3>같으면 0, 다르면 1</h3><div id="difference-matrix" class="taste-matrix difference-matrix"></div></section><div class="distance-total"><p>서로 다른 칸</p><strong id="distance-value"></strong><h2>이 수가 <b>해밍 거리</b>예요.</h2><p id="distance-summary"></p><a class="stats-jump" href="#class-stats">반 전체 거리에서 보기 ↓</a></div></div>
           </div>
-          <div class="friends-heading"><h3>참가한 친구들</h3><span id="comparison-count"></span></div><div id="comparison-friends" class="comparison-friends"></div>
+          <section id="class-stats" class="class-stats" aria-labelledby="class-stats-title" tabindex="-1" hidden>
+            <header class="stats-header"><h2 id="class-stats-title">우리 반 해밍 거리 분포</h2><p id="stats-sample"></p></header>
+            <dl class="stats-metrics">
+              <div><dt>비교한 쌍</dt><dd id="stats-pairs"></dd></div>
+              <div><dt>평균 거리</dt><dd id="stats-mean"></dd></div>
+              <div><dt>가장 많은 거리</dt><dd id="stats-mode"></dd></div>
+            </dl>
+            <figure class="stats-figure" aria-labelledby="histogram-title">
+              <figcaption><span id="histogram-title">거리마다 몇 쌍일까?</span><span id="histogram-pair" class="histogram-pair" hidden></span></figcaption>
+              <div id="distance-histogram" class="distance-histogram" role="group" aria-label="해밍 거리 0부터 9까지. 막대를 눌러 쌍의 수와 비율을 읽어요."></div>
+              <p class="stats-axis">해밍 거리 (다른 칸 수) <span class="histogram-tap-tip">· 막대를 눌러 비율 보기</span></p>
+              <div class="histogram-picker"><label for="histogram-distance">확인할 거리</label><select id="histogram-distance"></select></div>
+              <p id="histogram-reading" class="histogram-reading" role="status"></p>
+              <a class="stats-return" href="#comparison-toolbar">비교할 친구 바꾸기 ↑</a>
+            </figure>
+            <section class="stats-question" aria-labelledby="stats-question-title">
+              <div><h3 id="stats-question-title">이 문항에서 몇 쌍이 달랐을까?</h3><p>서로 다른 선택을 한 두 사람의 해밍 거리에 이 문항이 1을 더해요.</p></div>
+              <div class="stats-question-pick"><label for="stats-question-select">살펴볼 문항</label><select id="stats-question-select"></select></div>
+              <div class="stats-split">
+                <div id="stats-options" class="stats-options"></div><div class="split-track" aria-hidden="true"><span id="stats-left-share"></span></div>
+                <p id="stats-question-reading" role="status"></p>
+              </div>
+            </section>
+            <footer class="stats-footer"><p>취향표 대신 손글씨 숫자를 0과 1로 나타내면, 다른 칸을 세는 같은 방법으로 숫자 모양을 비교할 수 있어요.</p><a href="../activity11_similarity_check.html">숫자 모양 비교하기 →</a></footer>
+          </section>
+          <div class="friends-heading"><h3 id="comparison-friends-title">참가한 친구들</h3><span id="comparison-count"></span></div><div id="comparison-friends" class="comparison-friends"></div>
         </div>
       </section>
       <div id="app-message" class="app-message" role="alert" hidden></div>
@@ -76,7 +119,7 @@
     <footer><span>나의 취향은?</span><span id="footer-message">친구와 같은 방에서 함께해요.</span></footer>
   </div>
 
-  <dialog id="help-dialog"><button class="dialog-close text-button" type="button" data-action="close-dialog" aria-label="놀이 방법 닫기">✕</button><h2>이렇게 놀아요</h2><img src="assets/postal-friends.png" width="1536" height="1024" alt="" class="help-friends"><ol><li>선생님이 알려 준 방 코드로 들어와요.</li><li>아홉 가지 질문에서 더 좋은 쪽을 골라요.</li><li>친구를 골라 같은 자리의 취향을 비교해요.</li></ol><p>선생님은 위쪽 버튼으로 비교 화면을 차례로 열 수 있어요.</p><button type="button" class="primary-button" data-action="close-dialog">알겠어!</button></dialog>
+  <dialog id="help-dialog"><button class="dialog-close text-button" type="button" data-action="close-dialog" aria-label="놀이 방법 닫기">✕</button><h2>이렇게 놀아요</h2><picture class="help-friends"><source type="image/webp" srcset="assets/postal-friends.webp"><img src="assets/postal-friends.png" width="1536" height="1024" alt="" loading="lazy"></picture><ol><li>선생님이 알려 준 방 코드로 들어와요.</li><li>더 좋은 쪽을 골라 3×3 취향표를 채워요.</li><li>선택을 0과 1로 바꾸고 친구와 다른 칸을 세어요.</li><li>우리 반에서는 몇 칸 차이 나는 쌍이 가장 많은지 살펴봐요.</li></ol><p>선생님은 위쪽 버튼으로 비교 화면을 차례로 열 수 있어요.</p><button type="button" class="primary-button" data-action="close-dialog">알겠어!</button></dialog>
   <dialog id="leave-dialog"><h2 id="leave-dialog-title">방에서 나갈까요?</h2><p id="leave-dialog-copy">이 방에서 고른 취향이 삭제돼요.</p><div class="dialog-actions"><button class="secondary-button" type="button" data-action="close-dialog">계속하기</button><button id="confirm-leave" class="primary-button" type="button">나가기</button></div></dialog>
   <dialog id="share-dialog"><h2>참가 링크</h2><label for="share-link">주소를 복사해 친구들에게 알려 주세요.</label><input id="share-link" type="text" readonly><button type="button" class="primary-button" data-action="close-dialog">닫기</button></dialog>
   <noscript><p>게임에 참여하려면 JavaScript를 켜 주세요.</p></noscript>

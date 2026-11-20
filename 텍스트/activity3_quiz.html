@@ -154,31 +154,53 @@
         /* 그라데이션 CTA: 더 부드럽고 깊은 그림자 */
         .shadow-lg { box-shadow: 0 12px 28px -10px rgba(15,23,42,.35) !important; }
 
+        /* === 게임 화면 다듬기 === */
+        .stat-num { font-variant-numeric: tabular-nums; }
+        .break-keep { word-break: keep-all; }
+        #result { transition: opacity .2s ease; }
+        #timeBar { transition: width .9s linear, background .3s ease; }
+        #timeBar.bar-low { background: linear-gradient(to right, #f87171, #dc2626); }
+        @keyframes timerBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+        .timer-low { animation: timerBeat 1s ease-in-out infinite; display: inline-block; }
+        #comboBox.animate-glow { background: #fffbeb; }
+        @keyframes glowCombo { 0%, 100% { box-shadow: 0 0 0 2px rgba(245,158,11,.35); } 50% { box-shadow: 0 0 0 4px rgba(245,158,11,.55), 0 0 18px rgba(245,158,11,.45); } }
+        #comboBox.animate-glow { animation: glowCombo 1.5s ease-in-out infinite; }
+
+        /* 모달: 화면이 짧아도 끝까지 보이도록 창 안에서 스크롤 */
+        .modal { overflow-y: auto; padding: 16px 0; }
+        .modal-content { margin: 6vh auto; }
+        @media (max-width: 640px) {
+            .modal-content { padding: 1.25rem; width: calc(100% - 24px); margin: 52px auto 12px; }   /* 왼쪽 위 메뉴 버튼 아래부터 */
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+        }
+
     </style>
 <script src="../unit-nav.js" data-unit="text" defer></script>
 </head>
 <body class="bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-400 min-h-screen">
     
     <!-- 시작 화면 -->
-    <div id="startScreen" class="min-h-screen flex items-center justify-center p-4" style="position: relative; z-index: 1;">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
-            <h1 class="title-font text-6xl text-center text-gray-800 mb-8">🔗 코사인 이어말하기 게임</h1>
-            <p class="text-center text-gray-600 text-lg mb-6">AI 코사인 유사도로 단어를 연결하세요!</p>
+    <div id="startScreen" class="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-4" style="position: relative; z-index: 1;">
+        <div class="bg-white rounded-3xl shadow-2xl p-5 sm:p-8 max-w-2xl w-full">
+            <h1 class="title-font text-4xl sm:text-6xl text-center text-gray-800 mb-4 sm:mb-8 break-keep">🔗 코사인 이어말하기 게임</h1>
+            <p class="text-center text-gray-600 sm:text-lg mb-6 break-keep">AI 코사인 유사도로 단어를 연결하세요!</p>
             
             <!-- 설명 보기 버튼 -->
-            <div class="text-center mb-8">
-                <button onclick="showInfoModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl transition-all transform hover:scale-105 text-lg">
+            <div class="flex flex-wrap justify-center gap-2 mb-6 sm:mb-8">
+                <button onclick="showInfoModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-6 py-3 rounded-xl transition-all transform hover:scale-105 sm:text-lg whitespace-nowrap">
                     📖 코사인 유사도란? / 게임 방법
                 </button>
-                <button onclick="showStatsModal()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl transition-all transform hover:scale-105 text-lg ml-2">
+                <button onclick="showStatsModal()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 sm:px-6 py-3 rounded-xl transition-all transform hover:scale-105 sm:text-lg whitespace-nowrap">
                     📊 통계 보기
                 </button>
             </div>
 
             <!-- 학급 모드: 방 참여 / 방 만들기 -->
             <div class="grid grid-cols-2 gap-3 mb-6">
-                <button onclick="showScreen('joinScreen')" class="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-4 rounded-xl transition-all transform hover:scale-105 text-lg font-bold">🚪 방 참여하기</button>
-                <button onclick="goToCreate()" class="bg-teal-500 hover:bg-teal-600 text-white px-6 py-4 rounded-xl transition-all transform hover:scale-105 text-lg font-bold">👨‍🏫 방 만들기</button>
+                <button onclick="showScreen('joinScreen')" class="bg-cyan-500 hover:bg-cyan-600 text-white px-2 sm:px-6 py-4 rounded-xl transition-all transform hover:scale-105 sm:text-lg font-bold whitespace-nowrap">🚪 방 참여하기</button>
+                <button onclick="goToCreate()" class="bg-teal-500 hover:bg-teal-600 text-white px-2 sm:px-6 py-4 rounded-xl transition-all transform hover:scale-105 sm:text-lg font-bold whitespace-nowrap">👨‍🏫 방 만들기</button>
             </div>
             <div class="flex items-center gap-3 mb-6">
                 <div class="flex-1 h-px bg-gray-200"></div><span class="text-gray-400 text-sm">또는 혼자 연습</span><div class="flex-1 h-px bg-gray-200"></div>
@@ -187,31 +209,31 @@
             <!-- 난이도 선택 -->
             <div class="mb-8">
                 <h2 class="text-xl font-bold text-gray-700 mb-4 text-center">난이도 선택</h2>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-3 gap-2 sm:gap-4">
                     <label class="cursor-pointer">
                         <input type="radio" name="difficulty" value="easy" checked class="peer hidden">
-                        <div class="p-4 border-2 border-gray-300 rounded-xl text-center transition-all peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:shadow-lg hover:shadow-md">
+                        <div class="p-3 sm:p-4 border-2 border-gray-300 rounded-xl text-center transition-all peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:shadow-lg hover:shadow-md">
                             <div class="text-3xl mb-2">😊</div>
                             <div class="font-bold text-gray-700">쉬움</div>
-                            <div class="text-sm text-gray-500 mt-1">60점 이상</div>
+                            <div class="text-xs sm:text-sm text-gray-500 mt-1 whitespace-nowrap">60점 이상</div>
                         </div>
                     </label>
                     
                     <label class="cursor-pointer">
                         <input type="radio" name="difficulty" value="medium" class="peer hidden">
-                        <div class="p-4 border-2 border-gray-300 rounded-xl text-center transition-all peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:shadow-lg hover:shadow-md">
+                        <div class="p-3 sm:p-4 border-2 border-gray-300 rounded-xl text-center transition-all peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:shadow-lg hover:shadow-md">
                             <div class="text-3xl mb-2">🤔</div>
                             <div class="font-bold text-gray-700">중간</div>
-                            <div class="text-sm text-gray-500 mt-1">70점 이상</div>
+                            <div class="text-xs sm:text-sm text-gray-500 mt-1 whitespace-nowrap">70점 이상</div>
                         </div>
                     </label>
                     
                     <label class="cursor-pointer">
                         <input type="radio" name="difficulty" value="hard" class="peer hidden">
-                        <div class="p-4 border-2 border-gray-300 rounded-xl text-center transition-all peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:shadow-lg hover:shadow-md">
+                        <div class="p-3 sm:p-4 border-2 border-gray-300 rounded-xl text-center transition-all peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:shadow-lg hover:shadow-md">
                             <div class="text-3xl mb-2">🔥</div>
                             <div class="font-bold text-gray-700">어려움</div>
-                            <div class="text-sm text-gray-500 mt-1">80점 이상</div>
+                            <div class="text-xs sm:text-sm text-gray-500 mt-1 whitespace-nowrap">80점 이상</div>
                         </div>
                     </label>
                 </div>
@@ -231,52 +253,56 @@
     </div>
     
     <!-- 게임 화면 -->
-    <div id="gameScreen" style="display: none; position: relative; z-index: 1;" class="min-h-screen p-4">
+    <div id="gameScreen" style="display: none; position: relative; z-index: 1;" class="min-h-screen p-4 pt-16 sm:pt-4">
         <div class="max-w-4xl mx-auto">
             <!-- 상단 정보 -->
-            <div class="bg-white rounded-2xl shadow-xl p-6 mb-4">
-                <div class="grid grid-cols-3 gap-4">
+            <div class="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-4">
+                <div class="grid grid-cols-3 gap-2 sm:gap-4">
                     <!-- 점수 -->
-                    <div class="text-center">
-                        <div class="text-gray-600 mb-1">점수</div>
-                        <div id="score" class="text-3xl font-bold text-blue-600">0</div>
+                    <div class="text-center rounded-xl py-1">
+                        <div class="text-gray-600 text-sm sm:text-base mb-1">점수</div>
+                        <div id="score" class="stat-num text-3xl font-bold text-blue-600">0</div>
                     </div>
                     
                     <!-- 시간 -->
-                    <div class="text-center">
-                        <div class="text-gray-600 mb-1">시간</div>
-                        <div id="timer" class="text-3xl font-bold text-red-600">60</div>
+                    <div class="text-center rounded-xl py-1">
+                        <div class="text-gray-600 text-sm sm:text-base mb-1">시간</div>
+                        <div id="timer" class="stat-num text-3xl font-bold text-red-600">60</div>
                     </div>
                     
                     <!-- 콤보 -->
-                    <div id="comboBox" class="text-center">
-                        <div class="text-gray-600 mb-1">콤보</div>
-                        <div id="currentCombo" class="text-3xl font-bold text-yellow-600">0</div>
+                    <div id="comboBox" class="text-center rounded-xl py-1">
+                        <div class="text-gray-600 text-sm sm:text-base mb-1">콤보</div>
+                        <div id="currentCombo" class="stat-num text-3xl font-bold text-yellow-600">0</div>
                     </div>
+                </div>
+                <!-- 남은 시간 막대 -->
+                <div class="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden" aria-hidden="true">
+                    <div id="timeBar" class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" style="width:100%"></div>
                 </div>
             </div>
             
             <!-- 현재 단어 -->
-            <div class="bg-white rounded-2xl shadow-xl p-8 mb-4">
+            <div class="bg-white rounded-2xl shadow-xl p-5 sm:p-8 mb-4">
                 <div class="text-center">
                     <div class="text-gray-600 mb-2">현재 단어</div>
-                    <div id="currentWord" class="text-5xl font-bold text-gray-800 mb-4">시작</div>
+                    <div id="currentWord" class="text-4xl sm:text-5xl font-bold text-gray-800 mb-4 break-keep">시작</div>
                 </div>
                 
-                <!-- 결과 메시지 -->
-                <div id="result" class="mb-6" style="display: none;"></div>
+                <!-- 결과 메시지: 나타나고 사라져도 입력칸이 움직이지 않게 자리를 비워 둠 -->
+                <div id="result" class="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-bold sm:text-lg" style="visibility: hidden;" role="status" aria-live="polite">&nbsp;</div>
                 
                 <!-- 입력 필드 -->
                 <div class="flex gap-2">
-                    <input type="text" id="wordInput" class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg" placeholder="단어를 입력하세요" autocomplete="off">
-                    <button id="submitBtn" onclick="submitWord()" class="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105">
+                    <input type="text" id="wordInput" class="flex-1 min-w-0 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg" placeholder="단어를 입력하세요" autocomplete="off" enterkeyhint="send">
+                    <button id="submitBtn" onclick="submitWord()" class="shrink-0 whitespace-nowrap bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white px-5 sm:px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105">
                         제출
                     </button>
                 </div>
             </div>
             
             <!-- 단어 체인 -->
-            <div class="bg-white rounded-2xl shadow-xl p-6">
+            <div class="bg-white rounded-2xl shadow-xl p-4 sm:p-6">
                 <div class="text-gray-700 font-bold mb-4 text-center">연결된 단어들</div>
                 <div id="wordChain" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto"></div>
             </div>
@@ -284,7 +310,7 @@
     </div>
 
     <!-- 방 참여 화면 (학생) -->
-    <div id="joinScreen" class="min-h-screen flex items-center justify-center p-4" style="display:none; position:relative; z-index:1;">
+    <div id="joinScreen" class="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-4" style="display:none; position:relative; z-index:1;">
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
             <h2 class="title-font text-4xl text-center text-gray-800 mb-6">🚪 방 참여하기</h2>
             <div class="mb-5">
@@ -302,7 +328,7 @@
     </div>
 
     <!-- 대기실 (학생) -->
-    <div id="waitingScreen" class="min-h-screen flex items-center justify-center p-4" style="display:none; position:relative; z-index:1;">
+    <div id="waitingScreen" class="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-4" style="display:none; position:relative; z-index:1;">
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
             <h2 class="title-font text-4xl text-gray-800 mb-4">대기실</h2>
             <div class="bg-blue-50 rounded-2xl p-6 mb-6">
@@ -320,7 +346,7 @@
     </div>
 
     <!-- 방 만들기 (교사) -->
-    <div id="createScreen" class="min-h-screen flex items-center justify-center p-4" style="display:none; position:relative; z-index:1;">
+    <div id="createScreen" class="min-h-screen flex items-center justify-center p-4 pt-16 sm:pt-4" style="display:none; position:relative; z-index:1;">
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
             <h2 class="title-font text-4xl text-center text-gray-800 mb-6">👨‍🏫 방 만들기</h2>
             <div class="mb-5">
@@ -349,7 +375,7 @@
     </div>
 
     <!-- 교사 대시보드 -->
-    <div id="dashboardScreen" class="min-h-screen p-4" style="display:none; position:relative; z-index:1;">
+    <div id="dashboardScreen" class="min-h-screen p-4 pt-16 sm:pt-4" style="display:none; position:relative; z-index:1;">
         <div class="max-w-3xl mx-auto">
             <div class="bg-white rounded-2xl shadow-xl p-6 mb-4 text-center">
                 <h2 class="title-font text-3xl text-gray-800 mb-3">👨‍🏫 교사 대시보드</h2>
@@ -375,23 +401,23 @@
     <!-- 게임 종료 모달 -->
     <div id="endGameModal" class="modal">
         <div class="modal-content">
-            <h2 class="title-font text-5xl text-center mb-8 text-gray-800">🎉 게임 종료!</h2>
+            <h2 class="title-font text-4xl sm:text-5xl text-center mb-5 sm:mb-8 text-gray-800">🎉 게임 종료!</h2>
             
-            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-10 mb-8">
+            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 sm:p-10 mb-5 sm:mb-8">
                 <div class="text-center">
                     <div class="text-gray-600 mb-2 text-lg">최종 점수</div>
-                    <div id="finalScore" class="text-7xl font-bold text-blue-600">0</div>
+                    <div id="finalScore" class="stat-num text-6xl sm:text-7xl font-bold text-blue-600">0</div>
                 </div>
             </div>
 
             <!-- 최종 단어 체인 + 평균 유사도 -->
-            <div class="bg-gray-50 rounded-2xl p-5 mb-8">
+            <div class="bg-gray-50 rounded-2xl p-4 sm:p-5 mb-5 sm:mb-8">
                 <div class="text-gray-600 text-sm mb-3 text-center">단어 체인 · 평균 유사도 <span id="endAvg" class="font-bold text-blue-600">-</span></div>
                 <div id="endChain" class="flex flex-wrap gap-2 justify-center items-center max-h-44 overflow-y-auto"></div>
             </div>
 
             <!-- 방 순위 (방 모드에서만 표시) -->
-            <div id="endRoom" class="bg-teal-50 rounded-2xl p-5 mb-8" style="display:none;">
+            <div id="endRoom" class="bg-teal-50 rounded-2xl p-4 sm:p-5 mb-5 sm:mb-8" style="display:none;">
                 <div class="text-center mb-3">
                     <span class="text-gray-600 text-sm">방에서 내 등수</span>
                     <div class="text-3xl font-bold text-teal-600 mt-1"><span id="endRank">-</span> <span class="text-lg text-gray-400">/ <span id="endTotal">-</span>명</span></div>
@@ -789,7 +815,8 @@
 
             updateDisplay();
             document.getElementById('score').textContent = '0';
-            document.getElementById('timer').textContent = '60';
+            setTimerDisplay(60);
+            const rd = document.getElementById('result'); rd.style.visibility = 'hidden'; rd.innerHTML = '&nbsp;';
 
             // 단어 체인 초기화 + 시작 단어 칩을 첫 칸에 둔다 (이후 "─ 유사도 ─ 새단어" 형태로 이어짐)
             const chain = document.getElementById('wordChain');
@@ -807,6 +834,18 @@
             startTimer();
         }
 
+        // 남은 시간 숫자와 막대를 함께 갱신 (60초 = 막대 가득, 콤보 보너스로 넘치면 가득 유지)
+        function setTimerDisplay(sec) {
+            const el = document.getElementById('timer');
+            el.textContent = sec;
+            el.classList.toggle('timer-low', sec <= 10 && sec > 0);
+            const bar = document.getElementById('timeBar');
+            if (bar) {
+                bar.style.width = Math.max(0, Math.min(100, sec / 60 * 100)) + '%';
+                bar.classList.toggle('bar-low', sec <= 10);
+            }
+        }
+
         function startTimer() {
             clearInterval(timerInterval);
             
@@ -818,7 +857,7 @@
                 if (apiBusy || serviceDown) return;   // 서버 대기·서버 장애 시간은 빼기
                 
                 gameState.timeLeft--;
-                document.getElementById('timer').textContent = gameState.timeLeft;
+                setTimerDisplay(gameState.timeLeft);
                 
                 // 시간이 10초 이하면 배경색을 점점 빨갛게
                 const body = document.body;
@@ -827,7 +866,7 @@
                     const red = Math.round(255 * intensity);
                     const green = Math.round(200 * (1 - intensity));
                     const blue = Math.round(200 * (1 - intensity));
-                    body.style.background = `linear-gradient(to br, rgb(${red}, ${green}, ${blue}), rgb(${Math.round(red * 0.8)}, ${Math.round(green * 0.8)}, ${Math.round(blue * 0.8)})`;
+                    body.style.background = `linear-gradient(to bottom right, rgb(${red}, ${green}, ${blue}), rgb(${Math.round(red * 0.8)}, ${Math.round(green * 0.8)}, ${Math.round(blue * 0.8)})`;
                 } else if (gameState.timeLeft > 10) {
                     body.style.background = '';
                     body.className = 'bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-400 min-h-screen';
@@ -945,7 +984,7 @@
                     
                     if (gameState.currentCombo >= 3) {
                         gameState.timeLeft = Math.min(gameState.timeLeft + 5, 120);
-                        document.getElementById('timer').textContent = gameState.timeLeft;
+                        setTimerDisplay(gameState.timeLeft);
                         showComboBurst();
                         showResult(`✨ ${score}점! +${pointsGained}점! ${gameState.currentCombo} 콤보! (시간 +5초)`, 'combo');
                     } else {
@@ -1013,13 +1052,13 @@
             else if (type === 'combo') bgColor = 'bg-yellow-100 text-yellow-800 animate-celebrate';
             else if (type === 'loading') bgColor = 'bg-blue-100 text-blue-800';
             
-            resultDiv.className = `mb-6 p-4 rounded-xl text-center font-bold text-lg ${bgColor}`;
+            resultDiv.className = `mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-bold sm:text-lg ${bgColor}`;
             resultDiv.innerHTML = message;
-            resultDiv.style.display = 'block';
+            resultDiv.style.visibility = 'visible';
             
             if (!message.includes('계산하는 중') && type !== 'down') {   // 'down'(서비스 중단)은 계속 보이게
                 resultTimeout = setTimeout(() => {
-                    resultDiv.style.display = 'none';
+                    resultDiv.style.visibility = 'hidden';
                     resultTimeout = null;
                 }, 3000);
             }

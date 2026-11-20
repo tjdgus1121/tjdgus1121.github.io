@@ -1,0 +1,30 @@
+"hammingRooms": {
+  "$roomCode": {
+    ".read": "auth != null && $roomCode.matches(/^[0-9]{6}$/) && (!data.exists() || (data.child('meta/schema').val() == 'taste9-v1' && (data.child('meta/hostUid').val() == auth.uid || (data.child('meta/expiresAt').val() > now && data.child('meta/phase').val() != 'closed' && (data.child('meta/phase').val() == 'collect' || data.child('players').child(auth.uid).exists())))))",
+    ".write": "auth != null && $roomCode.matches(/^[0-9]{6}$/) && ((!data.exists() && newData.child('meta/hostUid').val() == auth.uid && newData.child('meta/phase').val() == 'collect' && newData.child('meta/expiresAt').val() > now) || (data.child('meta/schema').val() == 'taste9-v1' && data.child('meta/hostUid').val() == auth.uid && !newData.exists()))",
+    ".validate": "newData.hasChildren(['meta', 'players']) && newData.child('meta/hostUid').isString() && newData.child('players').child(newData.child('meta/hostUid').val()).exists()",
+    "meta": {
+      ".write": "auth != null && $roomCode.matches(/^[0-9]{6}$/) && data.child('schema').val() == 'taste9-v1' && data.child('hostUid').val() == auth.uid && data.child('expiresAt').val() > now && data.child('phase').val() != 'closed' && newData.exists()",
+      ".validate": "newData.hasChildren(['hostUid', 'phase', 'schema', 'createdAt', 'expiresAt'])",
+      "hostUid": { ".validate": "newData.isString() && (!data.exists() || newData.val() == data.val())" },
+      "phase": { ".validate": "newData.val() == 'collect' || newData.val() == 'compare' || newData.val() == 'binary' || newData.val() == 'distance' || newData.val() == 'closed'" },
+      "schema": { ".validate": "newData.val() == 'taste9-v1'" },
+      "createdAt": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now && (!data.exists() || newData.val() == data.val())" },
+      "expiresAt": { ".validate": "newData.isNumber() && newData.val() > newData.parent().child('createdAt').val() && newData.val() <= newData.parent().child('createdAt').val() + 21660000 && (!data.exists() || newData.val() == data.val())" },
+      "$other": { ".validate": false }
+    },
+    "players": {
+      "$uid": {
+        ".write": "auth != null && $uid == auth.uid && $roomCode.matches(/^[0-9]{6}$/) && data.parent().parent().child('meta/schema').val() == 'taste9-v1' && data.parent().parent().child('meta/expiresAt').val() > now && data.parent().parent().child('meta/phase').val() != 'closed' && newData.exists() && (data.parent().parent().child('meta/phase').val() == 'collect' || (data.exists() && newData.child('answers').val() == data.child('answers').val() && newData.child('submittedAt').val() == data.child('submittedAt').val()))",
+        ".validate": "newData.hasChildren(['name', 'answers', 'joinedAt', 'online']) && (root.child('hammingRooms').child($roomCode).exists() || $uid == auth.uid) && (data.exists() || (newData.child('answers').val() == '' && newData.child('online').val() == true)) && ((newData.child('answers').val() == '' && !newData.child('submittedAt').exists()) || (newData.child('answers').val() != '' && newData.child('submittedAt').exists()))",
+        "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12 && (!data.exists() || newData.val() == data.val())" },
+        "answers": { ".validate": "newData.isString() && ((!data.exists() || data.val() == '') && newData.val() == '' || newData.val().matches(/^[01]{9}$/))" },
+        "joinedAt": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now && (!data.exists() || newData.val() == data.val())" },
+        "online": { ".validate": "newData.isBoolean()" },
+        "submittedAt": { ".validate": "newData.isNumber() && newData.val() >= newData.parent().child('joinedAt').val() && newData.val() <= now && (!data.exists() || newData.val() >= data.val())" },
+        "$other": { ".validate": false }
+      }
+    },
+    "$other": { ".validate": false }
+  }
+}

@@ -15,20 +15,22 @@ const PHASE_TEXT = {
   collect: '친구들의 취향을 모으고 있어요.',
   compare: '누가 나랑 비슷할까? 친구를 골라 봐요.',
   binary: '같은 취향표를 0과 1로 바꿔 보세요.',
-  distance: '서로 다른 칸을 세면 해밍 거리가 돼요.'
+  distance: '두 친구가 다른 칸을 세고, 우리 반의 거리 분포를 살펴봐요.'
 };
 const SESSION_KEY = 'myTaste.room.v2';
 const state = {
   network: null, room: null, code: '', role: '', name: '',
   answers: Array(9).fill(null), question: 0, editing: false,
-  first: '', second: '', unsubscribe: null, busy: false
+  first: '', second: '', distanceFilter: 'all', statsPair: '', inspectedDistance: null, unsubscribe: null, busy: false
 };
 const $ = (id) => document.getElementById(id);
 const completed = (player) => /^[01]{9}$/.test(player?.answers || '');
 const isHost = () => state.room?.meta.hostUid === state.network?.uid;
 const ownPlayer = () => state.room?.players?.[state.network?.uid];
 const readyPlayers = () => Object.entries(state.room?.players || {}).filter(([, player]) => completed(player));
+const participantsInRoom = () => Object.entries(state.room?.players || {}).filter(([uid, player]) => uid !== state.room?.meta?.hostUid || completed(player));
 const distance = (first, second) => Array.from(first).filter((bit, index) => bit !== second[index]).length;
+const percent = (count, total) => (100 * count / total).toLocaleString('ko-KR', { maximumFractionDigits: 1 }) + '%';
 
 function remember() {
   try {
@@ -48,9 +50,12 @@ function savedRoom() {
   } catch { return null; }
 }
 
-function showMessage(message = '') {
-  $('app-message').textContent = message;
-  $('app-message').hidden = !message;
+function showMessage(message = '', anchor = null) {
+  const alert = $('app-message');
+  if (message && anchor?.closest('.entry-game')) anchor.after(alert);
+  else if (message) $('entry-screen').parentElement.append(alert);
+  alert.textContent = message;
+  alert.hidden = !message;
 }
 
 async function perform(button, operation) {
@@ -68,7 +73,7 @@ async function perform(button, operation) {
     const message = button?.id === 'create-room' && permissionDenied
       ? '방을 만들 수 없어요. Firebase 보안 규칙이 게시되어 있는지 확인해 주세요.'
       : state.network?.readableError?.(error) || error.message || '연결을 확인한 뒤 다시 눌러 주세요.';
-    showMessage(message);
+    showMessage(message, button);
   } finally {
     state.busy = false;
     if (button) {
@@ -91,11 +96,13 @@ async function network() {
 }
 
 function showScreen(name) {
+  const changed = document.body.dataset.screen !== name;
   document.body.dataset.screen = name;
   ['entry', 'question', 'room'].forEach((screen) => {
     $(screen + '-screen').hidden = screen !== name;
   });
   $('leave-button').hidden = name === 'entry';
+  if (changed) window.scrollTo(0, 0);
 }
 
 function watchRoom() {
@@ -129,6 +136,10 @@ function exitRoom(message = '') {
   state.editing = false;
   state.first = '';
   state.second = '';
+  state.distanceFilter = 'all';
+  $('pending-submissions').open = false;
+  state.statsPair = '';
+  state.inspectedDistance = null;
   try { sessionStorage.removeItem(SESSION_KEY); } catch { /* optional storage */ }
   document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
   showScreen('entry');
@@ -136,21 +147,35 @@ function exitRoom(message = '') {
   showMessage(message);
 }
 
+function renderQuestionBoard() {
+  $('answered-count').textContent = `${state.answers.filter((answer) => answer !== null).length} / ${QUESTIONS.length}칸 채움`;
+  $('question-progress').replaceChildren(...QUESTIONS.map(({ category, options, icons }, index) => {
+    const answer = state.answers[index];
+    const step = document.createElement('li');
+    step.className = 'progress-step';
+    if (answer !== null) step.dataset.choice = answer;
+    if (index === state.question) step.setAttribute('aria-current', 'step');
+    const description = `${index + 1}번 ${category} · ${answer === null ? '아직 미선택' : options[answer]}`;
+    step.setAttribute('aria-label', description);
+    step.title = description;
+    const mark = document.createElement('span');
+    mark.setAttribute('aria-hidden', 'true');
+    mark.textContent = answer === null ? index + 1 : icons[answer];
+    step.append(mark);
+    return step;
+  }));
+}
+
 function showQuestion(focus = false) {
   showScreen('question');
   const question = QUESTIONS[state.question];
   $('question-title').textContent = question.title;
-  $('question-count').textContent = (state.question + 1) + ' / 9';
+  $('question-count').textContent = `${state.question + 1} / ${QUESTIONS.length}`;
   $('question-room').textContent = '방 ' + state.code;
-  $('footer-message').textContent = '두 개 중 더 좋은 쪽을 골라요.';
+  $('question-next').textContent = state.question === QUESTIONS.length - 1 ? '고르면 취향표를 보내요.' : '고르면 다음 질문으로 넘어가요.';
   $('previous-question').disabled = state.question === 0;
   $('retry-submit').hidden = true;
-  $('question-progress').replaceChildren(...QUESTIONS.map((_, index) => {
-    const step = document.createElement('span');
-    step.className = 'progress-step' + (index < state.question ? ' complete' : '') + (index === state.question ? ' current' : '');
-    step.setAttribute('aria-label', (index + 1) + '번째 질문' + (index < state.question ? ' 완료' : ''));
-    return step;
-  }));
+  renderQuestionBoard();
   $('choice-list').replaceChildren(...question.options.map((option, index) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -167,17 +192,21 @@ function showQuestion(focus = false) {
       if (state.busy) return;
       state.answers[state.question] = index;
       remember();
-      if (state.question < 8) {
+      if (state.question < QUESTIONS.length - 1) {
         state.question += 1;
         remember();
         showQuestion(true);
       } else {
+        renderQuestionBoard();
+        for (const [side, choice] of Array.from($('choice-list').children).entries()) {
+          choice.setAttribute('aria-pressed', String(index === side));
+        }
         perform(button, submitAnswers);
       }
     });
     return button;
   }));
-  if (focus) $('question-title').focus();
+  if (focus) $('question-title').focus({ preventScroll: true });
 }
 
 async function submitAnswers() {
@@ -226,8 +255,10 @@ function matrix(answers, { binary = false, compareTo = null, differenceOnly = fa
 function render() {
   if (!state.room) return;
   const phase = state.room.meta.phase;
+  const phaseChanged = document.body.dataset.screen === 'room' && document.body.dataset.stage !== phase;
   const me = ownPlayer();
-  if (!isHost() && phase === 'collect' && (state.editing || !completed(me))) {
+  const teacher = isHost();
+  if (!teacher && phase === 'collect' && (state.editing || !completed(me))) {
     if ($('question-screen').hidden) {
       state.editing = true;
       showQuestion(true);
@@ -236,31 +267,61 @@ function render() {
   }
   showScreen('room');
   document.body.dataset.stage = phase;
-  document.body.dataset.role = isHost() ? 'teacher' : 'student';
+  document.body.dataset.role = teacher ? 'teacher' : 'student';
   $('room-code').textContent = state.code;
   $('room-subtitle').textContent = PHASE_TEXT[phase] || '';
-  $('teacher-controls').hidden = !isHost();
-  $('copy-room-link').hidden = !isHost();
-  $('footer-message').textContent = isHost() ? '위쪽 버튼으로 공개 단계를 바꿔 주세요.' : '화면은 선생님의 진행에 맞춰 바뀌어요.';
+  $('teacher-controls').hidden = !teacher;
+  $('teacher-submissions').hidden = !teacher;
+  $('copy-room-link').hidden = !teacher;
+  $('footer-message').textContent = teacher ? '위쪽 버튼으로 공개 단계를 바꿔 주세요.' : '화면은 선생님의 진행에 맞춰 바뀌어요.';
+  const participants = participantsInRoom();
+  const ready = participants.filter(([, player]) => completed(player));
+  if (teacher) renderSubmissions(participants, ready.length);
   document.querySelectorAll('[data-phase]').forEach((button) => {
     button.setAttribute('aria-current', button.dataset.phase === phase ? 'step' : 'false');
-    button.disabled = button.dataset.phase !== 'collect' && readyPlayers().length < 2;
+    button.disabled = button.dataset.phase !== 'collect' && ready.length < 2;
   });
   $('collection-view').hidden = phase !== 'collect';
   $('comparison-view').hidden = phase === 'collect';
-  if (phase === 'collect') renderCollection();
-  else renderComparison();
+  if (phase !== 'distance') {
+    $('class-stats').hidden = true;
+    state.statsPair = '';
+    state.inspectedDistance = null;
+  }
+  if (phase === 'collect') renderCollection(participants, ready.length, teacher);
+  else renderComparison(ready);
+  if (phaseChanged) window.scrollTo(0, 0);
 }
 
-function renderCollection() {
-  const players = Object.entries(state.room.players || {}).filter(([uid, player]) => uid !== state.room.meta.hostUid || completed(player));
-  const ready = players.filter(([, player]) => completed(player));
-  $('ready-count').textContent = ready.length + ' / ' + players.length + '명 선택 완료';
-  $('collection-title').textContent = isHost() ? '우리 반 취향' : '내 취향표 완성';
-  $('edit-answers').hidden = isHost() || !completed(ownPlayer());
-  $('student-waiting').hidden = isHost() || !completed(ownPlayer());
-  $('participant-gallery').hidden = !isHost();
-  if (!isHost()) {
+function renderSubmissions(participants, submitted) {
+  for (const [id, count] of [['joined-total', participants.length], ['submitted-total', submitted], ['pending-total', participants.length - submitted]]) {
+    const text = `${count}명`;
+    if ($(id).textContent !== text) $(id).textContent = text;
+  }
+  if (!$('pending-submissions').open) return;
+  const pending = participants.filter(([, player]) => !completed(player));
+  $('pending-submission-empty').hidden = pending.length > 0;
+  $('pending-submission-empty').textContent = participants.length ? '참가한 학생이 모두 제출했어요.' : '아직 참가한 학생이 없어요.';
+  $('pending-submission-list').hidden = pending.length === 0;
+  $('pending-submission-list').replaceChildren(...pending.map(([, player]) => {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    const status = document.createElement('small');
+    name.textContent = player.name;
+    status.textContent = player.online ? '접속 중' : '오프라인';
+    item.append(name, status);
+    return item;
+  }));
+}
+
+function renderCollection(players, submitted, teacher) {
+  $('ready-count').hidden = teacher;
+  $('ready-count').textContent = submitted + ' / ' + players.length + '명 선택 완료';
+  $('collection-title').textContent = teacher ? '우리 반 취향' : '내 취향표 완성';
+  $('edit-answers').hidden = teacher || !completed(ownPlayer());
+  $('student-waiting').hidden = teacher || !completed(ownPlayer());
+  $('participant-gallery').hidden = !teacher;
+  if (!teacher) {
     if (completed(ownPlayer())) $('my-taste-matrix').replaceChildren(...matrix(ownPlayer().answers));
     return;
   }
@@ -303,47 +364,71 @@ function fillPicker(id, players, selected) {
     return option;
   }));
   select.value = selected;
+  select.disabled = players.length === 0;
 }
 
-function renderComparison() {
-  const players = readyPlayers();
+function filterByDistance(first, others) {
+  const groups = Array.from({ length: QUESTIONS.length + 1 }, () => []);
+  for (const pair of others) groups[distance(first.answers, pair[1].answers)].push(pair);
+  const shortest = groups.findIndex((group) => group.length > 0);
+  const select = $('distance-filter');
+  select.options[0].textContent = `모든 거리 · ${others.length}명`;
+  select.options[1].textContent = `최단 거리 ${shortest} · ${groups[shortest].length}명`;
+  groups.forEach((group, value) => { select.options[value + 2].textContent = `거리 ${value} · ${group.length}명`; });
+  select.value = state.distanceFilter;
+  if (state.distanceFilter === 'all') return groups.flat();
+  const value = state.distanceFilter === 'shortest' ? shortest : Number(state.distanceFilter);
+  return groups[value];
+}
+
+function renderComparison(players = readyPlayers()) {
+  const teacher = isHost();
+  const phase = state.room.meta.phase;
   const ids = players.map(([uid]) => uid);
-  if (isHost()) {
+  if (teacher) {
     if (!ids.includes(state.first)) state.first = ids[0] || '';
   } else {
     state.first = completed(ownPlayer()) ? state.network.uid : '';
   }
-  if (!ids.includes(state.second) || state.second === state.first) state.second = ids.find((uid) => uid !== state.first) || '';
-  const otherPlayers = players.filter(([uid]) => uid !== state.first);
-  fillPicker('first-player', players, state.first);
-  fillPicker('second-player', otherPlayers, state.second);
-  $('first-picker-wrap').hidden = !isHost();
-  $('comparison-count').textContent = players.length + '명';
   const first = state.room.players?.[state.first];
+  const otherPlayers = players.filter(([uid]) => uid !== state.first);
+  const filterVisible = teacher && phase === 'distance' && completed(first) && otherPlayers.length > 0;
+  const candidates = filterVisible ? filterByDistance(first, otherPlayers) : otherPlayers;
+  $('teacher-distance-filter').hidden = !filterVisible;
+  if (filterVisible) $('distance-match-count').textContent = `${first.name} · 비교 후보 ${candidates.length}명`;
+  if (!candidates.some(([uid]) => uid === state.second)) state.second = candidates[0]?.[0] || '';
+  fillPicker('first-player', players, state.first);
+  fillPicker('second-player', candidates, state.second);
+  $('first-picker-wrap').hidden = !teacher;
+  $('comparison-friends-title').textContent = filterVisible ? '비교 후보' : '참가한 친구들';
+  $('comparison-count').textContent = (filterVisible ? candidates.length : players.length) + '명';
   const second = state.room.players?.[state.second];
   const validPair = completed(first) && completed(second) && state.first !== state.second;
   $('comparison-empty').hidden = validPair;
   $('comparison-content').hidden = !validPair;
-  $('comparison-empty').textContent = !state.first && !isHost() ? '취향 선택을 마치지 못했어요. 선생님께 취향 모으기를 다시 열어 달라고 해 주세요.' : '취향을 모두 고른 친구가 두 명 이상 필요해요.';
-  const phase = state.room.meta.phase;
+  let emptyMessage = '취향을 모두 고른 친구가 두 명 이상 필요해요.';
+  if (!state.first && !teacher) emptyMessage = '취향 선택을 마치지 못했어요. 선생님께 취향 모으기를 다시 열어 달라고 해 주세요.';
+  if (filterVisible && !candidates.length) emptyMessage = '이 거리의 친구가 없어요. 다른 거리를 골라 보세요.';
+  $('comparison-empty').textContent = emptyMessage;
   const binary = phase === 'binary' || phase === 'distance';
   $('comparison-title').textContent = phase === 'distance' ? '우리는 몇 칸 다를까?' : phase === 'binary' ? '취향도 숫자로 나타낼 수 있어요' : '누구랑 비교할까?';
   $('comparison-instruction').textContent = phase === 'distance' ? '다른 자리는 1, 같은 자리는 0. 1이 몇 개인지 세어 보세요.' : '같은 자리의 취향을 비교해 보세요.';
   $('binary-guide').hidden = !binary;
   $('distance-explanation').hidden = phase !== 'distance';
+  const pairDistance = validPair && phase === 'distance' ? distance(first.answers, second.answers) : null;
   if (validPair) {
     $('first-player-name').textContent = first.name + (state.first === state.network.uid ? ' · 나' : '');
     $('second-player-name').textContent = second.name;
     $('first-matrix').replaceChildren(...matrix(first.answers, { binary, compareTo: second.answers }));
     $('second-matrix').replaceChildren(...matrix(second.answers, { binary, compareTo: first.answers }));
-    if (phase === 'distance') {
-      const count = distance(first.answers, second.answers);
+    if (pairDistance !== null) {
       $('difference-matrix').replaceChildren(...matrix(first.answers, { compareTo: second.answers, differenceOnly: true }));
-      $('distance-value').textContent = count;
-      $('distance-summary').textContent = '다른 취향 ' + count + '개 · 같은 취향 ' + (9 - count) + '개';
+      $('distance-value').textContent = pairDistance;
+      $('distance-summary').textContent = `다른 취향 ${pairDistance}개 · 같은 취향 ${QUESTIONS.length - pairDistance}개`;
     }
   }
-  $('comparison-friends').replaceChildren(...otherPlayers.map(([uid, player]) => {
+  if (phase === 'distance') renderClassStats(players, pairDistance);
+  $('comparison-friends').replaceChildren(...candidates.map(([uid, player]) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'friend-button';
@@ -364,6 +449,108 @@ function renderComparison() {
   }));
 }
 
+function classDistanceCounts(ballots) {
+  const counts = Array(QUESTIONS.length + 1).fill(0);
+  ballots.forEach((first, index) => {
+    for (let other = 0; other < index; other++) counts[distance(first, ballots[other])]++;
+  });
+  return counts;
+}
+
+function histogramReading(counts, pairs, selected, pairDistance) {
+  const count = counts[selected];
+  const meaning = selected === 0 ? ' 아홉 답이 모두 같은 쌍이에요.' : selected === QUESTIONS.length ? ' 아홉 답이 모두 다른 쌍이에요.' : '';
+  const current = selected === pairDistance ? ' 지금 비교한 두 친구도 여기에 포함돼요.' : '';
+  $('histogram-reading').textContent = `거리 ${selected}인 쌍은 ${count}쌍 (${percent(count, pairs)})이에요.${meaning}${current}`;
+  $('histogram-distance').value = String(selected);
+  for (const [index, bar] of Array.from($('distance-histogram').children).entries()) {
+    bar.setAttribute('aria-pressed', String(index === selected));
+  }
+}
+
+function renderQuestionStats(ballots) {
+  const index = Number($('stats-question-select').value);
+  const question = QUESTIONS[index];
+  const left = ballots.filter((answer) => answer[index] === '0').length;
+  const right = ballots.length - left;
+  const pairs = ballots.length * (ballots.length - 1) / 2;
+  $('stats-options').replaceChildren(...question.options.map((option, side) => {
+    const label = document.createElement('span');
+    label.textContent = `${question.icons[side]} ${option} ${side === 0 ? left : right}명`;
+    return label;
+  }));
+  $('stats-left-share').style.width = percent(left, ballots.length);
+  $('stats-question-reading').textContent = `${left}명 × ${right}명 = ${left * right}쌍 (전체 쌍의 ${percent(left * right, pairs)})이 이 문항에서 달랐어요.`;
+}
+
+function renderClassStats(players, pairDistance) {
+  $('class-stats').hidden = players.length < 2;
+  if (players.length < 2) return;
+
+  const ballots = players.map(([, player]) => player.answers);
+  const counts = classDistanceCounts(ballots);
+  const pairs = players.length * (players.length - 1) / 2;
+  const most = Math.max(...counts);
+  const modes = counts.flatMap((count, index) => count === most ? [index] : []);
+  const totalDistance = counts.reduce((total, count, value) => total + value * count, 0);
+  $('stats-sample').textContent = `아홉 개를 모두 고른 ${players.length}명 가운데 두 사람씩 묶었어요. 같은 쌍은 한 번만 세어요.`;
+  $('stats-pairs').textContent = `${pairs.toLocaleString('ko-KR')}쌍`;
+  $('stats-mean').textContent = (totalDistance / pairs).toFixed(1);
+  $('stats-mode').textContent = modes.length === counts.length ? '모든 거리' : modes.join(' · ');
+  $('histogram-pair').hidden = pairDistance === null;
+  $('histogram-pair').textContent = pairDistance === null ? '' : `지금 비교한 쌍 · 거리 ${pairDistance}`;
+
+  const pairKey = pairDistance === null ? '' : `${state.first}/${state.second}`;
+  if (state.statsPair !== pairKey) {
+    state.statsPair = pairKey;
+    state.inspectedDistance = null;
+  }
+  const inspect = (value) => {
+    state.inspectedDistance = value;
+    histogramReading(counts, pairs, value, pairDistance);
+  };
+  const histogram = $('distance-histogram');
+  counts.forEach((count, value) => {
+    let bar = histogram.children[value];
+    if (!bar) {
+      bar = document.createElement('button');
+      bar.type = 'button';
+      bar.className = 'histogram-bar';
+      bar.innerHTML = '<span class="bar-track"><span class="bar-count"></span><span class="bar-fill"></span></span><span class="bar-number"></span>';
+      bar.querySelector('.bar-number').textContent = value;
+      histogram.append(bar);
+    }
+    bar.querySelector('.bar-count').textContent = count;
+    bar.style.setProperty('--bar-height', `${100 * count / most}%`);
+    bar.classList.toggle('current-pair', value === pairDistance);
+    bar.setAttribute('aria-label', `거리 ${value}, ${count}쌍${value === pairDistance ? ', 지금 비교한 쌍 포함' : ''}`);
+    bar.onclick = () => inspect(value);
+  });
+  $('histogram-distance').onchange = (event) => inspect(Number(event.target.value));
+  histogramReading(counts, pairs, state.inspectedDistance ?? pairDistance ?? modes[0], pairDistance);
+  renderQuestionStats(ballots);
+}
+
+$('histogram-distance').replaceChildren(...Array.from({ length: QUESTIONS.length + 1 }, (_, value) => new Option(`${value}칸`, value)));
+$('distance-filter').append(...Array.from({ length: QUESTIONS.length + 1 }, (_, value) => new Option(`거리 ${value}`, value)));
+$('distance-filter').addEventListener('change', (event) => {
+  state.distanceFilter = event.target.value;
+  renderComparison();
+});
+$('pending-submissions').addEventListener('toggle', () => {
+  if (!state.room || !isHost() || !$('pending-submissions').open) return;
+  renderSubmissions(participantsInRoom(), readyPlayers().length);
+});
+$('stats-question-select').replaceChildren(...QUESTIONS.map(({ category }, index) => {
+  const option = document.createElement('option');
+  option.value = index;
+  option.textContent = `${index + 1}. ${category}`;
+  return option;
+}));
+$('stats-question-select').addEventListener('change', () => {
+  renderQuestionStats(readyPlayers().map(([, player]) => player.answers));
+});
+
 $('create-room').addEventListener('click', () => perform($('create-room'), async () => {
   const net = await network();
   const result = await net.createRoom('선생님');
@@ -383,11 +570,14 @@ $('join-form').addEventListener('submit', (event) => {
   $('room-code-input').setAttribute('aria-invalid', String(!validCode));
   $('player-name-input').setAttribute('aria-invalid', String(!validName));
   if (!validCode || !validName) {
-    showMessage(!validCode ? '선생님이 알려 준 숫자 6자리 방 코드를 적어 주세요.' : '이름이나 별명을 12자 이내로 적어 주세요.');
+    const message = !validCode ? '선생님이 알려 준 숫자 6자리 방 코드를 적어 주세요.' : '이름이나 별명을 12자 이내로 적어 주세요.';
+    showMessage(message, $('join-button'));
     (!validCode ? $('room-code-input') : $('player-name-input')).focus();
     return;
   }
   perform($('join-button'), async () => {
+    const field = document.activeElement;
+    if (field === $('room-code-input') || field === $('player-name-input')) field.blur();
     const net = await network();
     await net.joinRoom(code, name);
     state.code = code;
