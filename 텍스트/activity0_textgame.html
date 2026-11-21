@@ -1115,6 +1115,8 @@
         let sentenceHidden = false;
         let shuffledWords = [];
         let hintCount = 3;
+        const DEFAULT_SLOT_COUNT = 3;
+        let slotCount = DEFAULT_SLOT_COUNT; // 단어 칸 수: 방에서는 방장만 늘릴 수 있고 학생 화면에 똑같이 적용된다.
         let viewStateUnsubscribe = null;
         let currentGuessData = {};
 
@@ -1847,7 +1849,9 @@
                 // 응답 없는 쓰기로 버튼이 영영 잠기지 않도록 제한 시간을 둔다.
                 await withTimeout(set(ref(db, `rooms/${roomCode}/viewState/${stageIdx}`), {
                     hidden: sentenceHidden,
-                    hintCount
+                    // DB 규칙이 viewState에 hidden·hintCount만 허용하므로, 단어 고르기 문장에서는
+                    // 쓰지 않는 hintCount 자리에 방장이 정한 단어 칸 수를 담는다.
+                    hintCount: isReverseStage(stageIdx) ? hintCount : slotCount
                 }));
                 clearStageSyncError();
                 return true;
@@ -1871,11 +1875,14 @@
                     return;
                 }
                 if (typeof val.hidden === 'boolean') sentenceHidden = val.hidden;
-                if (typeof val.hintCount === 'number') hintCount = val.hintCount;
+                const reverse = isReverseStage(stageIdx);
+                if (reverse && typeof val.hintCount === 'number') hintCount = val.hintCount;
                 renderSentence();
-                if (isReverseStage(stageIdx)) {
+                if (reverse) {
                     renderHintWords();
                     renderGuessBoard(currentGuessData);
+                } else if (typeof val.hintCount === 'number') {
+                    applySlotCount(val.hintCount); // 단어 고르기 문장: hintCount = 단어 칸 수
                 }
             }, err => console.error(err));
         }
@@ -1945,20 +1952,55 @@
                 zone.appendChild(slot);
             });
 
-            const addBtn = document.createElement('button');
-            addBtn.type = 'button';
-            addBtn.className = 'add-slot-btn';
-            addBtn.textContent = '+';
-            addBtn.title = '단어 칸 추가';
-            addBtn.addEventListener('click', addSlot);
-            zone.appendChild(addBtn);
+            // 방에서는 방장에게만 + 버튼을 보여 준다. 학생은 방장이 정한 칸 수를 따른다.
+            const canAddSlot = (!roomCode || isHost) && slotState.length < shuffledWords.length;
+            if (canAddSlot) {
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'add-slot-btn';
+                addBtn.textContent = '+';
+                addBtn.title = roomCode ? '모두의 단어 칸 추가' : '단어 칸 추가';
+                addBtn.disabled = viewStateBusy;
+                addBtn.addEventListener('click', addSlot);
+                zone.appendChild(addBtn);
+            }
         }
 
-        function addSlot() {
-            slotState.push(null);
+        // 칸 수를 n으로 맞춘다. 줄어들면 뒤쪽 칸의 단어는 단어 상자로 돌려보낸다.
+        function applySlotCount(n) {
+            const target = Math.max(1, Math.min(Math.floor(n), shuffledWords.length || 1));
+            slotCount = target;
+            if (slotState.length === target) return;
+            let picksChanged = false;
+            while (slotState.length < target) slotState.push(null);
+            while (slotState.length > target) {
+                const word = slotState.pop();
+                if (word) { bankState.push(word); picksChanged = true; }
+            }
+            renderBank();
             renderSlots();
             updateFeedback();
-            syncMyPicks();
+            if (picksChanged) syncMyPicks();
+        }
+
+        async function addSlot() {
+            if (viewStateBusy || (roomCode && !isHost)) return;
+            if (slotState.length >= shuffledWords.length) return;
+            viewStateBusy = true;
+            clearStageSyncError();
+            applySlotCount(slotState.length + 1);
+            try {
+                // 연결이 끊겨도 교사 화면의 칸은 늘리고, 학생 화면 전달 실패만 알린다.
+                if (roomCode && !firebaseConnected) {
+                    showSyncNotice('연결이 끊겨 학생 화면에는 전달되지 않았습니다.', true);
+                    showStageSyncError('연결이 끊겨 학생 화면에 전달하지 못했어요. 지금 보이는 내용은 이 기기에만 적용됩니다.');
+                } else if (roomCode) {
+                    await syncStageViewState();
+                }
+            } finally {
+                viewStateBusy = false;
+                renderSlots();
+            }
         }
 
         function renderHintWords() {
@@ -2100,7 +2142,8 @@
                 sentenceHidden = false;
                 renderSentence();
                 bankState = shuffledWords.slice();
-                slotState = [null, null, null];
+                slotCount = Math.min(DEFAULT_SLOT_COUNT, shuffledWords.length);
+                slotState = Array(slotCount).fill(null);
                 renderBank();
                 renderSlots();
                 updateFeedback();
